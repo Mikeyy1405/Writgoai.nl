@@ -32,8 +32,8 @@ COPY nextjs_space/. .
 # Generate Prisma Client
 RUN yarn prisma generate
 
-# Build Next.js application with standalone output for optimal size
-# Next.js automatically detects and uses standalone mode from next.config.js
+# Build Next.js application
+# Note: For standalone output, set NEXT_OUTPUT_MODE=standalone in environment
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
 
@@ -60,14 +60,10 @@ ENV NEXT_TELEMETRY_DISABLED 1
 # Copy public assets
 COPY --from=builder /app/public ./public
 
-# Copy Next.js build output
-# If using standalone build, copy the standalone folder
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy Prisma files for runtime
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+# Copy Next.js build output and dependencies
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Switch to non-root user
@@ -84,5 +80,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the application
-# If using standalone build, the server.js is in the root
-CMD ["node", "server.js"]
+# Use yarn start to run the Next.js production server
+CMD ["yarn", "start"]

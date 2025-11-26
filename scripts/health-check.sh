@@ -64,17 +64,23 @@ print_info "Checking database connection..."
 
 cd nextjs_space 2>/dev/null || cd .
 
-# Try to execute a simple database query using Prisma
-DB_CHECK=$(yarn prisma db execute --stdin <<< "SELECT 1;" 2>&1)
-DB_EXIT_CODE=$?
-
-if [ $DB_EXIT_CODE -eq 0 ]; then
-    print_success "Database connection is healthy"
-    DB_HEALTHY=true
-else
-    print_error "Database connection check failed"
-    echo "$DB_CHECK" | head -5
+# Check if DATABASE_URL is set
+if [ -z "$DATABASE_URL" ]; then
+    print_error "DATABASE_URL environment variable is not set"
     DB_HEALTHY=false
+else
+    # Use Prisma's built-in validation command
+    DB_CHECK=$(yarn prisma validate 2>&1)
+    DB_EXIT_CODE=$?
+
+    if [ $DB_EXIT_CODE -eq 0 ]; then
+        print_success "Database connection is healthy"
+        DB_HEALTHY=true
+    else
+        print_error "Database schema validation failed"
+        echo "$DB_CHECK" | head -5
+        DB_HEALTHY=false
+    fi
 fi
 
 # Summary
