@@ -25,7 +25,7 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Copy package files
-COPY nextjs_space/package*.json ./
+COPY package*.json ./
 
 # Install all dependencies (including dev dependencies needed for build)
 # Using npm ci for reproducible builds with package-lock.json
@@ -56,7 +56,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy application source
-COPY nextjs_space/. .
+COPY . .
 
 # Generate Prisma Client with correct binary target
 RUN npx prisma generate

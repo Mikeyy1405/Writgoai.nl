@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -5,42 +6,78 @@ async function addCreditsToJeffrey() {
   try {
     console.log('🔍 Zoeken naar Jeffrey Keijzer...');
     
-    // Find user by email
-    const user = await prisma.user.findUnique({
+    // Find client by email
+    const client = await prisma.client.findUnique({
       where: { email: 'jeffrey_keijzer@msn.com' }
     });
     
-    if (!user) {
-      console.log('❌ Gebruiker niet gevonden met email: jeffrey_keijzer@msn.com');
+    if (!client) {
+      console.log('❌ Client niet gevonden met email: jeffrey_keijzer@msn.com');
+      
+      // Search for similar email
+      const clients = await prisma.client.findMany({
+        where: {
+          OR: [
+            { email: { contains: 'jeffrey', mode: 'insensitive' } },
+            { email: { contains: 'keijzer', mode: 'insensitive' } },
+            { name: { contains: 'jeffrey', mode: 'insensitive' } },
+            { name: { contains: 'keijzer', mode: 'insensitive' } }
+          ]
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          subscriptionCredits: true,
+          topUpCredits: true,
+          isUnlimited: true
+        }
+      });
+      
+      if (clients.length > 0) {
+        console.log(`\n💡 Vergelijkbare clients gevonden:\n`);
+        clients.forEach((c, i) => {
+          console.log(`${i + 1}. ${c.name}`);
+          console.log(`   Email: ${c.email}`);
+          console.log(`   Subscription Credits: ${c.subscriptionCredits}`);
+          console.log(`   Top-up Credits: ${c.topUpCredits}`);
+          console.log(`   Unlimited: ${c.isUnlimited}`);
+          console.log('');
+        });
+      }
+      
       return;
     }
     
-    console.log('✅ Gebruiker gevonden:');
-    console.log(`   ID: ${user.id}`);
-    console.log(`   Naam: ${user.name}`);
-    console.log(`   Email: ${user.email}`);
-    console.log(`   Huidige credits: ${user.credits}`);
+    console.log('✅ Client gevonden:');
+    console.log(`   ID: ${client.id}`);
+    console.log(`   Naam: ${client.name}`);
+    console.log(`   Email: ${client.email}`);
+    console.log(`   Subscription Credits: ${client.subscriptionCredits}`);
+    console.log(`   Top-up Credits: ${client.topUpCredits}`);
+    console.log(`   Unlimited: ${client.isUnlimited}`);
     
-    // Add 10 credits
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
+    // Add 10 top-up credits
+    const updatedClient = await prisma.client.update({
+      where: { id: client.id },
       data: {
-        credits: user.credits + 10
+        topUpCredits: client.topUpCredits + 10,
+        totalCreditsPurchased: client.totalCreditsPurchased + 10
       }
     });
     
     console.log(`\n💰 Credits toegevoegd!`);
-    console.log(`   Oude credits: ${user.credits}`);
-    console.log(`   Nieuwe credits: ${updatedUser.credits}`);
+    console.log(`   Oude top-up credits: ${client.topUpCredits}`);
+    console.log(`   Nieuwe top-up credits: ${updatedClient.topUpCredits}`);
     
     // Create credit transaction record
     await prisma.creditTransaction.create({
       data: {
-        userId: user.id,
+        clientId: client.id,
         amount: 10,
         type: 'MANUAL_ADDITION',
         description: 'Eenmalige credit toevoeging door admin',
-        balanceAfter: updatedUser.credits
+        balanceAfter: updatedClient.subscriptionCredits + updatedClient.topUpCredits
       }
     });
     
