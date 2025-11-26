@@ -56,6 +56,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy application source
+# Note: .next directory is excluded in .dockerignore (correct behavior)
+# The .next build will be created fresh during the build process below
 COPY . .
 
 # Generate Prisma Client with correct binary target
@@ -65,7 +67,12 @@ RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN npm run build
+# Run build and verify .next directory is created
+RUN npm run build && \
+    echo "Verifying .next directory was created..." && \
+    ls -la .next/ && \
+    test -f .next/BUILD_ID && \
+    echo "✓ Build successful - .next directory exists with BUILD_ID"
 
 # Stage 3: Runner (Production)
 FROM node:18-alpine AS runner
@@ -106,6 +113,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./next.config.js
+
+# Verify .next directory exists in runner stage
+RUN ls -la .next/ && \
+    test -f .next/BUILD_ID && \
+    echo "✓ Production build verified in runner stage"
 
 # Switch to non-root user
 USER nextjs

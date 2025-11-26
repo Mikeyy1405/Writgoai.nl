@@ -3,15 +3,16 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
-  output: process.env.NEXT_OUTPUT_MODE,
+  // Only set output mode if explicitly configured
+  ...(process.env.NEXT_OUTPUT_MODE && { output: process.env.NEXT_OUTPUT_MODE }),
   
   // Optimize for production
   poweredByHeader: false,
   compress: true,
   
-  experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../'),
-  },
+  // Remove experimental outputFileTracingRoot as it's not needed in Docker
+  // and can cause issues when the path resolves incorrectly
+  experimental: {},
   
   eslint: {
     ignoreDuringBuilds: true,
