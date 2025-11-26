@@ -95,9 +95,15 @@ services:
         sync: false
       - key: PIXABAY_API_KEY
         sync: false
+      - key: PEXELS_API_KEY
+        sync: false
+      - key: UNSPLASH_ACCESS_KEY
+        sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: RUNWAY_API_KEY
+        sync: false
+      - key: RUNWAY_ML_API_KEY
         sync: false
       - key: LUMA_API_KEY
         sync: false
@@ -109,6 +115,24 @@ services:
         sync: false
       - key: ABACUSAI_API_KEY
         sync: false
+      - key: ORIGINALITY_API_KEY
+        sync: false
+      - key: ZEROGPT_API_KEY
+        sync: false
+      - key: AYRSHARE_API_KEY
+        sync: false
+      
+      # Email IMAP Configuration (Optional)
+      - key: EMAIL_IMAP_HOST
+        sync: false
+      - key: EMAIL_IMAP_PORT
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: EMAIL_SMTP_HOST
+        sync: false
+      - key: EMAIL_SMTP_PORT
+        sync: false
       
       # Security & Cron
       - key: JWT_SECRET
@@ -119,6 +143,14 @@ services:
       # Application Configuration
       - key: NEXT_PUBLIC_APP_URL
         value: https://writgoai.nl
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID
+        sync: false
 
 databases:
   # PostgreSQL Database
