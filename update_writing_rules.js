@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 
 // Read .env file
-const envContent = fs.readFileSync('/home/ubuntu/writgo_planning_app/nextjs_space/.env', 'utf8');
+const envContent = fs.readFileSync('/home/ubuntu/writgo_planning_app/.env', 'utf8');
 const envVars = {};
 envContent.split('\n').forEach(line => {
   const [key, ...valueParts] = line.split('=');

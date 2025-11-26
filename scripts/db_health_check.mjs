@@ -1,6 +1,6 @@
 
-// This script must be run from the nextjs_space directory
-// Usage: cd /home/ubuntu/writgo_planning_app/nextjs_space && node ../../scripts/db_health_check.mjs
+// This script must be run from the root directory
+// Usage: cd /home/ubuntu/writgo_planning_app && node scripts/db_health_check.mjs
 
 import { PrismaClient } from '@prisma/client';
 import { config } from 'dotenv';

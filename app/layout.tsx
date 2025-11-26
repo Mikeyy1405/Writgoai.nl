@@ -1,12 +1,12 @@
 
 import type { Metadata, Viewport } from 'next';
-// import { Inter } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import RegisterServiceWorker from './register-sw';
 import InstallPrompt from '@/components/install-prompt';
 
-// const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://writgoai.nl'),
@@ -121,7 +121,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="format-detection" content="telephone=no" />
       </head>
-      <body className="font-sans">
+      <body className={inter.className}>
         <Providers>
           {children}
           <InstallPrompt />
