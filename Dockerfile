@@ -6,20 +6,54 @@ FROM node:18-alpine AS deps
 LABEL stage=deps
 
 # Install system dependencies required for native modules
-RUN apk add --no-cache libc6-compat openssl
+# @napi-rs/canvas requires: pixman cairo pango jpeg giflib
+# Prisma requires: openssl
+# Sharp requires: vips
+RUN apk add --no-cache \
+    libc6-compat \
+    openssl \
+    cairo \
+    pango \
+    jpeg \
+    giflib \
+    pixman \
+    vips \
+    python3 \
+    make \
+    g++
 
 WORKDIR /app
 
 # Copy package files
-COPY nextjs_space/package*.json nextjs_space/yarn.lock ./
-COPY nextjs_space/.yarnrc.yml ./
+COPY nextjs_space/package*.json ./
+# Note: Using npm instead of yarn for better compatibility with Render
+# If yarn.lock exists, it will be copied but we'll use npm
 
 # Install dependencies with frozen lockfile for reproducibility
-RUN yarn install --frozen-lockfile
+RUN npm ci --omit=dev --legacy-peer-deps && \
+    npm cache clean --force
+
+# Install dev dependencies needed for build
+RUN npm install --save-dev prisma @types/node typescript --legacy-peer-deps && \
+    npm cache clean --force
 
 # Stage 2: Builder
 FROM node:18-alpine AS builder
 LABEL stage=builder
+
+# Install same system dependencies for build
+RUN apk add --no-cache \
+    libc6-compat \
+    openssl \
+    cairo \
+    pango \
+    jpeg \
+    giflib \
+    pixman \
+    vips \
+    python3 \
+    make \
+    g++
 
 WORKDIR /app
 
@@ -29,15 +63,14 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application source
 COPY nextjs_space/. .
 
-# Generate Prisma Client
-RUN yarn prisma generate
+# Generate Prisma Client with correct binary target
+RUN npx prisma generate
 
 # Build Next.js application
-# Note: For standalone output, set NEXT_OUTPUT_MODE=standalone in environment
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 
-RUN yarn build
+RUN npm run build
 
 # Stage 3: Runner (Production)
 FROM node:18-alpine AS runner
@@ -46,25 +79,39 @@ LABEL stage=runner
 WORKDIR /app
 
 # Install only runtime dependencies
-RUN apk add --no-cache openssl
+RUN apk add --no-cache \
+    openssl \
+    cairo \
+    pango \
+    jpeg \
+    giflib \
+    pixman \
+    vips \
+    bash
 
 # Create nextjs user for running the application (security best practice)
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 # Set environment variables
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Copy startup script
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh && \
+    chown nextjs:nodejs ./start.sh
 
 # Copy necessary files from builder
-# Copy public assets
-COPY --from=builder /app/public ./public
-
-# Copy Next.js build output and dependencies
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/package-lock.json* ./
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./next.config.js
 
 # Switch to non-root user
 USER nextjs
@@ -72,13 +119,9 @@ USER nextjs
 # Expose port 3000
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start the application
-# Use yarn start to run the Next.js production server
-CMD ["yarn", "start"]
+# Start the application with migrations
+CMD ["./start.sh"]

@@ -2,28 +2,41 @@ services:
   # Web Service - Next.js Application
   - type: web
     name: writgoai-app
-    runtime: node
+    env: docker
     region: frankfurt
     plan: starter
-    buildCommand: cd nextjs_space && yarn install && yarn prisma generate && yarn build
-    startCommand: cd nextjs_space && yarn start
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api/health
+    autoDeploy: true
+    
     envVars:
+      # Node Environment
       - key: NODE_ENV
         value: production
+      
+      # Database Configuration
       - key: DATABASE_URL
         fromDatabase:
           name: writgoai-db
           property: connectionString
-      # Production URL - Update this for staging/development environments
+      
+      # NextAuth Configuration
       - key: NEXTAUTH_URL
         value: https://writgoai.nl
       - key: NEXTAUTH_SECRET
         generateValue: true
+      
+      # AIML API Configuration (Claude AI & Image Generation)
       - key: AIML_API_KEY
         sync: false
       - key: AIML_API_BASE_URL
         value: https://api.aimlapi.com/v1
+      - key: AIML_API_URL
+        value: https://api.aimlapi.com/v1
+      
+      # AWS S3 Configuration (File Uploads)
       - key: AWS_BUCKET_NAME
         sync: false
       - key: AWS_ACCESS_KEY_ID
@@ -32,14 +45,80 @@ services:
         sync: false
       - key: AWS_REGION
         value: eu-west-1
+      - key: AWS_FOLDER_PREFIX
+        value: uploads/
+      
+      # Stripe Configuration (Payments)
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_STARTER_PRICE_ID
+        sync: false
+      - key: STRIPE_PRO_PRICE_ID
+        sync: false
+      - key: STRIPE_ENTERPRISE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      
+      # Email Configuration (SMTP)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      
+      # Google Search Console OAuth
+      - key: GOOGLE_SEARCH_CONSOLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET
+        sync: false
+      
+      # Bol.com Affiliate API (Optional)
       - key: BOLCOM_CLIENT_ID
         sync: false
       - key: BOLCOM_CLIENT_SECRET
         sync: false
+      
+      # DataForSEO API (Legacy - Optional)
       - key: DATAFORSEO_USERNAME
         sync: false
       - key: DATAFORSEO_PASSWORD
         sync: false
+      
+      # Additional API Keys (Optional)
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PIXABAY_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: RUNWAY_API_KEY
+        sync: false
+      - key: LUMA_API_KEY
+        sync: false
+      - key: VADOO_API_KEY
+        sync: false
+      - key: LATE_DEV_API_KEY
+        sync: false
+      - key: GETLATE_API_KEY
+        sync: false
+      - key: ABACUSAI_API_KEY
+        sync: false
+      
+      # Security & Cron
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      
+      # Application Configuration
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://writgoai.nl
 
 databases:
   # PostgreSQL Database
