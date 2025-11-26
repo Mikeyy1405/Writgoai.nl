@@ -62,13 +62,24 @@ done
 # Check 2: Database Connection
 print_info "Checking database connection..."
 
-cd nextjs_space 2>/dev/null || cd .
-
-# Check if DATABASE_URL is set
-if [ -z "$DATABASE_URL" ]; then
-    print_error "DATABASE_URL environment variable is not set"
+# Navigate to nextjs_space directory if it exists
+if [ -d "nextjs_space" ]; then
+    cd nextjs_space
+elif [ ! -f "package.json" ]; then
+    print_error "Cannot find Next.js application directory"
     DB_HEALTHY=false
 else
+    # Already in the correct directory
+    :
+fi
+
+# Only proceed with database check if directory check passed
+if [ "$DB_HEALTHY" != false ]; then
+  # Check if DATABASE_URL is set
+  if [ -z "$DATABASE_URL" ]; then
+    print_error "DATABASE_URL environment variable is not set"
+    DB_HEALTHY=false
+  else
     # Use Prisma's built-in validation command
     DB_CHECK=$(yarn prisma validate 2>&1)
     DB_EXIT_CODE=$?
@@ -81,6 +92,7 @@ else
         echo "$DB_CHECK" | head -5
         DB_HEALTHY=false
     fi
+  fi
 fi
 
 # Summary

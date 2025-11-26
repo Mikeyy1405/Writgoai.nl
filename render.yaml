@@ -15,6 +15,7 @@ services:
         fromDatabase:
           name: writgoai-db
           property: connectionString
+      # Production URL - Update this for staging/development environments
       - key: NEXTAUTH_URL
         value: https://writgoai.nl
       - key: NEXTAUTH_SECRET

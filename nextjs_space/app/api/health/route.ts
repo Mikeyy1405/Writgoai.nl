@@ -12,7 +12,8 @@ import { prisma } from '@/lib/db';
 export async function GET() {
   try {
     // Check database connectivity with a simple query
-    await prisma.$queryRaw`SELECT 1`;
+    // Using $executeRaw for a non-returning query
+    await prisma.$executeRaw`SELECT 1`;
 
     return NextResponse.json({
       status: 'healthy',
