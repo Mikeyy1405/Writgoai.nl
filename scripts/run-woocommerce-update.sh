@@ -3,7 +3,7 @@
 # WooCommerce Product Update Cron Job
 # Runs weekly to check prices and stock for all auto-update enabled projects
 
-cd /home/ubuntu/writgo_planning_app/nextjs_space || exit 1
+cd /home/ubuntu/writgo_planning_app || exit 1
 
 # Load environment variables
 export $(grep -v '^#' .env | xargs)

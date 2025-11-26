@@ -130,7 +130,8 @@ export async function POST(request: NextRequest) {
     if (includeBolProducts && project.bolcomEnabled && project.bolcomClientId && project.bolcomClientSecret) {
       try {
         console.log('🛒 [Content Generator] Zoeken naar Bol.com producten...');
-        sendSSE({ progress: 10, message: 'Bol.com producten zoeken...' });
+        // Note: sendSSE not available yet at this point in execution
+        // sendSSE({ progress: 10, message: 'Bol.com producten zoeken...' });
         
         // Gebruik de title + keywords als zoekterm
         const searchQuery = keywords ? `${title} ${keywords}` : title;
@@ -155,7 +156,8 @@ export async function POST(request: NextRequest) {
         }));
         
         console.log(`✅ [Content Generator] ${affiliateProducts.length} Bol.com producten gevonden`);
-        sendSSE({ progress: 12, message: `${affiliateProducts.length} producten gevonden` });
+        // Note: sendSSE not available yet at this point in execution
+        // sendSSE({ progress: 12, message: `${affiliateProducts.length} producten gevonden` });
       } catch (error: any) {
         console.error('❌ [Content Generator] Fout bij Bol.com zoeken:', error.message);
         // Fallback naar preferred products als API faalt

@@ -38,6 +38,12 @@
     ".build/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "AGENT_API_ROUTE.ts",
+    "AGENT_IMPLEMENTATION.ts",
+    "api_backup_20251022_094929",
+    "**/*.bak",
+    "**/*.backup",
+    "**/backup_*"
   ]
 }
