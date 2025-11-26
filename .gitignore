@@ -18,31 +18,3 @@ out
 .deploy
 .logs
 *.tsbuildinfo
-
-# Large files to exclude from GitHub
-core
-*.pack
-*.tgz
-nextjs_space/.build/
-nextjs_space/core
-*.db
-*.sqlite
-logs/
-*.log
-
-# Large files and build artifacts
-core
-*.pack
-*.tgz
-.build/
-.deploy/
-nextjs_space/.build/
-nextjs_space/core
-
-# Database
-*.db
-*.sqlite
-
-# Logs
-logs/
-*.log
