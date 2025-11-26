@@ -26,15 +26,10 @@ WORKDIR /app
 
 # Copy package files
 COPY nextjs_space/package*.json ./
-# Note: Using npm instead of yarn for better compatibility with Render
-# If yarn.lock exists, it will be copied but we'll use npm
 
-# Install dependencies with frozen lockfile for reproducibility
-RUN npm ci --omit=dev --legacy-peer-deps && \
-    npm cache clean --force
-
-# Install dev dependencies needed for build
-RUN npm install --save-dev prisma @types/node typescript --legacy-peer-deps && \
+# Install all dependencies (including dev dependencies needed for build)
+# Using npm ci for reproducible builds with package-lock.json
+RUN npm ci --legacy-peer-deps && \
     npm cache clean --force
 
 # Stage 2: Builder
@@ -109,7 +104,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nextjs:nodejs /app/package-lock.json* ./
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./next.config.js
 

@@ -42,7 +42,8 @@ check_database() {
     retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
-        if npx prisma db execute --stdin <<< "SELECT 1;" > /dev/null 2>&1; then
+        # Test database connection by checking if we can connect
+        if timeout 10 node -e "const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); prisma.\$connect().then(() => { prisma.\$disconnect(); process.exit(0); }).catch(() => process.exit(1));" 2>/dev/null; then
             log_success "Database connection established"
             return 0
         else
