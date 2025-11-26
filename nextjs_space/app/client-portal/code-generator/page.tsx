@@ -1,0 +1,202 @@
+
+'use client';
+
+import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Code2, 
+  Sparkles, 
+  Loader2,
+  Info
+} from 'lucide-react';
+import CodeCanvas from '@/components/code-canvas';
+import { toast } from 'sonner';
+
+// WritgoAI Brand Colors
+const BRAND_COLORS = {
+  black: '#000000',
+  orange: '#ff6b35',
+  white: '#FFFFFF',
+  cardBg: '#0a0a0a',
+  cardBorder: '#1a1a1a',
+};
+
+export default function CodeGeneratorPage() {
+  const { data: session } = useSession() || {};
+  const [prompt, setPrompt] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState<{
+    html: string;
+    css: string;
+    js: string;
+    title: string;
+    description: string;
+  } | null>(null);
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      toast.error('Voer een beschrijving in!');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/client/generate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          // @ts-ignore
+          clientId: session?.user?.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Code generatie mislukt');
+      }
+
+      const data = await response.json();
+      setGeneratedCode(data);
+      toast.success('Code succesvol gegenereerd!');
+    } catch (error: any) {
+      console.error('Generate error:', error);
+      toast.error(error.message || 'Er ging iets mis');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const examples = [
+    'Een interactieve todo list met localStorage',
+    'Een moderne landing page met gradient achtergrond',
+    'Een responsive navigatie menu met hamburger icon',
+    'Een animated counter met smooth transitions',
+    'Een contact formulier met validatie',
+    'Een image gallery met lightbox effect',
+  ];
+
+  return (
+    <div className="container mx-auto p-6 max-w-7xl space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-3 bg-gradient-to-br bg-[#ff6b35] rounded-xl">
+          <Code2 className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold">Code Generator</h1>
+          <p className="text-muted-foreground">
+            Genereer interactieve webcomponenten met AI
+          </p>
+        </div>
+      </div>
+
+      {/* Generator Form */}
+      {!generatedCode && (
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#ff6b35]" />
+              Wat wil je maken?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="prompt">Beschrijf je gewenste component</Label>
+              <Textarea
+                id="prompt"
+                placeholder="Bijvoorbeeld: Maak een interactieve quiz met multiple choice vragen en een score teller..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Examples */}
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Voorbeelden:</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {examples.map((example, idx) => (
+                  <Button
+                    key={idx}
+                    variant="outline"
+                    size="sm"
+                    className="justify-start text-left h-auto py-2 px-3"
+                    onClick={() => setPrompt(example)}
+                  >
+                    <Code2 className="w-3 h-3 mr-2 shrink-0" />
+                    <span className="text-xs">{example}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="flex items-start gap-2 p-3 bg-zinc-900 rounded-lg border border-orange-200">
+              <Info className="w-4 h-4 text-[#ff6b35] mt-0.5 shrink-0" />
+              <p className="text-xs text-orange-900">
+                De AI genereert volledige HTML, CSS en JavaScript code met een live preview.
+                Je kunt de code daarna bewerken en direct het resultaat zien.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleGenerate}
+              disabled={loading || !prompt.trim()}
+              className="w-full bg-gradient-to-r bg-[#ff6b35] hover:bg-[#ff8c42]"
+              size="lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Genereren...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Genereer Code
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Code Canvas */}
+      {generatedCode && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">{generatedCode.title}</h2>
+              <p className="text-sm text-muted-foreground">{generatedCode.description}</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setGeneratedCode(null);
+                setPrompt('');
+              }}
+            >
+              Nieuw Component
+            </Button>
+          </div>
+
+          <CodeCanvas
+            initialHtml={generatedCode.html}
+            initialCss={generatedCode.css}
+            initialJs={generatedCode.js}
+            title={generatedCode.title}
+            description={generatedCode.description}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

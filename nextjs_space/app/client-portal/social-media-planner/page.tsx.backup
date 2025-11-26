@@ -1,0 +1,980 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Loader2, 
+  Sparkles, 
+  Trash2, 
+  Copy, 
+  Send, 
+  Calendar,
+  RefreshCw,
+  AlertCircle,
+  Rocket,
+  Download,
+  Image as ImageIcon,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { useLanguage } from '@/lib/i18n/context';
+import Image from 'next/image';
+
+interface Project {
+  id: string;
+  name: string;
+  websiteUrl: string;
+  language: string;
+}
+
+interface SocialMediaIdea {
+  id: string;
+  title: string;
+  description: string;
+  contentType: string;
+  language: string;
+  suggestedPlatforms: string[];
+  keywords: string[];
+  status: string;
+  createdAt: string;
+  generatedPost?: {
+    id: string;
+    status: string;
+    platforms: string[];
+    createdAt: string;
+  };
+}
+
+const contentTypeLabels: Record<string, { label: string; icon: string }> = {
+  tips: { label: 'Tips & Advies', icon: '💡' },
+  quote: { label: 'Quote', icon: '💬' },
+  product_highlight: { label: 'Product Highlight', icon: '🎯' },
+  behind_the_scenes: { label: 'Behind the Scenes', icon: '🎬' },
+  user_generated: { label: 'User Generated', icon: '👥' },
+  blog_promo: { label: 'Blog Promotie', icon: '📝' },
+};
+
+const platformLabels: Record<string, { label: string; color: string; icon: string }> = {
+  linkedin: { label: 'LinkedIn', color: 'bg-blue-600', icon: '💼' },
+  facebook: { label: 'Facebook', color: 'bg-blue-500', icon: '👍' },
+  instagram: { label: 'Instagram', color: 'bg-pink-500', icon: '📸' },
+  twitter: { label: 'Twitter', color: 'bg-sky-500', icon: '𝕏' },
+  tiktok: { label: 'TikTok', color: 'bg-black', icon: '🎵' },
+  youtube: { label: 'YouTube', color: 'bg-red-600', icon: '📹' },
+  threads: { label: 'Threads', color: 'bg-gray-800', icon: '🧵' },
+  reddit: { label: 'Reddit', color: 'bg-orange-600', icon: '🤖' },
+  pinterest: { label: 'Pinterest', color: 'bg-red-500', icon: '📌' },
+  bluesky: { label: 'Bluesky', color: 'bg-sky-400', icon: '🦋' },
+};
+
+export default function SocialMediaPlannerPage() {
+  const { data: session, status } = useSession() || {};
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { t } = useLanguage();
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [ideas, setIdeas] = useState<SocialMediaIdea[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('planning');
+  
+  // Bulk execution
+  const [selectedIdeas, setSelectedIdeas] = useState<Set<string>>(new Set());
+  const [executing, setExecuting] = useState(false);
+  const [executionProgress, setExecutionProgress] = useState<Record<string, string>>({});
+  const [hasGetlate, setHasGetlate] = useState(false);
+  const [getlateAccounts, setGetlateAccounts] = useState<any[]>([]);
+
+  // Bulk delete
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // Load from URL
+  useEffect(() => {
+    const tab = searchParams?.get('tab');
+    if (tab === 'execution') {
+      setActiveTab('execution');
+    } else {
+      setActiveTab('planning');
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  useEffect(() => {
+    if (activeTab && searchParams) {
+      const params = new URLSearchParams(searchParams?.toString() || '');
+      params.set('tab', activeTab);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [activeTab, router, searchParams]);
+
+  // Load projects
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/client-login');
+    }
+    if (status === 'authenticated') {
+      loadProjects();
+    }
+  }, [status, router]);
+
+  // Load ideas and posts when project changes
+  useEffect(() => {
+    if (selectedProjectId) {
+      loadIdeas();
+      loadPosts();
+      loadGetlateAccounts();
+    }
+  }, [selectedProjectId]);
+
+  const loadProjects = async () => {
+    try {
+      const response = await fetch('/api/client/projects');
+      if (!response.ok) throw new Error('Failed to load projects');
+      const data = await response.json();
+      setProjects(data.projects || []);
+      if (data.projects?.length > 0 && !selectedProjectId) {
+        setSelectedProjectId(data.projects[0].id);
+      }
+    } catch (error: any) {
+      console.error('Error loading projects:', error);
+      toast.error('Kon projecten niet laden');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadIdeas = async () => {
+    if (!selectedProjectId) return;
+    try {
+      const response = await fetch(
+        `/api/client/social-media-ideas?projectId=${selectedProjectId}`
+      );
+      if (!response.ok) throw new Error('Failed to load ideas');
+      const data = await response.json();
+      setIdeas(data.ideas || []);
+    } catch (error: any) {
+      console.error('Error loading ideas:', error);
+      toast.error('Kon content ideeën niet laden');
+    }
+  };
+
+  const loadPosts = async () => {
+    if (!selectedProjectId) return;
+    setLoadingPosts(true);
+    try {
+      const response = await fetch(
+        `/api/client/social-media-posts?projectId=${selectedProjectId}`
+      );
+      if (!response.ok) throw new Error('Failed to load posts');
+      const data = await response.json();
+      setPosts(data.posts || []);
+    } catch (error: any) {
+      console.error('Error loading posts:', error);
+      toast.error('Kon posts niet laden');
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const loadGetlateAccounts = async () => {
+    if (!selectedProjectId) return;
+    
+    try {
+      const response = await fetch(`/api/client/getlate/accounts?projectId=${selectedProjectId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGetlateAccounts(data.accounts || []);
+        setHasGetlate(data.accounts && data.accounts.length > 0);
+      }
+    } catch (error) {
+      console.error('Error loading Getlate accounts:', error);
+    }
+  };
+
+  const handleGenerateIdeas = async () => {
+    if (!selectedProjectId) {
+      toast.error('Selecteer eerst een project');
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const response = await fetch('/api/client/social-media-ideas/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: selectedProjectId, count: 10 }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate ideas');
+      }
+
+      toast.success(`${data.count} nieuwe content ideeën gegenereerd! 🎉`);
+      loadIdeas();
+    } catch (error: any) {
+      console.error('Error generating ideas:', error);
+      toast.error(error.message || 'Fout bij genereren van ideeën');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleToggleIdea = (ideaId: string) => {
+    const newSelected = new Set(selectedIdeas);
+    if (newSelected.has(ideaId)) {
+      newSelected.delete(ideaId);
+    } else {
+      newSelected.add(ideaId);
+    }
+    setSelectedIdeas(newSelected);
+  };
+
+  const handleToggleAll = () => {
+    if (selectedIdeas.size === pendingIdeas.length) {
+      setSelectedIdeas(new Set());
+    } else {
+      setSelectedIdeas(new Set(pendingIdeas.map((idea) => idea.id)));
+    }
+  };
+
+  const handleBulkExecute = async () => {
+    if (selectedIdeas.size === 0) {
+      toast.error('Selecteer minimaal één idee');
+      return;
+    }
+
+    setExecuting(true);
+    setExecutionProgress({});
+
+    const ideaIds = Array.from(selectedIdeas);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+
+    let generatedCount = 0;
+    let scheduledCount = 0;
+
+    for (const ideaId of ideaIds) {
+      try {
+        setExecutionProgress((prev) => ({ ...prev, [ideaId]: 'generating' }));
+
+        // Generate post (always)
+        const response = await fetch('/api/client/social-media-posts/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ideaId }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to generate post');
+        }
+
+        const data = await response.json();
+        generatedCount++;
+        
+        // Schedule post via Getlate (optional - only if configured)
+        if (hasGetlate) {
+          setExecutionProgress((prev) => ({ ...prev, [ideaId]: 'scheduling' }));
+
+          const scheduleResponse = await fetch('/api/client/getlate/schedule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: selectedProjectId,
+              postId: data.post.id,
+              content: data.post.content,
+              platforms: data.post.platforms,
+              scheduledFor: tomorrow.toISOString(),
+            }),
+          });
+
+          if (scheduleResponse.ok) {
+            scheduledCount++;
+          } else {
+            console.warn(`Failed to schedule post for idea ${ideaId}`);
+          }
+        }
+
+        setExecutionProgress((prev) => ({ ...prev, [ideaId]: 'completed' }));
+      } catch (error: any) {
+        console.error(`Error executing idea ${ideaId}:`, error);
+        setExecutionProgress((prev) => ({ ...prev, [ideaId]: 'failed' }));
+        toast.error(`Fout bij uitvoeren: ${error.message}`);
+      }
+    }
+
+    setExecuting(false);
+    setSelectedIdeas(new Set());
+    loadIdeas();
+    loadPosts(); // Reload posts to show new ones
+    
+    // Show appropriate success message
+    if (hasGetlate) {
+      toast.success(`${generatedCount} posts gegenereerd en ${scheduledCount} ingepland via Getlate! 🎉`);
+    } else {
+      toast.success(`${generatedCount} posts gegenereerd! 🎉 Bekijk ze in de "Posts" tab.`);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIdeas.size === 0) {
+      toast.error('Selecteer minimaal één idee');
+      return;
+    }
+
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    setBulkDeleting(true);
+    
+    try {
+      const deletePromises = Array.from(selectedIdeas).map((ideaId) =>
+        fetch(`/api/client/social-media-ideas?ideaId=${ideaId}`, {
+          method: 'DELETE',
+        })
+      );
+
+      await Promise.all(deletePromises);
+      
+      toast.success(`${selectedIdeas.size} ideeën verwijderd`);
+      setSelectedIdeas(new Set());
+      loadIdeas();
+    } catch (error: any) {
+      console.error('Error deleting ideas:', error);
+      toast.error('Fout bij verwijderen van ideeën');
+    } finally {
+      setBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleDeleteIdea = async (ideaId: string) => {
+    if (!confirm('Weet je zeker dat je dit idee wilt verwijderen?')) return;
+
+    try {
+      const response = await fetch(
+        `/api/client/social-media-ideas?ideaId=${ideaId}`,
+        { method: 'DELETE' }
+      );
+
+      if (!response.ok) throw new Error('Failed to delete idea');
+      toast.success('Idee verwijderd');
+      loadIdeas();
+    } catch (error: any) {
+      console.error('Error deleting idea:', error);
+      toast.error('Fout bij verwijderen van idee');
+    }
+  };
+
+  const pendingIdeas = ideas.filter((idea) => idea.status === 'idea');
+  const completedIdeas = ideas.filter((idea) => idea.status === 'generated');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 max-w-7xl">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Social Media Contentplan 📱</h1>
+        <p className="text-gray-600">
+          Plan en beheer je social media content strategie zoals Autopilot
+        </p>
+      </div>
+
+      {/* Project Selector */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Project Selectie</CardTitle>
+          <CardDescription>
+            Selecteer een project om het contentplan voor te beheren
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Project</label>
+              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecteer een project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 max-w-3xl">
+          <TabsTrigger value="planning" className="flex items-center gap-2">
+            <ListChecks className="h-4 w-4" />
+            Ideeën ({pendingIdeas.length})
+          </TabsTrigger>
+          <TabsTrigger value="execution" className="flex items-center gap-2">
+            <Rocket className="h-4 w-4" />
+            Uitvoeren
+          </TabsTrigger>
+          <TabsTrigger value="posts" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Posts ({posts.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Planning Tab */}
+        <TabsContent value="planning">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Content Ideeën Beheer</CardTitle>
+                  <CardDescription>
+                    Genereer en beheer social media post ideeën voor dit project
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={handleGenerateIdeas}
+                  disabled={!selectedProjectId || generating}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Genereren...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Vernieuw (10 nieuwe)
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {pendingIdeas.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <Lightbulb className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-semibold mb-2">Geen content ideeën</h3>
+                  <p className="text-gray-600 mb-4">
+                    Klik op "Vernieuw" om 10 nieuwe ideeën te genereren
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Bulk actions */}
+                  <div className="flex items-center gap-4 pb-4 border-b">
+                    <Checkbox
+                      checked={selectedIdeas.size === pendingIdeas.length && pendingIdeas.length > 0}
+                      onCheckedChange={handleToggleAll}
+                    />
+                    <span className="text-sm font-medium">
+                      {selectedIdeas.size} geselecteerd
+                    </span>
+                    {selectedIdeas.size > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleBulkDelete}
+                        className="ml-auto"
+                      >
+                        <Trash className="h-4 w-4 mr-1" />
+                        Verwijder Geselecteerde
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Ideas list */}
+                  <div className="space-y-3">
+                    {pendingIdeas.map((idea) => (
+                      <div
+                        key={idea.id}
+                        className="flex items-start gap-3 p-4 border rounded-lg hover:bg-gray-100/80 transition-colors"
+                      >
+                        <Checkbox
+                          checked={selectedIdeas.has(idea.id)}
+                          onCheckedChange={() => handleToggleIdea(idea.id)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-lg">{idea.title}</h4>
+                              <Badge variant="outline" className="mt-1">
+                                {contentTypeLabels[idea.contentType]?.icon}{' '}
+                                {contentTypeLabels[idea.contentType]?.label || idea.contentType}
+                              </Badge>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">
+                            {idea.description}
+                          </p>
+                          
+                          {/* Platforms */}
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {idea.suggestedPlatforms.map((platform) => (
+                              <Badge key={platform} variant="secondary" className="text-xs">
+                                {platformLabels[platform]?.icon} {platformLabels[platform]?.label}
+                              </Badge>
+                            ))}
+                          </div>
+
+                          {/* Keywords */}
+                          {idea.keywords.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {idea.keywords.map((keyword, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  #{keyword}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteIdea(idea.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-gray-400" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Execution Tab */}
+        <TabsContent value="execution">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Contentplan Uitvoeren</CardTitle>
+                  <CardDescription>
+                    Selecteer ideeën en voer ze automatisch uit via Getlate
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={handleBulkExecute}
+                  disabled={!selectedProjectId || executing || selectedIdeas.size === 0}
+                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                >
+                  {executing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uitvoeren... ({Object.keys(executionProgress).length}/{selectedIdeas.size})
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="mr-2 h-4 w-4" />
+                      Voer {selectedIdeas.size > 0 ? selectedIdeas.size : ''} uit
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!hasGetlate && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Posts worden gegenereerd zonder automatische publicatie
+                    </p>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Koppel Getlate in Settings om posts automatisch in te plannen op social media. Nu worden posts alleen gegenereerd.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {pendingIdeas.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <Rocket className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-semibold mb-2">Geen ideeën om uit te voeren</h3>
+                  <p className="text-gray-600 mb-4">
+                    Ga naar "Contentplan Beheren" om nieuwe ideeën te genereren
+                  </p>
+                  <Button onClick={() => setActiveTab('planning')}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Genereer Ideeën
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Bulk actions */}
+                  <div className="flex items-center gap-4 pb-4 border-b">
+                    <Checkbox
+                      checked={selectedIdeas.size === pendingIdeas.length && pendingIdeas.length > 0}
+                      onCheckedChange={handleToggleAll}
+                    />
+                    <span className="text-sm font-medium">
+                      {selectedIdeas.size} geselecteerd voor uitvoering
+                    </span>
+                  </div>
+
+                  {/* Ideas list with execution status */}
+                  <div className="space-y-3">
+                    {pendingIdeas.map((idea) => (
+                      <div
+                        key={idea.id}
+                        className={`flex items-start gap-3 p-4 border rounded-lg transition-all ${
+                          executionProgress[idea.id]
+                            ? executionProgress[idea.id] === 'completed'
+                              ? 'bg-green-50 border-green-200'
+                              : executionProgress[idea.id] === 'failed'
+                              ? 'bg-red-50 border-red-200'
+                              : 'bg-blue-50 border-blue-200'
+                            : 'hover:bg-gray-100/80'
+                        }`}
+                      >
+                        <Checkbox
+                          checked={selectedIdeas.has(idea.id)}
+                          onCheckedChange={() => handleToggleIdea(idea.id)}
+                          disabled={executing}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-semibold">{idea.title}</h4>
+                              <Badge variant="outline" className="mt-1">
+                                {contentTypeLabels[idea.contentType]?.icon}{' '}
+                                {contentTypeLabels[idea.contentType]?.label}
+                              </Badge>
+                            </div>
+                            {executionProgress[idea.id] && (
+                              <Badge
+                                variant={
+                                  executionProgress[idea.id] === 'completed'
+                                    ? 'default'
+                                    : executionProgress[idea.id] === 'failed'
+                                    ? 'destructive'
+                                    : 'secondary'
+                                }
+                              >
+                                {executionProgress[idea.id] === 'generating' && (
+                                  <>
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    Post genereren...
+                                  </>
+                                )}
+                                {executionProgress[idea.id] === 'scheduling' && (
+                                  <>
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    Inplannen...
+                                  </>
+                                )}
+                                {executionProgress[idea.id] === 'completed' && (
+                                  <>
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    Voltooid
+                                  </>
+                                )}
+                                {executionProgress[idea.id] === 'failed' && (
+                                  <>
+                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                    Gefaald
+                                  </>
+                                )}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                            {idea.description}
+                          </p>
+                          
+                          {/* Platforms */}
+                          <div className="flex flex-wrap gap-2">
+                            {idea.suggestedPlatforms.map((platform) => (
+                              <Badge key={platform} variant="secondary" className="text-xs">
+                                {platformLabels[platform]?.icon} {platformLabels[platform]?.label}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Getlate info */}
+                  {hasGetlate && getlateAccounts.length > 0 && (
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800 font-medium mb-2">
+                        ✓ Getlate geconfigureerd met {getlateAccounts.length} account(s)
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        Posts worden automatisch gegenereerd en ingepland voor morgen 09:00
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Completed section */}
+          {completedIdeas.length > 0 && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  Uitgevoerde Posts ({completedIdeas.length})
+                </CardTitle>
+                <CardDescription>
+                  Deze ideeën zijn al uitgevoerd en hebben gegenereerde posts
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {completedIdeas.map((idea) => (
+                    <div
+                      key={idea.id}
+                      className="p-4 border border-green-200 bg-green-50 rounded-lg"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{idea.title}</h4>
+                          <Badge variant="outline" className="mt-1">
+                            {contentTypeLabels[idea.contentType]?.icon}{' '}
+                            {contentTypeLabels[idea.contentType]?.label}
+                          </Badge>
+                        </div>
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Uitgevoerd op {new Date(idea.generatedPost?.createdAt || '').toLocaleDateString('nl-NL')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Posts Tab - Gegenereerde Posts */}
+        <TabsContent value="posts">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Gegenereerde Social Media Posts</CardTitle>
+                  <CardDescription>
+                    Kant-en-klare posts met afbeeldingen. Download of post direct via Getlate.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingPosts ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-semibold mb-2">Geen posts gegenereerd</h3>
+                  <p className="text-gray-600 mb-4">
+                    Ga naar "Uitvoeren" om posts te genereren uit je content ideeën
+                  </p>
+                  <Button onClick={() => setActiveTab('execution')}>
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Naar Uitvoeren
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2">
+                  {posts.map((post) => (
+                    <Card key={post.id} className="overflow-hidden">
+                      {/* Post Image */}
+                      {post.mediaUrl && (
+                        <div className="relative aspect-video bg-gray-100">
+                          <img
+                            src={post.mediaUrl}
+                            alt="Post afbeelding"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Post Content */}
+                      <CardContent className="p-4 space-y-4">
+                        {/* Platforms */}
+                        <div className="flex flex-wrap gap-2">
+                          {post.platforms.map((platform: string) => (
+                            <Badge key={platform} className={platformLabels[platform]?.color || 'bg-gray-500'}>
+                              {platformLabels[platform]?.icon} {platformLabels[platform]?.label}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* Post Text */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-sm whitespace-pre-wrap line-clamp-6">
+                            {post.content}
+                          </p>
+                        </div>
+
+                        {/* Meta Info */}
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(post.createdAt).toLocaleDateString('nl-NL')}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(post.createdAt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              // Download post als tekstbestand
+                              const element = document.createElement('a');
+                              const file = new Blob(
+                                [post.content + '\n\n' + (post.hashtags || []).join(' ')],
+                                { type: 'text/plain' }
+                              );
+                              element.href = URL.createObjectURL(file);
+                              element.download = `post-${post.id}.txt`;
+                              document.body.appendChild(element);
+                              element.click();
+                              document.body.removeChild(element);
+                              toast.success('Post gedownload!');
+                            }}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download Tekst
+                          </Button>
+                          {post.mediaUrl && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                // Open afbeelding in nieuw tabblad
+                                window.open(post.mediaUrl, '_blank');
+                              }}
+                            >
+                              <ImageIcon className="h-4 w-4 mr-1" />
+                              Download Afbeelding
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* View Full Details */}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full"
+                          onClick={() => {
+                            // Show full post in dialog
+                            alert(`Volledige post:\n\n${post.content}\n\nHashtags: ${(post.hashtags || []).join(' ')}`);
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Bekijk Volledige Post
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk Verwijderen</DialogTitle>
+            <DialogDescription>
+              Weet je zeker dat je {selectedIdeas.size} geselecteerde ideeën wilt verwijderen?
+              Deze actie kan niet ongedaan worden gemaakt.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkDeleteDialog(false)}
+              disabled={bulkDeleting}
+            >
+              Annuleren
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmBulkDelete}
+              disabled={bulkDeleting}
+            >
+              {bulkDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Verwijderen...
+                </>
+              ) : (
+                <>
+                  <Trash className="h-4 w-4 mr-2" />
+                  Verwijder {selectedIdeas.size} Ideeën
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

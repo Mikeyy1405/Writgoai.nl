@@ -1,0 +1,375 @@
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { prisma } from '@/lib/db';
+import { deductCredits } from '@/lib/credits';
+import { scrapeWebsite } from '@/lib/website-scraper';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.AIML_API_KEY,
+  baseURL: 'https://api.aimlapi.com/v1',
+});
+
+// Generate image for social media post (using same logic as blog generator)
+async function generatePostImage(
+  topic: string,
+  focusKeyword: string,
+  contentContext: string
+): Promise<string | null> {
+  try {
+    console.log(`[Post Image] Generating social media image for: ${topic}`);
+    
+    // Use the same approach as blog generator for consistent quality
+    const socialImagePrompt = `Create a professional, eye-catching social media image.
+
+TOPIC: ${topic}
+KEYWORD: ${focusKeyword}
+
+CONTENT CONTEXT:
+${contentContext}
+
+STYLE REQUIREMENTS:
+- Modern, professional, high-quality
+- Suitable for LinkedIn, Facebook, Instagram
+- Aspect ratio: 1:1 (square format, 1080x1080px)
+- Visually appealing and attention-grabbing
+- No text overlays (will be added separately)
+- Vibrant colors that stand out in social feeds
+- Relevant to the article content
+- Should make people want to learn more
+
+Create a unique, contextually relevant image that represents the message and catches attention in social media feeds.`;
+
+    const imageResponse = await fetch('https://api.aimlapi.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.AIML_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'stable-diffusion-3', // Cost-optimized: $0.037 vs $0.05 for Flux-Pro
+        prompt: socialImagePrompt,
+        size: '1024x1024', // 1:1 square aspect ratio for social media
+        style: 'vivid', // Vibrant colors for social media
+        quality: 'hd',
+        n: 1
+      }),
+    });
+
+    if (!imageResponse.ok) {
+      const errorText = await imageResponse.text();
+      console.error('[Post Image] API error:', errorText);
+      return null;
+    }
+
+    const imageData = await imageResponse.json();
+    const imageUrl = imageData.data?.[0]?.url || imageData.choices?.[0]?.message?.content;
+    
+    if (!imageUrl) {
+      console.error('[Post Image] No image URL in response');
+      return null;
+    }
+
+    console.log('[Post Image] ✅ Image generated successfully');
+    return imageUrl;
+  } catch (error: any) {
+    console.error('[Post Image] Error:', error);
+    return null;
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    const body = await req.json();
+    const { ideaId, platforms } = body;
+
+    if (!ideaId) {
+      return NextResponse.json({ error: 'Idea ID is required' }, { status: 400 });
+    }
+
+    // Get idea and project details
+    const idea = await prisma.socialMediaIdea.findUnique({
+      where: { id: ideaId },
+      include: {
+        project: true,
+      },
+    });
+
+    if (!idea || idea.project.clientId !== client.id) {
+      return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
+    }
+
+    // Check if post already exists for this idea
+    const existingPost = await prisma.socialMediaPost.findFirst({
+      where: { sourceIdeaId: ideaId },
+    });
+
+    if (existingPost) {
+      return NextResponse.json({ 
+        error: 'Post already generated for this idea',
+        post: existingPost 
+      }, { status: 400 });
+    }
+
+    const project = idea.project;
+    const targetPlatforms = platforms || idea.suggestedPlatforms;
+    const projectNiche = project.niche || 'algemene onderwerpen';
+    const projectLanguage = idea.language || project.language || 'NL';
+
+    console.log(`[Post Generator] Starting for idea: ${idea.title}`);
+    console.log(`[Post Generator] Niche: ${projectNiche}`);
+    console.log(`[Post Generator] Language: ${projectLanguage}`);
+
+    // STEP 0: Get topic from content plan (if available)
+    let contentTopic = null;
+    if (idea.topicId) {
+      contentTopic = await prisma.socialMediaTopic.findUnique({
+        where: { id: idea.topicId },
+      });
+      console.log(`[Post Generator] ✅ Using content topic: ${contentTopic?.topic}`);
+    } else {
+      // Find unused/least used topic
+      const availableTopics = await prisma.socialMediaTopic.findMany({
+        where: {
+          projectId: project.id,
+          language: projectLanguage,
+        },
+        orderBy: [
+          { usageCount: 'asc' },
+          { createdAt: 'desc' },
+        ],
+        take: 5,
+      });
+
+      if (availableTopics.length > 0) {
+        // Pick random from top 5 least used
+        contentTopic = availableTopics[Math.floor(Math.random() * availableTopics.length)];
+        console.log(`[Post Generator] ✅ Auto-selected topic: ${contentTopic.topic}`);
+        
+        // Link idea to topic
+        await prisma.socialMediaIdea.update({
+          where: { id: ideaId },
+          data: { topicId: contentTopic.id },
+        });
+      }
+    }
+
+    // STEP 1: Get website content for context
+    let websiteContent = '';
+    if (project.websiteUrl) {
+      try {
+        const websiteData = await scrapeWebsite(project.websiteUrl);
+        if (websiteData.success && websiteData.content) {
+          websiteContent = websiteData.content.substring(0, 2000);
+          console.log(`[Post Generator] ✅ Website content loaded (${websiteContent.length} chars)`);
+        }
+      } catch (error) {
+        console.warn('[Post Generator] Website scraping failed:', error);
+      }
+    }
+
+    // STEP 2: Get recent posts to avoid repetition
+    const recentPosts = await prisma.socialMediaPost.findMany({
+      where: { projectId: project.id },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+      select: { content: true },
+    });
+
+    // STEP 3: Build simple, clear prompt
+    const languageMap: Record<string, string> = {
+      'NL': 'Nederlands',
+      'EN': 'English',
+      'DE': 'Deutsch',
+      'FR': 'Français',
+      'ES': 'Español',
+    };
+    const targetLanguageName = languageMap[projectLanguage.toUpperCase()] || 'Nederlands';
+
+    const prompt = `Schrijf een EDUCATIEVE social media post. GEEN PROMOTIE.
+
+${contentTopic ? `📚 CONTENTPLAN TOPIC (gebruik dit als basis):
+Topic: ${contentTopic.topic}
+Beschrijving: ${contentTopic.description}
+Categorie: ${contentTopic.category}
+Keywords: ${contentTopic.keywords.join(', ')}
+
+Je MOET een post maken die EXACT over dit topic gaat.
+` : ''}
+
+ONDERWERP: ${idea.title}
+NICHE: ${projectNiche}
+
+BLOG CONTENT (gebruik deze kennis):
+${websiteContent || 'Geen beschikbaar'}
+
+${contentTopic ? '' : `IDEE:
+${idea.description}
+`}
+
+${recentPosts.length > 0 ? `RECENTE POSTS (maak anders):\n${recentPosts.map((p, i) => `${i + 1}. ${p.content.substring(0, 80)}...`).join('\n')}\n` : ''}
+
+JE TAAK:
+${contentTopic 
+  ? `Schrijf een ${contentTopic.category} post die EXACT gaat over: "${contentTopic.topic}"`
+  : `Schrijf een post die ALLEEN kennis deelt over ${projectNiche}`
+}
+
+DE POST MOET:
+✓ ${contentTopic ? `Direct ingaan op het onderwerp: ${contentTopic.topic}` : 'Specifieke informatie geven die mensen kunnen gebruiken'}
+✓ Een probleem uitleggen en oplossen
+✓ Praktische tips of stappen bevatten  
+✓ Feiten, data of concrete voorbeelden delen
+✓ Leesbaar en nuttig zijn zonder externe links
+
+ABSOLUUT VERBODEN:
+✗ Zinnen zoals: "Bezoek onze", "Download", "Klik", "Ontdek", "Leer meer"
+✗ Verwijzingen naar websites, tools, apps, platforms
+✗ Algemene marketing taal of verkoop praat
+✗ Vage tips zonder context
+✗ Calls to action voor producten/diensten
+✗ Afwijken van het contentplan topic (als aanwezig)
+
+TAAL: ${targetLanguageName}
+LENGTE: 200-250 woorden
+TOON: Direct, eerlijk, behulpzaam - alsof je een goede vriend helpt
+
+VOORBEELD STRUCTUUR voor ${contentTopic?.category || 'educatie'}:
+${contentTopic?.category === 'tutorial' ? '→ Start: "Zo doe je [X] in 3 simpele stappen..."\n→ Stap 1, 2, 3 met duidelijke uitleg\n→ Afsluiting: Resultaat of extra tip' : ''}
+${contentTopic?.category === 'tip' ? '→ Start: "Deze tip over [X] ken je waarschijnlijk nog niet..."\n→ Uitleg waarom het werkt\n→ Concrete toepassing\n→ Afsluiting: Extra voordeel' : ''}
+${contentTopic?.category === 'uitleg' ? '→ Start: "Veel mensen begrijpen [X] niet goed..."\n→ Uitleg van het concept\n→ Praktisch voorbeeld\n→ Afsluiting: Samenvatting' : ''}
+${contentTopic?.category === 'vraag-antwoord' ? '→ Start: "De vraag: [X]..."\n→ Het korte antwoord\n→ Uitgebreide uitleg\n→ Afsluiting: Extra context' : ''}
+${contentTopic?.category === 'praktijkvoorbeeld' ? '→ Start: "Voorbeeld uit de praktijk..."\n→ De situatie/case\n→ Wat er gebeurde\n→ Afsluiting: Les of inzicht' : ''}
+${!contentTopic ? '→ Start: "Veel mensen maken deze fout bij [X]..."\n→ Uitleg: "Hier is waarom dit gebeurt..."\n→ Oplossing: "Zo doe je het beter: [concrete stappen]"\n→ Afsluiting: Vraag of observatie' : ''}
+
+Geef JSON terug:
+{
+  "content": "Volledige post in ${targetLanguageName} - ${contentTopic ? `EXACT over: ${contentTopic.topic}` : 'ALLEEN educatie, GEEN promotie'}",
+  "hashtags": ["#${projectNiche.toLowerCase()}", "#specifiek"],
+  "imagePrompt": "Beschrijf een CONCRETE, BEELDENDE foto die het onderwerp '${contentTopic?.topic || idea.title}' visueel weergeeft. Focus op het ECHTE onderwerp (mensen, objecten, scenes, acties) die je zou fotograferen. Beschrijf wat je in de foto ziet: specifieke details, kleuren, compositie, sfeer. ABSOLUUT VERBODEN: computers, laptops, telefoons, tablets, schermen, devices, mockups, websites, apps, social media screenshots. Voorbeeld: voor 'yoga technieken' schrijf je 'Een persoon in een perfecte krieger II yoga pose op een mat bij zonsopgang, met focus op de uitlijning en balans, natuurlijk licht, serene uitdrukking' - NIET 'iemand die een yoga video bekijkt op een laptop'."
+}`;
+
+    console.log('[Post Generator] Generating post with Claude...');
+
+    // STEP 4: Generate post
+    const completion = await openai.chat.completions.create({
+      model: 'claude-sonnet-4-5',
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.85,
+      response_format: { type: 'json_object' },
+    });
+
+    const responseContent = completion.choices[0].message.content || '{}';
+    let postData: any;
+    
+    try {
+      postData = JSON.parse(responseContent);
+    } catch (parseError) {
+      console.error('[Post Generator] Failed to parse response:', parseError);
+      return NextResponse.json({ error: 'Kon AI response niet verwerken' }, { status: 500 });
+    }
+
+    if (!postData.content) {
+      return NextResponse.json({ error: 'Geen content gegenereerd' }, { status: 500 });
+    }
+
+    console.log('[Post Generator] ✅ Post generated');
+    console.log('[Post Generator] Content:', postData.content.substring(0, 100) + '...');
+
+    // STEP 5: Generate image
+    let imageUrl: string | null = null;
+    let totalCredits = 5; // Base cost
+
+    if (postData.imagePrompt) {
+      console.log('[Post Generator] Generating image...');
+      imageUrl = await generatePostImage(
+        postData.imagePrompt,
+        projectNiche,
+        idea.keywords
+      );
+      
+      if (imageUrl) {
+        console.log('[Post Generator] ✅ Image generated');
+        totalCredits += 50; // Flux Pro cost
+      } else {
+        console.warn('[Post Generator] ⚠️ Image generation failed');
+      }
+    }
+
+    // STEP 6: Save post
+    const post = await prisma.socialMediaPost.create({
+      data: {
+        projectId: project.id,
+        sourceIdeaId: ideaId,
+        platforms: targetPlatforms,
+        content: postData.content,
+        language: projectLanguage,
+        contentType: idea.contentType,
+        mediaUrl: imageUrl,
+        status: 'draft',
+        creditsUsed: totalCredits,
+      },
+    });
+
+    // Update idea status
+    await prisma.socialMediaIdea.update({
+      where: { id: ideaId },
+      data: { status: 'generated' },
+    });
+
+    // Update topic usage count
+    if (contentTopic) {
+      await prisma.socialMediaTopic.update({
+        where: { id: contentTopic.id },
+        data: {
+          usageCount: { increment: 1 },
+          lastUsedAt: new Date(),
+        },
+      });
+      console.log(`[Post Generator] ✅ Topic usage updated: ${contentTopic.topic}`);
+    }
+
+    // Deduct credits
+    await deductCredits(
+      client.id,
+      totalCredits,
+      `Social media post voor ${project.name}`
+    );
+
+    console.log('[Post Generator] ✅ Complete!');
+
+    return NextResponse.json({
+      success: true,
+      post: {
+        ...post,
+        hashtags: postData.hashtags || [],
+      },
+    });
+  } catch (error: any) {
+    console.error('[Post Generator] Error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Fout bij genereren van post' },
+      { status: 500 }
+    );
+  }
+}

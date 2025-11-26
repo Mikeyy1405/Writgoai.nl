@@ -1,0 +1,1243 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { 
+  ArrowLeft, Globe, BookOpen, Plus, Edit, Trash2, 
+  Loader2, Save, AlertCircle, FileText, Lightbulb,
+  ExternalLink, CheckCircle2, Package, TrendingUp, Target, Calendar
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import toast from 'react-hot-toast';
+import ProjectAffiliateLinks from '@/components/project-affiliate-links';
+import ProjectCollaborators from '@/components/project-collaborators';
+import ProjectKnowledgeBase from '@/components/project-knowledge-base';
+import ProjectSocialMediaConfig from '@/components/project-social-media-config';
+import ProjectGSCConfig from '@/components/project-gsc-config';
+import ProjectGSCPerformance from '@/components/project-gsc-performance';
+import ProjectGSCDashboard from '@/components/project-gsc-dashboard';
+import ProjectGSCTrends from '@/components/project-gsc-trends';
+
+interface Project {
+  id: string;
+  name: string;
+  websiteUrl: string;
+  description?: string;
+  language: string;  // 'NL' | 'EN' | 'DE' | 'ES' | 'FR' | 'IT' | 'PT'
+  targetAudience?: string;
+  brandVoice?: string;
+  niche?: string;
+  keywords: string[];
+  writingStyle?: string;
+  customTones?: string[];
+  customInstructions?: string;
+  // WordPress integration
+  wordpressUrl?: string;
+  wordpressUsername?: string;
+  wordpressPassword?: string;
+  wordpressCategory?: string;
+  wordpressAutoPublish?: boolean;
+  // Bol.com integration
+  bolcomClientId?: string;
+  bolcomClientSecret?: string;
+  bolcomAffiliateId?: string;
+  bolcomEnabled?: boolean;
+  // TradeTracker integration
+  tradeTrackerSiteId?: string;
+  tradeTrackerPassphrase?: string;
+  tradeTrackerCampaignId?: string;
+  tradeTrackerEnabled?: boolean;
+  _count: {
+    savedContent: number;
+    knowledgeBase: number;
+  };
+}
+
+interface KnowledgeItem {
+  id: string;
+  title: string;
+  type: string;
+  content: string;
+  category?: string;
+  importance: string;
+}
+
+interface ContentIdea {
+  id: string;
+  title: string;
+  focusKeyword: string;
+  status: string;
+  priority: string;
+  contentType: string;
+  trending: boolean;
+  competitorGap: boolean;
+  createdAt: string;
+}
+
+export default function ProjectDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const projectId = params.id as string;
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
+  const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingIdeas, setLoadingIdeas] = useState(false);
+  const [showAddKnowledge, setShowAddKnowledge] = useState(false);
+  const [newKnowledge, setNewKnowledge] = useState({
+    title: '',
+    type: 'note',
+    content: '',
+    category: '',
+    importance: 'normal'
+  });
+  const [showWordPressSettings, setShowWordPressSettings] = useState(false);
+  const [wordpressSettings, setWordpressSettings] = useState({
+    wordpressUrl: '',
+    wordpressUsername: '',
+    wordpressPassword: '',
+    wordpressCategory: '',
+    wordpressAutoPublish: false
+  });
+  const [savingWordPress, setSavingWordPress] = useState(false);
+  const [showBolcomSettings, setShowBolcomSettings] = useState(false);
+  const [bolcomSettings, setBolcomSettings] = useState({
+    bolcomClientId: '',
+    bolcomClientSecret: '',
+    bolcomAffiliateId: '',
+    bolcomEnabled: false
+  });
+  const [savingBolcom, setSavingBolcom] = useState(false);
+  const [showTradeTrackerSettings, setShowTradeTrackerSettings] = useState(false);
+  const [tradeTrackerSettings, setTradeTrackerSettings] = useState({
+    tradeTrackerSiteId: '',
+    tradeTrackerPassphrase: '',
+    tradeTrackerCampaignId: '',
+    tradeTrackerEnabled: false
+  });
+  const [savingTradeTracker, setSavingTradeTracker] = useState(false);
+
+  useEffect(() => {
+    fetchProject();
+    fetchKnowledge();
+    fetchContentIdeas();
+  }, [projectId]);
+
+  // Check for GSC OAuth callback success/error
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const params = new URLSearchParams(window.location.search);
+    const gscStatus = params.get('gsc');
+    const message = params.get('message');
+
+    if (gscStatus === 'success') {
+      toast.success('✅ Google Search Console succesvol gekoppeld!');
+      // Remove query params
+      router.replace(`/client-portal/projects/${projectId}`, { scroll: false });
+    } else if (gscStatus === 'error') {
+      toast.error(`❌ Fout bij koppelen: ${message || 'Onbekende fout'}`);
+      // Remove query params
+      router.replace(`/client-portal/projects/${projectId}`, { scroll: false });
+    }
+  }, [router, projectId]);
+
+  const fetchProject = async () => {
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}`);
+      const data = await res.json();
+      
+      if (res.ok) {
+        setProject(data.project);
+        // Vul WordPress settings als ze bestaan
+        setWordpressSettings({
+          wordpressUrl: data.project.wordpressUrl || '',
+          wordpressUsername: data.project.wordpressUsername || '',
+          wordpressPassword: data.project.wordpressPassword || '',
+          wordpressCategory: data.project.wordpressCategory || '',
+          wordpressAutoPublish: data.project.wordpressAutoPublish || false
+        });
+        // Vul Bol.com settings als ze bestaan
+        setBolcomSettings({
+          bolcomClientId: data.project.bolcomClientId || '',
+          bolcomClientSecret: data.project.bolcomClientSecret || '',
+          bolcomAffiliateId: data.project.bolcomAffiliateId || '',
+          bolcomEnabled: data.project.bolcomEnabled || false
+        });
+        // Vul TradeTracker settings als ze bestaan
+        setTradeTrackerSettings({
+          tradeTrackerSiteId: data.project.tradeTrackerSiteId || '',
+          tradeTrackerPassphrase: data.project.tradeTrackerPassphrase || '',
+          tradeTrackerCampaignId: data.project.tradeTrackerCampaignId || '',
+          tradeTrackerEnabled: data.project.tradeTrackerEnabled || false
+        });
+      } else {
+        toast.error(data.error);
+        router.push('/client-portal/projects');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Fout bij ophalen project');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchKnowledge = async () => {
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}/knowledge`);
+      const data = await res.json();
+      
+      if (res.ok) {
+        setKnowledgeItems(data.knowledgeItems);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const fetchContentIdeas = async () => {
+    try {
+      setLoadingIdeas(true);
+      const res = await fetch(`/api/client/content-research?projectId=${projectId}`);
+      const data = await res.json();
+      
+      if (res.ok && data.articleIdeas) {
+        setContentIdeas(data.articleIdeas);
+      }
+    } catch (error) {
+      console.error('Error fetching content ideas:', error);
+    } finally {
+      setLoadingIdeas(false);
+    }
+  };
+
+  const handleAddKnowledge = async () => {
+    if (!newKnowledge.title || !newKnowledge.content) {
+      toast.error('Titel en inhoud zijn verplicht');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}/knowledge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newKnowledge)
+      });
+
+      if (res.ok) {
+        toast.success('Knowledge item toegevoegd');
+        setNewKnowledge({ title: '', type: 'note', content: '', category: '', importance: 'normal' });
+        setShowAddKnowledge(false);
+        fetchKnowledge();
+      } else {
+        const data = await res.json();
+        toast.error(data.error);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Fout bij toevoegen');
+    }
+  };
+
+  const handleDeleteKnowledge = async (knowledgeId: string) => {
+    if (!confirm('Weet je zeker dat je dit wilt verwijderen?')) return;
+
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}/knowledge/${knowledgeId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        toast.success('Verwijderd');
+        fetchKnowledge();
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Fout bij verwijderen');
+    }
+  };
+
+  const handleSaveWordPressSettings = async () => {
+    setSavingWordPress(true);
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}/wordpress`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(wordpressSettings)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success('WordPress instellingen opgeslagen');
+        setProject(prev => prev ? { ...prev, ...wordpressSettings } : null);
+        setShowWordPressSettings(false);
+      } else {
+        toast.error(data.error || 'Fout bij opslaan');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Fout bij opslaan instellingen');
+    } finally {
+      setSavingWordPress(false);
+    }
+  };
+
+  const handleTestWordPressConnection = async () => {
+    if (!wordpressSettings.wordpressUrl || !wordpressSettings.wordpressUsername || !wordpressSettings.wordpressPassword) {
+      toast.error('Vul alle WordPress velden in om te testen');
+      return;
+    }
+
+    toast.loading('Verbinding testen...');
+    
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}/wordpress/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(wordpressSettings)
+      });
+
+      const data = await res.json();
+      toast.dismiss();
+
+      if (res.ok) {
+        toast.success('✓ Verbinding succesvol!');
+      } else {
+        toast.error(data.error || 'Verbinding mislukt');
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error:', error);
+      toast.error('Fout bij testen verbinding');
+    }
+  };
+
+  const handleSaveBolcomSettings = async () => {
+    // Validatie: Site ID is verplicht
+    if (!bolcomSettings.bolcomAffiliateId || !bolcomSettings.bolcomAffiliateId.trim()) {
+      toast.error('Site ID is verplicht. Vul je Site ID in.');
+      return;
+    }
+
+    if (!bolcomSettings.bolcomClientId || !bolcomSettings.bolcomClientSecret) {
+      toast.error('Client ID en Client Secret zijn verplicht');
+      return;
+    }
+
+    setSavingBolcom(true);
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bolcomSettings)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success('Bol.com instellingen opgeslagen');
+        setProject(prev => prev ? { ...prev, ...bolcomSettings } : null);
+        setShowBolcomSettings(false);
+      } else {
+        toast.error(data.error || 'Fout bij opslaan');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Fout bij opslaan instellingen');
+    } finally {
+      setSavingBolcom(false);
+    }
+  };
+
+  const handleSaveTradeTrackerSettings = async () => {
+    // Valideer verplichte velden
+    if (!tradeTrackerSettings.tradeTrackerSiteId?.trim()) {
+      toast.error('Site ID is verplicht');
+      return;
+    }
+
+    setSavingTradeTracker(true);
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tradeTrackerSettings)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success('TradeTracker instellingen opgeslagen! Je kunt nu feeds importeren via de Affiliate Links tab.');
+        setProject(prev => prev ? { ...prev, ...tradeTrackerSettings } : null);
+        setShowTradeTrackerSettings(false);
+      } else {
+        toast.error(data.error || 'Fout bij opslaan');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Fout bij opslaan instellingen');
+    } finally {
+      setSavingTradeTracker(false);
+    }
+  };
+
+  const handleTestBolcomCredentials = async () => {
+    if (!bolcomSettings.bolcomClientId || !bolcomSettings.bolcomClientSecret) {
+      toast.error('Vul Client ID en Client Secret in om te testen');
+      return;
+    }
+
+    toast.loading('Credentials testen...');
+    
+    try {
+      const res = await fetch(`/api/client/projects/${projectId}/bolcom/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bolcomSettings)
+      });
+
+      const data = await res.json();
+      toast.dismiss();
+
+      if (res.ok) {
+        toast.success('✓ Credentials zijn geldig!');
+      } else {
+        toast.error(data.error || 'Credentials zijn ongeldig');
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error:', error);
+      toast.error('Fout bij testen credentials');
+    }
+  };
+
+  if (loading || !project) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Header */}
+      <div className="mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-4 text-gray-400 hover:text-white"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Terug
+        </Button>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+              <Globe className="w-8 h-8 text-orange-600" />
+              {project.name}
+            </h1>
+            <a
+              href={project.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 mt-2 inline-block"
+            >
+              {project.websiteUrl}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Project Info */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="p-6 bg-gray-900 border-gray-800">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-orange-600" />
+              Project Informatie
+            </h3>
+            
+            <div className="space-y-4 text-sm">
+              {/* Taal Selector */}
+              <div>
+                <Label className="text-gray-400">Primaire Taal</Label>
+                <div className="flex items-center gap-3 mt-2">
+                  <Select
+                    value={project.language}
+                    onValueChange={async (value) => {
+                      try {
+                        const res = await fetch(`/api/client/projects/${projectId}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ language: value })
+                        });
+                        if (!res.ok) throw new Error('Failed to update language');
+                        setProject({ ...project, language: value });
+                        toast.success('Taal bijgewerkt');
+                      } catch (error) {
+                        toast.error('Fout bij bijwerken van taal');
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[200px] bg-gray-800 border-gray-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999]">
+                      <SelectItem value="NL">🇳🇱 Nederlands</SelectItem>
+                      <SelectItem value="EN">🇺🇸 English</SelectItem>
+                      <SelectItem value="DE">🇩🇪 Deutsch</SelectItem>
+                      <SelectItem value="ES">🇪🇸 Español</SelectItem>
+                      <SelectItem value="FR">🇫🇷 Français</SelectItem>
+                      <SelectItem value="IT">🇮🇹 Italiano</SelectItem>
+                      <SelectItem value="PT">🇵🇹 Português</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Badge variant="outline" className="text-xs">
+                    {project.language === 'NL' ? 'Nederlands' : 
+                     project.language === 'EN' ? 'English' :
+                     project.language === 'DE' ? 'Deutsch' :
+                     project.language === 'ES' ? 'Español' :
+                     project.language === 'FR' ? 'Français' :
+                     project.language === 'IT' ? 'Italiano' :
+                     project.language === 'PT' ? 'Português' : project.language}
+                  </Badge>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Deze taal wordt gebruikt voor alle content generatie in dit project
+                </p>
+              </div>
+
+              {project.description && (
+                <div>
+                  <Label className="text-gray-400">Beschrijving</Label>
+                  <p className="text-white mt-1">{project.description}</p>
+                </div>
+              )}
+              
+              {project.niche && (
+                <div>
+                  <Label className="text-gray-400">Niche</Label>
+                  <Badge className="mt-1">{project.niche}</Badge>
+                </div>
+              )}
+
+              {project.keywords.length > 0 && (
+                <div>
+                  <Label className="text-gray-400">Keywords</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {project.keywords.map((kw, i) => (
+                      <Badge key={i} variant="outline">{kw}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Knowledge Base */}
+          <Card className="p-6 bg-gray-900 border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-orange-600" />
+                Knowledge Base ({knowledgeItems.length})
+              </h3>
+              <Button
+                onClick={() => setShowAddKnowledge(!showAddKnowledge)}
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700 text-white gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Toevoegen
+              </Button>
+            </div>
+
+            {showAddKnowledge && (
+              <Card className="p-4 mb-4 bg-gray-800 border-gray-700">
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Titel"
+                    value={newKnowledge.title}
+                    onChange={(e) => setNewKnowledge({...newKnowledge, title: e.target.value})}
+                    className="bg-gray-900 border-gray-700 text-white"
+                  />
+                  <Textarea
+                    placeholder="Inhoud..."
+                    value={newKnowledge.content}
+                    onChange={(e) => setNewKnowledge({...newKnowledge, content: e.target.value})}
+                    className="bg-gray-900 border-gray-700 text-white min-h-[100px]"
+                  />
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddKnowledge} size="sm" className="bg-orange-600">
+                      <Save className="w-4 h-4 mr-2" />
+                      Opslaan
+                    </Button>
+                    <Button onClick={() => setShowAddKnowledge(false)} size="sm" variant="outline">
+                      Annuleren
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {knowledgeItems.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <Lightbulb className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                <p>Nog geen knowledge items toegevoegd</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {knowledgeItems.map((item) => (
+                  <Card key={item.id} className="p-4 bg-gray-800 border-gray-700">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-white">{item.title}</h4>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteKnowledge(item.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-gray-400 text-sm line-clamp-2">{item.content}</p>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant="outline" className="text-xs">{item.type}</Badge>
+                      {item.importance === 'high' && (
+                        <Badge className="text-xs bg-red-600">Belangrijk</Badge>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* WordPress Integration */}
+          <Card className="p-6 bg-gray-900 border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <ExternalLink className="w-5 h-5 text-orange-600" />
+                WordPress Integratie
+                {project.wordpressUrl && (
+                  <Badge className="ml-2 bg-green-600">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Actief
+                  </Badge>
+                )}
+              </h3>
+              <Button
+                onClick={() => setShowWordPressSettings(!showWordPressSettings)}
+                size="sm"
+                variant="outline"
+                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+              >
+                {showWordPressSettings ? 'Annuleren' : 'Configureren'}
+              </Button>
+            </div>
+
+            {!showWordPressSettings && project.wordpressUrl && (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">WordPress URL</span>
+                  <span className="text-white">{project.wordpressUrl}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Gebruikersnaam</span>
+                  <span className="text-white">{project.wordpressUsername}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Auto-publiceren</span>
+                  <span className="text-white">{project.wordpressAutoPublish ? 'Ja' : 'Nee'}</span>
+                </div>
+              </div>
+            )}
+
+            {!showWordPressSettings && !project.wordpressUrl && (
+              <div className="text-center py-4">
+                <p className="text-gray-400 text-sm">
+                  Configureer WordPress om artikelen automatisch te kunnen publiceren
+                </p>
+              </div>
+            )}
+
+            {showWordPressSettings && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-gray-400">WordPress URL</Label>
+                  <Input
+                    placeholder="https://jouwwebsite.nl"
+                    value={wordpressSettings.wordpressUrl}
+                    onChange={(e) => setWordpressSettings({...wordpressSettings, wordpressUrl: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Gebruikersnaam</Label>
+                  <Input
+                    placeholder="admin"
+                    value={wordpressSettings.wordpressUsername}
+                    onChange={(e) => setWordpressSettings({...wordpressSettings, wordpressUsername: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Application Password</Label>
+                  <Input
+                    type="password"
+                    placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                    value={wordpressSettings.wordpressPassword}
+                    onChange={(e) => setWordpressSettings({...wordpressSettings, wordpressPassword: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Maak een application password aan in WordPress → Gebruikers → Profiel
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Standaard Categorie (optioneel)</Label>
+                  <Input
+                    placeholder="Nieuws"
+                    value={wordpressSettings.wordpressCategory}
+                    onChange={(e) => setWordpressSettings({...wordpressSettings, wordpressCategory: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label className="text-gray-400">Auto-publiceren</Label>
+                    <p className="text-xs text-gray-500">
+                      Publiceer direct of bewaar als concept
+                    </p>
+                  </div>
+                  <Switch
+                    checked={wordpressSettings.wordpressAutoPublish}
+                    onCheckedChange={(checked) => setWordpressSettings({...wordpressSettings, wordpressAutoPublish: checked})}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    onClick={handleTestWordPressConnection}
+                    size="sm"
+                    variant="outline"
+                    className="border-gray-700 text-gray-300 hover:bg-gray-800 flex-1"
+                  >
+                    Verbinding Testen
+                  </Button>
+                  <Button
+                    onClick={handleSaveWordPressSettings}
+                    disabled={savingWordPress}
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700 text-white flex-1"
+                  >
+                    {savingWordPress ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Opslaan...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Opslaan
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Bol.com Integration */}
+          <Card className="p-6 bg-gray-900 border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Package className="w-5 h-5 text-orange-600" />
+                Bol.com Integratie
+                {project.bolcomEnabled && (
+                  <Badge className="ml-2 bg-green-600">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Actief
+                  </Badge>
+                )}
+              </h3>
+              <Button
+                onClick={() => setShowBolcomSettings(!showBolcomSettings)}
+                size="sm"
+                variant="outline"
+                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+              >
+                {showBolcomSettings ? 'Annuleren' : 'Configureren'}
+              </Button>
+            </div>
+
+            {!showBolcomSettings && project.bolcomClientId && (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Client ID</span>
+                  <span className="text-white font-mono text-xs">
+                    {project.bolcomClientId.substring(0, 20)}...
+                  </span>
+                </div>
+                {project.bolcomAffiliateId && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Site ID</span>
+                    <span className="text-white">{project.bolcomAffiliateId}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Status</span>
+                  <span className="text-white">
+                    {project.bolcomEnabled ? 'Actief' : 'Inactief'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {!showBolcomSettings && !project.bolcomClientId && (
+              <div className="text-center py-4">
+                <p className="text-gray-400 text-sm mb-2">
+                  Koppel Bol.com om automatisch producten te kunnen toevoegen in je content
+                </p>
+                <p className="text-xs text-gray-500">
+                  Verdien commissie met affiliate links naar Bol.com producten
+                </p>
+              </div>
+            )}
+
+            {showBolcomSettings && (
+              <div className="space-y-4">
+                <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-3 mb-4">
+                  <p className="text-blue-300 text-xs mb-2">
+                    📋 <strong>Hoe verkrijg je credentials?</strong>
+                  </p>
+                  <ol className="text-xs text-gray-400 space-y-1 ml-4 list-decimal">
+                    <li>Ga naar <a href="https://partnerplatform.bol.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">partnerplatform.bol.com</a></li>
+                    <li>Klik op "Account" → "Open API"</li>
+                    <li>Klik "Toevoegen" om credentials aan te maken</li>
+                    <li>Kopieer je Client ID en Client Secret</li>
+                  </ol>
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Client ID *</Label>
+                  <Input
+                    placeholder="Jouw Bol.com Client ID"
+                    value={bolcomSettings.bolcomClientId}
+                    onChange={(e) => setBolcomSettings({...bolcomSettings, bolcomClientId: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1 font-mono text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Client Secret *</Label>
+                  <Input
+                    type="password"
+                    placeholder="Jouw Bol.com Client Secret"
+                    value={bolcomSettings.bolcomClientSecret}
+                    onChange={(e) => setBolcomSettings({...bolcomSettings, bolcomClientSecret: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1 font-mono text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Klik "Toon secret" in je Bol.com account om deze te verkrijgen
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Site ID *</Label>
+                  <Input
+                    placeholder="Jouw Site ID voor commissie tracking (verplicht)"
+                    value={bolcomSettings.bolcomAffiliateId}
+                    onChange={(e) => setBolcomSettings({...bolcomSettings, bolcomAffiliateId: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Vul dit in om commissies te verdienen op product clicks
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label className="text-gray-400">Bol.com Integratie Actief</Label>
+                    <p className="text-xs text-gray-500">
+                      Schakel product zoeken in/uit
+                    </p>
+                  </div>
+                  <Switch
+                    checked={bolcomSettings.bolcomEnabled}
+                    onCheckedChange={(checked) => setBolcomSettings({...bolcomSettings, bolcomEnabled: checked})}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    onClick={handleTestBolcomCredentials}
+                    size="sm"
+                    variant="outline"
+                    className="border-gray-700 text-gray-300 hover:bg-gray-800 flex-1"
+                  >
+                    Credentials Testen
+                  </Button>
+                  <Button
+                    onClick={handleSaveBolcomSettings}
+                    disabled={savingBolcom}
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700 text-white flex-1"
+                  >
+                    {savingBolcom ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Opslaan...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Opslaan
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* TradeTracker Integration */}
+          <Card className="p-6 bg-gray-900 border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                TradeTracker Integratie
+                {project.tradeTrackerEnabled && (
+                  <Badge className="ml-2 bg-green-600">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Actief
+                  </Badge>
+                )}
+              </h3>
+              <Button
+                onClick={() => setShowTradeTrackerSettings(!showTradeTrackerSettings)}
+                size="sm"
+                variant="outline"
+                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+              >
+                {showTradeTrackerSettings ? 'Annuleren' : 'Configureren'}
+              </Button>
+            </div>
+
+            {!showTradeTrackerSettings && project.tradeTrackerSiteId && (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Site ID</span>
+                  <span className="text-white">{project.tradeTrackerSiteId}</span>
+                </div>
+                {project.tradeTrackerCampaignId && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Campaign ID</span>
+                    <span className="text-white">{project.tradeTrackerCampaignId}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Status</span>
+                  <span className="text-white">
+                    {project.tradeTrackerEnabled ? 'Actief' : 'Inactief'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {!showTradeTrackerSettings && !project.tradeTrackerSiteId && (
+              <div className="text-center py-4">
+                <p className="text-gray-400 text-sm mb-2">
+                  Koppel TradeTracker om automatisch producten te kunnen toevoegen in je content
+                </p>
+                <p className="text-xs text-gray-500">
+                  Importeer productfeeds en verdien commissie met affiliate links
+                </p>
+              </div>
+            )}
+
+            {showTradeTrackerSettings && (
+              <div className="space-y-4">
+                <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-3 mb-4">
+                  <p className="text-blue-300 text-xs mb-2">
+                    📋 <strong>Hoe verkrijg je credentials?</strong>
+                  </p>
+                  <ol className="text-xs text-gray-400 space-y-1 ml-4 list-decimal">
+                    <li>Ga naar <a href="https://affiliate.tradetracker.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">affiliate.tradetracker.com</a></li>
+                    <li>Login op je affiliate account</li>
+                    <li>Zoek je Site ID (affiliate ID) in je account settings</li>
+                    <li>Download een productfeed van een campagne</li>
+                    <li>Importeer de feed via "Affiliate Links" tab</li>
+                  </ol>
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Site ID (Affiliate ID) *</Label>
+                  <Input
+                    placeholder="Bijvoorbeeld: 465504"
+                    value={tradeTrackerSettings.tradeTrackerSiteId}
+                    onChange={(e) => setTradeTrackerSettings({...tradeTrackerSettings, tradeTrackerSiteId: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Je unieke TradeTracker site/affiliate ID voor commissie tracking
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">API Passphrase (optioneel)</Label>
+                  <Input
+                    type="password"
+                    placeholder="API Passphrase voor SOAP API"
+                    value={tradeTrackerSettings.tradeTrackerPassphrase}
+                    onChange={(e) => setTradeTrackerSettings({...tradeTrackerSettings, tradeTrackerPassphrase: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Optioneel: alleen nodig voor SOAP API integratie
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-gray-400">Default Campaign ID (optioneel)</Label>
+                  <Input
+                    placeholder="Bijvoorbeeld: 439"
+                    value={tradeTrackerSettings.tradeTrackerCampaignId}
+                    onChange={(e) => setTradeTrackerSettings({...tradeTrackerSettings, tradeTrackerCampaignId: e.target.value})}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Optioneel: wordt gebruikt als fallback voor link generatie
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label className="text-gray-400">TradeTracker Integratie Actief</Label>
+                    <p className="text-xs text-gray-500">
+                      Schakel product zoeken in/uit
+                    </p>
+                  </div>
+                  <Switch
+                    checked={tradeTrackerSettings.tradeTrackerEnabled}
+                    onCheckedChange={(checked) => setTradeTrackerSettings({...tradeTrackerSettings, tradeTrackerEnabled: checked})}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    onClick={handleSaveTradeTrackerSettings}
+                    disabled={savingTradeTracker}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                  >
+                    {savingTradeTracker ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Opslaan...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Opslaan
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Content Plan / Ideas */}
+          <Card className="p-6 bg-gray-900 border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-orange-600" />
+                Contentplan Ideeën
+                {contentIdeas.length > 0 && (
+                  <Badge className="ml-2 bg-orange-600">
+                    {contentIdeas.length} ideeën
+                  </Badge>
+                )}
+              </h3>
+              <Link href="/client-portal/content-research">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nieuw Plan
+                </Button>
+              </Link>
+            </div>
+
+            {loadingIdeas ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
+                <span className="ml-2 text-gray-400">Laden...</span>
+              </div>
+            ) : contentIdeas.length === 0 ? (
+              <div className="text-center py-8 space-y-3">
+                <Lightbulb className="w-12 h-12 mx-auto text-gray-600" />
+                <p className="text-gray-400">Nog geen contentplan gemaakt voor dit project</p>
+                <p className="text-sm text-gray-500">
+                  Genereer een contentplan met 30-50 content ideeën op basis van website analyse, 
+                  concurrent research en trending topics.
+                </p>
+                <Link href="/client-portal/content-research">
+                  <Button size="sm" className="bg-orange-600 hover:bg-orange-700 mt-2">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Start Content Research
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="bg-gray-800 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {contentIdeas.filter(i => i.priority === 'high').length}
+                    </div>
+                    <div className="text-xs text-gray-400">Hoge Prioriteit</div>
+                  </div>
+                  <div className="bg-gray-800 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {contentIdeas.filter(i => i.trending).length}
+                    </div>
+                    <div className="text-xs text-gray-400">Trending</div>
+                  </div>
+                  <div className="bg-gray-800 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {contentIdeas.filter(i => i.status === 'idea').length}
+                    </div>
+                    <div className="text-xs text-gray-400">Nog Te Schrijven</div>
+                  </div>
+                </div>
+
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {contentIdeas.slice(0, 10).map((idea) => (
+                    <div
+                      key={idea.id}
+                      className="p-3 bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-white text-sm line-clamp-1">
+                              {idea.title}
+                            </h4>
+                            {idea.trending && (
+                              <TrendingUp className="w-3 h-3 text-green-500 flex-shrink-0" />
+                            )}
+                            {idea.competitorGap && (
+                              <Target className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Badge
+                              variant="outline"
+                              className={`
+                                ${idea.priority === 'high' ? 'border-red-500 text-red-500' : ''}
+                                ${idea.priority === 'medium' ? 'border-yellow-500 text-yellow-500' : ''}
+                                ${idea.priority === 'low' ? 'border-gray-500 text-gray-500' : ''}
+                              `}
+                            >
+                              {idea.priority}
+                            </Badge>
+                            <Badge variant="outline" className="text-gray-400">
+                              {idea.contentType}
+                            </Badge>
+                            <span className="text-gray-500">
+                              {idea.focusKeyword}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {contentIdeas.length > 10 && (
+                  <div className="text-center pt-2">
+                    <Link href="/client-portal/content-research">
+                      <Button variant="outline" size="sm" className="border-gray-700 text-gray-300">
+                        Bekijk alle {contentIdeas.length} ideeën →
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+
+          {/* Affiliate Links */}
+          <ProjectAffiliateLinks projectId={projectId} />
+
+          {/* Social Media Autopilot */}
+          <ProjectSocialMediaConfig projectId={projectId} />
+
+          {/* Google Search Console Configuration */}
+          <ProjectGSCConfig projectId={projectId} />
+
+          {/* Google Search Console Performance Dashboard */}
+          <ProjectGSCDashboard projectId={projectId} />
+
+          {/* Google Search Console Performance Trends */}
+          <ProjectGSCTrends projectId={projectId} />
+
+          {/* Collaborators */}
+          <ProjectCollaborators projectId={projectId} />
+
+          {/* Knowledge Base */}
+          <ProjectKnowledgeBase projectId={projectId} />
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          <Card className="p-6 bg-blue-900/20 border-blue-600">
+            <AlertCircle className="w-6 h-6 text-blue-400 mb-3" />
+            <h4 className="font-semibold text-white mb-2">
+              Project Context
+            </h4>
+            <p className="text-gray-300 text-sm">
+              Bij het genereren van content kun je dit project selecteren. De AI houdt dan 
+              rekening met alle project-specifieke informatie en knowledge base items.
+            </p>
+          </Card>
+
+          <Card className="p-6 bg-gray-900 border-gray-800">
+            <h4 className="font-semibold text-white mb-4">Statistieken</h4>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Content Items</span>
+                <span className="text-white font-semibold">{project._count.savedContent}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Knowledge Items</span>
+                <span className="text-white font-semibold">{project._count.knowledgeBase}</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

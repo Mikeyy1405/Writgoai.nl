@@ -1,0 +1,399 @@
+
+// Dagelijkse content generator - maakt alles in één keer met consistent thema
+
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+function getOpenAI() {
+  const { OpenAI } = require('openai');
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+interface ClientSettings {
+  targetAudience: string;
+  brandVoice: string;
+  keywords: string[];
+  website?: string;
+}
+
+export async function generateDailyContent(clientId: string) {
+  console.log(`🚀 Starting daily content generation for client ${clientId}`);
+  
+  const client = await prisma.client.findUnique({
+    where: { id: clientId }
+  });
+  
+  if (!client || !client.automationActive) {
+    console.log('❌ Client not found or automation not active');
+    return;
+  }
+  
+  // Stap 1: Genereer hoofdthema voor de dag
+  const theme = await generateDailyTheme(client);
+  console.log(`📌 Theme generated: ${theme}`);
+  
+  // Maak content piece aan
+  const contentPiece = await prisma.contentPiece.create({
+    data: {
+      clientId,
+      dayNumber: 1,
+      theme,
+      scheduledFor: new Date(),
+      status: 'generating'
+    }
+  });
+  
+  try {
+    // Stap 2: Genereer alle content parallel
+    const [blog, social, tiktok, youtube] = await Promise.all([
+      generateBlogArticle(theme, client),
+      generateSocialPost(theme, client),
+      generateTikTokScript(theme, client),
+      generateYouTubeScript(theme, client)
+    ]);
+    
+    // Update content piece met gegenereerde content
+    await prisma.contentPiece.update({
+      where: { id: contentPiece.id },
+      data: {
+        blogTitle: blog.title,
+        blogContent: blog.content,
+        socialCaption: social.caption,
+        socialImageUrl: social.imageUrl,
+        tiktokScript: tiktok.script,
+        youtubeScript: youtube.script,
+        youtubeTitle: youtube.title,
+        status: 'ready'
+      }
+    });
+    
+    console.log('✅ All content generated successfully');
+    
+    // Stap 3: Publiceer alles
+    await publishAllContent(contentPiece.id, client);
+    
+    return contentPiece;
+  } catch (error) {
+    console.error('❌ Error generating content:', error);
+    await prisma.contentPiece.update({
+      where: { id: contentPiece.id },
+      data: {
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
+    throw error;
+  }
+}
+
+async function generateDailyTheme(client: any): Promise<string> {
+  const prompt = `Je bent een content strategie expert. Genereer een relevant en boeiend thema voor dagelijkse content.
+
+Website: ${client.website || 'Geen website'}
+Doelgroep: ${client.targetAudience || 'Algemeen publiek'}
+Brand voice: ${client.brandVoice || 'Professioneel en vriendelijk'}
+Keywords: ${client.keywords?.join(', ') || 'Geen specifieke keywords'}
+
+Genereer 1 specifiek thema dat:
+- Relevant is voor de doelgroep
+- Aansluit bij de brand voice
+- Geschikt is voor blog, social media, TikTok en YouTube
+- Actueel en boeiend is
+
+Geef alleen het thema terug (max 10 woorden), geen uitleg.`;
+
+  const response = await getOpenAI().chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8
+  });
+  
+  return response.choices[0].message.content?.trim() || 'Algemeen thema';
+}
+
+async function generateBlogArticle(theme: string, client: any) {
+  const prompt = `Schrijf een uitgebreide blog artikel over: ${theme}
+
+Doelgroep: ${client.targetAudience || 'Algemeen publiek'}
+Brand voice: ${client.brandVoice || 'Professioneel en vriendelijk'}
+Keywords: ${client.keywords?.join(', ') || 'Geen specifieke keywords'}
+
+Vereisten:
+- Minimaal 800 woorden
+- SEO geoptimaliseerd
+- Duidelijke structuur met kopjes (gebruik ## voor H2)
+- Praktische tips en voorbeelden
+- Call-to-action aan het einde
+
+Formaat: JSON met "title" en "content" (content in Markdown)`;
+
+  const response = await getOpenAI().chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    response_format: { type: 'json_object' }
+  });
+  
+  const result = JSON.parse(response.choices[0].message.content || '{}');
+  return {
+    title: result.title || theme,
+    content: result.content || ''
+  };
+}
+
+async function generateSocialPost(theme: string, client: any) {
+  const prompt = `Maak een boeiende social media post over: ${theme}
+
+Doelgroep: ${client.targetAudience || 'Algemeen publiek'}
+Brand voice: ${client.brandVoice || 'Professioneel en vriendelijk'}
+
+Vereisten:
+- Maximaal 280 karakters (geschikt voor alle platforms)
+- Pakkende opening
+- 3-5 relevante hashtags
+- Call-to-action
+
+Geef alleen de caption terug, geen extra uitleg.`;
+
+  const response = await getOpenAI().chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8
+  });
+  
+  return {
+    caption: response.choices[0].message.content?.trim() || '',
+    imageUrl: null // TODO: Implementeer image generation met DALL-E of andere service
+  };
+}
+
+async function generateTikTokScript(theme: string, client: any) {
+  const prompt = `Schrijf een TikTok video script over: ${theme}
+
+Doelgroep: ${client.targetAudience || 'Algemeen publiek'}
+Brand voice: ${client.brandVoice || 'Professioneel en vriendelijk'}
+
+Vereisten:
+- 30-60 seconden video
+- Pakkende opening (eerste 3 seconden cruciaal!)
+- Praktische tips of interessante feiten
+- Duidelijke voice-over tekst
+- Visuele aanwijzingen tussen [haken]
+
+Format:
+OPENING: [visuele aanwijzing]
+"Voice-over tekst..."
+
+MIDDENSTUK: [visuele aanwijzing]
+"Voice-over tekst..."
+
+AFSLUITING: [visuele aanwijzing]
+"Voice-over tekst..."`;
+
+  const response = await getOpenAI().chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8
+  });
+  
+  return {
+    script: response.choices[0].message.content?.trim() || ''
+  };
+}
+
+async function generateYouTubeScript(theme: string, client: any) {
+  const prompt = `Schrijf een YouTube Shorts script over: ${theme}
+
+Doelgroep: ${client.targetAudience || 'Algemeen publiek'}
+Brand voice: ${client.brandVoice || 'Professioneel en vriendelijk'}
+
+Vereisten:
+- 45-60 seconden video
+- Duidelijke structuur (intro, content, outro)
+- Praktische informatie of entertainment
+- Voice-over tekst
+- Visuele aanwijzingen tussen [haken]
+- CTA aan het einde (subscribe, like, etc.)
+
+Format JSON met "title" en "script"`;
+
+  const response = await getOpenAI().chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8,
+    response_format: { type: 'json_object' }
+  });
+  
+  const result = JSON.parse(response.choices[0].message.content || '{}');
+  return {
+    title: result.title || theme,
+    script: result.script || ''
+  };
+}
+
+async function publishAllContent(contentPieceId: string, client: any) {
+  console.log('📤 Publishing content...');
+  
+  const contentPiece = await prisma.contentPiece.findUnique({
+    where: { id: contentPieceId }
+  });
+  
+  if (!contentPiece) return;
+  
+  let blogPublished = false;
+  let socialPublished = false;
+  let tiktokPublished = false;
+  let youtubePublished = false;
+  
+  // 1. Publish blog to WordPress
+  if (client.wordpressUrl && contentPiece.blogContent) {
+    try {
+      const { publishToWordPress } = await import('./wordpress-publisher');
+      // Generate excerpt from content (first 150 characters)
+      const excerpt = contentPiece.blogContent
+        .replace(/[#*`\[\]]/g, '') // Remove markdown
+        .substring(0, 150)
+        .trim() + '...';
+      
+      await publishToWordPress(client, {
+        title: contentPiece.blogTitle || '',
+        content: contentPiece.blogContent,
+        excerpt,
+        status: 'publish'
+      });
+      blogPublished = true;
+      console.log('✅ Blog published to WordPress');
+    } catch (error) {
+      console.error('❌ WordPress publish failed:', error);
+    }
+  }
+  
+  // 2. Publish to social media via Late.dev
+  if (client.lateDevProfileId) {
+    try {
+      const { createPost } = await import('./latedev');
+      
+      // Get all connected accounts
+      const accounts = await prisma.lateDevAccount.findMany({
+        where: {
+          clientId: client.id,
+          connected: true
+        }
+      });
+      
+      if (accounts.length > 0) {
+        const platforms: any[] = [];
+        
+        // Add each platform with appropriate content
+        for (const account of accounts) {
+          const platform = account.platform.toLowerCase();
+          
+          if (platform === 'instagram' || platform === 'facebook' || 
+              platform === 'linkedin' || platform === 'twitter' || platform === 'threads') {
+            // Regular social post
+            if (contentPiece.socialCaption) {
+              platforms.push({
+                platform: account.platform,
+                accountId: account.accountId,
+                platformSpecificData: platform === 'instagram' ? { contentType: 'post' } : undefined
+              });
+            }
+          } else if (platform === 'tiktok') {
+            // TikTok video (script only for now)
+            if (contentPiece.tiktokScript) {
+              platforms.push({
+                platform: account.platform,
+                accountId: account.accountId,
+                platformSpecificData: {
+                  tiktokPrivacy: 'PUBLIC_TO_EVERYONE' as const,
+                  disableComment: false,
+                  disableDuet: false,
+                  disableStitch: false
+                }
+              });
+              tiktokPublished = true;
+            }
+          } else if (platform === 'youtube') {
+            // YouTube Short (script only for now)
+            if (contentPiece.youtubeScript) {
+              platforms.push({
+                platform: account.platform,
+                accountId: account.accountId,
+                platformSpecificData: {
+                  title: contentPiece.youtubeTitle || contentPiece.theme || 'Video',
+                  description: contentPiece.youtubeScript?.substring(0, 500) || '',
+                  youtubePrivacy: 'public' as const,
+                  categoryId: '22',
+                  madeForKids: false
+                }
+              });
+              youtubePublished = true;
+            }
+          }
+        }
+        
+        // Post to regular social platforms
+        const socialPlatforms = platforms.filter(p => 
+          ['instagram', 'facebook', 'linkedin', 'twitter', 'threads'].includes(p.platform.toLowerCase())
+        );
+        
+        if (socialPlatforms.length > 0 && contentPiece.socialCaption) {
+          try {
+            await createPost({
+              content: contentPiece.socialCaption,
+              platforms: socialPlatforms,
+              publishNow: true,
+              timezone: 'Europe/Amsterdam'
+            });
+            socialPublished = true;
+            console.log('✅ Social media posts published via Late.dev');
+          } catch (error) {
+            console.error('❌ Social media post failed:', error);
+          }
+        }
+        
+        // Note: TikTok and YouTube need actual video files
+        // For now, we just mark the scripts as ready
+        console.log('📝 TikTok script ready (video generation needed)');
+        console.log('📝 YouTube script ready (video generation needed)');
+      }
+    } catch (error) {
+      console.error('❌ Late.dev publish failed:', error);
+    }
+  }
+  
+  await prisma.contentPiece.update({
+    where: { id: contentPieceId },
+    data: {
+      status: 'published',
+      blogPublished,
+      socialPublished,
+      tiktokPublished,
+      youtubePublished
+    }
+  });
+}
+
+export async function runDailyAutomationForAllClients() {
+  console.log('🤖 Running daily automation for all active clients...');
+  
+  const activeClients = await prisma.client.findMany({
+    where: {
+      automationActive: true
+    }
+  });
+  
+  console.log(`Found ${activeClients.length} active clients`);
+  
+  for (const client of activeClients) {
+    try {
+      await generateDailyContent(client.id);
+      console.log(`✅ Content generated for ${client.name}`);
+    } catch (error) {
+      console.error(`❌ Failed for ${client.name}:`, error);
+    }
+  }
+  
+  console.log('🎉 Daily automation completed');
+}

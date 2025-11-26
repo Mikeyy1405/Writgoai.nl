@@ -1,0 +1,308 @@
+
+'use client';
+
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Loader2, Package, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface ProductDescription {
+  shortDescription: string;
+  longDescription: string;
+  features: string[];
+}
+
+export default function WooCommerceProductPage() {
+  const { data: session, status } = useSession() || {};
+  const [productName, setProductName] = useState('');
+  const [productInfo, setProductInfo] = useState('');
+  const [targetAudience, setTargetAudience] = useState('');
+  const [keywords, setKeywords] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [result, setResult] = useState<ProductDescription | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    if (!productName.trim()) {
+      toast.error('Vul een productnaam in');
+      return;
+    }
+
+    setIsGenerating(true);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/client/generate-woocommerce-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productName,
+          productInfo,
+          targetAudience,
+          keywords,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Genereren mislukt');
+      }
+
+      const data = await response.json();
+      setResult(data);
+      toast.success('Productbeschrijving gegenereerd!');
+    } catch (error: any) {
+      console.error('Error generating product description:', error);
+      toast.error(error.message || 'Er is iets misgegaan');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      toast.success('Gekopieerd naar klembord!');
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (error) {
+      toast.error('Kopiëren mislukt');
+    }
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card>
+          <CardHeader>
+            <CardTitle>Niet ingelogd</CardTitle>
+            <CardDescription>Log in om deze functie te gebruiken</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-4 md:p-6 max-w-7xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold flex items-center gap-2 mb-2">
+          <Package className="h-8 w-8 text-orange-500" />
+          WooCommerce Productbeschrijving Generator
+        </h1>
+        <p className="text-muted-foreground">
+          Genereer professionele productbeschrijvingen voor je WooCommerce webshop
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Input Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Product Informatie</CardTitle>
+            <CardDescription>Vul de details van je product in</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="productName">
+                Productnaam <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="productName"
+                placeholder="Bijv: Premium Draadloze Koptelefoon"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                disabled={isGenerating}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="productInfo">Product Informatie</Label>
+              <Textarea
+                id="productInfo"
+                placeholder="Beschrijf je product, specs, voordelen, etc."
+                value={productInfo}
+                onChange={(e) => setProductInfo(e.target.value)}
+                disabled={isGenerating}
+                rows={6}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optioneel: Voeg extra details toe zoals materialen, afmetingen, functies
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="targetAudience">Doelgroep</Label>
+              <Input
+                id="targetAudience"
+                placeholder="Bijv: Muziekliefhebbers, professionals, gamers"
+                value={targetAudience}
+                onChange={(e) => setTargetAudience(e.target.value)}
+                disabled={isGenerating}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="keywords">Zoekwoorden</Label>
+              <Input
+                id="keywords"
+                placeholder="Bijv: draadloos, noise cancelling, bluetooth"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                disabled={isGenerating}
+              />
+              <p className="text-xs text-muted-foreground">
+                Kommagescheiden voor betere SEO
+              </p>
+            </div>
+
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating || !productName.trim()}
+              className="w-full bg-orange-500 hover:bg-orange-600"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Genereren...
+                </>
+              ) : (
+                <>
+                  <Package className="mr-2 h-4 w-4" />
+                  Genereer Productbeschrijving
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Results Section */}
+        <div className="space-y-4">
+          {result ? (
+            <>
+              {/* Korte Omschrijving */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Korte Omschrijving</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(result.shortDescription, 'short')}
+                    >
+                      {copiedField === 'short' ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <CardDescription>
+                    Korte samenvatting voor boven de product pagina
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap">{result.shortDescription}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Eigenschappen */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Eigenschappen</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(result.features.join('\n'), 'features')}
+                    >
+                      {copiedField === 'features' ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <CardDescription>
+                    Belangrijkste kenmerken en voordelen
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {result.features.map((feature, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-2 p-2 bg-muted rounded"
+                      >
+                        <span className="text-orange-500 font-bold">•</span>
+                        <span className="text-sm flex-1">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Lange Omschrijving */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Lange Omschrijving</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(result.longDescription, 'long')}
+                    >
+                      {copiedField === 'long' ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <CardDescription>
+                    Uitgebreide beschrijving voor de product tab
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 bg-muted rounded-lg max-h-96 overflow-y-auto">
+                    <div
+                      className="prose prose-sm max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{ __html: result.longDescription }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Package className="h-16 w-16 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground text-center">
+                  Vul de product informatie in en klik op "Genereer Productbeschrijving" om te beginnen
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

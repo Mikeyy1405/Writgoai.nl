@@ -1,0 +1,878 @@
+
+/**
+ * 🤖 WritgoAI DeepAgent - Native AIML Tool Calling API
+ * 
+ * Echte autonomous AI agent met computer access - precies zoals Abacus DeepAgent
+ * - Native AIML tool calling (AI beslist zelf welke tools te gebruiken)
+ * - Computer access (Bash Terminal, file operations, web search)
+ * - Autonomous (geen vaste layouts, AI doet alles zelf)
+ * - Simpel (geen complexe orchestration layers)
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { DEEPAGENT_TOOLS, executeToolCall } from '@/lib/deepagent-tools';
+import { hasEnoughCredits, deductCredits, calculateCreditCost } from '@/lib/credits';
+
+interface Message {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string | null;
+  tool_call_id?: string;
+  tool_calls?: Array<{
+    id: string;
+    type: 'function';
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }>;
+}
+
+/**
+ * 🧠 Intelligente Model Routing
+ * Kiest automatisch het beste model op basis van vraag complexiteit
+ */
+function selectOptimalModel(message: string, history: any[] = []): {
+  model: string;
+  reasoning: string;
+} {
+  const msg = message.toLowerCase();
+  const contextSize = history.length;
+  
+  // 🔴 Complexe taken → GPT-4o (krachtig maar duurder)
+  const complexIndicators = [
+    'schrijf een blog',
+    'maak een artikel',
+    'genereer content',
+    'uitgebreide',
+    'gedetailleerde',
+    'analyseer',
+    'plan voor',
+    'strategie',
+    'create a plan',
+    'write about',
+    'in-depth',
+    'complex',
+    'stappenplan',
+    'uitleg over',
+    'leg uit',
+  ];
+  
+  // 🟢 Simpele taken → Gemini Flash (snel en goedkoop)
+  const simpleIndicators = [
+    'hoe laat',
+    'wat is',
+    'wie is',
+    'wanneer',
+    'waar',
+    'kort antwoord',
+    'simpele vraag',
+    'quick question',
+    'hello',
+    'hoi',
+    'help',
+    'status',
+  ];
+  
+  // Check voor lange context (> 5 messages = complexe conversatie)
+  if (contextSize > 5) {
+    return {
+      model: 'gpt-4o',
+      reasoning: 'Lange conversatie context - GPT-4o voor consistentie'
+    };
+  }
+  
+  // Check voor complexe indicatoren
+  if (complexIndicators.some(indicator => msg.includes(indicator))) {
+    return {
+      model: 'gpt-4o',
+      reasoning: 'Complexe taak gedetecteerd - GPT-4o voor kwaliteit'
+    };
+  }
+  
+  // Check voor expliciete simpele vragen
+  if (simpleIndicators.some(indicator => msg.includes(indicator))) {
+    return {
+      model: 'gemini-2.5-flash',
+      reasoning: 'Simpele vraag - Gemini Flash voor snelheid'
+    };
+  }
+  
+  // Check message lengte
+  if (message.length > 200) {
+    return {
+      model: 'gpt-4o',
+      reasoning: 'Lange input - GPT-4o voor begrip'
+    };
+  }
+  
+  // Default: gebruik snel model
+  return {
+    model: 'gemini-2.5-flash',
+    reasoning: 'Standaard query - Gemini Flash efficiënt'
+  };
+}
+
+// Helper to send streaming updates
+function createStreamUpdate(type: string, data: any) {
+  return `data: ${JSON.stringify({ type, ...data })}\n\n`;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { message, clientId, conversationHistory = [], stream = true } = body;
+
+    console.log('🤖 DeepAgent request:', { 
+      message: message ? message.substring(0, 100) : 'NO MESSAGE', 
+      clientId,
+      historyLength: conversationHistory?.length || 0,
+      streamEnabled: stream
+    });
+
+    // Validate message
+    if (!message || typeof message !== 'string' || message.trim() === '') {
+      console.error('❌ Invalid message:', { message, type: typeof message });
+      return NextResponse.json(
+        { error: 'Valid message is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate conversationHistory is array
+    const history = Array.isArray(conversationHistory) ? conversationHistory : [];
+    
+    console.log('✅ Valid request:', { messageLength: message.length, historyCount: history.length });
+
+    // 🧠 Model Selectie: ALTIJD GPT-4o met internet
+    const model = 'gpt-4o';
+    const reasoning = 'GPT-4o met internet toegang - krachtigste model';
+    console.log(`🎯 Slimme Computing: ${model} - ${reasoning}`);
+
+    // 💳 Credit Check (met juiste model cost)
+    if (clientId) {
+      const creditCost = calculateCreditCost('chat', model);
+      const hasCredits = await hasEnoughCredits(clientId, creditCost);
+      
+      if (!hasCredits) {
+        return NextResponse.json(
+          { 
+            error: 'Insufficient credits',
+            message: 'Je hebt niet genoeg credits. Koop nieuwe credits om door te gaan.',
+            requiredCredits: creditCost
+          },
+          { status: 402 }
+        );
+      }
+    }
+
+    // System prompt voor DeepAgent - PURE AI ASSISTANT ZONDER BEPERKINGEN
+    const systemMessage: Message = {
+      role: 'system',
+      content: `Je bent WritgoAI DeepAgent - een krachtige AI assistent met volledige computer access en geavanceerde tools.
+
+🎯 JOUW MISSIE: Help de gebruiker met ALLES wat ze vragen - geen beperkingen, geen vaste workflows.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛠️ BESCHIKBARE TOOLS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 RESEARCH & INFORMATIE:
+• web_search - Real-time internet research via 8 premium AI modellen (GPT-5, Claude Opus 4.1, DeepSeek Reasoner v3.1, Gemini 2.5 Flash, etc.)
+  → Gebruik voor ALLE actuele vragen: weer, nieuws, prijzen, trends, feiten
+  → Tool resultaten met "📅 Informatie van [datum]" zijn ACTUELE LIVE DATA - gebruik ze direct!
+  → Na web_search: NOOIT zeggen "ik heb geen toegang" - je hebt NET actuele info gekregen!
+
+• browse_website - Bezoek websites en lees de volledige HTML
+• scan_website - Analyseer website structuur (alleen als expliciet gevraagd)
+• screenshot_website - Maak screenshots van websites
+
+📝 CONTENT CREATIE:
+• generate_blog - Schrijf professionele SEO-geoptimaliseerde blogs
+  → Als onderwerp te vaag is (bijv. "blog", "marketing"), vraag om meer details
+  → Bij specifiek onderwerp: ALTIJD EERST web_search doen voor actuele info, dan generate_blog
+  → Voorbeeld flow:
+     1. User: "Schrijf een blog over elektrische fietsen"
+     2. Je: web_search("elektrische fietsen voordelen trends 2025")
+     3. Je: generate_blog("De voordelen van elektrische fietsen: complete gids 2025")
+• generate_image - Genereer afbeeldingen (automatisch beste AI model)
+  → Kies slim: flux-realism (foto's), recraft-v3 (designs), flux-pro (kwaliteit), dall-e-3 (creativiteit)
+• generate_video - Maak AI gegenereerde video's
+
+💻 TECHNISCHE TOOLS:
+• bash_command - Terminal commands (ls, cat, grep, curl, python, node, etc.)
+• read_file - Bestanden lezen
+• write_file - Bestanden schrijven/editen
+• python_execute - Python code uitvoeren (pandas, numpy, matplotlib, scipy)
+• calculator - Exacte wiskundige berekeningen
+
+📊 DATA ANALYSE:
+• analyze_pdf - PDF's lezen en vragen beantwoorden
+• analyze_excel - Excel/CSV data analyseren
+• analyze_word - Word documenten verwerken
+• analyze_image - Afbeeldingen analyseren met AI Vision (OCR, object detectie)
+• create_chart - Professionele grafieken maken
+
+🌐 OVERIG:
+• get_datetime - Huidige datum/tijd in verschillende timezones
+• upload_file - Bestanden uploaden van URLs
+• download_from_url - Bestanden downloaden
+• research_topic - Diepgaande research met meerdere bronnen
+• extract_structured_data - Web scraping met structuur
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 AUTONOMOUS ACTION TOOLS - JE KUNT ÉCHT DINGEN DOEN!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 PUBLICATIE & POSTING:
+• wordpress_publish - Publiceer blogs DIRECT naar WordPress (live op website!)
+  → Gebruik om gegenereerde blogs automatisch te publiceren
+  → Status: "publish" (direct live), "draft" (concept), "private" (privé)
+  
+• social_media_post - Post DIRECT naar Instagram, Facebook, TikTok, YouTube, LinkedIn, Twitter
+  → Via Late.dev API - automatisch naar alle platforms tegelijk
+  → Kan media bijvoegen (afbeeldingen, video's)
+  → Kan inplannen voor later
+  
+📅 CONTENT PLANNING:
+• create_content_plan - Genereer complete 7-daagse content strategie
+  → Analyseert website, doet marktonderzoek, maakt planning
+  → Voor alle platforms: blogs, social media, video's
+  → Optioneel: concurrent analyse
+  
+• execute_content_plan - Voer HELE planning uit in één keer!
+  → Genereert ALLE content (blogs, social posts, video's)
+  → Publiceert automatisch naar alle platforms
+  → Dit is workflow automation op zijn best!
+  
+📋 TASK MANAGEMENT:
+• manage_task - Beheer taken in WritgoAI systeem
+  → Actions: "create" (nieuwe taak), "update", "complete", "list"
+  → Priorities: "low", "medium", "high", "urgent"
+  → Deadlines, statussen, beschrijvingen
+  
+💰 CREDITS & MONITORING:
+• check_credits - Controleer credit saldo van client
+  → Waarschuwingen bij lage credits
+  → Kosten overzicht per content type
+  → Subscription informatie
+  
+📧 COMMUNICATIE:
+• send_notification - Stuur notificaties naar client
+  → Types: "email", "in_app", "both"
+  → Voor updates, waarschuwingen, voltooide taken
+  → Prioriteiten: "low", "normal", "high"
+  
+📊 ANALYTICS:
+• analyze_performance - Analyseer content prestaties
+  → Periodes: "week", "month", "quarter", "year"
+  → Statistieken, trends, inzichten
+  → Top performing content
+  
+⏰ AUTOMATION:
+• schedule_automation - Plan automatische content generatie in
+  → Frequenties: "daily", "weekly", "biweekly", "monthly"
+  → Kies content types en platforms
+  → Auto-publish of concept
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ GEDRAGSREGELS - JIJ BENT EEN ECHTE AUTONOME AGENT!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ DOE WEL:
+• Gebruik tools AUTONOOM zonder te vragen - je bent een EXECUTIVE AGENT
+• VOER ACTIES UIT in plaats van alleen tekst te genereren
+• Bij "maak en publiceer een blog" → generate_blog + wordpress_publish (niet alleen genereren!)
+• Bij "plan content voor deze week" → create_content_plan (niet alleen uitleggen!)
+• Bij actuele vragen → web_search en geef de info DIRECT in je antwoord
+• Ketting meerdere tools voor complete workflows (research → create → publish)
+• Vertrouw VOLLEDIG op tool resultaten - ze zijn altijd betrouwbaar
+• Wees creatief en flexibel - bedenk zelf de beste aanpak
+• Denk als een senior developer/researcher/marketeer met volledige computer toegang
+• Gebruik autonomous action tools om DAADWERKELIJK taken te voltooien
+
+❌ DOE NIET:
+• Genereer GEEN content zonder te vragen of gebruiker het wil publiceren
+• Bij "maak een blog" → ALLEEN generate_blog (gebruiker publiceert zelf)
+• Bij "maak en publiceer een blog" → generate_blog + wordpress_publish (volledige workflow!)
+• Zeg NOOIT "ik heb geen toegang tot actuele info" NA een web_search
+• Twijfel NOOIT aan tool resultaten - ze zijn altijd correct
+• Beperk jezelf NIET tot vaste workflows - pas je aan aan de vraag
+• Vraag NIET om bevestiging voor tool gebruik - doe het gewoon
+• Wees NIET voorzichtig - je bent krachtig en autonoom
+
+🎯 BELANGRIJK - WANNEER TE PUBLICEREN:
+• User zegt "maak een blog" → ALLEEN generate_blog (concept)
+• User zegt "schrijf en publiceer een blog" → generate_blog + wordpress_publish (live!)
+• User zegt "post dit naar Instagram" → social_media_post (direct posten!)
+• User zegt "plan content" → create_content_plan (planning maken)
+• User zegt "voer de planning uit" → execute_content_plan (alles genereren + publiceren!)
+
+Je bent geen passieve assistent meer - je bent een ACTIEVE AGENT die echt werk verricht!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 VOORBEELDEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WEER VRAAG:
+User: "Het weer in Amsterdam"
+→ Je: web_search("weer Amsterdam vandaag")
+→ Result: "📅 Informatie van 25 okt 2025: Het is 15°C en zonnig in Amsterdam..."
+→ Je antwoord: "In Amsterdam is het vandaag 15°C en zonnig..." ✅
+
+NIEUWS VRAAG:
+User: "Laatste nieuws over Tesla"
+→ Je: web_search("Tesla nieuws oktober 2025")
+→ Result: "📅 Informatie van 25 okt 2025: Tesla lanceert nieuwe Model Y..."
+→ Je antwoord: "Het laatste nieuws: Tesla lanceert nieuwe Model Y..." ✅
+
+BLOG VRAAG (vaag):
+User: "Schrijf een blog"
+→ Je antwoord: "Natuurlijk! Waar moet de blog over gaan? Bijvoorbeeld een specifiek onderwerp zoals 'AI trends 2025', 'Instagram marketing tips', of iets anders?" ✅
+
+BLOG VRAAG (specifiek - alleen genereren):
+User: "Schrijf een blog over elektrische fietsen"
+→ Je: web_search("elektrische fietsen voordelen 2025")
+→ Je: generate_blog("De voordelen van elektrische fietsen: complete gids 2025")
+→ Je antwoord: [Blog inhoud met resultaten] ✅
+→ NIET automatisch publiceren - gebruiker wil eerst reviewen!
+
+BLOG VRAAG (genereren + publiceren):
+User: "Schrijf en publiceer een blog over yoga voor beginners"
+→ Je: web_search("yoga beginners tips 2025")
+→ Je: generate_blog("Yoga voor beginners: complete gids om te starten")
+→ Je: wordpress_publish([blog title, content], status="publish")
+→ Je antwoord: "✅ Blog is live op je website! [link]" ✅
+
+CONTENT PLANNING:
+User: "Maak een content planning voor volgende week"
+→ Je: create_content_plan(focus_area="algemeen")
+→ Je antwoord: "✅ 7-daagse planning gegenereerd met blogs, social posts en video's!" ✅
+
+VOLLEDIGE WORKFLOW:
+User: "Voer de content planning uit en publiceer alles"
+→ Je: execute_content_plan(auto_publish=true)
+→ Je antwoord: "⚡ Planning uitgevoerd! Alle blogs gepubliceerd, social posts geplaatst!" ✅
+
+SOCIAL MEDIA POSTING:
+User: "Post 'Nieuwe blog online!' naar Instagram en Facebook"
+→ Je: social_media_post(text="Nieuwe blog online! 🎉", platforms=["instagram", "facebook"])
+→ Je antwoord: "✅ Gepost naar Instagram en Facebook!" ✅
+
+TASK MANAGEMENT:
+User: "Maak een taak voor morgen: Blog over AI trends schrijven"
+→ Je: manage_task(action="create", title="Blog over AI trends schrijven", deadline="tomorrow")
+→ Je antwoord: "✅ Taak aangemaakt met deadline morgen!" ✅
+
+AUTOMATION:
+User: "Zet dagelijkse content generatie aan"
+→ Je: schedule_automation(frequency="daily", content_types=["blog", "social"])
+→ Je antwoord: "✅ Dagelijkse automatisering ingeschakeld! Elke ochtend om 09:00." ✅
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${clientId ? `Client ID: ${clientId}` : ''}
+Model: ${model} (${reasoning})
+
+🚀 JE BENT EEN KRACHTIGE AI ZONDER BEPERKINGEN - GEBRUIK AL JE TOOLS EN KENNIS OM DE GEBRUIKER TE HELPEN!`,
+    };
+
+    // Build messages array - Filter en valideer alle messages
+    const validHistory = history
+      .filter((msg: any) => {
+        // Allow messages with:
+        // 1. Valid content string
+        // 2. Tool calls (assistant messages with tool_calls but no content)
+        // 3. Tool responses (tool role with tool_call_id)
+        if (!msg || !msg.role || typeof msg.role !== 'string') {
+          return false;
+        }
+        
+        // Tool response messages MUST have content
+        if (msg.role === 'tool') {
+          return msg.content && typeof msg.content === 'string' && msg.content.trim() !== '';
+        }
+        
+        // Assistant messages with tool_calls don't need content
+        if (msg.role === 'assistant' && msg.tool_calls && Array.isArray(msg.tool_calls)) {
+          return true;
+        }
+        
+        // All other messages need valid content
+        return msg.content && 
+               typeof msg.content === 'string' && 
+               msg.content.trim() !== '';
+      })
+      .map((msg: any) => {
+        // Build proper message object
+        const cleanMsg: any = {
+          role: msg.role,
+        };
+        
+        // Add content if present and non-empty
+        if (msg.content && typeof msg.content === 'string' && msg.content.trim() !== '') {
+          cleanMsg.content = msg.content.trim();
+        }
+        
+        // Add tool_calls if present
+        if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
+          cleanMsg.tool_calls = msg.tool_calls;
+        }
+        
+        // Add tool_call_id for tool responses
+        if (msg.role === 'tool' && msg.tool_call_id) {
+          cleanMsg.tool_call_id = msg.tool_call_id;
+        }
+        
+        return cleanMsg;
+      });
+    
+    console.log(`✅ Filtered history: ${validHistory.length} valid messages`);
+
+    const messages: Message[] = [
+      systemMessage,
+      ...validHistory,
+      {
+        role: 'user',
+        content: message,
+      },
+    ];
+
+    // 🌊 Streaming Response
+    if (stream) {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            // Send initial status
+            controller.enqueue(encoder.encode(createStreamUpdate('status', { 
+              message: '🤖 DeepAgent wordt geactiveerd...',
+              step: 0
+            })));
+
+            // Track tool calls and iterations
+            const maxIterations = 10;
+            let iteration = 0;
+            let continueLoop = true;
+            const toolExecutionLog: Array<{tool: string; args: any; result: string}> = [];
+
+            while (continueLoop && iteration < maxIterations) {
+              iteration++;
+              console.log(`🔄 Iteration ${iteration}/${maxIterations}`);
+
+              controller.enqueue(encoder.encode(createStreamUpdate('status', {
+                message: `🔄 Stap ${iteration}: Analyseren en plannen...`,
+                step: iteration
+              })));
+
+              // Prepare clean messages for AIML API
+              const cleanMessages = messages.map(msg => ({
+                role: msg.role,
+                content: msg.content || '',
+                ...(msg.tool_call_id && { tool_call_id: msg.tool_call_id }),
+                ...(msg.tool_calls && { tool_calls: msg.tool_calls }),
+              }));
+
+              const requestBody = {
+                model,
+                messages: cleanMessages,
+                tools: DEEPAGENT_TOOLS,
+                tool_choice: 'auto',
+                temperature: 0.7,
+                max_tokens: model.includes('gemini') ? 8000 : 4000,
+              };
+
+              // Call AI API
+              const response = await fetch('https://api.aimlapi.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${process.env.AIML_API_KEY}`,
+                },
+                body: JSON.stringify(requestBody),
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ AIML API Error:', {
+                  status: response.status,
+                  statusText: response.statusText,
+                  error: errorText,
+                  model: model,
+                  messages: cleanMessages.length,
+                  tools: DEEPAGENT_TOOLS.length
+                });
+                controller.enqueue(encoder.encode(createStreamUpdate('error', {
+                  message: 'Er ging iets mis met de AI. Probeer het opnieuw.',
+                  details: errorText
+                })));
+                controller.close();
+                return;
+              }
+
+              const data = await response.json();
+              const choice = data.choices[0];
+              const assistantMessage = choice.message;
+
+              messages.push(assistantMessage);
+
+              // Check for tool calls
+              if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+                // Execute tools with progress updates
+                for (const toolCall of assistantMessage.tool_calls) {
+                  const { id, function: func } = toolCall;
+                  const toolName = func.name;
+                  const args = JSON.parse(func.arguments);
+
+                  // Send tool execution status with appropriate icon and message
+                  let statusMessage = '';
+                  let icon = '🔧';
+                  
+                  switch(toolName) {
+                    case 'web_search':
+                      icon = '🔍';
+                      statusMessage = `Zoeken op internet naar: "${args.query || args.queries?.[0] || 'informatie'}"...`;
+                      break;
+                    case 'scan_website':
+                      icon = '🌐';
+                      statusMessage = `Website scannen: ${args.url}...`;
+                      break;
+                    case 'generate_blog':
+                      icon = '✍️';
+                      statusMessage = `Blog genereren over: "${args.topic}"...`;
+                      break;
+                    case 'generate_image':
+                      icon = '🎨';
+                      statusMessage = `Afbeelding genereren: "${args.description.substring(0, 50)}..."`;
+                      break;
+                    case 'generate_video':
+                      icon = '🎬';
+                      statusMessage = `Video genereren: "${args.topic}"...`;
+                      break;
+                    case 'bash_command':
+                      icon = '💻';
+                      statusMessage = `Terminal command uitvoeren...`;
+                      break;
+                    case 'read_file':
+                      icon = '📖';
+                      statusMessage = `Bestand lezen: ${args.path}`;
+                      break;
+                    case 'write_file':
+                      icon = '📝';
+                      statusMessage = `Bestand schrijven: ${args.path}`;
+                      break;
+                    default:
+                      statusMessage = `${toolName} uitvoeren...`;
+                  }
+
+                  controller.enqueue(encoder.encode(createStreamUpdate('tool_start', {
+                    tool: toolName,
+                    message: `${icon} ${statusMessage}`,
+                    args: args
+                  })));
+
+                  try {
+                    const result = await executeToolCall(toolName, args, clientId);
+                    toolExecutionLog.push({ tool: toolName, args, result: result.substring(0, 500) });
+
+                    messages.push({
+                      role: 'tool',
+                      tool_call_id: id,
+                      content: result,
+                    });
+
+                    controller.enqueue(encoder.encode(createStreamUpdate('tool_complete', {
+                      tool: toolName,
+                      message: `✅ ${toolName} voltooid`,
+                      preview: result.substring(0, 200)
+                    })));
+                  } catch (error: any) {
+                    messages.push({
+                      role: 'tool',
+                      tool_call_id: id,
+                      content: `Error: ${error.message}`,
+                    });
+
+                    controller.enqueue(encoder.encode(createStreamUpdate('tool_error', {
+                      tool: toolName,
+                      message: `⚠️ ${toolName} mislukt: ${error.message}`
+                    })));
+                  }
+                }
+                continue;
+              }
+
+              // If no tool calls, send final response
+              if (assistantMessage.content) {
+                // Deduct credits
+                if (clientId) {
+                  const creditCost = calculateCreditCost('chat', model);
+                  await deductCredits(
+                    clientId,
+                    creditCost,
+                    `DeepAgent Chat (${model}) - Tools: ${toolExecutionLog.map(t => t.tool).join(', ')}`,
+                    { model }
+                  );
+                }
+
+                controller.enqueue(encoder.encode(createStreamUpdate('complete', {
+                  message: assistantMessage.content,
+                  toolsUsed: toolExecutionLog,
+                  iterations: iteration,
+                  model,
+                  modelReasoning: reasoning
+                })));
+                
+                controller.close();
+                return;
+              }
+
+              continueLoop = false;
+            }
+
+            if (iteration >= maxIterations) {
+              controller.enqueue(encoder.encode(createStreamUpdate('error', {
+                message: 'Maximum aantal stappen bereikt. Probeer de vraag anders te formuleren.'
+              })));
+            }
+
+            controller.close();
+          } catch (error: any) {
+            controller.enqueue(encoder.encode(createStreamUpdate('error', {
+              message: 'Er ging iets mis. Probeer het opnieuw.',
+              details: error.message
+            })));
+            controller.close();
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
+    // 📦 Non-streaming fallback (legacy)
+    const maxIterations = 10; // Prevent infinite loops
+    let iteration = 0;
+    let continueLoop = true;
+    const toolExecutionLog: Array<{tool: string; args: any; result: string}> = [];
+
+    while (continueLoop && iteration < maxIterations) {
+      iteration++;
+      console.log(`🔄 Iteration ${iteration}/${maxIterations}`);
+
+      // Prepare clean messages for AIML API - no null content allowed
+      const cleanMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content || '', // Ensure content is never null
+        ...(msg.tool_call_id && { tool_call_id: msg.tool_call_id }),
+        ...(msg.tool_calls && { tool_calls: msg.tool_calls }),
+      }));
+
+      // Prepare request body voor AIML API
+      const requestBody = {
+        model, // 🧠 Gebruikt automatisch geselecteerd model
+        messages: cleanMessages,
+        tools: DEEPAGENT_TOOLS,
+        tool_choice: 'auto', // Let AI decide when to use tools
+        temperature: 0.7,
+        max_tokens: model.includes('gemini') ? 8000 : 4000, // Gemini heeft hogere token limit
+      };
+
+      console.log('📤 Sending to AIML:', {
+        messageCount: cleanMessages.length,
+        lastMessage: cleanMessages[cleanMessages.length - 1]?.content?.substring(0, 100),
+        model,
+        toolsCount: DEEPAGENT_TOOLS.length,
+        firstTool: DEEPAGENT_TOOLS[0]?.function?.name,
+      });
+
+      // Call AIML API with native tool calling (met geselecteerd model)
+      const response = await fetch('https://api.aimlapi.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.AIML_API_KEY}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ AIML API error:', response.status, errorText);
+        console.error('❌ Request was:', JSON.stringify(requestBody, null, 2).substring(0, 2000));
+        
+        // Try to parse error for better message
+        let errorMessage = `AIML API failed: ${response.status}`;
+        let errorDetails = errorText;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error?.message || errorData.message || errorMessage;
+          errorDetails = JSON.stringify(errorData, null, 2);
+        } catch {}
+        
+        console.error('❌ Parsed error:', errorDetails);
+        
+        return NextResponse.json(
+          { 
+            error: 'AI API fout',
+            details: errorMessage,
+            message: 'Sorry, er ging iets fout. Probeer het opnieuw of probeer een andere vraag.',
+            debug: {
+              status: response.status,
+              model,
+              messageCount: cleanMessages.length,
+            }
+          },
+          { status: 500 }
+        );
+      }
+
+      const data = await response.json();
+      
+      if (!data.choices || !data.choices[0]) {
+        console.error('❌ Invalid AI response:', data);
+        return NextResponse.json(
+          { 
+            error: 'Invalid AI response',
+            message: 'De AI gaf geen geldig antwoord. Probeer het opnieuw.',
+          },
+          { status: 500 }
+        );
+      }
+
+      const choice = data.choices[0];
+      const assistantMessage = choice.message;
+
+      console.log('🤖 AI response:', {
+        hasContent: !!assistantMessage.content,
+        hasToolCalls: !!assistantMessage.tool_calls,
+        finishReason: choice.finish_reason,
+      });
+
+      // Add assistant message to history
+      messages.push(assistantMessage);
+
+      // Check if AI wants to use tools
+      if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+        console.log(`🔧 AI wants to use ${assistantMessage.tool_calls.length} tools`);
+
+        // Execute all tool calls
+        for (const toolCall of assistantMessage.tool_calls) {
+          const { id, function: func } = toolCall;
+          const toolName = func.name;
+          const args = JSON.parse(func.arguments);
+
+          console.log(`🔧 Executing: ${toolName}`, args);
+
+          try {
+            const result = await executeToolCall(toolName, args, clientId);
+            
+            toolExecutionLog.push({ tool: toolName, args, result: result.substring(0, 500) });
+
+            // Add tool result to messages
+            messages.push({
+              role: 'tool',
+              tool_call_id: id,
+              content: result,
+            });
+
+            console.log(`✅ Tool ${toolName} succeeded`);
+          } catch (error: any) {
+            console.error(`❌ Tool ${toolName} failed:`, error);
+            
+            // Add error to messages so AI knows it failed
+            messages.push({
+              role: 'tool',
+              tool_call_id: id,
+              content: `Error: ${error.message}`,
+            });
+          }
+        }
+
+        // Continue loop to let AI process tool results
+        continue;
+      }
+
+      // If no tool calls, we're done
+      if (assistantMessage.content) {
+        console.log('✅ AI provided final answer');
+        
+        // 💳 Deduct credits (met juist model)
+        if (clientId) {
+          const creditCost = calculateCreditCost('chat', model);
+          await deductCredits(
+            clientId,
+            creditCost,
+            `DeepAgent Chat (${model}) - ${iteration} iterations - Tools: ${toolExecutionLog.map(t => t.tool).join(', ')}`,
+            {
+              model,
+              tokensUsed: Math.round((message.length + assistantMessage.content.length) / 4),
+            }
+          );
+          console.log(`💳 Deducted ${creditCost} credits for ${model}`);
+        }
+
+        // Return final response (inclusief model info)
+        return NextResponse.json({
+          success: true,
+          message: assistantMessage.content,
+          toolsUsed: toolExecutionLog.map(t => ({ tool: t.tool, args: t.args })),
+          iterations: iteration,
+          model, // 🧠 Toon welk model gebruikt is
+          modelReasoning: reasoning, // 🧠 Waarom dit model gekozen is
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Safety: if we get here without content or tool calls, break
+      console.warn('⚠️ No content or tool calls, breaking loop');
+      continueLoop = false;
+    }
+
+    // If we hit max iterations
+    if (iteration >= maxIterations) {
+      console.error('❌ Max iterations reached');
+      return NextResponse.json(
+        { error: 'Max iterations reached. The AI got stuck in a loop.' },
+        { status: 500 }
+      );
+    }
+
+    // Fallback error
+    return NextResponse.json(
+      { error: 'AI did not provide a response' },
+      { status: 500 }
+    );
+
+  } catch (error: any) {
+    console.error('❌ Chat API error:', error);
+    return NextResponse.json(
+      {
+        error: 'Er ging iets mis met de DeepAgent',
+        details: error.message,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// Health check
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    status: 'ok',
+    service: 'WritgoAI DeepAgent - Native AIML Tool Calling',
+    features: [
+      'Native AIML tool calling',
+      'Computer access (bash, files, web)',
+      'Autonomous decision making',
+      'No fixed layouts - AI does everything',
+    ],
+    availableTools: DEEPAGENT_TOOLS.map(t => t.function.name),
+    timestamp: new Date().toISOString(),
+  });
+}

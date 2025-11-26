@@ -1,0 +1,482 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, CreditCard, Download, TrendingUp, Calendar, AlertCircle, CheckCircle2, Sparkles, Zap, Building2, ArrowUpCircle, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
+import Link from 'next/link';
+
+interface SubscriptionData {
+  hasActiveSubscription: boolean;
+  plan: string | null;
+  status: string | null;
+  monthlyCredits: number;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+}
+
+interface UsageData {
+  subscriptionCredits: number;
+  topUpCredits: number;
+  totalCreditsUsed: number;
+  monthlyCredits: number;
+}
+
+interface Invoice {
+  id: string;
+  amount: number;
+  status: string;
+  created: number;
+  invoice_pdf: string;
+  period_start: number;
+  period_end: number;
+}
+
+export default function AccountPage() {
+  const { data: session, status } = useSession() || {};
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [usage, setUsage] = useState<UsageData | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [changingPlan, setChangingPlan] = useState(false);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/client-login');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      loadAccountData();
+    }
+  }, [status, router]);
+
+  const loadAccountData = async () => {
+    try {
+      setLoading(true);
+      
+      const subResponse = await fetch('/api/client/subscription');
+      const subData = await subResponse.json();
+      setSubscription(subData);
+
+      const usageResponse = await fetch('/api/client/credits');
+      const usageData = await usageResponse.json();
+      setUsage(usageData);
+
+      const invoicesResponse = await fetch('/api/stripe/invoices');
+      const invoicesData = await invoicesResponse.json();
+      setInvoices(invoicesData.invoices || []);
+
+    } catch (error) {
+      console.error('Error loading account data:', error);
+      toast.error('Kon account gegevens niet laden');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePlan = async (newPlanId: string) => {
+    if (!subscription?.hasActiveSubscription) {
+      setChangingPlan(true);
+      try {
+        const response = await fetch('/api/stripe/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId: newPlanId }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Er ging iets mis');
+        }
+
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error('Geen checkout URL ontvangen');
+        }
+      } catch (error: any) {
+        console.error('[Change Plan] Error:', error);
+        toast.error(error.message || 'Kon checkout niet starten. Probeer het opnieuw.');
+        setChangingPlan(false);
+      }
+      return;
+    }
+
+    if (!confirm(`Weet je zeker dat je wilt upgraden/downgraden naar het ${newPlanId.toUpperCase()} plan?`)) {
+      return;
+    }
+
+    setChangingPlan(true);
+    try {
+      const response = await fetch('/api/stripe/change-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPlanId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Er ging iets mis');
+      }
+
+      toast.success('Abonnement succesvol gewijzigd! 🎉');
+      
+      setTimeout(() => {
+        loadAccountData();
+      }, 1000);
+    } catch (error: any) {
+      console.error('[Change Plan] Error:', error);
+      toast.error(error.message || 'Kon abonnement niet wijzigen. Probeer het opnieuw.');
+    } finally {
+      setChangingPlan(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm('Weet je zeker dat je je abonnement wilt opzeggen? Je blijft toegang houden tot het einde van je betaalperiode.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/stripe/cancel-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Er ging iets mis');
+      }
+
+      toast.success('Abonnement opgezegd! Je blijft toegang houden tot het einde van de periode.');
+      
+      setTimeout(() => {
+        loadAccountData();
+      }, 1000);
+    } catch (error: any) {
+      console.error('[Cancel] Error:', error);
+      toast.error(error.message || 'Kon abonnement niet opzeggen. Probeer het opnieuw.');
+    }
+  };
+
+  const plans = [
+    {
+      id: 'starter',
+      name: 'Starter',
+      icon: Sparkles,
+      price: '€24,99',
+      credits: 100,
+      features: ['Alle AI modellen', 'Website scanner', 'WordPress integratie'],
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      icon: Zap,
+      price: '€99,99',
+      credits: 500,
+      features: ['Priority support', 'Automatische publicatie', 'YouTube & TikTok'],
+      popular: true,
+    },
+    {
+      id: 'business',
+      name: 'Business',
+      icon: Building2,
+      price: '€299,99',
+      credits: 2000,
+      features: ['24/7 support', 'Team management', 'Maandelijks strategiegesprek'],
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50">
+        <Loader2 className="w-8 h-8 animate-spin text-[#ff6b35]" />
+      </div>
+    );
+  }
+
+  const totalCredits = (usage?.subscriptionCredits || 0) + (usage?.topUpCredits || 0);
+  const creditsUsedPercentage = usage?.monthlyCredits 
+    ? Math.round(((usage.monthlyCredits - (usage.subscriptionCredits || 0)) / usage.monthlyCredits) * 100)
+    : 0;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <Link href="/client-portal">
+            <Button variant="ghost" className="mb-4 text-gray-300 hover:text-white hover:bg-zinc-800">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Terug naar overzicht
+            </Button>
+          </Link>
+          
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 bg-gradient-to-br from-[#ff6b35] to-[#ff8c42] rounded-xl shadow-lg">
+              <CreditCard className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white">
+                Account Beheer
+              </h1>
+              <p className="text-gray-300 text-lg mt-1">
+                Beheer je abonnement, bekijk je gebruik en facturen
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Subscription Status */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-zinc-900 border-zinc-800 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-300">Huidig Abonnement</CardTitle>
+              <CreditCard className="w-4 h-4 text-[#ff6b35]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white mb-1">
+                {subscription?.plan ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1) : 'Geen'}
+              </div>
+              {subscription?.hasActiveSubscription && (
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                  subscription.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {subscription.status === 'active' ? '✓ Actief' : subscription.status}
+                </span>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-zinc-900 border-zinc-800 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-300">Beschikbare Credits</CardTitle>
+              <TrendingUp className="w-4 h-4 text-[#ff6b35]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white mb-1">{totalCredits.toFixed(0)}</div>
+              <p className="text-xs text-gray-300">
+                {usage?.subscriptionCredits.toFixed(0)} maandelijks + {usage?.topUpCredits.toFixed(0)} extra
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-zinc-900 border-zinc-800 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-300">Gebruikt deze maand</CardTitle>
+              <Calendar className="w-4 h-4 text-[#ff6b35]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white mb-1">{creditsUsedPercentage}%</div>
+              <div className="w-full bg-zinc-700 rounded-full h-2 mt-2">
+                <div
+                  className="bg-gradient-to-r from-[#ff6b35] to-[#ff8c42] h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min(creditsUsedPercentage, 100)}%` }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Renewal/Cancel Info */}
+        {subscription?.hasActiveSubscription && subscription.currentPeriodEnd && (
+          <Card className="bg-zinc-900 border-zinc-800 shadow-lg mb-8">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                {subscription.cancelAtPeriodEnd ? (
+                  <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <p className="text-white font-semibold mb-1">
+                    {subscription.cancelAtPeriodEnd 
+                      ? 'Abonnement loopt af'
+                      : 'Automatische verlenging'}
+                  </p>
+                  <p className="text-gray-300 text-sm">
+                    {subscription.cancelAtPeriodEnd
+                      ? `Je abonnement eindigt op ${new Date(subscription.currentPeriodEnd).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                      : `Je abonnement wordt automatisch verlengd op ${new Date(subscription.currentPeriodEnd).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                  </p>
+                </div>
+                {!subscription.cancelAtPeriodEnd && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelSubscription}
+                    className="border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    Opzeggen
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Change Plan */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">Wijzig je abonnement</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {plans.map((plan) => {
+              const Icon = plan.icon;
+              const isCurrentPlan = subscription?.plan === plan.id;
+              return (
+                <Card
+                  key={plan.id}
+                  className={`bg-zinc-900 shadow-lg border-2 ${
+                    isCurrentPlan
+                      ? 'border-[#ff6b35]'
+                      : plan.popular
+                      ? 'border-[#ff6b35]/50'
+                      : 'border-zinc-800'
+                  }`}
+                >
+                  <CardHeader>
+                    <div className="flex justify-center mb-3">
+                      <div className={`p-3 rounded-full ${plan.popular ? 'bg-orange-100' : 'bg-zinc-800'}`}>
+                        <Icon className={`w-6 h-6 ${plan.popular ? 'text-[#ff6b35]' : 'text-gray-300'}`} />
+                      </div>
+                    </div>
+                    <CardTitle className="text-center text-white">{plan.name}</CardTitle>
+                    <CardDescription className="text-center">
+                      <span className="text-3xl font-bold text-white">{plan.price}</span>
+                      <span className="text-gray-300"> / maand</span>
+                    </CardDescription>
+                    <p className="text-center text-[#ff6b35] font-semibold mt-2">
+                      {plan.credits} credits/maand
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2 mb-6">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                          <CheckCircle2 className="w-4 h-4 text-[#ff6b35] flex-shrink-0 mt-0.5" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    {isCurrentPlan ? (
+                      <Button disabled className="w-full bg-zinc-700 text-gray-300">
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                        Huidig Plan
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleChangePlan(plan.id)}
+                        disabled={changingPlan}
+                        className="w-full bg-[#ff6b35] hover:bg-[#ff8c42] text-white"
+                      >
+                        {changingPlan ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {subscription?.hasActiveSubscription ? 'Wijzigen...' : 'Naar Stripe...'}
+                          </>
+                        ) : subscription?.hasActiveSubscription ? (
+                          <>
+                            <ArrowUpCircle className="w-4 h-4 mr-2" />
+                            {plans.findIndex(p => p.id === subscription?.plan) < plans.findIndex(p => p.id === plan.id)
+                              ? 'Upgrade'
+                              : 'Downgrade'}
+                          </>
+                        ) : (
+                          <>
+                            <ArrowUpCircle className="w-4 h-4 mr-2" />
+                            Start Abonnement
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Invoices */}
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-4">Facturen</h2>
+          <Card className="bg-zinc-900 border-zinc-800 shadow-lg">
+            <CardContent className="p-0">
+              {invoices.length === 0 ? (
+                <div className="p-8 text-center text-gray-300">
+                  <CreditCard className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>Nog geen facturen beschikbaar</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-800">
+                  {invoices.map((invoice) => (
+                    <div key={invoice.id} className="p-4 flex items-center justify-between hover:bg-zinc-900 transition-colors">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="text-white font-semibold">
+                            €{(invoice.amount / 100).toFixed(2)}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            invoice.status === 'paid' 
+                              ? 'bg-green-100 text-green-700'
+                              : invoice.status === 'open'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {invoice.status === 'paid' ? 'Betaald' : invoice.status === 'open' ? 'Open' : 'Mislukt'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-300">
+                          {new Date(invoice.created * 1000).toLocaleDateString('nl-NL', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(invoice.invoice_pdf, '_blank')}
+                        className="border-zinc-700 text-white hover:bg-zinc-800"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Extra Credits CTA */}
+        {subscription?.hasActiveSubscription && (
+          <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-[#ff6b35] mt-8">
+            <CardContent className="p-6 text-center">
+              <h3 className="text-xl font-bold text-white mb-2">Heb je meer credits nodig?</h3>
+              <p className="text-gray-300 mb-4">
+                Koop eenmalig extra credits bij. Deze blijven altijd beschikbaar!
+              </p>
+              <Button
+                onClick={() => router.push('/client-portal/buy-credits')}
+                className="bg-[#ff6b35] hover:bg-[#ff8c42] text-white"
+              >
+                Extra Credits Kopen
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
