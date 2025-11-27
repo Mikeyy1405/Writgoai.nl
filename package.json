@@ -73,6 +73,8 @@
     "@radix-ui/react-toggle-group": "1.1.0",
     "@radix-ui/react-tooltip": "1.1.2",
     "@stripe/stripe-js": "^8.2.0",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.86.0",
     "@tanstack/react-query": "5.0.0",
     "@tiptap/core": "^3.8.0",
     "@tiptap/extension-character-count": "^3.8.0",
