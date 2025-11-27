@@ -101,7 +101,6 @@
     "@types/xml2js": "^0.4.14",
     "autoprefixer": "10.4.15",
     "bcryptjs": "2.4.3",
-    "canvas": "^3.2.0",
     "chart.js": "4.4.9",
     "cheerio": "^1.1.2",
     "class-variance-authority": "0.7.0",
