@@ -622,8 +622,221 @@ ALTER TABLE "Video" ENABLE ROW LEVEL SECURITY;
 -- Service role bypasses RLS, so server-side operations work without issues
 -- Client-side operations respect these policies
 
--- Note: Actual policies depend on your authentication strategy
--- These are placeholder policies - customize based on your auth setup
+-- =====================================================
+-- CLIENT TABLE POLICIES
+-- =====================================================
 
--- Example: Allow service role full access (default behavior)
--- For client-side access, implement auth.uid() based policies
+-- Clients can view and update their own data
+CREATE POLICY "Clients can view own data" ON "Client"
+  FOR SELECT USING (
+    auth.uid()::text = id 
+    OR auth.jwt() ->> 'role' = 'admin'
+    OR auth.jwt() ->> 'role' = 'superadmin'
+  );
+
+CREATE POLICY "Clients can update own data" ON "Client"
+  FOR UPDATE USING (
+    auth.uid()::text = id 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+-- =====================================================
+-- PROJECT TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own projects" ON "Project"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can insert own projects" ON "Project"
+  FOR INSERT WITH CHECK (
+    "clientId" = auth.uid()::text
+  );
+
+CREATE POLICY "Users can update own projects" ON "Project"
+  FOR UPDATE USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can delete own projects" ON "Project"
+  FOR DELETE USING (
+    "clientId" = auth.uid()::text
+  );
+
+-- =====================================================
+-- SAVED CONTENT TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own content" ON "SavedContent"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can insert own content" ON "SavedContent"
+  FOR INSERT WITH CHECK (
+    "clientId" = auth.uid()::text
+  );
+
+CREATE POLICY "Users can update own content" ON "SavedContent"
+  FOR UPDATE USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can delete own content" ON "SavedContent"
+  FOR DELETE USING (
+    "clientId" = auth.uid()::text
+  );
+
+-- =====================================================
+-- ARTICLE IDEA TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own article ideas" ON "ArticleIdea"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can insert own article ideas" ON "ArticleIdea"
+  FOR INSERT WITH CHECK (
+    "clientId" = auth.uid()::text
+  );
+
+CREATE POLICY "Users can update own article ideas" ON "ArticleIdea"
+  FOR UPDATE USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can delete own article ideas" ON "ArticleIdea"
+  FOR DELETE USING (
+    "clientId" = auth.uid()::text
+  );
+
+-- =====================================================
+-- AUTOPILOT JOB TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own autopilot jobs" ON "AutopilotJob"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can insert own autopilot jobs" ON "AutopilotJob"
+  FOR INSERT WITH CHECK (
+    "clientId" = auth.uid()::text
+  );
+
+CREATE POLICY "Users can update own autopilot jobs" ON "AutopilotJob"
+  FOR UPDATE USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+-- =====================================================
+-- AUTOPILOT SCHEDULE TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own schedules" ON "AutopilotSchedule"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can manage own schedules" ON "AutopilotSchedule"
+  FOR ALL USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+-- =====================================================
+-- CREDIT TRANSACTION TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own transactions" ON "CreditTransaction"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+-- Only service role can insert transactions (server-side only)
+
+-- =====================================================
+-- CREDIT PURCHASE TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own purchases" ON "CreditPurchase"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+-- =====================================================
+-- CONVERSATION TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own conversations" ON "Conversation"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can manage own conversations" ON "Conversation"
+  FOR ALL USING (
+    "clientId" = auth.uid()::text
+  );
+
+-- =====================================================
+-- CHAT MESSAGE TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view messages in own conversations" ON "ChatMessage"
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM "Conversation" c 
+      WHERE c.id = "conversationId" 
+      AND (c."clientId" = auth.uid()::text OR auth.jwt() ->> 'role' = 'admin')
+    )
+  );
+
+CREATE POLICY "Users can insert messages in own conversations" ON "ChatMessage"
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM "Conversation" c 
+      WHERE c.id = "conversationId" 
+      AND c."clientId" = auth.uid()::text
+    )
+  );
+
+-- =====================================================
+-- VIDEO TABLE POLICIES
+-- =====================================================
+
+CREATE POLICY "Users can view own videos" ON "Video"
+  FOR SELECT USING (
+    "clientId" = auth.uid()::text 
+    OR "userId" = auth.uid()::text
+    OR auth.jwt() ->> 'role' = 'admin'
+  );
+
+CREATE POLICY "Users can manage own videos" ON "Video"
+  FOR ALL USING (
+    "clientId" = auth.uid()::text 
+    OR "userId" = auth.uid()::text
+  );
+
+-- =====================================================
+-- PUBLIC TABLES (No RLS needed)
+-- =====================================================
+
+-- BlogPost is public content - no RLS needed for SELECT
+-- User table is for admin users only - managed by service role
+
+-- Note: These policies assume you're using Supabase Auth with auth.uid()
+-- If using a different auth mechanism, adjust the policies accordingly

@@ -1,6 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Protected route patterns - routes that require authentication
+const PROTECTED_PATTERNS = [
+  '/admin',
+  '/superadmin',
+  '/client-portal',
+  '/dashboard',
+]
+
+// Check if a path matches any protected pattern
+function isProtectedRoute(pathname: string): boolean {
+  return PROTECTED_PATTERNS.some(pattern => pathname.startsWith(pattern))
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -36,13 +49,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // If no user and trying to access protected routes, redirect to login
-  if (
-    !user &&
-    (request.nextUrl.pathname.startsWith('/admin') ||
-      request.nextUrl.pathname.startsWith('/superadmin') ||
-      request.nextUrl.pathname.startsWith('/client-portal') ||
-      request.nextUrl.pathname.startsWith('/dashboard'))
-  ) {
+  if (!user && isProtectedRoute(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/client-login'
     return NextResponse.redirect(url)

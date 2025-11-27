@@ -1,5 +1,6 @@
-// Generated Supabase database types based on Prisma schema
-// Note: In production, generate these with: supabase gen types typescript
+// Supabase database types for WritgoAI
+// These types are manually generated from the Prisma schema for initial setup.
+// For production, regenerate using: npx supabase gen types typescript --project-id YOUR_PROJECT_ID > types/supabase.ts
 
 export type Language = 'NL' | 'EN' | 'DE' | 'ES' | 'FR' | 'IT' | 'PT' | 'PL' | 'SV' | 'DA'
 
