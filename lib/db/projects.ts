@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { generateId, DEFAULT_LANGUAGE } from './utils';
 
 // Create supabase client for this module
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -74,15 +75,6 @@ export interface UpdateProject {
   isActive?: boolean;
   isPrimary?: boolean;
   language?: string;
-}
-
-function generateId(): string {
-  return crypto.randomUUID ? crypto.randomUUID() : 
-    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
 }
 
 /**
@@ -168,7 +160,7 @@ export async function createProject(project: CreateProject): Promise<Project> {
     niche: project.niche || null,
     keywords: project.keywords || [],
     contentPillars: project.contentPillars || [],
-    language: project.language || 'NL',
+    language: project.language || DEFAULT_LANGUAGE,
     isActive: true,
     isPrimary: false,
     wordpressAutoPublish: false,

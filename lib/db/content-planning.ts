@@ -13,8 +13,12 @@ import type {
   ArticleIdeaFilters,
   ArticleStatus,
 } from '@/types/database';
+import { generateId, generateSlug, DEFAULT_LANGUAGE } from './utils';
 
-// Create supabase client for this module (untyped to avoid type conflicts with new tables)
+// Re-export utility functions for convenience
+export { generateId, generateSlug } from './utils';
+
+// Create supabase client for this module
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -23,30 +27,6 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
     persistSession: false
   }
 });
-
-/**
- * Generate a slug from a title
- */
-export function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-}
-
-/**
- * Generate a unique ID
- */
-export function generateId(): string {
-  return crypto.randomUUID ? crypto.randomUUID() : 
-    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-}
 
 // =====================================================
 // SITE PLAN FUNCTIONS
@@ -285,7 +265,7 @@ export async function createArticleIdea(idea: CreateArticleIdea): Promise<Articl
     notes: idea.notes || null,
     createdAt: now,
     updatedAt: now,
-    language: idea.language || 'NL',
+    language: idea.language || DEFAULT_LANGUAGE,
   };
 
   const { data, error } = await supabase
@@ -340,7 +320,7 @@ export async function createArticleIdeas(ideas: CreateArticleIdea[]): Promise<Ar
     notes: idea.notes || null,
     createdAt: now,
     updatedAt: now,
-    language: idea.language || 'NL',
+    language: idea.language || DEFAULT_LANGUAGE,
   }));
 
   const { data, error } = await supabase

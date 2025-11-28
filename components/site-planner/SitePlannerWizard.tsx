@@ -36,7 +36,7 @@ interface SitePlannerWizardProps {
   existingKeywords?: string[];
   existingTargetAudience?: string;
   existingNiche?: string;
-  onComplete: (sitePlan: SitePlan) => void;
+  onComplete: (sitePlan: SitePlan | null) => void;
   onCancel?: () => void;
 }
 
@@ -55,6 +55,7 @@ export function SitePlannerWizard({
   const [step, setStep] = useState<WizardStep>('keywords');
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [generatedPlan, setGeneratedPlan] = useState<SitePlan | null>(null);
 
   // Form state
   const [keywords, setKeywords] = useState<string[]>(existingKeywords);
@@ -148,8 +149,8 @@ export function SitePlannerWizard({
 
       setProgress(100);
       setStep('complete');
+      setGeneratedPlan(data.sitePlan);
       toast.success(`Site plan gegenereerd! ${data.articleIdeasCount} artikel ideeën aangemaakt.`);
-      onComplete(data.sitePlan);
 
     } catch (error) {
       console.error('Error generating site plan:', error);
@@ -393,7 +394,7 @@ export function SitePlannerWizard({
         )}
 
         {step === 'complete' && (
-          <Button onClick={() => onComplete(null as unknown as SitePlan)} className="w-full">
+          <Button onClick={() => onComplete(generatedPlan)} className="w-full">
             Bekijk Content Planner
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

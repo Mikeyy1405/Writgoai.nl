@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { CONTENT_PLANNING_CREDITS } from '@/types/database';
+import { generateId } from './utils';
 
 // Create supabase client for this module
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -36,15 +37,6 @@ export interface CreditTransaction {
   messageId: string | null;
   balanceAfter: number;
   createdAt: string;
-}
-
-function generateId(): string {
-  return crypto.randomUUID ? crypto.randomUUID() : 
-    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
 }
 
 /**

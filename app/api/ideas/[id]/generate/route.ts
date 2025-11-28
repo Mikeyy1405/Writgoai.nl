@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { getArticleIdea, linkContentToIdea } from '@/lib/db/content-planning';
 import { getProject } from '@/lib/db/projects';
 import { deductCredits, hasEnoughCredits, CONTENT_PLANNING_CREDITS } from '@/lib/db/credits';
+import { generateId, countWords, DEFAULT_LANGUAGE } from '@/lib/db/utils';
 import { prisma } from '@/lib/db';
 import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
 import { getBannedWordsInstructions } from '@/lib/banned-words';
@@ -139,12 +140,7 @@ IMPORTANT:
     const generatedContent = response.message;
 
     // 9. Save content to SavedContent table
-    const contentId = crypto.randomUUID ? crypto.randomUUID() : 
-      'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
+    const contentId = generateId();
 
     const savedContent = await prisma.savedContent.create({
       data: {
@@ -161,7 +157,7 @@ IMPORTANT:
         description: idea.topic,
         wordCount: countWords(generatedContent),
         characterCount: generatedContent.length,
-        language: (idea.language || 'NL') as 'NL' | 'EN' | 'DE' | 'ES' | 'FR' | 'IT' | 'PT' | 'PL' | 'SV' | 'DA',
+        language: (idea.language || DEFAULT_LANGUAGE) as 'NL' | 'EN' | 'DE' | 'ES' | 'FR' | 'IT' | 'PT' | 'PL' | 'SV' | 'DA',
         generatorType: 'content-planner',
       },
     });
@@ -255,10 +251,4 @@ Requirements:
 10. Output in clean HTML format with semantic tags
 
 Write the complete article now:`;
-}
-
-function countWords(html: string): number {
-  // Remove HTML tags and count words
-  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  return text.split(' ').filter(word => word.length > 0).length;
 }
