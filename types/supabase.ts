@@ -1098,6 +1098,59 @@ export interface Database {
           language?: Language
         }
       }
+      SitePlan: {
+        Row: {
+          id: string
+          clientId: string
+          projectId: string
+          name: string
+          homepage: Json | null
+          pillarPages: Json | null
+          clusterPages: Json | null
+          blogPosts: Json | null
+          keywords: string[]
+          targetAudience: string | null
+          language: string
+          status: string
+          generatedAt: string | null
+          createdAt: string
+          updatedAt: string
+        }
+        Insert: {
+          id?: string
+          clientId: string
+          projectId: string
+          name?: string
+          homepage?: Json | null
+          pillarPages?: Json | null
+          clusterPages?: Json | null
+          blogPosts?: Json | null
+          keywords?: string[]
+          targetAudience?: string | null
+          language?: string
+          status?: string
+          generatedAt?: string | null
+          createdAt?: string
+          updatedAt?: string
+        }
+        Update: {
+          id?: string
+          clientId?: string
+          projectId?: string
+          name?: string
+          homepage?: Json | null
+          pillarPages?: Json | null
+          clusterPages?: Json | null
+          blogPosts?: Json | null
+          keywords?: string[]
+          targetAudience?: string | null
+          language?: string
+          status?: string
+          generatedAt?: string | null
+          createdAt?: string
+          updatedAt?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
