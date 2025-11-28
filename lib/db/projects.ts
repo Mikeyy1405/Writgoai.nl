@@ -3,7 +3,17 @@
  * Provides functions for managing Projects via Supabase
  */
 
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Create supabase client for this module
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export interface Project {
   id: string;
@@ -66,9 +76,6 @@ export interface UpdateProject {
   language?: string;
 }
 
-/**
- * Generate a unique ID
- */
 function generateId(): string {
   return crypto.randomUUID ? crypto.randomUUID() : 
     'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -150,20 +157,28 @@ export async function createProject(project: CreateProject): Promise<Project> {
   const id = generateId();
   const now = new Date().toISOString();
   
+  const insertData = {
+    id,
+    clientId: project.clientId,
+    name: project.name,
+    websiteUrl: project.websiteUrl,
+    description: project.description || null,
+    targetAudience: project.targetAudience || null,
+    brandVoice: project.brandVoice || null,
+    niche: project.niche || null,
+    keywords: project.keywords || [],
+    contentPillars: project.contentPillars || [],
+    language: project.language || 'NL',
+    isActive: true,
+    isPrimary: false,
+    wordpressAutoPublish: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+
   const { data, error } = await supabase
     .from('Project')
-    .insert({
-      id,
-      ...project,
-      keywords: project.keywords || [],
-      contentPillars: project.contentPillars || [],
-      language: project.language || 'NL',
-      isActive: true,
-      isPrimary: false,
-      wordpressAutoPublish: false,
-      createdAt: now,
-      updatedAt: now,
-    })
+    .insert(insertData)
     .select()
     .single();
 
@@ -182,12 +197,14 @@ export async function updateProject(
   id: string, 
   updates: UpdateProject
 ): Promise<Project> {
+  const updateData = {
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+
   const { data, error } = await supabase
     .from('Project')
-    .update({
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq('id', id)
     .select()
     .single();
@@ -222,7 +239,6 @@ export async function setPrimaryProject(
   projectId: string, 
   clientId: string
 ): Promise<void> {
-  // First, unset all other projects as primary
   const { error: unsetError } = await supabase
     .from('Project')
     .update({ isPrimary: false, updatedAt: new Date().toISOString() })
@@ -234,7 +250,6 @@ export async function setPrimaryProject(
     throw unsetError;
   }
 
-  // Then set the new primary
   const { error: setError } = await supabase
     .from('Project')
     .update({ isPrimary: true, updatedAt: new Date().toISOString() })
@@ -259,7 +274,6 @@ export async function getPrimaryProject(clientId: string): Promise<Project | nul
 
   if (error) {
     if (error.code === 'PGRST116') {
-      // No primary project, try to get the first one
       const { data: firstProject } = await supabase
         .from('Project')
         .select('*')

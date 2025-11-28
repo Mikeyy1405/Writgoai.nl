@@ -62,7 +62,7 @@ export async function POST(
     }
 
     // 4. Determine credit cost based on content type
-    let creditCost = CONTENT_PLANNING_CREDITS.BLOG_GENERATION;
+    let creditCost: number = CONTENT_PLANNING_CREDITS.BLOG_GENERATION;
     if (idea.contentType === 'pillar') {
       creditCost = CONTENT_PLANNING_CREDITS.PILLAR_PAGE_GENERATION;
     } else if (idea.contentType === 'cluster') {
@@ -113,7 +113,7 @@ Writing Style: ${project.writingStyle || 'Duidelijk en toegankelijk'}
 
     // 8. Generate content with AI
     const response = await chatCompletion({
-      model: TEXT_MODELS.CLAUDE_4_SONNET,
+      model: TEXT_MODELS.CLAUDE_SONNET,
       messages: [
         {
           role: 'system',
@@ -174,7 +174,7 @@ IMPORTANT:
       client.id,
       creditCost,
       `Content generatie: ${idea.title}`,
-      { model: TEXT_MODELS.CLAUDE_4_SONNET }
+      { model: TEXT_MODELS.CLAUDE_SONNET }
     );
 
     console.log('✅ [Generate] Content generated successfully');
@@ -201,7 +201,7 @@ function buildGenerationPrompt(options: {
   topic: string;
   contentType: string;
   searchIntent: string;
-  outline: Record<string, unknown> | null;
+  outline: unknown;
   wordCount: number;
   language: string;
   projectContext: string;

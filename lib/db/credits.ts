@@ -1,13 +1,20 @@
 /**
  * Credits Database Helper Functions
  * Provides functions for managing credits via Supabase
- * 
- * NOTE: This module works alongside the existing Prisma-based credits.ts
- * Use environment variable USE_SUPABASE=true to switch to Supabase
  */
 
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { CONTENT_PLANNING_CREDITS } from '@/types/database';
+
+// Create supabase client for this module
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export interface Client {
   id: string;
@@ -31,9 +38,6 @@ export interface CreditTransaction {
   createdAt: string;
 }
 
-/**
- * Generate a unique ID
- */
 function generateId(): string {
   return crypto.randomUUID ? crypto.randomUUID() : 
     'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -94,7 +98,6 @@ export async function getTotalCredits(clientId: string): Promise<number> {
 
 /**
  * Deduct credits from a client
- * FIRST uses subscription credits, then top-up credits
  */
 export async function deductCredits(
   clientId: string,
@@ -113,9 +116,7 @@ export async function deductCredits(
       return { success: false, newBalance: 0, error: 'Client not found' };
     }
 
-    // Unlimited clients don't need to pay
     if (client.isUnlimited) {
-      // Still log for analytics
       await supabase.from('CreditTransaction').insert({
         id: generateId(),
         clientId,
@@ -132,7 +133,6 @@ export async function deductCredits(
       return { success: true, newBalance: 999999 };
     }
 
-    // Check if there are enough credits
     const totalCredits = client.subscriptionCredits + client.topUpCredits;
     if (totalCredits < amount) {
       return { 
@@ -142,7 +142,6 @@ export async function deductCredits(
       };
     }
 
-    // Calculate how much from each bucket
     let remainingAmount = amount;
     let subscriptionDeduction = 0;
     let topUpDeduction = 0;
@@ -156,7 +155,6 @@ export async function deductCredits(
       topUpDeduction = remainingAmount;
     }
 
-    // Update client credits
     const newSubscriptionCredits = client.subscriptionCredits - subscriptionDeduction;
     const newTopUpCredits = client.topUpCredits - topUpDeduction;
     const newBalance = newSubscriptionCredits + newTopUpCredits;
@@ -176,7 +174,6 @@ export async function deductCredits(
       return { success: false, newBalance: totalCredits, error: updateError.message };
     }
 
-    // Log transaction
     await supabase.from('CreditTransaction').insert({
       id: generateId(),
       clientId,
@@ -218,7 +215,6 @@ export async function addCredits(
       return { success: false, newBalance: 0 };
     }
 
-    // Determine which bucket gets the credits
     const isSubscriptionCredit = type === 'subscription';
     
     let newSubscriptionCredits = client.subscriptionCredits;
@@ -252,7 +248,6 @@ export async function addCredits(
       return { success: false, newBalance: 0 };
     }
 
-    // Log transaction
     await supabase.from('CreditTransaction').insert({
       id: generateId(),
       clientId,
@@ -295,33 +290,20 @@ export async function getCreditHistory(
   return (data || []) as CreditTransaction[];
 }
 
-/**
- * Get the cost for site plan generation
- */
 export function getSitePlanCost(): number {
   return CONTENT_PLANNING_CREDITS.SITE_PLAN_GENERATION;
 }
 
-/**
- * Get the cost for blog generation
- */
 export function getBlogGenerationCost(): number {
   return CONTENT_PLANNING_CREDITS.BLOG_GENERATION;
 }
 
-/**
- * Get the cost for pillar page generation
- */
 export function getPillarPageCost(): number {
   return CONTENT_PLANNING_CREDITS.PILLAR_PAGE_GENERATION;
 }
 
-/**
- * Get the cost for keyword research
- */
 export function getKeywordResearchCost(): number {
   return CONTENT_PLANNING_CREDITS.KEYWORD_RESEARCH_50;
 }
 
-// Re-export CONTENT_PLANNING_CREDITS for convenience
 export { CONTENT_PLANNING_CREDITS };

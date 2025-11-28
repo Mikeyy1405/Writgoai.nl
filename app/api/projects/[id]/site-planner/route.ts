@@ -148,7 +148,7 @@ export async function POST(
 
     console.log('🤖 [Site Planner] Generating with Claude...');
     const response = await chatCompletion({
-      model: TEXT_MODELS.CLAUDE_4_SONNET,
+      model: TEXT_MODELS.CLAUDE_SONNET,
       messages: [
         {
           role: 'system',
@@ -299,7 +299,7 @@ CRITICAL: Your response MUST be valid JSON only, no other text. Follow the exact
       client.id,
       creditCost,
       `Site Plan generatie voor ${project.name}`,
-      { model: TEXT_MODELS.CLAUDE_4_SONNET }
+      { model: TEXT_MODELS.CLAUDE_SONNET }
     );
 
     console.log('✅ [Site Planner] Site plan generated and saved');

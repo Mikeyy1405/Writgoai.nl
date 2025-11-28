@@ -3,7 +3,7 @@
  * Provides functions for managing SitePlans and ArticleIdeas via Supabase
  */
 
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import type {
   ArticleIdea,
   SitePlan,
@@ -13,6 +13,16 @@ import type {
   ArticleIdeaFilters,
   ArticleStatus,
 } from '@/types/database';
+
+// Create supabase client for this module (untyped to avoid type conflicts with new tables)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 /**
  * Generate a slug from a title
@@ -54,7 +64,6 @@ export async function getSitePlan(projectId: string): Promise<SitePlan | null> {
 
   if (error) {
     if (error.code === 'PGRST116') {
-      // No rows returned
       return null;
     }
     console.error('Error fetching site plan:', error);
@@ -71,15 +80,27 @@ export async function upsertSitePlan(plan: CreateSitePlan): Promise<SitePlan> {
   const id = generateId();
   const now = new Date().toISOString();
   
+  const insertData = {
+    id,
+    clientId: plan.clientId,
+    projectId: plan.projectId,
+    name: plan.name || 'Content Strategy',
+    homepage: plan.homepage || null,
+    pillarPages: plan.pillarPages || null,
+    clusterPages: plan.clusterPages || null,
+    blogPosts: plan.blogPosts || null,
+    keywords: plan.keywords || [],
+    targetAudience: plan.targetAudience || null,
+    language: plan.language || 'nl',
+    status: plan.status || 'draft',
+    generatedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  };
+
   const { data, error } = await supabase
     .from('SitePlan')
-    .upsert({
-      id,
-      ...plan,
-      generatedAt: now,
-      createdAt: now,
-      updatedAt: now,
-    }, {
+    .upsert(insertData, {
       onConflict: 'projectId',
     })
     .select()
@@ -146,7 +167,6 @@ export async function getArticleIdeas(
     .select('*')
     .eq('clientId', clientId);
 
-  // Apply filters
   if (filters?.projectId) {
     query = query.eq('projectId', filters.projectId);
   }
@@ -191,7 +211,6 @@ export async function getArticleIdeas(
     query = query.or(`title.ilike.%${filters.searchQuery}%,focusKeyword.ilike.%${filters.searchQuery}%`);
   }
 
-  // Order by priority and creation date
   query = query.order('priority', { ascending: false })
     .order('createdAt', { ascending: false });
 
@@ -232,26 +251,46 @@ export async function getArticleIdea(id: string): Promise<ArticleIdea | null> {
 export async function createArticleIdea(idea: CreateArticleIdea): Promise<ArticleIdea> {
   const id = generateId();
   const now = new Date().toISOString();
-  
-  // Ensure slug is unique
   const slug = idea.slug || generateSlug(idea.title);
   
+  const insertData = {
+    id,
+    clientId: idea.clientId,
+    projectId: idea.projectId || null,
+    title: idea.title,
+    slug,
+    focusKeyword: idea.focusKeyword,
+    topic: idea.topic,
+    secondaryKeywords: idea.secondaryKeywords || [],
+    searchIntent: idea.searchIntent || null,
+    searchVolume: idea.searchVolume || null,
+    difficulty: idea.difficulty || null,
+    contentOutline: idea.contentOutline || null,
+    targetWordCount: idea.targetWordCount || null,
+    contentType: idea.contentType || null,
+    contentCategory: idea.contentCategory || null,
+    priority: idea.priority || 'medium',
+    category: idea.category || null,
+    cluster: idea.cluster || null,
+    scheduledFor: idea.scheduledFor || null,
+    status: idea.status || 'idea',
+    hasContent: false,
+    contentId: null,
+    generatedAt: null,
+    publishedAt: null,
+    aiScore: null,
+    trending: false,
+    seasonal: false,
+    competitorGap: false,
+    notes: idea.notes || null,
+    createdAt: now,
+    updatedAt: now,
+    language: idea.language || 'NL',
+  };
+
   const { data, error } = await supabase
     .from('ArticleIdea')
-    .insert({
-      id,
-      ...idea,
-      slug,
-      status: idea.status || 'idea',
-      priority: idea.priority || 'medium',
-      hasContent: false,
-      trending: false,
-      seasonal: false,
-      competitorGap: false,
-      createdAt: now,
-      updatedAt: now,
-      language: idea.language || 'NL',
-    })
+    .insert(insertData)
     .select()
     .single();
 
@@ -271,14 +310,34 @@ export async function createArticleIdeas(ideas: CreateArticleIdea[]): Promise<Ar
   
   const ideasToInsert = ideas.map(idea => ({
     id: generateId(),
-    ...idea,
+    clientId: idea.clientId,
+    projectId: idea.projectId || null,
+    title: idea.title,
     slug: idea.slug || generateSlug(idea.title),
-    status: idea.status || 'idea',
+    focusKeyword: idea.focusKeyword,
+    topic: idea.topic,
+    secondaryKeywords: idea.secondaryKeywords || [],
+    searchIntent: idea.searchIntent || null,
+    searchVolume: idea.searchVolume || null,
+    difficulty: idea.difficulty || null,
+    contentOutline: idea.contentOutline || null,
+    targetWordCount: idea.targetWordCount || null,
+    contentType: idea.contentType || null,
+    contentCategory: idea.contentCategory || null,
     priority: idea.priority || 'medium',
+    category: idea.category || null,
+    cluster: idea.cluster || null,
+    scheduledFor: idea.scheduledFor || null,
+    status: idea.status || 'idea',
     hasContent: false,
+    contentId: null,
+    generatedAt: null,
+    publishedAt: null,
+    aiScore: null,
     trending: false,
     seasonal: false,
     competitorGap: false,
+    notes: idea.notes || null,
     createdAt: now,
     updatedAt: now,
     language: idea.language || 'NL',
@@ -304,12 +363,14 @@ export async function updateArticleIdea(
   id: string, 
   updates: UpdateArticleIdea
 ): Promise<ArticleIdea> {
+  const updateData = {
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+
   const { data, error } = await supabase
     .from('ArticleIdea')
-    .update({
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq('id', id)
     .select()
     .single();
@@ -331,7 +392,6 @@ export async function updateArticleStatus(
 ): Promise<ArticleIdea> {
   const updates: UpdateArticleIdea = { status };
   
-  // Set timestamps based on status
   if (status === 'published') {
     updates.publishedAt = new Date().toISOString();
   }
@@ -391,7 +451,7 @@ export async function getArticleIdeasCountByStatus(
 ): Promise<Record<ArticleStatus, number>> {
   let query = supabase
     .from('ArticleIdea')
-    .select('status', { count: 'exact' })
+    .select('status')
     .eq('clientId', clientId);
 
   if (projectId) {
@@ -405,7 +465,6 @@ export async function getArticleIdeasCountByStatus(
     throw error;
   }
 
-  // Group by status
   const counts: Record<ArticleStatus, number> = {
     idea: 0,
     planned: 0,
@@ -416,7 +475,7 @@ export async function getArticleIdeasCountByStatus(
 
   if (data) {
     for (const row of data) {
-      const status = row.status as ArticleStatus;
+      const status = (row as { status: ArticleStatus }).status;
       counts[status] = (counts[status] || 0) + 1;
     }
   }
