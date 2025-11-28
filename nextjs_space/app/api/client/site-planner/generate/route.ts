@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
 import { getBannedWordsInstructions } from '@/lib/banned-words';
+import { loadWordPressSitemap, SitemapData } from '@/lib/sitemap-loader';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -12,6 +13,7 @@ export const runtime = 'nodejs';
 /**
  * 🗺️ SITE PLANNER - AI Content Strategy Generator
  * Genereert een volledig contentplan voor een website
+ * Nu met sitemap-analyse om bestaande onderwerpen uit te sluiten
  */
 
 interface ContentItem {
@@ -30,6 +32,7 @@ interface SitePlan {
   strategy: string;
   contentItems: ContentItem[];
   totalEstimatedCredits: number;
+  existingTopics?: string[]; // Bestaande onderwerpen uit sitemap
 }
 
 export async function POST(req: NextRequest) {
@@ -69,12 +72,15 @@ export async function POST(req: NextRequest) {
         id: true,
         name: true,
         websiteUrl: true,
+        wordpressUrl: true,
         description: true,
         niche: true,
         targetAudience: true,
         keywords: true,
         language: true,
         clientId: true,
+        sitemap: true,
+        sitemapScannedAt: true,
         sitePlan: {
           select: {
             id: true,
@@ -139,7 +145,57 @@ export async function POST(req: NextRequest) {
     // 6. Generate plan in background
     (async () => {
       try {
-        sendSSE({ progress: 10, message: 'Project wordt geanalyseerd...' });
+        sendSSE({ progress: 5, message: 'Project wordt geanalyseerd...' });
+
+        // 6a. Load existing sitemap to find existing topics
+        let existingTopics: string[] = [];
+        let sitemapData: SitemapData | null = null;
+        
+        if (project.websiteUrl) {
+          sendSSE({ progress: 10, message: 'Bestaande sitemap wordt geladen...' });
+          
+          try {
+            // Try to load fresh sitemap
+            sitemapData = await loadWordPressSitemap(
+              project.websiteUrl,
+              project.wordpressUrl || undefined
+            );
+            
+            if (sitemapData && sitemapData.pages.length > 0) {
+              // Extract existing topics from sitemap
+              existingTopics = sitemapData.pages
+                .filter(page => page.type === 'post' || page.type === 'page')
+                .map(page => {
+                  // Extract topic from title and URL
+                  const title = page.title || '';
+                  const urlSlug = page.url.split('/').filter(Boolean).pop() || '';
+                  return title || urlSlug.replace(/-/g, ' ');
+                })
+                .filter(topic => topic.length > 0);
+              
+              console.log(`✅ [Site Planner] Found ${existingTopics.length} existing topics from sitemap`);
+              
+              // Update project sitemap in database
+              await prisma.project.update({
+                where: { id: projectId },
+                data: {
+                  sitemap: sitemapData as any,
+                  sitemapScannedAt: new Date(),
+                },
+              });
+            }
+          } catch (sitemapError) {
+            console.warn('⚠️ [Site Planner] Could not load sitemap:', sitemapError);
+            // Continue without sitemap - will generate all new topics
+          }
+        }
+        
+        sendSSE({ 
+          progress: 15, 
+          message: existingTopics.length > 0 
+            ? `${existingTopics.length} bestaande onderwerpen gevonden, nieuwe worden gegenereerd...` 
+            : 'Geen bestaande content gevonden, volledig nieuw plan wordt gemaakt...'
+        });
 
         // Build prompt with project data
         const promptLanguage = project.language || 'NL';
@@ -164,9 +220,22 @@ export async function POST(req: NextRequest) {
         
         const bannedWordsLang = (languageCode === 'nl' || languageCode === 'en' || languageCode === 'de') ? languageCode : 'nl';
         
+        // Build existing topics exclusion section
+        const existingTopicsSection = existingTopics.length > 0 
+          ? `
+🚫 BESTAANDE ONDERWERPEN (NIET OPNIEUW GENEREREN):
+De volgende ${existingTopics.length} onderwerpen bestaan al op de website en mogen NIET in het nieuwe plan voorkomen:
+${existingTopics.slice(0, 150).map((topic, i) => `${i + 1}. ${topic}`).join('\n')}
+${existingTopics.length > 150 ? `\n... en nog ${existingTopics.length - 150} andere bestaande onderwerpen.` : ''}
+
+⚠️ KRITIEK: Genereer ALLEEN NIEUWE onderwerpen die NIET in bovenstaande lijst staan!
+Vermijd ook variaties, synoniemen of zeer vergelijkbare titels van bestaande onderwerpen.
+`
+          : '';
+
         const prompt = `Je bent een expert contentstrateeg die een volledig contentplan maakt voor websites.
 
-✨ ANALYSEER AUTOMATISCH HET PROJECT EN MAAK EEN COMPLEET PLAN
+✨ ANALYSEER AUTOMATISCH HET PROJECT EN MAAK EEN COMPLEET PLAN MET NIEUWE ONDERWERPEN
 
 PROJECT INFORMATIE:
 Project naam: ${project.name}
@@ -176,13 +245,14 @@ ${project.description ? `Project beschrijving: ${project.description}` : ''}
 ${project.targetAudience ? `Doelgroep: ${project.targetAudience}` : ''}
 Keywords: ${projectKeywords}
 Content taal: ${languageName} (${languageCode})
-
+${existingTopicsSection}
 🎯 TAAK:
-Analyseer het project en maak AUTOMATISCH een volledig strategisch contentplan:
+Analyseer het project en maak AUTOMATISCH een volledig strategisch contentplan met ALLEEN NIEUWE onderwerpen:
 1. Begrijp waar de site over gaat
 2. Identificeer de doelgroep
 3. Bepaal realistische doelen
-4. Maak een SEO-geoptimaliseerd contentplan
+4. Maak een SEO-geoptimaliseerd contentplan met NIEUWE content ideeën
+${existingTopics.length > 0 ? '5. VERMIJD alle bestaande onderwerpen uit de sitemap!' : ''}
 
 Maak een volledig contentplan voor deze website in het ${languageName} met:
 
@@ -191,7 +261,7 @@ Maak een volledig contentplan voor deze website in het ${languageName} met:
    - Welke waarde het biedt aan de doelgroep
    - Hoe het de gestelde doelen gaat bereiken
 
-2. MINIMAAL 100-120 content items verdeeld over een hiërarchische structuur:
+2. MINIMAAL 100-120 NIEUWE content items verdeeld over een hiërarchische structuur:
    - Homepage content (1 item)
    - Pillar pages (5-6 grote hoofdonderwerpen die de kern vormen)
    - Cluster content (per pillar: 4-5 clusters = 20-30 totaal)
@@ -212,10 +282,11 @@ STRUCTUUR VOORBEELD:
 
 TOTAAL ITEMS: 1 homepage + 5-6 pillars + 20-30 clusters + 80-150 blogs = 106-187 items
 
-🚨 BELANGRIJK: Genereer MINIMAAL 100 items totaal. Dit is een strenge eis!
+🚨 BELANGRIJK: Genereer MINIMAAL 100 NIEUWE items totaal. Dit is een strenge eis!
+${existingTopics.length > 0 ? '🚨 GEEN van deze items mag overlappen met de bestaande onderwerpen!' : ''}
 
 Voor elk content item geef:
-- Titel (SEO-geoptimaliseerd, pakkend)
+- Titel (SEO-geoptimaliseerd, pakkend, UNIEK - niet bestaand)
 - URL (ALLEEN hoofdkeyword, lowercase, hyphens, max 40 chars)
   * Homepage: "home"
   * Pillar: "yoga-beginners" (NIET "complete-gids-yoga")
@@ -231,6 +302,7 @@ URL REGELS:
 - ALLEEN hoofdkeyword (geen "complete", "beste", jaartallen)
 - Lowercase, hyphens, 2-4 woorden max
 - Geen speciale tekens of leestekens
+- GEEN URLs die al bestaan op de website
 
 ${getBannedWordsInstructions(bannedWordsLang)}
 
@@ -238,6 +310,7 @@ TITELS & BESCHRIJVINGEN:
 - GEEN verboden woorden
 - Natuurlijk en SEO-vriendelijk
 - Taal: ${languageName}
+- UNIEK en niet bestaand op de website
 
 OUTPUT FORMAT (exact deze JSON structuur):
 {
@@ -284,10 +357,11 @@ OUTPUT FORMAT (exact deze JSON structuur):
 }
 
 ⚠️ BELANGRIJK:
-- Genereer MINIMAAL 100 items totaal (1 homepage + 5-6 pillars + 20-30 clusters + 80-150 blogs)
+- Genereer MINIMAAL 100 NIEUWE items totaal (1 homepage + 5-6 pillars + 20-30 clusters + 80-150 blogs)
 - URL = ALLEEN hoofdkeyword (geen "beste", "complete", jaartallen, etc.)
 - Zorg voor logische verdeling: elke pillar heeft 4-5 clusters, elk cluster heeft 4-5 blogs
 - Dit is een STRENGE VEREISTE: minder dan 100 items is niet acceptabel
+${existingTopics.length > 0 ? '- ALLE items moeten NIEUW zijn en NIET overlappen met bestaande content!' : ''}
 - Geef ALLEEN de JSON, geen extra tekst`;
 
         sendSSE({ progress: 30, message: 'AI genereert contentplan...' });
@@ -446,6 +520,8 @@ OUTPUT FORMAT (exact deze JSON structuur):
               ...blogs.map(b => ({ ...b, type: 'blog' as const })),
             ],
             totalEstimatedCredits: totalEstimatedCredits,
+            existingTopics: existingTopics, // Include existing topics for frontend display
+            existingTopicsCount: existingTopics.length,
           };
 
           // Save or update the plan in database

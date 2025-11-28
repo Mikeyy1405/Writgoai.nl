@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get affiliate products - AUTOMATISCH ZOEKEN via Bol.com API
+    // Note: This will be done inside the streaming handler after sendSSE is defined
     let affiliateProducts: Array<{
       name: string;
       url: string;
@@ -127,48 +128,8 @@ export async function POST(request: NextRequest) {
       description: string;
     }> = [];
     
-    if (includeBolProducts && project.bolcomEnabled && project.bolcomClientId && project.bolcomClientSecret) {
-      try {
-        console.log('🛒 [Content Generator] Zoeken naar Bol.com producten...');
-        sendSSE({ progress: 10, message: 'Bol.com producten zoeken...' });
-        
-        // Gebruik de title + keywords als zoekterm
-        const searchQuery = keywords ? `${title} ${keywords}` : title;
-        
-        const { quickProductSearch } = await import('@/lib/bolcom-product-finder');
-        const foundProducts = await quickProductSearch(
-          searchQuery,
-          {
-            clientId: project.bolcomClientId,
-            clientSecret: project.bolcomClientSecret,
-            affiliateId: project.bolcomAffiliateId || undefined,
-          },
-          3 // Max 3 producten
-        );
-        
-        // Format producten voor de AI prompt
-        affiliateProducts = foundProducts.map(p => ({
-          name: p.title,
-          url: p.affiliateUrl || p.url,
-          price: p.price,
-          description: p.summary || p.description.substring(0, 150),
-        }));
-        
-        console.log(`✅ [Content Generator] ${affiliateProducts.length} Bol.com producten gevonden`);
-        sendSSE({ progress: 12, message: `${affiliateProducts.length} producten gevonden` });
-      } catch (error: any) {
-        console.error('❌ [Content Generator] Fout bij Bol.com zoeken:', error.message);
-        // Fallback naar preferred products als API faalt
-        if (project.preferredProducts && Array.isArray(project.preferredProducts)) {
-          affiliateProducts = project.preferredProducts.slice(0, 3).map((name: string) => ({
-            name,
-            url: '',
-            price: 0,
-            description: '',
-          }));
-        }
-      }
-    }
+    // Pre-check if Bol.com is enabled (actual search happens in streaming handler)
+    const shouldSearchBolcom = includeBolProducts && project.bolcomEnabled && project.bolcomClientId && project.bolcomClientSecret;
 
     console.log('📦 [Content Generator] Data loaded:', {
       internalPages: internalPages.length,

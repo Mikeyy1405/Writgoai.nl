@@ -40,6 +40,8 @@ interface ContentItem {
 interface PlanData {
   homepage?: ContentItem;
   pillars?: ContentItem[];
+  existingTopics?: string[];
+  existingTopicsCount?: number;
 }
 
 interface SavedPlan {
@@ -91,6 +93,9 @@ export default function SitePlannerPage() {
   // Sidebar state
   const [expandedPillars, setExpandedPillars] = useState<Set<string>>(new Set());
   const [expandedClusters, setExpandedClusters] = useState<Set<string>>(new Set());
+  
+  // Existing topics state
+  const [showExistingTopics, setShowExistingTopics] = useState(false);
 
   // Fetch project name when project changes
   useEffect(() => {
@@ -643,13 +648,14 @@ export default function SitePlannerPage() {
                 </div>
                 {projectId && !currentPlan && !isLoading && !isGenerating && (
                   <div className="mt-4 space-y-3">
-                    <div className="p-3 bg-yellow-900/20 border border-yellow-700/30 rounded-lg">
+                    <div className="p-3 bg-green-900/20 border border-green-700/30 rounded-lg">
                       <div className="space-y-2">
-                        <p className="text-xs text-yellow-400 font-medium">
-                          ℹ️ Geen bestaand plan gevonden voor dit project
+                        <p className="text-xs text-green-400 font-medium">
+                          ✨ Klaar om een nieuw contentplan te genereren
                         </p>
-                        <p className="text-xs text-yellow-300/80">
-                          Klik op "Genereer Nieuw Plan" om een uitgebreid contentplan te maken met minimaal 100 items
+                        <p className="text-xs text-green-300/80">
+                          Het systeem scant eerst je bestaande sitemap om te zien welke onderwerpen al bestaan. 
+                          Daarna worden <strong>alleen nieuwe, unieke onderwerpen</strong> gegenereerd die nog niet op je website staan.
                         </p>
                       </div>
                     </div>
@@ -658,7 +664,7 @@ export default function SitePlannerPage() {
                       className="w-full bg-green-600 hover:bg-green-700 text-white h-10"
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Genereer Nieuw Plan (minimaal 100 items)
+                      Genereer Nieuw Plan (alleen nieuwe onderwerpen)
                     </Button>
                   </div>
                 )}
@@ -686,6 +692,56 @@ export default function SitePlannerPage() {
               </Card>
             )}
 
+            {/* Existing Topics Section */}
+            {currentPlan && currentPlan.existingTopics && currentPlan.existingTopics.length > 0 && (
+              <Card className="bg-yellow-900/20 border-yellow-700/30">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1">
+                      <FileText className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-yellow-300 mb-1">
+                          📚 {currentPlan.existingTopicsCount || currentPlan.existingTopics.length} Bestaande Onderwerpen Gevonden
+                        </h4>
+                        <p className="text-xs text-yellow-200/80 leading-relaxed mb-2">
+                          Deze onderwerpen staan al op je website en zijn <strong>uitgesloten</strong> van het nieuwe plan. Het plan bevat alleen nieuwe, unieke onderwerpen.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowExistingTopics(!showExistingTopics)}
+                          className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/20 h-7 text-xs"
+                        >
+                          {showExistingTopics ? 'Verberg bestaande onderwerpen' : 'Toon bestaande onderwerpen'}
+                          {showExistingTopics ? (
+                            <ChevronDown className="w-3 h-3 ml-1" />
+                          ) : (
+                            <ChevronRight className="w-3 h-3 ml-1" />
+                          )}
+                        </Button>
+                        
+                        {showExistingTopics && (
+                          <div className="mt-3 max-h-64 overflow-y-auto bg-gray-900/50 rounded-lg p-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                              {currentPlan.existingTopics.map((topic, index) => (
+                                <div 
+                                  key={index} 
+                                  className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded truncate"
+                                  title={topic}
+                                >
+                                  {index + 1}. {topic}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Info Banner */}
             {currentPlan && (
               <Card className="bg-blue-900/20 border-blue-700/30">
@@ -694,10 +750,10 @@ export default function SitePlannerPage() {
                     <FileText className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <h4 className="text-sm font-semibold text-blue-300 mb-1">
-                        📋 Dit is een contentplan
+                        📋 Dit is een contentplan met NIEUWE onderwerpen
                       </h4>
                       <p className="text-xs text-blue-200/80 leading-relaxed">
-                        Deze items zijn nog niet gegenereerd. Klik op de <strong>"Start"</strong> knop bij elk item om de volledige content te genereren en naar WordPress te publiceren.
+                        Alle items hieronder zijn <strong>nieuw</strong> en staan nog niet op je website. Klik op de <strong>"Start"</strong> knop bij elk item om de volledige content te genereren en naar WordPress te publiceren.
                       </p>
                     </div>
                   </div>
@@ -723,7 +779,8 @@ export default function SitePlannerPage() {
                             count += cluster.blogs?.length || 0;
                           });
                         });
-                        return `${count} content items · Klik "Start" om te genereren`;
+                        const existingCount = currentPlan.existingTopicsCount || 0;
+                        return `${count} nieuwe content items${existingCount > 0 ? ` · ${existingCount} bestaande uitgesloten` : ''} · Klik "Start" om te genereren`;
                       })()}
                     </p>
                   </div>

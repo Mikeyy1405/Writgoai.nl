@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 async function publishBlog() {
   try {
-    const blogData = JSON.parse(readFileSync('/home/ubuntu/daily_blogs/temp_blog_20251126_080139.json', 'utf-8'));
+    const blogData = JSON.parse(readFileSync('/home/ubuntu/daily_blogs/temp_blog_20251128_080142.json', 'utf-8'));
     
     // Check if slug already exists
     const existing = await prisma.blogPost.findUnique({
