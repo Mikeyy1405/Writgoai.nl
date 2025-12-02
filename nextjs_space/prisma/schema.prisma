@@ -130,6 +130,9 @@ model Client {
   adminNotes                        AdminNote[]
   activityLogs                      ClientActivityLog[]
   contentQueue                      ContentQueue[]
+  assignments                       Assignment[]
+  clientRequests                    ClientRequest[]
+  invoices                          Invoice[]
 }
 
 model Project {
@@ -2024,4 +2027,104 @@ model ContentQueue {
   @@index([status])
   @@index([scheduledFor])
   @@index([position])
+}
+// ============================================
+// AGENCY PORTAL MODELS
+// ============================================
+
+model Assignment {
+  id              String    @id @default(cuid())
+  clientId        String
+  projectId       String?
+  title           String
+  description     String    @db.Text
+  type            String    // blog, video, chatbot, automation, website, design, custom
+  status          String    @default("open") // open, in_progress, review, completed, cancelled
+  priority        String    @default("normal") // low, normal, high, urgent
+  deadline        DateTime?
+  estimatedHours  Float?
+  actualHours     Float?
+  budget          Float?
+  finalPrice      Float?
+  deliverables    Json?     // Array of deliverable items
+  notes           String?   @db.Text
+  adminNotes      String?   @db.Text
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invoiceItems    InvoiceItem[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
+  @@index([deadline])
+}
+
+model ClientRequest {
+  id              String    @id @default(cuid())
+  clientId        String
+  title           String
+  description     String    @db.Text
+  type            String    // blog, video, chatbot, automation, website, design, custom, other
+  budget          String?   // Budget indication from client
+  deadline        String?   // Deadline indication from client
+  attachments     String[]  // URLs to attached files
+  status          String    @default("new") // new, reviewed, converted, rejected
+  adminResponse   String?   @db.Text
+  assignmentId    String?   // Link to created assignment
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  clientId        String
+  invoiceNumber   String    @unique
+  status          String    @default("draft") // draft, sent, paid, overdue, cancelled
+  issueDate       DateTime  @default(now())
+  dueDate         DateTime?
+  paidAt          DateTime?
+  subtotal        Float     @default(0)
+  taxRate         Float     @default(21) // BTW percentage
+  taxAmount       Float     @default(0)
+  total           Float     @default(0)
+  notes           String?   @db.Text
+  paymentTerms    String?
+  stripeInvoiceId String?
+  stripePaymentUrl String?
+  pdfUrl          String?
+  sentAt          DateTime?
+  reminderSentAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  items           InvoiceItem[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@index([dueDate])
+}
+
+model InvoiceItem {
+  id              String    @id @default(cuid())
+  invoiceId       String
+  assignmentId    String?
+  description     String
+  quantity        Float     @default(1)
+  unitPrice       Float
+  total           Float
+  createdAt       DateTime  @default(now())
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  assignment      Assignment? @relation(fields: [assignmentId], references: [id])
+
+  @@index([invoiceId])
+  @@index([assignmentId])
 }

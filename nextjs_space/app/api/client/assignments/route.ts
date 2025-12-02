@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
-// GET client's invoices
+// GET client's assignments
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,27 +19,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Client niet gevonden' }, { status: 404 });
     }
 
-    const invoices = await prisma.invoice.findMany({
+    const assignments = await prisma.assignment.findMany({
       where: { clientId: client.id },
-      include: {
-        items: {
-          include: {
-            assignment: {
-              select: {
-                id: true,
-                title: true,
-                type: true,
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
+      orderBy: [
+        { status: 'asc' },
+        { deadline: 'asc' },
+        { createdAt: 'desc' }
+      ]
     });
 
-    return NextResponse.json({ invoices });
+    return NextResponse.json({ assignments });
   } catch (error: any) {
-    console.error('Error fetching invoices:', error);
-    return NextResponse.json({ error: 'Kon facturen niet ophalen' }, { status: 500 });
+    console.error('Error fetching assignments:', error);
+    return NextResponse.json({ error: 'Kon opdrachten niet ophalen' }, { status: 500 });
   }
 }

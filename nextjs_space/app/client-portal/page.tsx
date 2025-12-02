@@ -1,305 +1,318 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Bell, Sparkles, TrendingUp, ChevronRight, AlertCircle, Rocket, Map, Zap } from 'lucide-react';
-import { ModernDashboardStats } from '@/components/modern-dashboard-stats';
-import { DailyTips } from '@/components/dashboard/daily-tips';
-import { FavoriteTools } from '@/components/dashboard/favorite-tools';
-import { CreditsOverview } from '@/components/dashboard/credits-overview';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { formatDistanceToNow } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import {
+  ClipboardList,
+  FileText,
+  Plus,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Euro,
+  ArrowRight,
+  Sparkles,
+  Eye,
+} from 'lucide-react';
 
-export default function ClientPortal() {
+interface Stats {
+  openAssignments: number;
+  completedAssignments: number;
+  pendingRequests: number;
+  unpaidInvoices: number;
+}
+
+interface Assignment {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  deadline: string | null;
+  createdAt: string;
+}
+
+interface ClientRequest {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  createdAt: string;
+}
+
+export default function ClientDashboard() {
   const { data: session, status } = useSession() || {};
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalContent: 0,
-    thisMonth: 0,
-    totalProjects: 0,
-    creditsAvailable: 0,
-    creditsUsed: 0,
+  const [stats, setStats] = useState<Stats>({
+    openAssignments: 0,
+    completedAssignments: 0,
+    pendingRequests: 0,
+    unpaidInvoices: 0,
   });
-  const [isUnlimited, setIsUnlimited] = useState(false);
-  const [recentContent, setRecentContent] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [requests, setRequests] = useState<ClientRequest[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/client-login');
+      router.push('/inloggen');
     }
   }, [status, router]);
 
   useEffect(() => {
     if (status === 'authenticated') {
-      loadDashboardData();
+      fetchDashboardData();
     }
   }, [status]);
 
-  const loadDashboardData = async () => {
+  const fetchDashboardData = async () => {
     try {
-      setLoading(true);
-      
-      // Load credits
-      const creditsResponse = await fetch('/api/client/credits');
-      const creditsData = await creditsResponse.json();
-      
-      // Load projects
-      const projectsResponse = await fetch('/api/client/projects');
-      const projectsData = await projectsResponse.json();
-      
-      // Load recent content
-      const contentResponse = await fetch('/api/client/content-library?limit=5');
-      const contentData = await contentResponse.json();
-      
-      // Calculate stats
-      const availableCredits = (creditsData.subscriptionCredits || 0) + (creditsData.topUpCredits || 0);
-      const usedCredits = creditsData.totalCreditsUsed || 0;
-      
-      // Calculate this month's content
-      const now = new Date();
-      const thisMonthContent = contentData.content?.filter((c: any) => {
-        const createdDate = new Date(c.createdAt);
-        return createdDate.getMonth() === now.getMonth() && createdDate.getFullYear() === now.getFullYear();
-      }).length || 0;
-      
-      // Check if unlimited
-      setIsUnlimited(creditsData.isUnlimited || false);
-      
+      const [assignmentsRes, requestsRes, invoicesRes] = await Promise.all([
+        fetch('/api/client/assignments'),
+        fetch('/api/client/requests'),
+        fetch('/api/client/invoices'),
+      ]);
+
+      const [assignmentsData, requestsData, invoicesData] = await Promise.all([
+        assignmentsRes.json(),
+        requestsRes.json(),
+        invoicesRes.json(),
+      ]);
+
+      const allAssignments = assignmentsData.assignments || [];
+      const allRequests = requestsData.requests || [];
+      const allInvoices = invoicesData.invoices || [];
+
+      const openAssignments = allAssignments.filter((a: any) => 
+        ['open', 'in_progress', 'review'].includes(a.status)
+      );
+      const completedAssignments = allAssignments.filter((a: any) => 
+        a.status === 'completed'
+      );
+      const pendingRequests = allRequests.filter((r: any) => 
+        ['new', 'reviewed'].includes(r.status)
+      );
+      const unpaidInvoices = allInvoices.filter((i: any) => 
+        ['sent', 'overdue'].includes(i.status)
+      );
+
       setStats({
-        totalContent: contentData.total || 0,
-        thisMonth: thisMonthContent,
-        totalProjects: projectsData.projects?.length || 0,
-        creditsAvailable: availableCredits,
-        creditsUsed: usedCredits,
+        openAssignments: openAssignments.length,
+        completedAssignments: completedAssignments.length,
+        pendingRequests: pendingRequests.length,
+        unpaidInvoices: unpaidInvoices.length,
       });
-      
-      // Format recent content
-      const formattedContent = contentData.content?.slice(0, 5).map((c: any) => ({
-        id: c.id,
-        title: c.title,
-        language: c.language || 'NL',
-        createdAt: c.createdAt,
-        projectName: c.project?.name
-      })) || [];
-      
-      setRecentContent(formattedContent);
+
+      setAssignments(allAssignments.slice(0, 5));
+      setRequests(allRequests.slice(0, 5));
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const languageFlags: Record<string, string> = {
-    'NL': '🇳🇱',
-    'EN': '🇺🇸',
-    'FR': '🇫🇷',
-    'ES': '🇪🇸',
-    'DE': '🇩🇪',
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'open': return 'bg-blue-500/20 text-blue-400';
+      case 'in_progress': return 'bg-yellow-500/20 text-yellow-400';
+      case 'review': return 'bg-purple-500/20 text-purple-400';
+      case 'completed': return 'bg-green-500/20 text-green-400';
+      case 'new': return 'bg-blue-500/20 text-blue-400';
+      case 'converted': return 'bg-green-500/20 text-green-400';
+      case 'rejected': return 'bg-red-500/20 text-red-400';
+      default: return 'bg-gray-500/20 text-gray-400';
+    }
   };
 
-  if (status === 'loading' || loading) {
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'open': return 'Open';
+      case 'in_progress': return 'In Uitvoering';
+      case 'review': return 'In Review';
+      case 'completed': return 'Voltooid';
+      case 'new': return 'Nieuw';
+      case 'reviewed': return 'Beoordeeld';
+      case 'converted': return 'In Behandeling';
+      case 'rejected': return 'Afgewezen';
+      default: return status;
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'blog': return '📝';
+      case 'video': return '🎬';
+      case 'chatbot': return '🤖';
+      case 'automation': return '⚙️';
+      case 'website': return '🌐';
+      case 'design': return '🎨';
+      default: return '📋';
+    }
+  };
+
+  if (loading || status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-400">Dashboard laden...</p>
+      <div className="min-h-screen bg-[#0a0a0a] p-8">
+        <div className="animate-pulse space-y-8">
+          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="grid grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-32 bg-white/10 rounded-xl"></div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!session) {
-    return null;
-  }
-
-  const firstName = session?.user?.name?.split(' ')[0] || 'daar';
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {/* Main Content */}
-      <main className="p-4 md:p-8 max-w-[1600px] mx-auto">
-        {/* Hero Section */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-green-600 flex items-center justify-center">
-              <Sparkles className="text-white" size={24} />
+    <div className="min-h-screen bg-[#0a0a0a] p-8">
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white">Welkom terug!</h1>
+        <p className="text-gray-400 mt-1">Bekijk de status van je opdrachten en verzoeken</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-yellow-600/20 to-yellow-800/20 border border-yellow-500/30 rounded-xl p-6">
+          <ClipboardList className="w-8 h-8 text-yellow-400 mb-4" />
+          <p className="text-3xl font-bold text-white">{stats.openAssignments}</p>
+          <p className="text-yellow-300 text-sm">Lopende Opdrachten</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-xl p-6">
+          <CheckCircle className="w-8 h-8 text-green-400 mb-4" />
+          <p className="text-3xl font-bold text-white">{stats.completedAssignments}</p>
+          <p className="text-green-300 text-sm">Voltooid</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 rounded-xl p-6">
+          <Clock className="w-8 h-8 text-purple-400 mb-4" />
+          <p className="text-3xl font-bold text-white">{stats.pendingRequests}</p>
+          <p className="text-purple-300 text-sm">Verzoeken in Behandeling</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border border-orange-500/30 rounded-xl p-6">
+          <FileText className="w-8 h-8 text-orange-400 mb-4" />
+          <p className="text-3xl font-bold text-white">{stats.unpaidInvoices}</p>
+          <p className="text-orange-300 text-sm">Openstaande Facturen</p>
+        </div>
+      </div>
+
+      {/* Quick Action */}
+      <div className="mb-8">
+        <Link
+          href="/client-portal/nieuw-verzoek"
+          className="flex items-center justify-between p-6 bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/30 rounded-xl hover:border-green-400/50 transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-500/20 rounded-xl">
+              <Sparkles className="w-6 h-6 text-green-400" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">
-                Hoi, {firstName}! 👋
-              </h1>
-              <p className="text-gray-400">
-                Welkom terug bij je AI Content Platform
-              </p>
+              <h3 className="text-lg font-semibold text-white">Nieuw AI Verzoek</h3>
+              <p className="text-gray-400 text-sm">Blog, video, chatbot, automatisering of custom project</p>
             </div>
           </div>
-        </div>
+          <div className="flex items-center gap-2 text-green-400 group-hover:translate-x-1 transition-transform">
+            <Plus className="w-5 h-5" />
+            <span>Verzoek Indienen</span>
+          </div>
+        </Link>
+      </div>
 
-        {/* Content Wizard CTA */}
-        <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-500/30 p-6 mb-8">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="flex-shrink-0">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h2 className="text-2xl font-bold text-white mb-2">
-                Content Wizard ✨
-              </h2>
-              <p className="text-gray-300 mb-4">
-                Bouw je complete content strategie in 3 stappen. Genereer een volledige topical map met 100-500+ artikelen, 
-                kies je content mix (informatief, reviews, lijstjes) en publiceer automatisch naar WordPress.
-              </p>
-              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                <div className="flex items-center gap-2 text-purple-300 text-sm">
-                  <Map className="w-4 h-4" />
-                  <span>Topical Maps</span>
-                </div>
-                <div className="flex items-center gap-2 text-blue-300 text-sm">
-                  <Zap className="w-4 h-4" />
-                  <span>Bulk Generatie</span>
-                </div>
-                <div className="flex items-center gap-2 text-green-300 text-sm">
-                  <Rocket className="w-4 h-4" />
-                  <span>Auto Publiceren</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex-shrink-0">
-              <Link href="/client-portal/content-wizard">
-                <Button className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-purple-500/25">
-                  Start Wizard
-                  <ChevronRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-            </div>
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Assignments */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-yellow-400" />
+              Mijn Opdrachten
+            </h3>
+            <Link href="/client-portal/opdrachten" className="text-blue-400 hover:text-blue-300 text-sm">
+              Bekijk alles →
+            </Link>
           </div>
-        </Card>
-
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Left Column - Stats */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Daily Tip */}
-            <DailyTips />
-            
-            {/* Stats */}
-            <ModernDashboardStats stats={stats} />
-            
-            {/* Favorite Tools */}
-            <FavoriteTools recentActivity={recentContent} />
-          </div>
-
-          {/* Right Column - Credits & Quick Info */}
-          <div className="space-y-6">
-            {/* Credits Overview */}
-            <CreditsOverview 
-              creditsAvailable={stats.creditsAvailable}
-              creditsUsed={stats.creditsUsed}
-              isUnlimited={isUnlimited}
-            />
-            
-            {/* Quick Stats */}
-            <Card className="bg-gray-900 border-gray-800 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="text-blue-400" size={20} />
-                Deze Maand
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Artikelen</span>
-                  <span className="text-2xl font-bold text-white">{stats.thisMonth}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Projecten</span>
-                  <span className="text-2xl font-bold text-white">{stats.totalProjects}</span>
-                </div>
-                
-                <div className="pt-4 border-t border-gray-800">
-                  <Link href="/client-portal/content-library">
-                    <Button className="w-full bg-blue-500 hover:bg-orange-500 text-white">
-                      Bekijk Alles
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <Card className="bg-gray-900 border-gray-800">
-          <div className="p-6 border-b border-gray-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-white">Recente Activiteit</h3>
-                <p className="text-sm text-gray-400 mt-1">
-                  {recentContent.length} recente artikel{recentContent.length !== 1 ? 'en' : ''}
-                </p>
-              </div>
-              <Link href="/client-portal/content-library">
-                <Button variant="ghost" className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10">
-                  Bekijk Alles
-                  <ChevronRight size={16} className="ml-1" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-          
-          <div className="divide-y divide-gray-800">
-            {recentContent.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle size={32} className="text-gray-600" />
-                </div>
-                <p className="text-gray-500 mb-4">Nog geen content gegenereerd</p>
-                <Link href="/client-portal/content-generator">
-                  <Button className="bg-green-600 hover:bg-green-700 text-white">
-                    Genereer Content
-                  </Button>
-                </Link>
-              </div>
+          <div className="space-y-3">
+            {assignments.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Geen opdrachten</p>
             ) : (
-              recentContent.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/client-portal/content-library/${item.id}/edit`}
-                  className="block p-4 hover:bg-gray-800/50 transition-colors"
+              assignments.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="flex items-center justify-between p-4 bg-white/5 rounded-lg"
                 >
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">{languageFlags[item.language?.toUpperCase()] || '🌐'}</span>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-white font-medium truncate">{item.title}</h4>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                        <span>{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: nl })}</span>
-                        {item.projectName && (
-                          <>
-                            <span>•</span>
-                            <Badge variant="outline" className="text-xs border-gray-700 text-gray-400">
-                              {item.projectName}
-                            </Badge>
-                          </>
-                        )}
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{getTypeIcon(assignment.type)}</span>
+                    <div>
+                      <p className="text-white font-medium">{assignment.title}</p>
+                      {assignment.deadline && (
+                        <p className="text-gray-500 text-xs">
+                          Deadline: {new Date(assignment.deadline).toLocaleDateString('nl-NL')}
+                        </p>
+                      )}
                     </div>
-                    <ChevronRight size={16} className="text-gray-600" />
                   </div>
-                </Link>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(assignment.status)}`}>
+                    {getStatusLabel(assignment.status)}
+                  </span>
+                </div>
               ))
             )}
           </div>
-        </Card>
-      </main>
+        </div>
+
+        {/* Recent Requests */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-purple-400" />
+              Mijn Verzoeken
+            </h3>
+            <Link href="/client-portal/verzoeken" className="text-blue-400 hover:text-blue-300 text-sm">
+              Bekijk alles →
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {requests.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-gray-500 mb-2">Nog geen verzoeken</p>
+                <Link
+                  href="/client-portal/nieuw-verzoek"
+                  className="inline-flex items-center gap-1 text-green-400 hover:text-green-300 text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Eerste verzoek indienen
+                </Link>
+              </div>
+            ) : (
+              requests.map((request) => (
+                <div
+                  key={request.id}
+                  className="flex items-center justify-between p-4 bg-white/5 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{getTypeIcon(request.type)}</span>
+                    <div>
+                      <p className="text-white font-medium">{request.title}</p>
+                      <p className="text-gray-500 text-xs">
+                        {new Date(request.createdAt).toLocaleDateString('nl-NL')}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                    {getStatusLabel(request.status)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

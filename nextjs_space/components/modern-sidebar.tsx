@@ -48,22 +48,20 @@ interface NavItem {
 
 const menuItems: NavItem[] = [
   { label: 'Dashboard', href: '/client-portal', icon: <LayoutDashboard size={20} /> },
-  { label: 'Content Wizard', href: '/client-portal/content-wizard', icon: <Sparkles size={20} />, badge: '✨ NIEUW', badgeColor: 'orange' },
-  { label: 'Mijn Content', href: '/client-portal/content-library', icon: <FileText size={20} /> },
+  { label: 'Mijn Opdrachten', href: '/client-portal/opdrachten', icon: <FileText size={20} /> },
+  { label: 'Mijn Verzoeken', href: '/client-portal/verzoeken', icon: <MessageSquare size={20} /> },
+  { label: 'Mijn Facturen', href: '/client-portal/facturen', icon: <Receipt size={20} /> },
 ];
 
 const toolsItems: NavItem[] = [
-  { label: 'Image Specialist', href: '/client-portal/image-specialist', icon: <Image size={20} />, badge: '15+ MODELS', badgeColor: 'orange' },
-  { label: 'Content Generator', href: '/client-portal/content-generator', icon: <Wand2 size={20} /> },
+  { label: 'Nieuw Verzoek', href: '/client-portal/nieuw-verzoek', icon: <Plus size={20} />, badge: '✨', badgeColor: 'orange' },
 ];
 
 const integrationItems: NavItem[] = [
-  { label: 'Projecten', href: '/client-portal/projects', icon: <Map size={20} /> },
-  { label: 'Bol.com Affiliate', href: '/client-portal/affiliate', icon: <ShoppingBag size={20} />, badge: 'BOL.COM', badgeColor: 'blue' },
+  { label: 'Content Library', href: '/client-portal/content-library', icon: <Library size={20} /> },
 ];
 
 const adminItems: NavItem[] = [
-  { label: 'Credits Kopen', href: '/client-portal/buy-credits', icon: <Receipt size={20} /> },
   { label: 'Support & Help', href: '/contact', icon: <HelpCircle size={20} /> },
 ];
 
@@ -173,10 +171,10 @@ export function ModernSidebar() {
 
         {/* New Request Button */}
         <div className="p-3 border-t border-gray-800">
-          <Link href="/client-portal/content-generator" onClick={closeMobileMenu}>
-            <Button className="w-full bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white font-bold shadow-lg shadow-blue-500/20">
+          <Link href="/client-portal/nieuw-verzoek" onClick={closeMobileMenu}>
+            <Button className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold shadow-lg shadow-green-500/20">
               <Plus size={18} className="mr-2" />
-              Nieuwe Content
+              Nieuw Verzoek
             </Button>
           </Link>
         </div>
@@ -200,12 +198,20 @@ export function ModernSidebar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-gray-800 border-gray-700">
               {isSuperAdmin && (
-                <DropdownMenuItem asChild>
-                  <Link href="/superadmin/dashboard" onClick={closeMobileMenu} className="flex items-center gap-2 cursor-pointer">
-                    <Settings size={16} />
-                    <span>Super Admin</span>
-                  </Link>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/agency" onClick={closeMobileMenu} className="flex items-center gap-2 cursor-pointer">
+                      <Settings size={16} />
+                      <span>Agency Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/superadmin/dashboard" onClick={closeMobileMenu} className="flex items-center gap-2 cursor-pointer">
+                      <ShieldCheck size={16} />
+                      <span>Super Admin</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuItem asChild>
                 <Link href="/client-portal/account" onClick={closeMobileMenu} className="flex items-center gap-2 cursor-pointer">
