@@ -23,10 +23,13 @@ import {
   Zap,
   Clock,
   CalendarDays,
-  Play,
-  Pause,
   Settings,
-  ExternalLink
+  Database,
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Scale
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -50,6 +53,30 @@ interface Project {
   wordpressPassword?: string;
 }
 
+interface ExistingContent {
+  id: string | number;
+  title: string;
+  slug: string;
+  url: string;
+  type: string;
+}
+
+interface ScanResult {
+  success: boolean;
+  niche: string;
+  existingPages: number;
+  existingContent: ExistingContent[];
+  existingTopics: string[];
+  categories: string[];
+  tags: string[];
+  totalPosts: number;
+  totalPages: number;
+  hasWordPress: boolean;
+  sitemapFound: boolean;
+  apiAvailable: boolean;
+  suggestedTopics: string[];
+}
+
 interface ContentItem {
   id: string;
   title: string;
@@ -60,7 +87,7 @@ interface ContentItem {
   selected: boolean;
   priority: 'high' | 'medium' | 'low';
   estimatedWords: number;
-  productKeyword?: string; // For reviews/listicles - what product to search on Bol.com
+  productKeyword?: string;
 }
 
 interface TopicalMap {
@@ -75,6 +102,7 @@ interface TopicalMap {
   listicleCount: number;
   reviewCount: number;
   howToCount: number;
+  duplicatesRemoved?: number;
 }
 
 interface ScheduleConfig {
@@ -101,16 +129,14 @@ export default function ContentWizardPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<{
-    niche: string;
-    existingPages: number;
-    suggestedTopics: string[];
-  } | null>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [showExistingContent, setShowExistingContent] = useState(false);
   
   // Step 2: Topical Map
   const [topicalMap, setTopicalMap] = useState<TopicalMap | null>(null);
   const [isGeneratingMap, setIsGeneratingMap] = useState(false);
   const [mapProgress, setMapProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
   const [contentMix, setContentMix] = useState({
     informational: true,
     listicles: true,
@@ -145,7 +171,6 @@ export default function ContentWizardPage() {
       const data = await response.json();
       if (data.projects) {
         setProjects(data.projects);
-        // Auto-select primary project
         const primary = data.projects.find((p: Project) => (p as any).isPrimary) || data.projects[0];
         if (primary) {
           setSelectedProject(primary);
@@ -166,6 +191,7 @@ export default function ContentWizardPage() {
     
     setIsScanning(true);
     setError(null);
+    setScanResult(null);
     
     try {
       const response = await fetch('/api/client/content-wizard/scan-website', {
@@ -179,13 +205,9 @@ export default function ContentWizardPage() {
       
       const data = await response.json();
       
-      if (data.success) {
-        setScanResult({
-          niche: data.niche,
-          existingPages: data.existingPages || 0,
-          suggestedTopics: data.suggestedTopics || []
-        });
-        toast.success('Website succesvol gescand!');
+      if (data.success !== false) {
+        setScanResult(data);
+        toast.success(`Website gescand! ${data.existingPages || 0} bestaande pagina's gevonden.`);
       } else {
         throw new Error(data.error || 'Scan mislukt');
       }
@@ -206,7 +228,9 @@ export default function ContentWizardPage() {
     
     setIsGeneratingMap(true);
     setMapProgress(0);
+    setProgressMessage('');
     setError(null);
+    setTopicalMap(null);
     
     try {
       const response = await fetch('/api/client/content-wizard/generate-topical-map', {
@@ -218,13 +242,12 @@ export default function ContentWizardPage() {
           niche: scanResult?.niche || selectedProject?.niche,
           targetArticles,
           contentMix,
-          existingPages: scanResult?.existingPages || 0
+          existingTopics: scanResult?.existingTopics || []
         })
       });
       
       if (!response.ok) throw new Error('Genereren mislukt');
       
-      // Handle streaming response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       
@@ -240,13 +263,19 @@ export default function ContentWizardPage() {
             try {
               const data = JSON.parse(line.slice(6));
               
-              if (data.progress) {
+              if (data.progress !== undefined) {
                 setMapProgress(data.progress);
+              }
+              if (data.message) {
+                setProgressMessage(data.message);
               }
               
               if (data.topicalMap) {
                 setTopicalMap(data.topicalMap);
-                toast.success(`${data.topicalMap.totalItems} content items gegenereerd!`);
+                const msg = data.topicalMap.duplicatesRemoved 
+                  ? `${data.topicalMap.totalItems} unieke content items gegenereerd! (${data.topicalMap.duplicatesRemoved} duplicates verwijderd)`
+                  : `${data.topicalMap.totalItems} content items gegenereerd!`;
+                toast.success(msg);
               }
               
               if (data.error) {
@@ -313,7 +342,6 @@ export default function ContentWizardPage() {
     setError(null);
     
     try {
-      // Collect all selected items
       const selectedItems: ContentItem[] = [];
       topicalMap?.categories.forEach(cat => {
         selectedItems.push(...cat.pillars.filter(i => i.selected));
@@ -356,7 +384,7 @@ export default function ContentWizardPage() {
       case 'cluster': return <FileText className="w-4 h-4" />;
       case 'listicle': return <ListChecks className="w-4 h-4" />;
       case 'review': return <Star className="w-4 h-4" />;
-      case 'comparison': return <ShoppingBag className="w-4 h-4" />;
+      case 'comparison': return <Scale className="w-4 h-4" />;
       case 'how-to': return <Zap className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
@@ -393,11 +421,11 @@ export default function ContentWizardPage() {
             Content Wizard
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            Bouw je Complete Content Strategie
+            Automatische Content Marketing
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            In 3 simpele stappen naar een volledige topical map met honderden artikelen, 
-            automatisch gepubliceerd naar je WordPress website.
+            Scan je website, genereer een complete topical map met reviews, lijstjes en vergelijkingen,
+            en publiceer automatisch naar WordPress met Bol.com affiliate links.
           </p>
         </div>
         
@@ -427,7 +455,7 @@ export default function ContentWizardPage() {
         <div className="flex justify-center gap-8 md:gap-16 mb-8 text-sm">
           <div className={`text-center ${currentStep >= 1 ? 'text-white' : 'text-gray-500'}`}>
             <Globe className="w-5 h-5 mx-auto mb-1" />
-            Website
+            Scan Website
           </div>
           <div className={`text-center ${currentStep >= 2 ? 'text-white' : 'text-gray-500'}`}>
             <Map className="w-5 h-5 mx-auto mb-1" />
@@ -477,16 +505,23 @@ export default function ContentWizardPage() {
                         >
                           <div className="font-medium text-white truncate">{project.name}</div>
                           <div className="text-sm text-gray-400 truncate">{project.websiteUrl}</div>
-                          {project.niche && (
-                            <Badge className="mt-2 bg-purple-500/20 text-purple-400">
-                              {project.niche}
-                            </Badge>
-                          )}
-                          {project.bolcomEnabled && (
-                            <Badge className="mt-2 ml-2 bg-blue-500/20 text-blue-400">
-                              Bol.com
-                            </Badge>
-                          )}
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {project.niche && (
+                              <Badge className="bg-purple-500/20 text-purple-400 text-xs">
+                                {project.niche}
+                              </Badge>
+                            )}
+                            {project.bolcomEnabled && (
+                              <Badge className="bg-blue-500/20 text-blue-400 text-xs">
+                                Bol.com
+                              </Badge>
+                            )}
+                            {project.wordpressUrl && (
+                              <Badge className="bg-green-500/20 text-green-400 text-xs">
+                                WordPress
+                              </Badge>
+                            )}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -511,32 +546,126 @@ export default function ContentWizardPage() {
                       {isScanning ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Scannen...</>
                       ) : (
-                        <><Globe className="w-4 h-4 mr-2" /> Scan Website</>
+                        <><RefreshCw className="w-4 h-4 mr-2" /> Scan Website</>
                       )}
                     </Button>
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    We scannen je sitemap en WordPress API om bestaande content te vinden
+                  </p>
                 </div>
                 
                 {/* Scan Results */}
                 {scanResult && (
-                  <div className="bg-gray-800 rounded-lg p-4 border border-green-500/30">
-                    <div className="flex items-center gap-2 text-green-400 mb-3">
-                      <Check className="w-5 h-5" />
-                      <span className="font-medium">Website Gescand!</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-400">Niche:</span>
-                        <div className="text-white font-medium">{scanResult.niche}</div>
+                  <div className="space-y-4">
+                    <div className="bg-gray-800 rounded-lg p-4 border border-green-500/30">
+                      <div className="flex items-center gap-2 text-green-400 mb-4">
+                        <Check className="w-5 h-5" />
+                        <span className="font-medium">Website Gescand!</span>
                       </div>
-                      <div>
-                        <span className="text-gray-400">Bestaande Pagina's:</span>
-                        <div className="text-white font-medium">{scanResult.existingPages}</div>
+                      
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="bg-gray-900 rounded-lg p-3 text-center">
+                          <div className="text-2xl font-bold text-white">{scanResult.totalPosts || 0}</div>
+                          <div className="text-xs text-gray-400">Blog Posts</div>
+                        </div>
+                        <div className="bg-gray-900 rounded-lg p-3 text-center">
+                          <div className="text-2xl font-bold text-white">{scanResult.totalPages || 0}</div>
+                          <div className="text-xs text-gray-400">Pagina's</div>
+                        </div>
+                        <div className="bg-gray-900 rounded-lg p-3 text-center">
+                          <div className="text-2xl font-bold text-white">{scanResult.categories?.length || 0}</div>
+                          <div className="text-xs text-gray-400">Categorieën</div>
+                        </div>
+                        <div className="bg-gray-900 rounded-lg p-3 text-center">
+                          <div className="text-2xl font-bold text-purple-400">{scanResult.niche}</div>
+                          <div className="text-xs text-gray-400">Gedetecteerde Niche</div>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-gray-400">Suggesties:</span>
-                        <div className="text-white font-medium">{scanResult.suggestedTopics.length} topics</div>
+                      
+                      {/* Detection Badges */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {scanResult.hasWordPress && (
+                          <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">
+                            <Check className="w-3 h-3 mr-1" /> WordPress Gedetecteerd
+                          </Badge>
+                        )}
+                        {scanResult.sitemapFound && (
+                          <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                            <Check className="w-3 h-3 mr-1" /> Sitemap Gevonden
+                          </Badge>
+                        )}
+                        {scanResult.apiAvailable && (
+                          <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                            <Database className="w-3 h-3 mr-1" /> WP REST API Actief
+                          </Badge>
+                        )}
+                        {!scanResult.hasWordPress && (
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                            <AlertTriangle className="w-3 h-3 mr-1" /> Geen WordPress gevonden
+                          </Badge>
+                        )}
                       </div>
+                      
+                      {/* Categories */}
+                      {scanResult.categories && scanResult.categories.length > 0 && (
+                        <div className="mb-4">
+                          <div className="text-sm text-gray-400 mb-2">Bestaande categorieën:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {scanResult.categories.slice(0, 10).map((cat, idx) => (
+                              <Badge key={idx} className="bg-gray-700 text-gray-300">
+                                {cat}
+                              </Badge>
+                            ))}
+                            {scanResult.categories.length > 10 && (
+                              <Badge className="bg-gray-700 text-gray-400">
+                                +{scanResult.categories.length - 10} meer
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Existing Content Warning */}
+                      {scanResult.existingTopics && scanResult.existingTopics.length > 0 && (
+                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-yellow-400">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span className="font-medium">{scanResult.existingTopics.length} bestaande onderwerpen gevonden</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowExistingContent(!showExistingContent)}
+                              className="text-yellow-400 hover:text-yellow-300"
+                            >
+                              {showExistingContent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              <span className="ml-1">{showExistingContent ? 'Verberg' : 'Bekijk'}</span>
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Deze worden automatisch uitgesloten bij het genereren van nieuwe content
+                          </p>
+                          
+                          {showExistingContent && (
+                            <div className="mt-3 max-h-48 overflow-y-auto space-y-1">
+                              {(scanResult.existingContent || []).slice(0, 50).map((content, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm text-gray-300 bg-gray-900 rounded px-2 py-1">
+                                  <Badge className="text-xs bg-gray-700">{content.type}</Badge>
+                                  <span className="truncate">{content.title}</span>
+                                </div>
+                              ))}
+                              {(scanResult.existingContent?.length || 0) > 50 && (
+                                <div className="text-xs text-gray-500 text-center py-2">
+                                  ...en {(scanResult.existingContent?.length || 0) - 50} meer
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -574,31 +703,33 @@ export default function ContentWizardPage() {
                 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                   {[
-                    { key: 'informational', label: 'Informatief', icon: BookOpen, color: 'blue' },
-                    { key: 'listicles', label: 'Beste Lijstjes', icon: ListChecks, color: 'green' },
-                    { key: 'reviews', label: 'Reviews', icon: Star, color: 'yellow' },
-                    { key: 'howTo', label: 'How-To', icon: Zap, color: 'cyan' },
-                    { key: 'comparisons', label: 'Vergelijkingen', icon: ShoppingBag, color: 'orange' }
-                  ].map((item) => (
-                    <button
-                      key={item.key}
-                      onClick={() => setContentMix(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
-                      className={`p-4 rounded-lg border text-center transition-all ${
-                        contentMix[item.key as keyof typeof contentMix]
-                          ? `border-${item.color}-500 bg-${item.color}-500/10`
-                          : 'border-gray-700 bg-gray-800 opacity-50'
-                      }`}
-                    >
-                      <item.icon className={`w-6 h-6 mx-auto mb-2 ${contentMix[item.key as keyof typeof contentMix] ? `text-${item.color}-400` : 'text-gray-500'}`} />
-                      <div className="text-sm font-medium">{item.label}</div>
-                    </button>
-                  ))}
+                    { key: 'informational', label: 'Informatief', desc: 'Uitleg & guides', icon: BookOpen, activeColor: 'border-blue-500 bg-blue-500/10', iconColor: 'text-blue-400' },
+                    { key: 'listicles', label: 'Beste Lijstjes', desc: 'Top 10, Beste X', icon: ListChecks, activeColor: 'border-green-500 bg-green-500/10', iconColor: 'text-green-400' },
+                    { key: 'reviews', label: 'Reviews', desc: 'Product reviews', icon: Star, activeColor: 'border-yellow-500 bg-yellow-500/10', iconColor: 'text-yellow-400' },
+                    { key: 'howTo', label: 'How-To', desc: 'Stap-voor-stap', icon: Zap, activeColor: 'border-cyan-500 bg-cyan-500/10', iconColor: 'text-cyan-400' },
+                    { key: 'comparisons', label: 'Vergelijkingen', desc: 'A vs B', icon: Scale, activeColor: 'border-orange-500 bg-orange-500/10', iconColor: 'text-orange-400' }
+                  ].map((item) => {
+                    const isActive = contentMix[item.key as keyof typeof contentMix];
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => setContentMix(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
+                        className={`p-4 rounded-lg border text-center transition-all ${
+                          isActive ? item.activeColor : 'border-gray-700 bg-gray-800 opacity-50'
+                        }`}
+                      >
+                        <item.icon className={`w-6 h-6 mx-auto mb-2 ${isActive ? item.iconColor : 'text-gray-500'}`} />
+                        <div className="text-sm font-medium">{item.label}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.desc}</div>
+                      </button>
+                    );
+                  })}
                 </div>
                 
                 {/* Target Articles Slider */}
                 <div className="mb-6">
                   <Label className="text-gray-300 mb-2 block">
-                    Aantal Artikelen: <span className="text-white font-bold">{targetArticles}</span>
+                    Aantal Artikelen: <span className="text-white font-bold text-xl">{targetArticles}</span>
                   </Label>
                   <input
                     type="range"
@@ -607,27 +738,36 @@ export default function ContentWizardPage() {
                     step="25"
                     value={targetArticles}
                     onChange={(e) => setTargetArticles(parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
                     <span>50</span>
-                    <span>100</span>
-                    <span>200</span>
-                    <span>300</span>
-                    <span>400</span>
+                    <span>150</span>
+                    <span>250</span>
+                    <span>350</span>
                     <span>500</span>
                   </div>
                 </div>
                 
+                {/* Existing Topics Info */}
+                {scanResult?.existingTopics && scanResult.existingTopics.length > 0 && (
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-6">
+                    <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>{scanResult.existingTopics.length} onderwerpen worden automatisch uitgesloten (duplicates)</span>
+                    </div>
+                  </div>
+                )}
+                
                 <Button
                   onClick={generateTopicalMap}
                   disabled={isGeneratingMap}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 text-lg"
                 >
                   {isGeneratingMap ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Topical Map Genereren...</>
+                    <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Topical Map Genereren...</>
                   ) : (
-                    <><Sparkles className="w-4 h-4 mr-2" /> Genereer Topical Map ({targetArticles} artikelen)</>
+                    <><Sparkles className="w-5 h-5 mr-2" /> Genereer Topical Map ({targetArticles} artikelen)</>
                   )}
                 </Button>
                 
@@ -636,10 +776,7 @@ export default function ContentWizardPage() {
                   <div className="mt-4">
                     <Progress value={mapProgress} className="h-2" />
                     <p className="text-sm text-gray-400 mt-2 text-center">
-                      {mapProgress < 30 && 'Niche analyseren...'}
-                      {mapProgress >= 30 && mapProgress < 60 && 'Pillar pages genereren...'}
-                      {mapProgress >= 60 && mapProgress < 90 && 'Clusters en blogs toevoegen...'}
-                      {mapProgress >= 90 && 'Afronden...'}
+                      {progressMessage || 'Bezig met genereren...'}
                     </p>
                   </div>
                 )}
@@ -679,19 +816,19 @@ export default function ContentWizardPage() {
                       <div className="text-2xl font-bold text-white">{topicalMap.totalItems}</div>
                       <div className="text-xs text-gray-400">Totaal</div>
                     </div>
-                    <div className="bg-blue-500/10 rounded-lg p-3 text-center">
+                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-blue-400">{topicalMap.informationalCount}</div>
                       <div className="text-xs text-gray-400">Informatief</div>
                     </div>
-                    <div className="bg-green-500/10 rounded-lg p-3 text-center">
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-green-400">{topicalMap.listicleCount}</div>
                       <div className="text-xs text-gray-400">Lijstjes</div>
                     </div>
-                    <div className="bg-yellow-500/10 rounded-lg p-3 text-center">
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-yellow-400">{topicalMap.reviewCount}</div>
                       <div className="text-xs text-gray-400">Reviews</div>
                     </div>
-                    <div className="bg-cyan-500/10 rounded-lg p-3 text-center">
+                    <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-cyan-400">{topicalMap.howToCount}</div>
                       <div className="text-xs text-gray-400">How-To</div>
                     </div>
@@ -712,7 +849,7 @@ export default function ContentWizardPage() {
                         {/* Pillars */}
                         {category.pillars.length > 0 && (
                           <div className="mb-3">
-                            <div className="text-xs text-purple-400 font-medium mb-2">PILLAR PAGES</div>
+                            <div className="text-xs text-purple-400 font-medium mb-2">PILLAR PAGES ({category.pillars.length})</div>
                             <div className="space-y-2">
                               {category.pillars.map((item, idx) => (
                                 <label
@@ -739,7 +876,7 @@ export default function ContentWizardPage() {
                         {/* Clusters */}
                         {category.clusters.length > 0 && (
                           <div className="mb-3">
-                            <div className="text-xs text-blue-400 font-medium mb-2">CLUSTER CONTENT</div>
+                            <div className="text-xs text-blue-400 font-medium mb-2">CLUSTER CONTENT ({category.clusters.length})</div>
                             <div className="space-y-2">
                               {category.clusters.map((item, idx) => (
                                 <label
@@ -753,6 +890,12 @@ export default function ContentWizardPage() {
                                     onCheckedChange={() => toggleContentItem(catIndex, 'clusters', idx)}
                                   />
                                   <span className="flex-1 text-sm">{item.title}</span>
+                                  {item.productKeyword && (
+                                    <Badge className="bg-orange-500/20 text-orange-400 text-xs">
+                                      <ShoppingBag className="w-3 h-3 mr-1" />
+                                      Bol.com
+                                    </Badge>
+                                  )}
                                   <Badge className={getTypeColor(item.type)}>
                                     {getTypeIcon(item.type)}
                                     <span className="ml-1">{item.type}</span>
@@ -766,7 +909,7 @@ export default function ContentWizardPage() {
                         {/* Supporting Content */}
                         {category.supportingContent.length > 0 && (
                           <div>
-                            <div className="text-xs text-green-400 font-medium mb-2">SUPPORTING CONTENT</div>
+                            <div className="text-xs text-green-400 font-medium mb-2">SUPPORTING CONTENT ({category.supportingContent.length})</div>
                             <div className="space-y-2">
                               {category.supportingContent.map((item, idx) => (
                                 <label
@@ -987,7 +1130,7 @@ export default function ContentWizardPage() {
                       <span className="font-medium">Bol.com Affiliate Actief</span>
                     </div>
                     <p className="text-sm text-gray-400">
-                      Reviews en lijstjes worden automatisch verrijkt met Bol.com producten en partnerlinks 
+                      Reviews, lijstjes en vergelijkingen worden automatisch verrijkt met Bol.com producten en partnerlinks 
                       (ID: {selectedProject.bolcomAffiliateId})
                     </p>
                   </div>

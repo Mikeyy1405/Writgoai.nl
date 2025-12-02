@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import fs from 'fs';
+import { topicExists } from '@/lib/wordpress-scanner';
 
 const AUTH_SECRETS_PATH = '/home/ubuntu/.config/abacusai_auth_secrets.json';
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
     
     const body = await request.json();
-    const { projectId, websiteUrl, niche, targetArticles, contentMix, existingPages } = body;
+    const { projectId, websiteUrl, niche, targetArticles, contentMix, existingTopics: clientExistingTopics } = body;
     
     const apiKey = getAIMLApiKey();
     if (!apiKey) {
@@ -63,10 +64,13 @@ export async function POST(request: NextRequest) {
         };
         
         try {
-          sendProgress(5, 'Niche analyseren...');
+          sendProgress(5, 'Bestaande content analyseren...');
           
           // Load existing project data if available
-          let existingTopics: string[] = [];
+          let existingTopics: string[] = clientExistingTopics || [];
+          let existingCategories: string[] = [];
+          let projectNiche = niche;
+          
           if (projectId) {
             const client = await prisma.client.findUnique({
               where: { email: session.user.email }
@@ -79,20 +83,33 @@ export async function POST(request: NextRequest) {
               
               if (project?.sitemap && typeof project.sitemap === 'object') {
                 const sitemap = project.sitemap as any;
-                existingTopics = sitemap.titles || [];
+                // Combine topics from sitemap with client-provided topics
+                const sitemapTopics = sitemap.topics || sitemap.titles || [];
+                existingTopics = [...new Set([...existingTopics, ...sitemapTopics])];
+                existingCategories = sitemap.categories || [];
+                
+                console.log(`[Topical Map] Found ${existingTopics.length} existing topics to avoid`);
+              }
+              
+              // Use project niche if available
+              if (project?.niche && !projectNiche) {
+                projectNiche = project.niche;
               }
             }
           }
           
-          sendProgress(10, 'Topical map structuur opbouwen...');
+          sendProgress(10, `${existingTopics.length} bestaande onderwerpen gevonden...`);
           
-          // Calculate content distribution
+          // Calculate content distribution based on enabled types
+          const enabledTypes = Object.entries(contentMix).filter(([_, enabled]) => enabled);
+          const typeCount = enabledTypes.length || 1;
+          
           const distribution = {
-            informational: contentMix.informational ? 0.35 : 0,
+            informational: contentMix.informational ? 0.30 : 0,
             listicles: contentMix.listicles ? 0.25 : 0,
             reviews: contentMix.reviews ? 0.20 : 0,
             howTo: contentMix.howTo ? 0.15 : 0,
-            comparisons: contentMix.comparisons ? 0.05 : 0,
+            comparisons: contentMix.comparisons ? 0.10 : 0,
           };
           
           // Normalize distribution
@@ -103,34 +120,42 @@ export async function POST(request: NextRequest) {
             }
           }
           
-          sendProgress(20, 'AI prompt voorbereiden...');
+          sendProgress(15, 'Content strategie voorbereiden...');
+          
+          // Build exclusion list for AI prompt (max 100 items to keep prompt manageable)
+          const exclusionList = existingTopics.slice(0, 100).join('\n- ');
           
           // Generate topical map with AI
-          const prompt = `Je bent een SEO expert en content strateeg. Genereer een volledige topical map voor een website in de niche: "${niche || 'Algemeen'}".
+          const prompt = `Je bent een SEO expert en content strateeg. Genereer een uitgebreide topical map voor een website.
 
-Website: ${websiteUrl || 'Nieuwe website'}
-Bestaande pagina's: ${existingPages || 0}
-Gewenst aantal artikelen: ${targetArticles}
+## WEBSITE INFO
+- Niche: "${projectNiche || 'Algemeen'}"
+- Website: ${websiteUrl || 'Nieuwe website'}
+- Gewenst aantal artikelen: MINIMAAL ${targetArticles} (genereer meer dan gevraagd!)
 
-Content mix percentages:
-- Informatief: ${Math.round(distribution.informational * 100)}%
-- Beste lijstjes (Top X, Beste Y): ${Math.round(distribution.listicles * 100)}%
-- Reviews (product reviews): ${Math.round(distribution.reviews * 100)}%
-- How-to guides: ${Math.round(distribution.howTo * 100)}%
-- Vergelijkingen: ${Math.round(distribution.comparisons * 100)}%
+## CONTENT MIX (verdeling over types)
+- Informatieve artikelen: ${Math.round(distribution.informational * 100)}% (educatief, guides, uitleg)
+- Beste lijstjes (Top X producten): ${Math.round(distribution.listicles * 100)}% (bijv. "10 Beste Laptops voor Studenten")
+- Product reviews: ${Math.round(distribution.reviews * 100)}% (gedetailleerde reviews van specifieke producten)
+- How-to guides: ${Math.round(distribution.howTo * 100)}% (stap-voor-stap instructies)
+- Vergelijkingen: ${Math.round(distribution.comparisons * 100)}% (Product A vs Product B)
 
-${existingTopics.length > 0 ? `BELANGRIJK: Deze onderwerpen bestaan al en moeten NIET opnieuw worden voorgesteld:\n${existingTopics.slice(0, 30).join('\n')}\n` : ''}
+## BESTAANDE CONTENT - NIET HERHALEN!
+${existingTopics.length > 0 ? `De volgende onderwerpen bestaan AL op de website. Genereer GEEN duplicates:\n- ${exclusionList}` : 'Geen bestaande content.'}
 
-Genereer een JSON object met de volgende structuur:
+${existingCategories.length > 0 ? `Bestaande categorieën: ${existingCategories.join(', ')}` : ''}
+
+## OUTPUT FORMAT
+Retourneer ALLEEN een valid JSON object met deze structuur:
 {
   "categories": [
     {
       "name": "Categorie naam",
       "pillars": [
         {
-          "title": "Pillar page titel",
+          "title": "Uitgebreide pillar page titel met SEO keywords",
           "type": "pillar",
-          "keywords": ["keyword1", "keyword2"],
+          "keywords": ["hoofdkeyword", "secundair keyword", "long-tail"],
           "searchIntent": "informational",
           "estimatedWords": 3000
         }
@@ -138,41 +163,65 @@ Genereer een JSON object met de volgende structuur:
       "clusters": [
         {
           "title": "Cluster artikel titel",
-          "type": "cluster" of "listicle" of "review" of "how-to" of "comparison",
+          "type": "listicle",
           "keywords": ["keyword1", "keyword2"],
-          "searchIntent": "informational" of "commercial" of "transactional",
+          "searchIntent": "commercial",
+          "estimatedWords": 1800,
+          "productKeyword": "laptop studenten" 
+        },
+        {
+          "title": "Review artikel titel",
+          "type": "review",
+          "keywords": ["product naam", "review"],
+          "searchIntent": "commercial",
           "estimatedWords": 1500,
-          "productKeyword": "product zoekwoord voor Bol.com" (alleen bij reviews/listicles)
+          "productKeyword": "macbook air m2"
+        },
+        {
+          "title": "Vergelijking artikel",
+          "type": "comparison",
+          "keywords": ["product a vs product b"],
+          "searchIntent": "commercial",
+          "estimatedWords": 2000,
+          "productKeyword": "macbook vs windows laptop"
         }
       ],
       "supportingContent": [
         {
-          "title": "Supporting content titel",
-          "type": "blog" of "how-to" of "guide",
-          "keywords": ["keyword1"],
+          "title": "How-to guide titel",
+          "type": "how-to",
+          "keywords": ["how to", "keyword"],
           "searchIntent": "informational",
-          "estimatedWords": 1000
+          "estimatedWords": 1200
         }
       ]
     }
   ]
 }
 
-Regels:
-1. Maak 5-8 hoofdcategorieën relevant voor de niche
-2. Elke categorie heeft 1-2 pillar pages
-3. Elke categorie heeft 5-15 cluster artikelen
-4. Elke categorie heeft 5-20 supporting content items
-5. Totaal MOET minimaal ${targetArticles} artikelen zijn
-6. Voor reviews en lijstjes, voeg altijd "productKeyword" toe voor Bol.com producten
-7. Gebruik Nederlandse titels met goede SEO keywords
-8. Pillar pages zijn 2500-4000 woorden, clusters 1000-2000, supporting 800-1500
-9. NIET dezelfde onderwerpen als bestaande content
-10. Maak titels specifiek en zoekbaar (bijv. "Beste laptops voor studenten 2024" niet "Laptops")
+## BELANGRIJKE REGELS
+1. Genereer MINIMAAL ${targetArticles} unieke artikelen verdeeld over 6-10 categorieën
+2. Elke categorie MOET hebben:
+   - 1-2 pillar pages (2500-4000 woorden) - uitgebreide gidsen
+   - 8-15 cluster artikelen met MIX van types (listicles, reviews, comparisons, etc.)
+   - 10-25 supporting content items
+3. Voor REVIEWS en LISTICLES: voeg ALTIJD "productKeyword" toe voor Bol.com zoeken
+   - Bij listicles: zoekterm voor productcategorie (bijv. "laptop studenten", "koptelefoon bluetooth")
+   - Bij reviews: specifiek productnaam (bijv. "macbook air m2", "sony wh-1000xm5")
+   - Bij comparisons: beide producten (bijv. "macbook air vs dell xps")
+4. Maak titels SPECIFIEK en ZOEKBAAR:
+   - GOED: "Beste Laptops voor Studenten 2024: Top 10 Aanraders"
+   - SLECHT: "Laptops"
+5. Gebruik NEDERLANDSE titels met relevante zoekwoorden
+6. Varieer in type per categorie - niet alle clusters hetzelfde type!
+7. VERMIJD alle bestaande onderwerpen uit de lijst hierboven
+8. SearchIntent types: "informational", "commercial", "transactional", "navigational"
 
-Retourneer ALLEEN valid JSON, geen extra tekst.`;
+Retourneer ALLEEN valid JSON, geen andere tekst of uitleg.`;
           
-          sendProgress(30, 'Topical map genereren met AI...');
+          sendProgress(25, 'Topical map genereren met AI...');
+          
+          console.log('[Topical Map] Calling AI API...');
           
           const response = await fetch('https://api.aimlapi.com/v1/chat/completions', {
             method: 'POST',
@@ -191,13 +240,17 @@ Retourneer ALLEEN valid JSON, geen extra tekst.`;
           });
           
           if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[Topical Map] AI API error:', errorText);
             throw new Error('AI API request failed');
           }
           
-          sendProgress(60, 'AI response verwerken...');
+          sendProgress(55, 'AI response verwerken...');
           
           const data = await response.json();
           const content = data.choices?.[0]?.message?.content || '';
+          
+          console.log('[Topical Map] Received AI response, parsing JSON...');
           
           // Extract JSON from response
           let jsonContent = content;
@@ -213,58 +266,79 @@ Retourneer ALLEEN valid JSON, geen extra tekst.`;
             }
           }
           
-          sendProgress(70, 'Topical map structureren...');
+          sendProgress(65, 'Topical map structureren...');
           
           let topicalMapData;
           try {
             topicalMapData = JSON.parse(jsonContent);
           } catch (e) {
-            console.error('JSON parse error:', e);
+            console.error('[Topical Map] JSON parse error:', e);
+            console.error('[Topical Map] Raw content:', jsonContent.substring(0, 500));
             throw new Error('Kon AI response niet verwerken');
           }
           
-          sendProgress(80, 'Content items verrijken...');
+          sendProgress(75, 'Content items verrijken en duplicates verwijderen...');
           
-          // Process and enrich the topical map
+          // Process and enrich the topical map, filtering out duplicates
+          let duplicatesRemoved = 0;
+          
           const categories: Category[] = topicalMapData.categories.map((cat: any) => {
-            const pillars: ContentItem[] = (cat.pillars || []).map((item: any) => ({
-              id: generateId(),
-              title: item.title,
-              type: 'pillar' as const,
-              category: cat.name,
-              keywords: item.keywords || [],
-              searchIntent: item.searchIntent || 'informational',
-              selected: true,
-              priority: 'high' as const,
-              estimatedWords: item.estimatedWords || 3000,
-              productKeyword: item.productKeyword
-            }));
+            const pillars: ContentItem[] = (cat.pillars || [])
+              .filter((item: any) => {
+                const isDuplicate = topicExists(item.title, existingTopics);
+                if (isDuplicate) duplicatesRemoved++;
+                return !isDuplicate;
+              })
+              .map((item: any) => ({
+                id: generateId(),
+                title: item.title,
+                type: 'pillar' as const,
+                category: cat.name,
+                keywords: item.keywords || [],
+                searchIntent: item.searchIntent || 'informational',
+                selected: true,
+                priority: 'high' as const,
+                estimatedWords: item.estimatedWords || 3000,
+                productKeyword: item.productKeyword
+              }));
             
-            const clusters: ContentItem[] = (cat.clusters || []).map((item: any) => ({
-              id: generateId(),
-              title: item.title,
-              type: item.type || 'cluster',
-              category: cat.name,
-              keywords: item.keywords || [],
-              searchIntent: item.searchIntent || 'informational',
-              selected: true,
-              priority: item.type === 'review' || item.type === 'listicle' ? 'high' as const : 'medium' as const,
-              estimatedWords: item.estimatedWords || 1500,
-              productKeyword: item.productKeyword
-            }));
+            const clusters: ContentItem[] = (cat.clusters || [])
+              .filter((item: any) => {
+                const isDuplicate = topicExists(item.title, existingTopics);
+                if (isDuplicate) duplicatesRemoved++;
+                return !isDuplicate;
+              })
+              .map((item: any) => ({
+                id: generateId(),
+                title: item.title,
+                type: item.type || 'cluster',
+                category: cat.name,
+                keywords: item.keywords || [],
+                searchIntent: item.searchIntent || 'informational',
+                selected: true,
+                priority: ['review', 'listicle', 'comparison'].includes(item.type) ? 'high' as const : 'medium' as const,
+                estimatedWords: item.estimatedWords || 1500,
+                productKeyword: item.productKeyword
+              }));
             
-            const supportingContent: ContentItem[] = (cat.supportingContent || []).map((item: any) => ({
-              id: generateId(),
-              title: item.title,
-              type: item.type || 'blog',
-              category: cat.name,
-              keywords: item.keywords || [],
-              searchIntent: item.searchIntent || 'informational',
-              selected: true,
-              priority: 'low' as const,
-              estimatedWords: item.estimatedWords || 1000,
-              productKeyword: item.productKeyword
-            }));
+            const supportingContent: ContentItem[] = (cat.supportingContent || [])
+              .filter((item: any) => {
+                const isDuplicate = topicExists(item.title, existingTopics);
+                if (isDuplicate) duplicatesRemoved++;
+                return !isDuplicate;
+              })
+              .map((item: any) => ({
+                id: generateId(),
+                title: item.title,
+                type: item.type || 'blog',
+                category: cat.name,
+                keywords: item.keywords || [],
+                searchIntent: item.searchIntent || 'informational',
+                selected: true,
+                priority: 'low' as const,
+                estimatedWords: item.estimatedWords || 1000,
+                productKeyword: item.productKeyword
+              }));
             
             return {
               name: cat.name,
@@ -274,28 +348,42 @@ Retourneer ALLEEN valid JSON, geen extra tekst.`;
             };
           });
           
-          sendProgress(90, 'Statistieken berekenen...');
+          console.log(`[Topical Map] Removed ${duplicatesRemoved} duplicate topics`);
           
-          // Calculate totals
+          sendProgress(85, 'Statistieken berekenen...');
+          
+          // Calculate totals by type
           let totalItems = 0;
           let informationalCount = 0;
           let listicleCount = 0;
           let reviewCount = 0;
           let howToCount = 0;
+          let comparisonCount = 0;
           
           categories.forEach(cat => {
             const allItems = [...cat.pillars, ...cat.clusters, ...cat.supportingContent];
             totalItems += allItems.length;
             
             allItems.forEach(item => {
-              if (item.type === 'pillar' || item.type === 'cluster' || item.type === 'blog' || item.type === 'guide') {
-                informationalCount++;
-              } else if (item.type === 'listicle') {
-                listicleCount++;
-              } else if (item.type === 'review' || item.type === 'comparison') {
-                reviewCount++;
-              } else if (item.type === 'how-to') {
-                howToCount++;
+              switch (item.type) {
+                case 'pillar':
+                case 'cluster':
+                case 'blog':
+                case 'guide':
+                  informationalCount++;
+                  break;
+                case 'listicle':
+                  listicleCount++;
+                  break;
+                case 'review':
+                  reviewCount++;
+                  break;
+                case 'comparison':
+                  comparisonCount++;
+                  break;
+                case 'how-to':
+                  howToCount++;
+                  break;
               }
             });
           });
@@ -305,9 +393,12 @@ Retourneer ALLEEN valid JSON, geen extra tekst.`;
             totalItems,
             informationalCount,
             listicleCount,
-            reviewCount,
-            howToCount
+            reviewCount: reviewCount + comparisonCount, // Combine for display
+            howToCount,
+            duplicatesRemoved
           };
+          
+          console.log(`[Topical Map] Generated ${totalItems} items: ${informationalCount} info, ${listicleCount} lists, ${reviewCount} reviews, ${comparisonCount} comparisons, ${howToCount} how-to`);
           
           sendProgress(100, 'Voltooid!');
           
@@ -315,7 +406,7 @@ Retourneer ALLEEN valid JSON, geen extra tekst.`;
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ topicalMap })}\n\n`));
           
         } catch (error: any) {
-          console.error('Error generating topical map:', error);
+          console.error('[Topical Map] Error:', error);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: error.message || 'Genereren mislukt' })}\n\n`));
         } finally {
           controller.close();
@@ -332,7 +423,7 @@ Retourneer ALLEEN valid JSON, geen extra tekst.`;
     });
     
   } catch (error: any) {
-    console.error('Error in topical map generation:', error);
+    console.error('[Topical Map] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Genereren mislukt' },
       { status: 500 }
