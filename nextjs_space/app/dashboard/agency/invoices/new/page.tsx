@@ -12,6 +12,10 @@ import {
   Euro,
   Calendar,
   Loader2,
+  Clock,
+  Zap,
+  Package,
+  Settings,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -38,12 +42,24 @@ interface InvoiceItem {
   assignmentId?: string;
 }
 
+type InvoiceMode = 'assignment' | 'custom';
+
+const quickItems = [
+  { icon: Clock, label: 'Uren (€75/u)', description: 'Consultancy uren', unitPrice: 75 },
+  { icon: FileText, label: 'Blog artikel', description: 'SEO-geoptimaliseerd blog artikel', unitPrice: 150 },
+  { icon: Zap, label: 'Video (kort)', description: 'Korte video productie (<2 min)', unitPrice: 250 },
+  { icon: Zap, label: 'Video (lang)', description: 'Lange video productie (>2 min)', unitPrice: 500 },
+  { icon: Package, label: 'Chatbot', description: 'AI Chatbot implementatie', unitPrice: 750 },
+  { icon: Settings, label: 'Maatwerk', description: 'Maatwerk opdracht', unitPrice: 0 },
+];
+
 export default function NewInvoicePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [clientAssignments, setClientAssignments] = useState<Assignment[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
+  const [invoiceMode, setInvoiceMode] = useState<InvoiceMode>('custom');
   const [items, setItems] = useState<InvoiceItem[]>([
     { id: '1', description: '', quantity: 1, unitPrice: 0 }
   ]);
@@ -90,6 +106,19 @@ export default function NewInvoicePage() {
       ...items,
       { id: Date.now().toString(), description: '', quantity: 1, unitPrice: 0 }
     ]);
+  };
+
+  const addQuickItem = (quickItem: typeof quickItems[0]) => {
+    setItems([
+      ...items,
+      {
+        id: Date.now().toString(),
+        description: quickItem.description,
+        quantity: 1,
+        unitPrice: quickItem.unitPrice,
+      }
+    ]);
+    toast.success(`${quickItem.label} toegevoegd`);
   };
 
   const removeItem = (id: string) => {
@@ -191,6 +220,53 @@ export default function NewInvoicePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Invoice Mode Selector */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+            <label className="text-sm font-medium text-gray-300 mb-3 block">
+              Type factuur
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setInvoiceMode('custom')}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  invoiceMode === 'custom'
+                    ? 'border-green-500 bg-green-500/10'
+                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Settings className={`w-5 h-5 ${invoiceMode === 'custom' ? 'text-green-400' : 'text-gray-400'}`} />
+                  <div className="text-left">
+                    <div className={`font-semibold ${invoiceMode === 'custom' ? 'text-green-400' : 'text-white'}`}>
+                      Custom Factuur
+                    </div>
+                    <div className="text-xs text-gray-400">Vrije items toevoegen</div>
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setInvoiceMode('assignment')}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  invoiceMode === 'assignment'
+                    ? 'border-green-500 bg-green-500/10'
+                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className={`w-5 h-5 ${invoiceMode === 'assignment' ? 'text-green-400' : 'text-gray-400'}`} />
+                  <div className="text-left">
+                    <div className={`font-semibold ${invoiceMode === 'assignment' ? 'text-green-400' : 'text-white'}`}>
+                      Van Opdrachten
+                    </div>
+                    <div className="text-xs text-gray-400">Voltooide opdrachten</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
           {/* Client Selection */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-6">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
@@ -212,7 +288,7 @@ export default function NewInvoicePage() {
             </select>
 
             {/* Quick add from completed assignments */}
-            {clientAssignments.length > 0 && (
+            {invoiceMode === 'assignment' && clientAssignments.length > 0 && (
               <div className="mt-4 pt-4 border-t border-white/10">
                 <p className="text-sm text-gray-400 mb-2">Voltooide opdrachten toevoegen:</p>
                 <div className="flex flex-wrap gap-2">
@@ -230,6 +306,36 @@ export default function NewInvoicePage() {
               </div>
             )}
           </div>
+
+          {/* Quick Items for Custom Invoices */}
+          {invoiceMode === 'custom' && (
+            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+              <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-400" />
+                Snelle items
+              </h3>
+              <p className="text-sm text-gray-400 mb-4">Klik om vooraf ingestelde items toe te voegen</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {quickItems.map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => addQuickItem(item)}
+                      className="p-3 bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/30 rounded-lg transition-all group"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Icon className="w-4 h-4 text-gray-400 group-hover:text-green-400" />
+                        <span className="text-sm font-medium text-white">{item.label}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 text-left">{item.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Invoice Items */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-6">
