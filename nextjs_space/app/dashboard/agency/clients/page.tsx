@@ -16,6 +16,8 @@ import {
   Trash2,
   Edit,
   Eye,
+  CreditCard,
+  Infinity,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -25,6 +27,11 @@ interface Client {
   email: string;
   companyName: string | null;
   website: string | null;
+  subscriptionStatus: string | null;
+  subscriptionPlan: string | null;
+  subscriptionCredits: number;
+  topUpCredits: number;
+  isUnlimited: boolean;
   createdAt: string;
   _count: {
     assignments: number;
@@ -218,7 +225,7 @@ export default function ClientsPage() {
               </div>
 
               {/* Stats */}
-              <div className="flex gap-6 mt-4 pt-4 border-t border-white/10">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 pt-4 border-t border-white/10">
                 <div className="flex items-center gap-2">
                   <ClipboardList className="w-4 h-4 text-yellow-400" />
                   <span className="text-sm text-gray-300">
@@ -231,8 +238,32 @@ export default function ClientsPage() {
                     <strong>{client._count.invoices}</strong> facturen
                   </span>
                 </div>
-                <div className="text-sm text-gray-500">
-                  Klant sinds {new Date(client.createdAt).toLocaleDateString('nl-NL')}
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm text-gray-300">
+                    {client.isUnlimited ? (
+                      <span className="flex items-center gap-1">
+                        <Infinity className="w-4 h-4" /> <strong>Onbeperkt</strong>
+                      </span>
+                    ) : (
+                      <strong>{(client.subscriptionCredits + client.topUpCredits).toLocaleString()}</strong>
+                    )}
+                    {' '}credits
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {client.subscriptionStatus === 'active' ? (
+                    <span className="px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded border border-green-500/50">
+                      Actief
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 text-xs bg-gray-500/20 text-gray-400 rounded border border-gray-500/50">
+                      Inactief
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-500">
+                    sinds {new Date(client.createdAt).toLocaleDateString('nl-NL', { month: 'short', year: 'numeric' })}
+                  </span>
                 </div>
               </div>
             </div>

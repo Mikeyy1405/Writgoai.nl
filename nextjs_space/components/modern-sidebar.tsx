@@ -198,20 +198,12 @@ export function ModernSidebar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-gray-800 border-gray-700">
               {isSuperAdmin && (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/agency" onClick={closeMobileMenu} className="flex items-center gap-2 cursor-pointer">
-                      <Settings size={16} />
-                      <span>Agency Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/superadmin/dashboard" onClick={closeMobileMenu} className="flex items-center gap-2 cursor-pointer">
-                      <ShieldCheck size={16} />
-                      <span>Super Admin</span>
-                    </Link>
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/agency" onClick={closeMobileMenu} className="flex items-center gap-2 cursor-pointer">
+                    <Settings size={16} />
+                    <span>Agency Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
                 <Link href="/client-portal/account" onClick={closeMobileMenu} className="flex items-center gap-2 cursor-pointer">

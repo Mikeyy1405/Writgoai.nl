@@ -131,11 +131,6 @@ export default function AgencyLayout({ children }: AgencyLayoutProps) {
                   Client Portal
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/superadmin/dashboard" className="cursor-pointer text-gray-300 hover:text-white">
-                  Super Admin
-                </Link>
-              </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-gray-800" />
               <DropdownMenuItem
                 onClick={() => signOut({ callbackUrl: '/inloggen' })}
