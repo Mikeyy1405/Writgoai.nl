@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { notifyAdminNewRequest } from '@/lib/notification-helper';
+import { getServiceCost } from '@/lib/service-pricing';
 
 // GET client's own requests
 export async function GET(request: NextRequest) {
@@ -56,6 +57,43 @@ export async function POST(request: NextRequest) {
         { error: 'Titel, beschrijving en type zijn verplicht' },
         { status: 400 }
       );
+    }
+
+    // Check and deduct credits (unless unlimited)
+    const serviceCost = getServiceCost(type);
+    if (!client.isUnlimited) {
+      const totalCredits = (client.subscriptionCredits || 0) + (client.topUpCredits || 0);
+      if (totalCredits < serviceCost) {
+        return NextResponse.json(
+          { error: `Je hebt niet genoeg credits. Deze dienst kost ${serviceCost} credits.` },
+          { status: 400 }
+        );
+      }
+
+      // Deduct credits (prioritize top-up credits first)
+      let remainingCost = serviceCost;
+      let topUpDeduction = 0;
+      let subscriptionDeduction = 0;
+
+      if (client.topUpCredits && client.topUpCredits >= remainingCost) {
+        topUpDeduction = remainingCost;
+      } else if (client.topUpCredits) {
+        topUpDeduction = client.topUpCredits;
+        remainingCost -= client.topUpCredits;
+        subscriptionDeduction = remainingCost;
+      } else {
+        subscriptionDeduction = remainingCost;
+      }
+
+      await prisma.client.update({
+        where: { id: client.id },
+        data: {
+          topUpCredits: { decrement: topUpDeduction },
+          subscriptionCredits: { decrement: subscriptionDeduction },
+        }
+      });
+
+      console.log(`[Credits] Deducted ${serviceCost} credits from client ${client.id} for ${type} request`);
     }
 
     const clientRequest = await prisma.clientRequest.create({

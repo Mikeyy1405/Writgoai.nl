@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -15,8 +16,12 @@ import {
   HelpCircle,
   Loader2,
   CheckCircle,
+  Coins,
+  AlertCircle,
+  Infinity,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SERVICE_PRICING, getServiceCost } from '@/lib/service-pricing';
 
 const requestTypes = [
   {
@@ -25,6 +30,7 @@ const requestTypes = [
     icon: FileText,
     description: 'SEO artikelen, blogs, product beschrijvingen',
     color: 'blue',
+    credits: SERVICE_PRICING.blog.credits,
   },
   {
     value: 'video',
@@ -32,6 +38,7 @@ const requestTypes = [
     icon: Video,
     description: 'Video productie, editing, YouTube content',
     color: 'red',
+    credits: SERVICE_PRICING.video.credits,
   },
   {
     value: 'chatbot',
@@ -39,6 +46,7 @@ const requestTypes = [
     icon: Bot,
     description: 'AI chatbot voor je website of klantenservice',
     color: 'purple',
+    credits: SERVICE_PRICING.chatbot.credits,
   },
   {
     value: 'automation',
@@ -46,6 +54,7 @@ const requestTypes = [
     icon: Cog,
     description: 'Workflows, integraties, automatische processen',
     color: 'yellow',
+    credits: SERVICE_PRICING.automation.credits,
   },
   {
     value: 'website',
@@ -53,6 +62,7 @@ const requestTypes = [
     icon: Globe,
     description: 'Website ontwikkeling, landing pages, webshops',
     color: 'green',
+    credits: SERVICE_PRICING.website.credits,
   },
   {
     value: 'design',
@@ -60,6 +70,7 @@ const requestTypes = [
     icon: Palette,
     description: 'Grafisch ontwerp, logo, branding, social media',
     color: 'pink',
+    credits: SERVICE_PRICING.design.credits,
   },
   {
     value: 'other',
@@ -67,13 +78,18 @@ const requestTypes = [
     icon: HelpCircle,
     description: 'Overige AI-gerelateerde diensten',
     color: 'gray',
+    credits: SERVICE_PRICING.other.credits,
   },
 ];
 
 export default function NewRequestPage() {
   const router = useRouter();
+  const { data: session, status } = useSession() || {};
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [clientCredits, setClientCredits] = useState(0);
+  const [isUnlimited, setIsUnlimited] = useState(false);
+  const [loadingCredits, setLoadingCredits] = useState(true);
   const [formData, setFormData] = useState({
     type: '',
     title: '',
@@ -82,11 +98,44 @@ export default function NewRequestPage() {
     deadline: '',
   });
 
+  // Fetch client credits
+  useEffect(() => {
+    async function fetchClientData() {
+      if (status === 'loading') return;
+      if (!session) {
+        router.push('/inloggen');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/client/profile');
+        if (res.ok) {
+          const data = await res.json();
+          setClientCredits((data.subscriptionCredits || 0) + (data.topUpCredits || 0));
+          setIsUnlimited(data.isUnlimited || false);
+        }
+      } catch (error) {
+        console.error('Error fetching client data:', error);
+      } finally {
+        setLoadingCredits(false);
+      }
+    }
+
+    fetchClientData();
+  }, [session, status, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.type || !formData.title || !formData.description) {
       toast.error('Vul alle verplichte velden in');
+      return;
+    }
+
+    // Check credits (unless unlimited)
+    const serviceCost = getServiceCost(formData.type);
+    if (!isUnlimited && clientCredits < serviceCost) {
+      toast.error(`Je hebt niet genoeg credits. Deze dienst kost ${serviceCost} credits.`);
       return;
     }
 
@@ -101,6 +150,10 @@ export default function NewRequestPage() {
 
       if (res.ok) {
         setSuccess(true);
+        // Update local credits
+        if (!isUnlimited) {
+          setClientCredits(prev => prev - serviceCost);
+        }
       } else {
         const data = await res.json();
         toast.error(data.error || 'Kon verzoek niet indienen');
@@ -145,23 +198,55 @@ export default function NewRequestPage() {
     );
   }
 
+  const selectedService = requestTypes.find(t => t.value === formData.type);
+  const serviceCost = selectedService?.credits || 0;
+  const hasEnoughCredits = isUnlimited || clientCredits >= serviceCost;
+
+  if (loadingCredits) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Link
-            href="/client-portal"
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-400" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-green-400" />
-              Nieuw AI Verzoek
-            </h1>
-            <p className="text-gray-400">Vertel ons wat je nodig hebt</p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/client-portal"
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-400" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-green-400" />
+                Nieuw AI Verzoek
+              </h1>
+              <p className="text-gray-400">Vertel ons wat je nodig hebt</p>
+            </div>
+          </div>
+
+          {/* Credits Display */}
+          <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+            <div className="flex items-center gap-2">
+              {isUnlimited ? (
+                <>
+                  <Infinity className="w-5 h-5 text-green-400" />
+                  <span className="text-white font-semibold">Onbeperkt</span>
+                </>
+              ) : (
+                <>
+                  <Coins className="w-5 h-5 text-green-400" />
+                  <span className="text-white font-semibold">{clientCredits.toLocaleString()}</span>
+                  <span className="text-gray-400 text-sm">credits</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -173,29 +258,69 @@ export default function NewRequestPage() {
               {requestTypes.map((type) => {
                 const Icon = type.icon;
                 const isSelected = formData.type === type.value;
+                const canAfford = isUnlimited || clientCredits >= type.credits;
                 return (
                   <button
                     key={type.value}
                     type="button"
                     onClick={() => setFormData({ ...formData, type: type.value })}
-                    className={`p-4 rounded-xl border text-left transition-all ${
+                    className={`p-4 rounded-xl border text-left transition-all relative ${
                       isSelected
                         ? 'bg-green-500/20 border-green-500/50'
-                        : 'bg-white/5 border-white/10 hover:border-white/20'
+                        : canAfford
+                        ? 'bg-white/5 border-white/10 hover:border-white/20'
+                        : 'bg-white/5 border-red-500/30 opacity-60'
                     }`}
                   >
-                    <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-green-400' : 'text-gray-400'}`} />
-                    <p className={`font-medium text-sm ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                    <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-green-400' : canAfford ? 'text-gray-400' : 'text-red-400'}`} />
+                    <p className={`font-medium text-sm ${isSelected ? 'text-white' : canAfford ? 'text-gray-300' : 'text-gray-500'}`}>
                       {type.label}
                     </p>
+                    <div className={`flex items-center gap-1 mt-1 ${isSelected ? 'text-green-400' : canAfford ? 'text-gray-400' : 'text-red-400'}`}>
+                      <Coins className="w-3 h-3" />
+                      <span className="text-xs font-medium">{type.credits}</span>
+                    </div>
+                    {!canAfford && !isUnlimited && (
+                      <div className="absolute top-2 right-2">
+                        <AlertCircle className="w-4 h-4 text-red-400" />
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
             {formData.type && (
-              <p className="text-gray-400 text-sm mt-3">
-                {requestTypes.find(t => t.value === formData.type)?.description}
-              </p>
+              <div className="mt-4 space-y-2">
+                <p className="text-gray-400 text-sm">
+                  {requestTypes.find(t => t.value === formData.type)?.description}
+                </p>
+                {selectedService && (
+                  <div className="flex items-start gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <Coins className="w-4 h-4 text-green-400 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="text-white font-medium">
+                        Kosten: {selectedService.credits} credits
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        {SERVICE_PRICING[formData.type as keyof typeof SERVICE_PRICING]?.details}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {!hasEnoughCredits && formData.type && (
+                  <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-red-400 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="text-red-400 font-medium">
+                        Je hebt niet genoeg credits
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        Je hebt nog {clientCredits} credits. Deze dienst kost {serviceCost} credits.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -272,11 +397,15 @@ export default function NewRequestPage() {
             </Link>
             <button
               type="submit"
-              disabled={loading || !formData.type}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+              disabled={loading || !formData.type || !hasEnoughCredits}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Verzoek Indienen
+              {!hasEnoughCredits && formData.type ? (
+                'Niet genoeg credits'
+              ) : (
+                'Verzoek Indienen'
+              )}
             </button>
           </div>
         </form>
