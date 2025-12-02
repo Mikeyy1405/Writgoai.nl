@@ -14,6 +14,7 @@ import {
   Euro,
   Download,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface Invoice {
   id: string;
@@ -53,6 +54,22 @@ export default function ClientInvoicesPage() {
     }
   }, [status]);
 
+  useEffect(() => {
+    // Check for payment success/cancelled
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get('payment');
+    const invoiceNumber = params.get('invoice');
+
+    if (payment === 'success') {
+      toast.success(`Betaling succesvol! Factuur ${invoiceNumber || ''} is betaald.`);
+      // Remove query params
+      window.history.replaceState({}, '', '/client-portal/facturen');
+    } else if (payment === 'cancelled') {
+      toast.error('Betaling geannuleerd');
+      window.history.replaceState({}, '', '/client-portal/facturen');
+    }
+  }, []);
+
   const fetchInvoices = async () => {
     try {
       const res = await fetch('/api/client/invoices');
@@ -62,6 +79,28 @@ export default function ClientInvoicesPage() {
       console.error('Error fetching invoices:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const payInvoice = async (invoiceId: string) => {
+    try {
+      toast.loading('Betaling starten...');
+      const res = await fetch(`/api/client/invoices/${invoiceId}/pay`, {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+      toast.dismiss();
+
+      if (res.ok && data.checkoutUrl) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast.error(data.error || 'Kon betaling niet starten');
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Er ging iets mis');
     }
   };
 
@@ -233,11 +272,19 @@ export default function ClientInvoicesPage() {
                     </div>
                   </div>
 
-                  {invoice.paidAt && (
+                  {invoice.paidAt ? (
                     <p className="mt-4 text-sm text-green-400 flex items-center gap-1">
                       <CheckCircle className="w-4 h-4" />
                       Betaald op {new Date(invoice.paidAt).toLocaleDateString('nl-NL')}
                     </p>
+                  ) : (
+                    <button
+                      onClick={() => payInvoice(invoice.id)}
+                      className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                    >
+                      <Euro className="w-5 h-5" />
+                      Nu Betalen
+                    </button>
                   )}
                 </div>
               )}

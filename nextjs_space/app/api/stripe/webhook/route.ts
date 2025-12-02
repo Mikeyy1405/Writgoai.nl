@@ -1,9 +1,11 @@
 
 import { NextResponse } from 'next/server';
-import { stripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe';
+import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
 import { sendAdminNotification } from '@/lib/notification-helper';
+
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 export async function POST(req: Request) {
   const body = await req.text();

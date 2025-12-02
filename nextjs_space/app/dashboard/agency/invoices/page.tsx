@@ -88,6 +88,30 @@ export default function InvoicesPage() {
     }
   };
 
+  const createCheckout = async (id: string) => {
+    try {
+      toast.loading('Betaallink genereren...');
+      const res = await fetch(`/api/admin/agency/invoices/${id}/checkout`, {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+      toast.dismiss();
+
+      if (res.ok && data.checkoutUrl) {
+        // Copy link to clipboard
+        await navigator.clipboard.writeText(data.checkoutUrl);
+        toast.success('Betaallink gekopieerd naar clipboard!');
+        fetchInvoices();
+      } else {
+        toast.error(data.error || 'Kon betaallink niet genereren');
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Er ging iets mis');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'draft': return <FileText className="w-4 h-4 text-gray-400" />;
@@ -249,6 +273,18 @@ export default function InvoicesPage() {
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
                     {getStatusLabel(invoice.status)}
                   </span>
+
+                  {['sent', 'overdue'].includes(invoice.status) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        createCheckout(invoice.id);
+                      }}
+                      className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-sm transition-colors"
+                    >
+                      Stuur Betaallink
+                    </button>
+                  )}
 
                   <select
                     value={invoice.status}
