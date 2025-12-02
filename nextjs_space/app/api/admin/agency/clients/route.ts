@@ -28,6 +28,13 @@ export async function GET(request: NextRequest) {
         email: true,
         companyName: true,
         website: true,
+        subscriptionStatus: true,
+        subscriptionPlan: true,
+        subscriptionCredits: true,
+        topUpCredits: true,
+        totalCreditsUsed: true,
+        totalCreditsPurchased: true,
+        isUnlimited: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -36,6 +43,7 @@ export async function GET(request: NextRequest) {
             invoices: true,
             clientRequests: true,
             projects: true,
+            savedContent: true,
           }
         }
       },

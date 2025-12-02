@@ -65,7 +65,7 @@ export async function GET(
     // Remove password from response
     const { password, ...clientData } = client;
 
-    return NextResponse.json({ client: clientData });
+    return NextResponse.json(clientData);
   } catch (error: any) {
     console.error('Error fetching client:', error);
     return NextResponse.json({ error: 'Kon klant niet ophalen' }, { status: 500 });
