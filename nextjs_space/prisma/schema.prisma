@@ -129,6 +129,7 @@ model Client {
   sitePlans                         SitePlan[]
   adminNotes                        AdminNote[]
   activityLogs                      ClientActivityLog[]
+  contentQueue                      ContentQueue[]
 }
 
 model Project {
@@ -1991,4 +1992,36 @@ model SitePlan {
 
   @@index([clientId, createdAt(sort: Desc)])
   @@index([projectId])
+}
+
+
+model ContentQueue {
+  id                String    @id @default(cuid())
+  clientId          String
+  projectId         String?
+  title             String
+  type              String
+  category          String?
+  keywords          String[]
+  searchIntent      String?
+  priority          String    @default("medium")
+  estimatedWords    Int       @default(1500)
+  productKeyword    String?
+  scheduledFor      DateTime
+  status            String    @default("queued") // queued, scheduled, processing, completed, failed
+  autoPublish       Boolean   @default(false)
+  bolcomEnabled     Boolean   @default(false)
+  bolcomAffiliateId String?
+  position          Int       @default(0)
+  completedAt       DateTime?
+  savedContentId    String?
+  errorMessage      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([position])
 }

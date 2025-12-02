@@ -11,10 +11,12 @@ import { createWooCommerceClient } from '@/lib/woocommerce-api';
 import OpenAI from 'openai';
 import { deductCredits } from '@/lib/credits';
 
-const openai = new OpenAI({
-  baseURL: 'https://api.aimlapi.com/v1',
-  apiKey: process.env.AIML_API_KEY,
-});
+function getOpenAI() {
+  return new OpenAI({
+    baseURL: 'https://api.aimlapi.com/v1',
+    apiKey: process.env.AIML_API_KEY || 'dummy-key-for-build',
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -132,7 +134,7 @@ Format je antwoord als JSON:
   "longDescription": "lange beschrijving hier (ZONDER titel)"
 }`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'claude-sonnet-4-5',
       messages: [
         { role: 'system', content: systemPrompt },

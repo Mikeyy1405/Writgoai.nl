@@ -7,10 +7,12 @@ import { deductCredits } from '@/lib/credits';
 import { scrapeWebsite } from '@/lib/website-scraper';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.AIML_API_KEY,
-  baseURL: 'https://api.aimlapi.com/v1',
-});
+function getOpenAI() {
+  return new OpenAI({
+    apiKey: process.env.AIML_API_KEY || 'dummy-key-for-build',
+    baseURL: 'https://api.aimlapi.com/v1',
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -180,7 +182,7 @@ ONTHOUD: PUUR VAKINHOUDELIJK. GEEN MARKETING. GEEN TOOLS. ALLEEN KENNIS OVER ${p
     console.log('[Social Media Ideas] Generating with Claude...');
 
     // STEP 4: Generate ideas with AI
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'claude-sonnet-4-5',
       messages: [
         {

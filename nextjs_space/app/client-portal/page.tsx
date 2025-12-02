@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Bell, Sparkles, TrendingUp, ChevronRight, AlertCircle } from 'lucide-react';
+import { Loader2, Bell, Sparkles, TrendingUp, ChevronRight, AlertCircle, Rocket, Map, Zap } from 'lucide-react';
 import { ModernDashboardStats } from '@/components/modern-dashboard-stats';
 import { DailyTips } from '@/components/dashboard/daily-tips';
 import { FavoriteTools } from '@/components/dashboard/favorite-tools';
@@ -141,6 +141,48 @@ export default function ClientPortal() {
             </div>
           </div>
         </div>
+
+        {/* Content Wizard CTA */}
+        <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-500/30 p-6 mb-8">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Content Wizard ✨
+              </h2>
+              <p className="text-gray-300 mb-4">
+                Bouw je complete content strategie in 3 stappen. Genereer een volledige topical map met 100-500+ artikelen, 
+                kies je content mix (informatief, reviews, lijstjes) en publiceer automatisch naar WordPress.
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                <div className="flex items-center gap-2 text-purple-300 text-sm">
+                  <Map className="w-4 h-4" />
+                  <span>Topical Maps</span>
+                </div>
+                <div className="flex items-center gap-2 text-blue-300 text-sm">
+                  <Zap className="w-4 h-4" />
+                  <span>Bulk Generatie</span>
+                </div>
+                <div className="flex items-center gap-2 text-green-300 text-sm">
+                  <Rocket className="w-4 h-4" />
+                  <span>Auto Publiceren</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex-shrink-0">
+              <Link href="/client-portal/content-wizard">
+                <Button className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-purple-500/25">
+                  Start Wizard
+                  <ChevronRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

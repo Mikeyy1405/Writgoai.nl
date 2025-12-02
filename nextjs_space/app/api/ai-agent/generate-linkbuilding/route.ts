@@ -10,10 +10,12 @@ import { getClientToneOfVoice, generateToneOfVoicePrompt } from '@/lib/tone-of-v
 const AIML_API_BASE_URL = process.env.AIML_API_BASE_URL || 'https://api.aimlapi.com';
 const AIML_API_KEY = process.env.AIML_API_KEY;
 
-const openai = new OpenAI({
+function getOpenAI() {
+  return new OpenAI({
   apiKey: AIML_API_KEY,
   baseURL: AIML_API_BASE_URL,
-});
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,7 +79,7 @@ Het artikel moet:
 
 Genereer het artikel nu in JSON formaat.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-2024-11-20',
       messages: [
         { role: 'system', content: systemPrompt },

@@ -48,22 +48,21 @@ interface NavItem {
 
 const menuItems: NavItem[] = [
   { label: 'Dashboard', href: '/client-portal', icon: <LayoutDashboard size={20} /> },
-  { label: 'Site Planner', href: '/client-portal/site-planner', icon: <Map size={20} />, badge: 'NIEUW', badgeColor: 'blue' },
-  { label: 'Content Generator', href: '/client-portal/content-generator', icon: <Sparkles size={20} />, badge: 'NIEUW', badgeColor: 'orange' },
+  { label: 'Content Wizard', href: '/client-portal/content-wizard', icon: <Sparkles size={20} />, badge: '✨ NIEUW', badgeColor: 'orange' },
   { label: 'Mijn Content', href: '/client-portal/content-library', icon: <FileText size={20} /> },
 ];
 
 const toolsItems: NavItem[] = [
   { label: 'Image Specialist', href: '/client-portal/image-specialist', icon: <Image size={20} />, badge: '15+ MODELS', badgeColor: 'orange' },
+  { label: 'Content Generator', href: '/client-portal/content-generator', icon: <Wand2 size={20} /> },
 ];
 
 const integrationItems: NavItem[] = [
-  { label: 'WordPress', href: '/client-portal/wordpress-content', icon: <Globe size={20} /> },
+  { label: 'Projecten', href: '/client-portal/projects', icon: <Map size={20} /> },
   { label: 'Bol.com Affiliate', href: '/client-portal/affiliate', icon: <ShoppingBag size={20} />, badge: 'BOL.COM', badgeColor: 'blue' },
 ];
 
 const adminItems: NavItem[] = [
-  { label: 'Projecten', href: '/client-portal/projects', icon: <Map size={20} /> },
   { label: 'Credits Kopen', href: '/client-portal/buy-credits', icon: <Receipt size={20} /> },
   { label: 'Support & Help', href: '/contact', icon: <HelpCircle size={20} /> },
 ];

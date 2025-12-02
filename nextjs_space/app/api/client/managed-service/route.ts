@@ -5,9 +5,14 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-});
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY not configured');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-10-29.clover',
+  });
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -81,13 +86,13 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Maak Stripe Subscription
-    const subscription = await stripe.subscriptions.create({
+    const subscription = await getStripe().subscriptions.create({
       customer: await getOrCreateStripeCustomer(client.email, client.name),
       items: [
         {
           price_data: {
             currency: 'eur',
-            product: (await stripe.products.create({
+            product: (await getStripe().products.create({
               name: 'Writgo Managed Service AI',
               description: 'Complete content & social media service - automatisch gegenereerd',
             })).id,
@@ -231,7 +236,7 @@ export async function DELETE(req: NextRequest) {
 
     // Cancel Stripe subscription
     if (client.managedServiceSubscription.stripeSubscriptionId) {
-      await stripe.subscriptions.cancel(
+      await getStripe().subscriptions.cancel(
         client.managedServiceSubscription.stripeSubscriptionId
       );
     }
@@ -254,7 +259,7 @@ export async function DELETE(req: NextRequest) {
 }
 
 async function getOrCreateStripeCustomer(email: string, name: string) {
-  const customers = await stripe.customers.list({
+  const customers = await getStripe().customers.list({
     email,
     limit: 1,
   });
@@ -263,7 +268,7 @@ async function getOrCreateStripeCustomer(email: string, name: string) {
     return customers.data[0].id;
   }
 
-  const customer = await stripe.customers.create({
+  const customer = await getStripe().customers.create({
     email,
     name,
   });
