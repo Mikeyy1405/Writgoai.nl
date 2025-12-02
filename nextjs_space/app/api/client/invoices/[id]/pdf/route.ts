@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-import { renderToStream } from '@react-pdf/renderer';
-import { InvoicePDFDocument } from '@/lib/pdf-invoice-generator';
-import React from 'react';
+import { generateInvoicePDF, type InvoiceData } from '@/lib/pdf-invoice-generator';
 
 export async function GET(
   request: NextRequest,
@@ -46,7 +44,7 @@ export async function GET(
     }
 
     // Prepare invoice data for PDF
-    const invoiceData = {
+    const invoiceData: InvoiceData = {
       invoiceNumber: invoice.invoiceNumber,
       issueDate: invoice.issueDate.toISOString(),
       dueDate: invoice.dueDate.toISOString(),
@@ -70,17 +68,8 @@ export async function GET(
       paymentTerms: invoice.paymentTerms || undefined,
     };
 
-    // Generate PDF stream
-    const pdfStream = await renderToStream(
-      React.createElement(InvoicePDFDocument, { invoice: invoiceData })
-    );
-
-    // Convert stream to buffer
-    const chunks: Uint8Array[] = [];
-    for await (const chunk of pdfStream) {
-      chunks.push(chunk);
-    }
-    const pdfBuffer = Buffer.concat(chunks);
+    // Generate PDF buffer
+    const pdfBuffer = await generateInvoicePDF(invoiceData);
 
     // Return PDF as download
     return new NextResponse(pdfBuffer, {

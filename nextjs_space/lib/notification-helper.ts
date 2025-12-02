@@ -1,5 +1,152 @@
 import { sendEmail, emailTemplates } from './email-service';
 import { prisma as db } from './db';
+import { sendLowCreditsEmail } from './email';
+
+interface AdminNotificationParams {
+  type: string;
+  clientId?: string;
+  clientName?: string;
+  clientEmail?: string;
+  details?: Record<string, any>;
+}
+
+/**
+ * Send admin notification for important events
+ * Supports both object-style and 2-argument style for backwards compatibility
+ */
+export async function sendAdminNotification(
+  typeOrParams: string | AdminNotificationParams,
+  data?: Record<string, any>
+) {
+  try {
+    const adminEmail = 'info@writgo.nl';
+    
+    // Handle both calling styles
+    let type: string;
+    let notificationData: Record<string, any>;
+    
+    if (typeof typeOrParams === 'object') {
+      type = typeOrParams.type;
+      notificationData = {
+        clientId: typeOrParams.clientId,
+        clientName: typeOrParams.clientName,
+        clientEmail: typeOrParams.clientEmail,
+        ...typeOrParams.details,
+      };
+    } else {
+      type = typeOrParams;
+      notificationData = data || {};
+    }
+    
+    let subject = '';
+    let html = '';
+    
+    switch (type) {
+      case 'new_registration':
+        subject = `Nieuwe Registratie: ${notificationData.clientName || 'Nieuwe Klant'}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: #10b981;">Nieuwe Registratie</h2>
+            <p><strong>Naam:</strong> ${notificationData.clientName || 'N/A'}</p>
+            <p><strong>Email:</strong> ${notificationData.email || notificationData.clientEmail || 'N/A'}</p>
+            <p><strong>Bedrijf:</strong> ${notificationData.companyName || 'N/A'}</p>
+            <p><strong>Website:</strong> ${notificationData.website || 'N/A'}</p>
+          </div>
+        `;
+        break;
+      case 'payment_received':
+        subject = `Betaling Ontvangen: ${notificationData.invoiceNumber || 'Factuur'}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: #10b981;">Betaling Ontvangen</h2>
+            <p><strong>Factuurnummer:</strong> ${notificationData.invoiceNumber || 'N/A'}</p>
+            <p><strong>Bedrag:</strong> €${notificationData.amount?.toFixed(2) || '0.00'}</p>
+            <p><strong>Klant:</strong> ${notificationData.clientName || 'N/A'}</p>
+          </div>
+        `;
+        break;
+      case 'subscription_error':
+        subject = `⚠️ Subscription Error: ${notificationData.clientName || 'Unknown'}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: #ef4444;">Subscription Error</h2>
+            <p><strong>Klant:</strong> ${notificationData.clientName || 'N/A'}</p>
+            <p><strong>Email:</strong> ${notificationData.clientEmail || 'N/A'}</p>
+            <p><strong>Error:</strong> ${notificationData.error || 'Unknown error'}</p>
+            <pre style="background: #f3f4f6; padding: 10px; border-radius: 4px;">${JSON.stringify(notificationData, null, 2)}</pre>
+          </div>
+        `;
+        break;
+      case 'subscription_created':
+        subject = `🎉 Nieuwe Abonnement: ${notificationData.clientName || 'Klant'}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: #10b981;">Nieuw Abonnement</h2>
+            <p><strong>Klant:</strong> ${notificationData.clientName || 'N/A'}</p>
+            <p><strong>Email:</strong> ${notificationData.clientEmail || 'N/A'}</p>
+            <p><strong>Plan:</strong> ${notificationData.plan || 'N/A'}</p>
+            <p><strong>Credits:</strong> ${notificationData.credits || 'N/A'}</p>
+          </div>
+        `;
+        break;
+      default:
+        subject = `Notificatie: ${type}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: #10b981;">Systeem Notificatie</h2>
+            <p><strong>Type:</strong> ${type}</p>
+            <pre style="background: #f3f4f6; padding: 10px; border-radius: 4px;">${JSON.stringify(notificationData, null, 2)}</pre>
+          </div>
+        `;
+    }
+    
+    return await sendEmail({
+      to: adminEmail,
+      subject,
+      html,
+    });
+  } catch (error) {
+    console.error('Error sending admin notification:', error);
+    return { success: false, error: 'Failed to send admin notification' };
+  }
+}
+
+/**
+ * Check and notify clients with low credits
+ * Can be called with just clientId (will fetch credits from DB) or with both clientId and currentCredits
+ */
+export async function checkAndNotifyLowCredits(clientId: string, currentCredits?: number) {
+  try {
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+    });
+    
+    if (!client) {
+      return { success: false, error: 'Client not found' };
+    }
+    
+    // Use provided credits or fetch from client
+    const credits = currentCredits ?? client.credits ?? 0;
+    
+    // Only notify if credits are low (below 100)
+    if (credits > 100) {
+      return { success: true, notified: false };
+    }
+    
+    // Send low credits notification
+    await sendLowCreditsEmail(
+      client.email,
+      client.name,
+      credits,
+      'https://writgoai.nl/client-portal'
+    );
+    
+    return { success: true, notified: true };
+  } catch (error) {
+    console.error('Error checking/notifying low credits:', error);
+    return { success: false, error: 'Failed to check low credits' };
+  }
+}
 
 /**
  * Send notification when a new assignment is created

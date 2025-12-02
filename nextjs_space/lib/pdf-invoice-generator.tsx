@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 
 // Create styles for PDF
 const styles = StyleSheet.create({
@@ -181,21 +181,21 @@ const styles = StyleSheet.create({
   },
 });
 
-interface InvoiceItem {
+export interface InvoiceItem {
   description: string;
   quantity: number;
   unitPrice: number;
   total: number;
 }
 
-interface Client {
+export interface Client {
   name: string;
   email: string;
   companyName?: string;
   website?: string;
 }
 
-interface InvoiceData {
+export interface InvoiceData {
   invoiceNumber: string;
   issueDate: string;
   dueDate: string;
@@ -361,3 +361,14 @@ export const InvoicePDFDocument = ({ invoice }: { invoice: InvoiceData }) => (
     </Page>
   </Document>
 );
+
+/**
+ * Generate a PDF buffer from invoice data
+ */
+export async function generateInvoicePDF(invoiceData: InvoiceData): Promise<Buffer> {
+  const document = <InvoicePDFDocument invoice={invoiceData} />;
+  const asPdf = pdf(document);
+  const blob = await asPdf.toBlob();
+  const arrayBuffer = await blob.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
