@@ -18,7 +18,7 @@ export async function GET(
       where: { email: session.user.email }
     });
 
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
       return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
     }
 
@@ -73,7 +73,7 @@ export async function PUT(
       where: { email: session.user.email }
     });
 
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
       return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
     }
 
@@ -138,7 +138,7 @@ export async function DELETE(
       where: { email: session.user.email }
     });
 
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
       return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
     }
 

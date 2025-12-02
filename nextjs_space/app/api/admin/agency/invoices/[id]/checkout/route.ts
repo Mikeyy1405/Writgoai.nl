@@ -19,7 +19,7 @@ export async function POST(
       where: { email: session.user.email }
     });
 
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
       return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
     }
 
