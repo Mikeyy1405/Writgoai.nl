@@ -1,5 +1,5 @@
 import { sendEmail, emailTemplates } from './email-service';
-import { prisma as db } from './db';
+import { prisma } from './db';
 import { sendLowCreditsEmail } from './email';
 
 interface AdminNotificationParams {
@@ -117,7 +117,7 @@ export async function sendAdminNotification(
  */
 export async function checkAndNotifyLowCredits(clientId: string, currentCredits?: number) {
   try {
-    const client = await db.client.findUnique({
+    const client = await prisma.client.findUnique({
       where: { id: clientId },
     });
     
@@ -125,8 +125,8 @@ export async function checkAndNotifyLowCredits(clientId: string, currentCredits?
       return { success: false, error: 'Client not found' };
     }
     
-    // Use provided credits or fetch from client
-    const credits = currentCredits ?? client.credits ?? 0;
+    // Use provided credits or calculate from client
+    const credits = currentCredits ?? (client.subscriptionCredits + client.topUpCredits);
     
     // Only notify if credits are low (below 100)
     if (credits > 100) {
@@ -153,7 +153,7 @@ export async function checkAndNotifyLowCredits(clientId: string, currentCredits?
  */
 export async function notifyAssignmentCreated(assignmentId: string) {
   try {
-    const assignment = await db.assignment.findUnique({
+    const assignment = await prisma.assignment.findUnique({
       where: { id: assignmentId },
       include: { client: true },
     });
@@ -186,7 +186,7 @@ export async function notifyAssignmentCreated(assignmentId: string) {
  */
 export async function notifyPaymentReceived(invoiceId: string) {
   try {
-    const invoice = await db.invoice.findUnique({
+    const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
       include: { client: true },
     });
@@ -218,7 +218,7 @@ export async function notifyPaymentReceived(invoiceId: string) {
  */
 export async function sendPaymentReminder(invoiceId: string) {
   try {
-    const invoice = await db.invoice.findUnique({
+    const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
       include: { client: true },
     });
@@ -272,7 +272,7 @@ export async function sendPaymentReminder(invoiceId: string) {
  */
 export async function notifyAdminNewRequest(requestId: string) {
   try {
-    const request = await db.clientRequest.findUnique({
+    const request = await prisma.clientRequest.findUnique({
       where: { id: requestId },
       include: { client: true },
     });
@@ -304,7 +304,7 @@ export async function notifyAdminNewRequest(requestId: string) {
 export async function checkAndSendPaymentReminders() {
   try {
     const today = new Date();
-    const overdueInvoices = await db.invoice.findMany({
+    const overdueInvoices = await prisma.invoice.findMany({
       where: {
         status: 'overdue',
         dueDate: {
