@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { notifyAssignmentCreated } from '@/lib/notification-helper';
 
 // GET all assignments
 export async function GET(request: NextRequest) {
@@ -119,6 +120,9 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+
+    // Send notification email to client
+    await notifyAssignmentCreated(assignment.id);
 
     return NextResponse.json({ assignment });
   } catch (error: any) {

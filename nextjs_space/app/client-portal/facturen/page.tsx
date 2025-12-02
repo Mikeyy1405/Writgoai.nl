@@ -104,6 +104,35 @@ export default function ClientInvoicesPage() {
     }
   };
 
+  const downloadPDF = async (invoiceId: string, invoiceNumber: string) => {
+    try {
+      toast.loading('PDF genereren...');
+      const res = await fetch(`/api/client/invoices/${invoiceId}/pdf`);
+      
+      toast.dismiss();
+
+      if (!res.ok) {
+        toast.error('Kon PDF niet genereren');
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('PDF gedownload!');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Er ging iets mis');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-500/20 text-gray-400';
@@ -272,20 +301,30 @@ export default function ClientInvoicesPage() {
                     </div>
                   </div>
 
-                  {invoice.paidAt ? (
-                    <p className="mt-4 text-sm text-green-400 flex items-center gap-1">
-                      <CheckCircle className="w-4 h-4" />
-                      Betaald op {new Date(invoice.paidAt).toLocaleDateString('nl-NL')}
-                    </p>
-                  ) : (
+                  <div className="mt-4 space-y-2">
+                    {invoice.paidAt ? (
+                      <p className="text-sm text-green-400 flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4" />
+                        Betaald op {new Date(invoice.paidAt).toLocaleDateString('nl-NL')}
+                      </p>
+                    ) : (
+                      <button
+                        onClick={() => payInvoice(invoice.id)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                      >
+                        <Euro className="w-5 h-5" />
+                        Nu Betalen
+                      </button>
+                    )}
+                    
                     <button
-                      onClick={() => payInvoice(invoice.id)}
-                      className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                      onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
                     >
-                      <Euro className="w-5 h-5" />
-                      Nu Betalen
+                      <Download className="w-5 h-5" />
+                      Download PDF
                     </button>
-                  )}
+                  </div>
                 </div>
               )}
             </div>

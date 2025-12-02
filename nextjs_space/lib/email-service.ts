@@ -1,421 +1,309 @@
+import fs from 'fs';
+import path from 'path';
 
-/**
- * Email Service
- * Handles fetching, parsing, and managing emails from info@WritgoAI.nl
- */
-
-import imaps from 'imap-simple';
-import { simpleParser, ParsedMail, AddressObject } from 'mailparser';
-import { prisma } from './db';
-import { uploadFile } from './s3';
-import { getBucketConfig } from './aws-config';
-
-export interface EmailConfig {
-  host: string;
-  port: number;
-  user: string;
-  password: string;
-  tls: boolean;
-}
-
-/**
- * Get email configuration from environment variables
- */
-export function getEmailConfig(): EmailConfig {
-  return {
-    host: process.env.EMAIL_IMAP_HOST || '',
-    port: parseInt(process.env.EMAIL_IMAP_PORT || '993'),
-    user: process.env.EMAIL_USER || '',
-    password: process.env.EMAIL_PASSWORD || '',
-    tls: true,
-  };
-}
-
-/**
- * Extract email address from AddressObject
- */
-function extractEmail(addressObj: AddressObject | AddressObject[] | undefined): string {
-  if (!addressObj) return '';
-  const addr = Array.isArray(addressObj) ? addressObj[0] : addressObj;
-  return addr.value?.[0]?.address || '';
-}
-
-/**
- * Extract email addresses from AddressObject array
- */
-function extractEmails(addressObj: AddressObject | AddressObject[] | undefined): string[] {
-  if (!addressObj) return [];
-  const addresses = Array.isArray(addressObj) ? addressObj : [addressObj];
-  return addresses.flatMap(addr => 
-    addr.value?.map(v => v.address) || []
-  ).filter(Boolean);
-}
-
-/**
- * Extract name from AddressObject
- */
-function extractName(addressObj: AddressObject | AddressObject[] | undefined): string | undefined {
-  if (!addressObj) return undefined;
-  const addr = Array.isArray(addressObj) ? addressObj[0] : addressObj;
-  return addr.value?.[0]?.name;
-}
-
-/**
- * Find or create email thread
- */
-async function findOrCreateThread(
-  subject: string,
-  participants: string[],
-  messageId: string,
-  inReplyTo?: string
-): Promise<string> {
-  // If this is a reply, find the parent thread
-  if (inReplyTo) {
-    const parentEmail = await prisma.email.findUnique({
-      where: { messageId: inReplyTo },
-      select: { threadId: true },
-    });
-    if (parentEmail) {
-      // Update thread activity
-      await prisma.emailThread.update({
-        where: { id: parentEmail.threadId },
-        data: { lastActivity: new Date() },
-      });
-      return parentEmail.threadId;
-    }
-  }
-
-  // Try to find existing thread by subject and participants
-  const normalizedSubject = subject.replace(/^(Re|Fwd):\s*/i, '').trim();
-  const threads = await prisma.emailThread.findMany({
-    where: {
-      subject: {
-        contains: normalizedSubject,
-        mode: 'insensitive',
-      },
-    },
-    orderBy: { lastActivity: 'desc' },
-    take: 5,
-  });
-
-  // Check if any thread has matching participants
-  for (const thread of threads) {
-    const hasMatchingParticipants = participants.some(p => 
-      thread.participants.includes(p)
-    );
-    if (hasMatchingParticipants) {
-      // Update thread activity
-      await prisma.emailThread.update({
-        where: { id: thread.id },
-        data: { lastActivity: new Date() },
-      });
-      return thread.id;
-    }
-  }
-
-  // Create new thread
-  const newThread = await prisma.emailThread.create({
-    data: {
-      subject: normalizedSubject,
-      participants,
-      lastActivity: new Date(),
-    },
-  });
-
-  return newThread.id;
-}
-
-/**
- * Process and store email attachment
- */
-async function processAttachment(
-  attachment: any,
-  emailId: string
-): Promise<void> {
+// Load MailerLite API key from secrets
+function getMailerLiteApiKey(): string {
   try {
-    const config = getBucketConfig();
-    const timestamp = Date.now();
-    const sanitizedFilename = attachment.filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const s3Key = `${config.folderPrefix}email-attachments/${emailId}/${timestamp}-${sanitizedFilename}`;
-    
-    const cloudStoragePath = await uploadFile(attachment.content, s3Key);
-
-    await prisma.emailAttachment.create({
-      data: {
-        emailId,
-        filename: attachment.filename,
-        mimeType: attachment.contentType,
-        size: attachment.size,
-        cloudStoragePath,
-      },
-    });
+    const secretsPath = '/home/ubuntu/.config/abacusai_auth_secrets.json';
+    const secretsData = fs.readFileSync(secretsPath, 'utf-8');
+    const secrets = JSON.parse(secretsData);
+    return secrets?.mailerlite?.secrets?.api_key?.value || process.env.MAILERLITE_API_KEY || '';
   } catch (error) {
-    console.error('Error processing attachment:', error);
+    console.error('Error loading MailerLite API key:', error);
+    return process.env.MAILERLITE_API_KEY || '';
   }
 }
 
-/**
- * Fetch new emails from inbox
- */
-export async function fetchNewEmails(): Promise<number> {
-  const config = getEmailConfig();
-  
-  if (!config.host || !config.user || !config.password) {
-    console.error('[Email Service] Email configuration incomplete');
-    return 0;
-  }
-
-  let connection;
-  try {
-    console.log('[Email Service] Connecting to email server...');
-    
-    connection = await imaps.connect({
-      imap: {
-        host: config.host,
-        port: config.port,
-        user: config.user,
-        password: config.password,
-        tls: config.tls,
-        authTimeout: 10000,
-      },
-    });
-
-    console.log('[Email Service] Connected successfully');
-
-    await connection.openBox('INBOX');
-    
-    // Search for unseen emails
-    const searchCriteria = ['UNSEEN'];
-    const fetchOptions = {
-      bodies: ['HEADER', 'TEXT', ''],
-      markSeen: false,
-    };
-
-    const messages = await connection.search(searchCriteria, fetchOptions);
-    console.log(`[Email Service] Found ${messages.length} new emails`);
-
-    let processedCount = 0;
-
-    for (const item of messages) {
-      try {
-        const all = item.parts.find((part: any) => part.which === '');
-        if (!all || !all.body) continue;
-
-        const parsed: ParsedMail = await simpleParser(all.body);
-
-        // Extract email data
-        const messageId = parsed.messageId || `generated-${Date.now()}-${Math.random()}`;
-        const from = extractEmail(parsed.from);
-        const fromName = extractName(parsed.from);
-        const to = extractEmails(parsed.to);
-        const cc = extractEmails(parsed.cc);
-        const bcc = extractEmails(parsed.bcc);
-        const subject = parsed.subject || '(No Subject)';
-        const textBody = parsed.text || '';
-        const htmlBody = parsed.html || undefined;
-        const snippet = textBody.substring(0, 200).trim();
-        const receivedAt = parsed.date || new Date();
-        const inReplyTo = parsed.inReplyTo || undefined;
-        const references = parsed.references || [];
-        const hasAttachments = (parsed.attachments?.length || 0) > 0;
-
-        // Check if email already exists
-        const existingEmail = await prisma.email.findUnique({
-          where: { messageId },
-        });
-
-        if (existingEmail) {
-          console.log(`[Email Service] Email ${messageId} already exists, skipping`);
-          continue;
-        }
-
-        // Determine all participants
-        const participants = Array.from(new Set([from, ...to, ...cc]));
-
-        // Find or create thread
-        const threadId = await findOrCreateThread(
-          subject,
-          participants,
-          messageId,
-          inReplyTo
-        );
-
-        // Create email record
-        const email = await prisma.email.create({
-          data: {
-            threadId,
-            messageId,
-            inReplyTo,
-            references: Array.isArray(references) ? references : [references].filter(Boolean),
-            from,
-            fromName,
-            to,
-            cc,
-            bcc,
-            replyTo: extractEmail(parsed.replyTo),
-            subject,
-            textBody,
-            htmlBody,
-            snippet,
-            hasAttachments,
-            receivedAt,
-            isIncoming: true,
-            isRead: false,
-          },
-        });
-
-        // Process attachments
-        if (hasAttachments && parsed.attachments) {
-          for (const attachment of parsed.attachments) {
-            await processAttachment(attachment, email.id);
-          }
-        }
-
-        processedCount++;
-        console.log(`[Email Service] Processed email: ${subject} from ${from}`);
-      } catch (error) {
-        console.error('[Email Service] Error processing email:', error);
-      }
-    }
-
-    console.log(`[Email Service] Successfully processed ${processedCount} new emails`);
-    return processedCount;
-  } catch (error) {
-    console.error('[Email Service] Error fetching emails:', error);
-    throw error;
-  } finally {
-    if (connection) {
-      connection.end();
-    }
-  }
-}
-
-/**
- * Send email reply
- */
-export async function sendEmailReply(params: {
-  to: string | string[];
-  cc?: string[];
-  bcc?: string[];
+interface EmailParams {
+  to: string;
   subject: string;
-  text: string;
-  html?: string;
-  inReplyTo?: string;
-  references?: string[];
-  threadId: string;
-}): Promise<string> {
-  const nodemailer = require('nodemailer');
+  html: string;
+  from?: string;
+}
+
+export async function sendEmail({ to, subject, html, from = 'WritGo <info@writgo.nl>' }: EmailParams) {
+  const apiKey = getMailerLiteApiKey();
   
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_SMTP_HOST,
-    port: parseInt(process.env.EMAIL_SMTP_PORT || '587'),
-    secure: process.env.EMAIL_SMTP_PORT === '465',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
+  if (!apiKey) {
+    console.error('MailerLite API key not found');
+    return { success: false, error: 'Email service not configured' };
+  }
 
-  const mailOptions = {
-    from: `WritgoAI <${process.env.EMAIL_USER}>`,
-    to: Array.isArray(params.to) ? params.to : [params.to],
-    cc: params.cc,
-    bcc: params.bcc,
-    subject: params.subject,
-    text: params.text,
-    html: params.html,
-    inReplyTo: params.inReplyTo,
-    references: params.references,
-  };
+  try {
+    const response = await fetch('https://connect.mailerlite.com/api/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: {
+          email: from.includes('<') ? from.split('<')[1].replace('>', '') : from,
+          name: from.includes('<') ? from.split('<')[0].trim() : 'WritGo',
+        },
+        to: [{
+          email: to,
+        }],
+        subject,
+        html,
+      }),
+    });
 
-  const info = await transporter.sendMail(mailOptions);
-  const messageId = info.messageId;
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('MailerLite API error:', error);
+      return { success: false, error: `Failed to send email: ${error}` };
+    }
 
-  // Store sent email in database
-  await prisma.email.create({
-    data: {
-      threadId: params.threadId,
-      messageId,
-      inReplyTo: params.inReplyTo,
-      references: params.references || [],
-      from: process.env.EMAIL_USER || '',
-      fromName: 'WritgoAI',
-      to: Array.isArray(params.to) ? params.to : [params.to],
-      cc: params.cc || [],
-      bcc: params.bcc || [],
-      subject: params.subject,
-      textBody: params.text,
-      htmlBody: params.html,
-      snippet: params.text.substring(0, 200),
-      receivedAt: new Date(),
-      sentAt: new Date(),
-      isIncoming: false,
-      isRead: true,
-      hasAttachments: false,
-    },
-  });
-
-  // Update thread activity
-  await prisma.emailThread.update({
-    where: { id: params.threadId },
-    data: { lastActivity: new Date() },
-  });
-
-  console.log(`[Email Service] Sent reply: ${messageId}`);
-  return messageId;
+    const data = await response.json();
+    console.log('Email sent successfully:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 }
 
-/**
- * Mark email as read
- */
-export async function markEmailAsRead(emailId: string): Promise<void> {
-  await prisma.email.update({
-    where: { id: emailId },
-    data: { isRead: true },
-  });
-}
+// Email templates
+export const emailTemplates = {
+  invoiceSent: (invoiceNumber: string, total: number, dueDate: string, paymentUrl: string, clientName: string) => `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .invoice-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .button { display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>WritGo AI</h1>
+          <p>Nieuwe Factuur</p>
+        </div>
+        <div class="content">
+          <p>Beste ${clientName},</p>
+          <p>Hierbij ontvangt u factuur <strong>${invoiceNumber}</strong> van WritGo AI.</p>
+          
+          <div class="invoice-details">
+            <h3>Factuurdetails</h3>
+            <p><strong>Factuurnummer:</strong> ${invoiceNumber}</p>
+            <p><strong>Totaalbedrag:</strong> €${total.toFixed(2)}</p>
+            <p><strong>Vervaldatum:</strong> ${new Date(dueDate).toLocaleDateString('nl-NL')}</p>
+          </div>
+          
+          <p>U kunt deze factuur direct betalen via de onderstaande link:</p>
+          <center>
+            <a href="${paymentUrl}" class="button">Betaal Factuur</a>
+          </center>
+          
+          <p>Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+        </div>
+        <div class="footer">
+          <p>WritGo AI - Uw AI Content Partner</p>
+          <p>info@writgo.nl | www.writgoai.nl</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `,
 
-/**
- * Mark email as starred
- */
-export async function toggleEmailStar(emailId: string): Promise<boolean> {
-  const email = await prisma.email.findUnique({
-    where: { id: emailId },
-    select: { isStarred: true },
-  });
+  paymentReceived: (invoiceNumber: string, total: number, clientName: string) => `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .success-icon { font-size: 48px; text-align: center; margin: 20px 0; }
+        .payment-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>WritGo AI</h1>
+          <p>Betaling Ontvangen</p>
+        </div>
+        <div class="content">
+          <div class="success-icon">✅</div>
+          <p>Beste ${clientName},</p>
+          <p>Bedankt voor uw betaling! We hebben uw betaling succesvol ontvangen.</p>
+          
+          <div class="payment-details">
+            <h3>Betalingsdetails</h3>
+            <p><strong>Factuurnummer:</strong> ${invoiceNumber}</p>
+            <p><strong>Bedrag:</strong> €${total.toFixed(2)}</p>
+            <p><strong>Status:</strong> <span style="color: #10b981;">Betaald</span></p>
+          </div>
+          
+          <p>Uw factuur is nu volledig voldaan. U ontvangt binnenkort een PDF-factuur ter bevestiging.</p>
+          
+          <p>Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+        </div>
+        <div class="footer">
+          <p>WritGo AI - Uw AI Content Partner</p>
+          <p>info@writgo.nl | www.writgoai.nl</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `,
 
-  const newStarred = !email?.isStarred;
-  
-  await prisma.email.update({
-    where: { id: emailId },
-    data: { isStarred: newStarred },
-  });
+  paymentReminder: (invoiceNumber: string, total: number, dueDate: string, paymentUrl: string, clientName: string, daysOverdue: number) => `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .invoice-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .button { display: inline-block; background: #f59e0b; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>WritGo AI</h1>
+          <p>Betalingsherinnering</p>
+        </div>
+        <div class="content">
+          <p>Beste ${clientName},</p>
+          
+          <div class="warning">
+            <strong>⚠️ Betaalherinnering</strong><br>
+            Factuur ${invoiceNumber} is ${daysOverdue} dag${daysOverdue > 1 ? 'en' : ''} over de vervaldatum.
+          </div>
+          
+          <p>Wij hebben nog geen betaling ontvangen voor onderstaande factuur. Mogelijk is deze over het hoofd gezien.</p>
+          
+          <div class="invoice-details">
+            <h3>Factuurdetails</h3>
+            <p><strong>Factuurnummer:</strong> ${invoiceNumber}</p>
+            <p><strong>Totaalbedrag:</strong> €${total.toFixed(2)}</p>
+            <p><strong>Vervaldatum:</strong> ${new Date(dueDate).toLocaleDateString('nl-NL')}</p>
+            <p><strong>Dagen over tijd:</strong> ${daysOverdue}</p>
+          </div>
+          
+          <p>U kunt deze factuur direct betalen via de onderstaande link:</p>
+          <center>
+            <a href="${paymentUrl}" class="button">Betaal Nu</a>
+          </center>
+          
+          <p>Indien u vragen heeft over deze factuur, neem dan gerust contact met ons op.</p>
+          
+          <p>Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+        </div>
+        <div class="footer">
+          <p>WritGo AI - Uw AI Content Partner</p>
+          <p>info@writgo.nl | www.writgoai.nl</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `,
 
-  return newStarred;
-}
+  assignmentCreated: (assignmentTitle: string, assignmentType: string, deadline: string, clientName: string) => `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .assignment-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .button { display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>WritGo AI</h1>
+          <p>Nieuwe Opdracht</p>
+        </div>
+        <div class="content">
+          <p>Beste ${clientName},</p>
+          <p>Er is een nieuwe opdracht voor u aangemaakt in het WritGo AI portal.</p>
+          
+          <div class="assignment-details">
+            <h3>Opdrachtdetails</h3>
+            <p><strong>Titel:</strong> ${assignmentTitle}</p>
+            <p><strong>Type:</strong> ${assignmentType}</p>
+            ${deadline ? `<p><strong>Deadline:</strong> ${new Date(deadline).toLocaleDateString('nl-NL')}</p>` : ''}
+          </div>
+          
+          <p>U kunt de volledige details en voortgang bekijken in uw portal:</p>
+          <center>
+            <a href="https://writgoai.nl/client-portal/opdrachten" class="button">Bekijk Opdrachten</a>
+          </center>
+          
+          <p>Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+        </div>
+        <div class="footer">
+          <p>WritGo AI - Uw AI Content Partner</p>
+          <p>info@writgo.nl | www.writgoai.nl</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `,
 
-/**
- * Update thread status
- */
-export async function updateThreadStatus(
-  threadId: string,
-  status: 'open' | 'closed' | 'archived'
-): Promise<void> {
-  await prisma.emailThread.update({
-    where: { id: threadId },
-    data: { status },
-  });
-}
-
-/**
- * Update thread priority
- */
-export async function updateThreadPriority(
-  threadId: string,
-  priority: 'low' | 'normal' | 'high' | 'urgent'
-): Promise<void> {
-  await prisma.emailThread.update({
-    where: { id: threadId },
-    data: { priority },
-  });
-}
+  requestReceived: (requestTitle: string, requestType: string) => `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .request-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>WritGo AI</h1>
+          <p>Nieuw Klantverzoek</p>
+        </div>
+        <div class="content">
+          <p>Er is een nieuw verzoek ontvangen van een klant.</p>
+          
+          <div class="request-details">
+            <h3>Verzoekdetails</h3>
+            <p><strong>Titel:</strong> ${requestTitle}</p>
+            <p><strong>Type:</strong> ${requestType}</p>
+          </div>
+          
+          <p>Log in op het agency portal om dit verzoek te bekijken en te verwerken.</p>
+          
+          <p>Met vriendelijke groet,<br><strong>WritGo AI Systeem</strong></p>
+        </div>
+        <div class="footer">
+          <p>WritGo AI - Agency Portal</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `,
+};

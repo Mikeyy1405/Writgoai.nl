@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { notifyAdminNewRequest } from '@/lib/notification-helper';
 
 // GET client's own requests
 export async function GET(request: NextRequest) {
@@ -69,6 +70,9 @@ export async function POST(request: NextRequest) {
         status: 'new',
       }
     });
+
+    // Notify admin about new request
+    await notifyAdminNewRequest(clientRequest.id);
 
     return NextResponse.json({ request: clientRequest });
   } catch (error: any) {

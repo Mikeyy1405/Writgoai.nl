@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   Send,
   Eye,
+  Mail,
+  Download,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -106,6 +108,57 @@ export default function InvoicesPage() {
       } else {
         toast.error(data.error || 'Kon betaallink niet genereren');
       }
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Er ging iets mis');
+    }
+  };
+
+  const sendInvoiceEmail = async (id: string) => {
+    try {
+      toast.loading('Email verzenden...');
+      const res = await fetch(`/api/admin/agency/invoices/${id}/send-email`, {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+      toast.dismiss();
+
+      if (res.ok) {
+        toast.success('Factuur email verzonden!');
+        fetchInvoices();
+      } else {
+        toast.error(data.error || 'Kon email niet verzenden');
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Er ging iets mis');
+    }
+  };
+
+  const downloadPDF = async (id: string, invoiceNumber: string) => {
+    try {
+      toast.loading('PDF genereren...');
+      const res = await fetch(`/api/admin/agency/invoices/${id}/pdf`);
+      
+      toast.dismiss();
+
+      if (!res.ok) {
+        toast.error('Kon PDF niet genereren');
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('PDF gedownload!');
     } catch (error) {
       toast.dismiss();
       toast.error('Er ging iets mis');
@@ -274,17 +327,47 @@ export default function InvoicesPage() {
                     {getStatusLabel(invoice.status)}
                   </span>
 
-                  {['sent', 'overdue'].includes(invoice.status) && (
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    {['sent', 'overdue'].includes(invoice.status) && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            createCheckout(invoice.id);
+                          }}
+                          className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-sm transition-colors flex items-center gap-2"
+                          title="Genereer en kopieer betaallink"
+                        >
+                          <Send className="w-4 h-4" />
+                          Betaallink
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            sendInvoiceEmail(invoice.id);
+                          }}
+                          className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-sm transition-colors flex items-center gap-2"
+                          title="Verstuur factuur via email"
+                        >
+                          <Mail className="w-4 h-4" />
+                          Email
+                        </button>
+                      </>
+                    )}
+                    
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        createCheckout(invoice.id);
+                        downloadPDF(invoice.id, invoice.invoiceNumber);
                       }}
-                      className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-sm transition-colors"
+                      className="px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm transition-colors flex items-center gap-2"
+                      title="Download PDF"
                     >
-                      Stuur Betaallink
+                      <Download className="w-4 h-4" />
+                      PDF
                     </button>
-                  )}
+                  </div>
 
                   <select
                     value={invoice.status}

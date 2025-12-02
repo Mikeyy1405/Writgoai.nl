@@ -1,95 +1,188 @@
+import { sendEmail, emailTemplates } from './email-service';
+import { prisma as db } from './db';
 
 /**
- * Notification Helper
- * Centraal systeem voor het versturen van admin notificaties
+ * Send notification when a new assignment is created
  */
-
-import { prisma } from './db';
-import { sendAdminNotificationEmail } from './email';
-
-const ADMIN_EMAILS = [
-  'mikeschonewille@gmail.com',
-  // Voeg hier meer admin emails toe indien nodig
-];
-
-export interface NotificationData {
-  type: 'new_client' | 'credits_purchased' | 'credits_low' | 'subscription_started' | 'subscription_cancelled' | 'subscription_changed' | 'subscription_error';
-  clientId: string;
-  clientName: string;
-  clientEmail: string;
-  details: Record<string, any>;
-}
-
-/**
- * Stuur notificatie naar alle admins
- */
-export async function sendAdminNotification(data: NotificationData) {
+export async function notifyAssignmentCreated(assignmentId: string) {
   try {
-    // Log notification in database (optioneel - kan later toegevoegd worden)
-    console.log('[Notification] Sending to admins:', data.type, data.clientName);
+    const assignment = await db.assignment.findUnique({
+      where: { id: assignmentId },
+      include: { client: true },
+    });
 
-    // Stuur e-mail naar alle admins
-    for (const adminEmail of ADMIN_EMAILS) {
-      try {
-        await sendAdminNotificationEmail({
-          to: adminEmail,
-          type: data.type,
-          clientName: data.clientName,
-          clientEmail: data.clientEmail,
-          details: data.details,
-        });
-      } catch (emailError) {
-        console.error(`[Notification] Failed to send email to ${adminEmail}:`, emailError);
-        // Continue met andere emails ook al faalt één
-      }
+    if (!assignment) {
+      console.error('Assignment not found for notification');
+      return { success: false, error: 'Assignment not found' };
     }
 
-    return { success: true };
+    const emailHtml = emailTemplates.assignmentCreated(
+      assignment.title,
+      assignment.type,
+      assignment.deadline?.toISOString() || '',
+      assignment.client.name
+    );
+
+    return await sendEmail({
+      to: assignment.client.email,
+      subject: `Nieuwe Opdracht: ${assignment.title} - WritGo AI`,
+      html: emailHtml,
+    });
   } catch (error) {
-    console.error('[Notification] Failed to send admin notification:', error);
-    // Throw niet - we willen niet dat het hoofd proces faalt door een notificatie fout
-    return { success: false, error };
+    console.error('Error sending assignment notification:', error);
+    return { success: false, error: 'Failed to send notification' };
   }
 }
 
 /**
- * Check of credits laag zijn en stuur notificatie
+ * Send notification when a payment is received
  */
-export async function checkAndNotifyLowCredits(clientId: string) {
+export async function notifyPaymentReceived(invoiceId: string) {
   try {
-    const client = await prisma.client.findUnique({
-      where: { id: clientId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        subscriptionCredits: true,
-        topUpCredits: true,
-        isUnlimited: true,
-      },
+    const invoice = await db.invoice.findUnique({
+      where: { id: invoiceId },
+      include: { client: true },
     });
 
-    if (!client || client.isUnlimited) {
-      return;
+    if (!invoice) {
+      console.error('Invoice not found for notification');
+      return { success: false, error: 'Invoice not found' };
     }
 
-    const totalCredits = client.subscriptionCredits + client.topUpCredits;
+    const emailHtml = emailTemplates.paymentReceived(
+      invoice.invoiceNumber,
+      invoice.total,
+      invoice.client.name
+    );
 
-    // Stuur notificatie als credits onder 5 zijn
-    if (totalCredits <= 5 && totalCredits > 0) {
-      await sendAdminNotification({
-        type: 'credits_low',
-        clientId: client.id,
-        clientName: client.name,
-        clientEmail: client.email,
-        details: {
-          subscriptionCredits: client.subscriptionCredits,
-          topUpCredits: client.topUpCredits,
-          totalCredits,
-        },
-      });
-    }
+    return await sendEmail({
+      to: invoice.client.email,
+      subject: `Betaling Ontvangen - ${invoice.invoiceNumber}`,
+      html: emailHtml,
+    });
   } catch (error) {
-    console.error('[Notification] Failed to check low credits:', error);
+    console.error('Error sending payment notification:', error);
+    return { success: false, error: 'Failed to send notification' };
+  }
+}
+
+/**
+ * Send payment reminder for overdue invoice
+ */
+export async function sendPaymentReminder(invoiceId: string) {
+  try {
+    const invoice = await db.invoice.findUnique({
+      where: { id: invoiceId },
+      include: { client: true },
+    });
+
+    if (!invoice) {
+      console.error('Invoice not found for reminder');
+      return { success: false, error: 'Invoice not found' };
+    }
+
+    if (invoice.status === 'paid') {
+      return { success: false, error: 'Invoice is already paid' };
+    }
+
+    if (!invoice.stripePaymentUrl) {
+      return { success: false, error: 'No payment URL available' };
+    }
+
+    // Calculate days overdue
+    const today = new Date();
+    const dueDate = new Date(invoice.dueDate);
+    const daysOverdue = Math.floor(
+      (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysOverdue <= 0) {
+      return { success: false, error: 'Invoice is not overdue yet' };
+    }
+
+    const emailHtml = emailTemplates.paymentReminder(
+      invoice.invoiceNumber,
+      invoice.total,
+      invoice.dueDate.toISOString(),
+      invoice.stripePaymentUrl,
+      invoice.client.name,
+      daysOverdue
+    );
+
+    return await sendEmail({
+      to: invoice.client.email,
+      subject: `Betaalherinnering - ${invoice.invoiceNumber}`,
+      html: emailHtml,
+    });
+  } catch (error) {
+    console.error('Error sending payment reminder:', error);
+    return { success: false, error: 'Failed to send reminder' };
+  }
+}
+
+/**
+ * Notify admin about new client request
+ */
+export async function notifyAdminNewRequest(requestId: string) {
+  try {
+    const request = await db.clientRequest.findUnique({
+      where: { id: requestId },
+      include: { client: true },
+    });
+
+    if (!request) {
+      console.error('Request not found for notification');
+      return { success: false, error: 'Request not found' };
+    }
+
+    const emailHtml = emailTemplates.requestReceived(
+      request.title,
+      request.type
+    );
+
+    return await sendEmail({
+      to: 'info@writgo.nl',
+      subject: `Nieuw Klantverzoek: ${request.title}`,
+      html: emailHtml,
+    });
+  } catch (error) {
+    console.error('Error sending admin notification:', error);
+    return { success: false, error: 'Failed to send notification' };
+  }
+}
+
+/**
+ * Check and send reminders for all overdue invoices
+ */
+export async function checkAndSendPaymentReminders() {
+  try {
+    const today = new Date();
+    const overdueInvoices = await db.invoice.findMany({
+      where: {
+        status: 'overdue',
+        dueDate: {
+          lt: today,
+        },
+        stripePaymentUrl: {
+          not: null,
+        },
+      },
+      include: { client: true },
+    });
+
+    console.log(`Found ${overdueInvoices.length} overdue invoices`);
+
+    const results = [];
+    for (const invoice of overdueInvoices) {
+      // Only send reminder if last reminder was sent more than 7 days ago
+      // (You can add a lastReminderSent field to the Invoice model if needed)
+      const result = await sendPaymentReminder(invoice.id);
+      results.push({ invoiceId: invoice.id, result });
+    }
+
+    return { success: true, results };
+  } catch (error) {
+    console.error('Error checking payment reminders:', error);
+    return { success: false, error: 'Failed to check reminders' };
   }
 }

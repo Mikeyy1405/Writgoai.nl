@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/db';
+import { notifyPaymentReceived } from '@/lib/notification-helper';
 import Stripe from 'stripe';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -82,6 +83,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   });
 
   console.log(`[Stripe Webhook] Invoice ${invoiceId} marked as paid`);
+  
+  // Send payment confirmation email
+  await notifyPaymentReceived(invoiceId);
 }
 
 async function handleInvoicePaid(stripeInvoice: Stripe.Invoice) {
@@ -103,6 +107,9 @@ async function handleInvoicePaid(stripeInvoice: Stripe.Invoice) {
       stripeInvoiceId: stripeInvoice.id,
     }
   });
+  
+  // Send payment confirmation email
+  await notifyPaymentReceived(invoiceId);
 }
 
 async function handleInvoicePaymentFailed(stripeInvoice: Stripe.Invoice) {
