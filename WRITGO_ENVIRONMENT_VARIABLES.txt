@@ -1,0 +1,101 @@
+# ==========================================
+# WRITGO AI - PRODUCTION ENVIRONMENT
+# ==========================================
+# BELANGRIJK: Dit bestand bevat gevoelige gegevens!
+# Deel deze NOOIT publiekelijk of via Git!
+
+# ⚠️⚠️⚠️ KRITIEKE WAARSCHUWING ⚠️⚠️⚠️
+# De Stripe keys hieronder zijn GECOMPROMITTEERD (waren op GitHub)!
+# VERVANG DEZE ONMIDDELLIJK met nieuwe keys voordat je de app gebruikt!
+# Stappen:
+# 1. Ga naar https://dashboard.stripe.com/apikeys
+# 2. Revoke (intrekken) de oude keys
+# 3. Genereer nieuwe Secret Key en Publishable Key
+# 4. Vervang de waarden hieronder met de nieuwe keys
+
+# ==========================================
+# DATABASE (Render PostgreSQL)
+# ==========================================
+# ⚠️ Vervang dit met je Render Internal Database URL
+# Formaat: postgresql://username:password@hostname:5432/database
+# Te vinden in: Render Dashboard → Database → Internal Database URL
+DATABASE_URL=postgresql://user:password@host:5432/database
+
+# ==========================================
+# NEXTAUTH AUTHENTICATIE
+# ==========================================
+# Deze is nieuw gegenereerd en veilig
+NEXTAUTH_SECRET=WEZ8bamh3TOPhEnBCC8X-huM7URZnVtHCiRBIZsVxDuLEfKG
+
+# Voor lokale development: http://localhost:3000
+# Voor productie: je eigen domein
+NEXTAUTH_URL=https://writgoai.nl
+
+# ==========================================
+# STRIPE BETALINGEN
+# ==========================================
+# ⚠️⚠️⚠️ VERVANG DEZE KEYS - ZE ZIJN GECOMPROMITTEERD! ⚠️⚠️⚠️
+
+# Publishable Key (vervang met nieuwe!)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_VERVANG_DIT_MET_NIEUWE_KEY
+
+# Secret Key (vervang met nieuwe!)
+STRIPE_SECRET_KEY=sk_live_VERVANG_DIT_MET_NIEUWE_KEY
+
+# Webhook Secret - Configureer NA deployment:
+# 1. Deploy je app eerst naar Render
+# 2. Ga naar https://dashboard.stripe.com/webhooks
+# 3. Klik "Add endpoint"
+# 4. URL: https://writgoai.nl/api/webhooks/stripe
+# 5. Selecteer events:
+#    - checkout.session.completed
+#    - payment_intent.succeeded
+#    - payment_intent.payment_failed
+# 6. Kopieer de "Signing secret" en plak hieronder
+STRIPE_WEBHOOK_SECRET=whsec_VERVANG_DIT_NA_WEBHOOK_CONFIGURATIE
+
+# ==========================================
+# AWS S3 CLOUD STORAGE
+# ==========================================
+# Voor file uploads (facturen PDF, afbeeldingen, etc.)
+# Deze worden automatisch geconfigureerd door het platform
+AWS_BUCKET_NAME=writgo-production
+AWS_FOLDER_PREFIX=production/
+
+# ==========================================
+# AI APIs (Deze zijn veilig - niet op GitHub geweest)
+# ==========================================
+
+# AIML API (voor content generatie)
+AIML_API_KEY=eb1cd6eaee0d4c5ca30dffe07cdcb600
+
+# Bol.com Affiliate API
+BOL_COM_CLIENT_ID=34713130-133d-4aa0-bee4-0926dc30913f
+BOL_COM_CLIENT_SECRET=uF85MFTZ4q?)1T0vX!akVoTVd5V!AAw4CIb+s6MH@23YGwNkRjkUTUxz0j4c67vU
+
+# MailerLite Email Service
+MAILERLITE_API_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0IiwianRpIjoiNGIwYzczNmM0NGU2N2M5ZmE3MDU0Yjg5N2M0MGMwODgxNjI3YjgxZThmNTAwY2NlMmEwYmY5NmMxNmMxZjAwMDU3MmVmZWFmMmRkMzAyNDMiLCJpYXQiOjE3NjA1MzI4MDcuMTAyNDI0LCJuYmYiOjE3NjA1MzI4MDcuMTAyNDI2LCJleHAiOjQ5MTYyMDY0MDcuMDk4NDA3LCJzdWIiOiIxNTE1MjE3Iiwic2NvcGVzIjpbXX0.De1E2K2VAPJJiaTyOuu4pFPA8QYE4f7GalCH1ANHNyfrlgwK4icl8gQg2rmC3vgw1kl3rvbhpzxnbhu53Ekzc9g13TjZAZJLrOdPHF5-iK96FW6xc2wHPubJuDFv_B4Y1WFzZEoW70mDIP8z-Ys7TqskM2wP2Q-5r9M-9255ZDaqEMPhQ36OZu6PEXHcjUBsyA00bJs2pCKMNMPFCUJM1MU2IRcagLXH76Xuq7u0cviE9UN--7u4yiQ0SMPUOppSSrRG8oQE-umuqQcc2mGAnviGFzmN8-Jca-mF260lEDxQhGF4TPcfaJ6HH6Fd5Gjso09RFDiqQH-CgkuSkX0IghdWjLNdYeJ0CmWKhasm4AuLsKKrKWei2wnACMRfykiMEgMQOs_VRJXTwNNewhb5bsqozojn4xibaRFq3drmp_fpdYIHe5N7iVWM3NBESdDCWX4mjGME0BJc-BsymeQiRdYtz-zsJiCf0wC7mGe1QgNBzqYMVeZYTRajDmfcFOtqVz9wbv60flwQPWUi-eRyd41WjHQzK3aZU1PltGMVeWtUO5HX6PlTPiu1BRbaY06PHP68PcHBcP83NBl4NGUSjYyBoBqrL3pQUZ1ZhzE9uF55CfeBKy_I_r2_HhDSKAuWamgF8Dt1JuicKK1iqZz3258w3J3mTfvca4rEn6LOm2M
+
+# ==========================================
+# CRON JOB BEVEILIGING
+# ==========================================
+# Voor automatische payment reminders
+# Endpoint: https://writgoai.nl/api/cron/payment-reminders
+# Header: Authorization: Bearer <CRON_SECRET>
+# Deze is nieuw gegenereerd en veilig
+CRON_SECRET=fVjjHrR9Nol2Ze2tG1H0Mi5epEdY3sme
+
+# ==========================================
+# PRODUCTIE SETTINGS
+# ==========================================
+NODE_ENV=production
+
+# ==========================================
+# DEPLOYMENT CHECKLIST
+# ==========================================
+# □ DATABASE_URL vervangen met Render Internal Database URL
+# □ Stripe keys vervangen met NIEUWE keys (oude zijn gecompromitteerd!)
+# □ Stripe webhook configureren en STRIPE_WEBHOOK_SECRET toevoegen
+# □ AWS credentials controleren (indien nodig)
+# □ Alle environment variables toevoegen in Render Dashboard
+# □ Test de app in Render preview environment eerst!
