@@ -78,8 +78,15 @@ export default function ClientPortalLayout({
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/client-login');
+      return;
     }
-  }, [status, router]);
+    
+    // Admin moet naar agency dashboard, niet client portal
+    if (status === 'authenticated' && session?.user?.email === 'info@writgo.nl') {
+      router.push('/dashboard/agency');
+      return;
+    }
+  }, [status, session, router]);
 
   if (status === 'loading') {
     return (
