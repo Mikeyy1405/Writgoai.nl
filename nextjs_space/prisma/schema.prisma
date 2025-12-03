@@ -133,6 +133,7 @@ model Client {
   assignments                       Assignment[]
   clientRequests                    ClientRequest[]
   invoices                          Invoice[]
+  toolUsage                         ToolUsage[]
 }
 
 model Project {
@@ -243,6 +244,7 @@ model Project {
   VideoProject                   VideoProject[]
   topicalMaps                    TopicalMap[]
   sitePlan                       SitePlan?
+  toolUsage                      ToolUsage[]
 
   @@index([clientId])
   @@index([websiteUrl])
@@ -2117,6 +2119,7 @@ model InvoiceItem {
   id              String    @id @default(cuid())
   invoiceId       String
   assignmentId    String?
+  usageId         String?
   description     String
   quantity        Float     @default(1)
   unitPrice       Float
@@ -2124,7 +2127,35 @@ model InvoiceItem {
   createdAt       DateTime  @default(now())
   invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   assignment      Assignment? @relation(fields: [assignmentId], references: [id])
+  usage           ToolUsage? @relation(fields: [usageId], references: [id])
 
   @@index([invoiceId])
   @@index([assignmentId])
+  @@index([usageId])
+}
+
+// ===== TOOL USAGE TRACKING (Pay-as-you-go) =====
+model ToolUsage {
+  id              String    @id @default(cuid())
+  clientId        String
+  projectId       String?
+  tool            String    // blog_generator, keyword_research, image_generator, content_generator, site_planner
+  action          String    // generate, research, create, etc.
+  details         Json?     // Extra info like keyword, title, etc.
+  tokenCount      Int?      // AI tokens used
+  imageCount      Int?      // Images generated
+  wordCount       Int?      // Words generated
+  suggestedPrice  Float     @default(0) // Suggested price based on usage
+  invoiced        Boolean   @default(false)
+  invoiceItemId   String?
+  createdAt       DateTime  @default(now())
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project         Project?  @relation(fields: [projectId], references: [id])
+  invoiceItems    InvoiceItem[]
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([tool])
+  @@index([invoiced])
+  @@index([createdAt])
 }

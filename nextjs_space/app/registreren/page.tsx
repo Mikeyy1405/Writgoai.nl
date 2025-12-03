@@ -77,7 +77,7 @@ function RegisterForm() {
         return;
       }
 
-      toast.success(data.message || 'Account aangemaakt! Je hebt gratis credits ontvangen! 🎉');
+      toast.success(data.message || 'Account aangemaakt! Je hebt nu toegang tot alle AI tools! 🎉');
       
       // Redirect to login page after successful registration
       setTimeout(() => {
@@ -117,7 +117,7 @@ function RegisterForm() {
             Maak een WritgoAI account
           </CardTitle>
           <CardDescription className="text-center text-zinc-400">
-            Start gratis met 1000 welkomst credits 🎁
+            Krijg toegang tot onze AI tools en agency diensten
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -138,16 +138,17 @@ function RegisterForm() {
               </div>
             )}
 
-            {/* Free Credits Highlight */}
-            <div className="p-4 bg-green-900/20 border-2 border-green-500 rounded-lg mb-4">
+            {/* Features Highlight */}
+            <div className="p-4 bg-emerald-900/20 border-2 border-emerald-500 rounded-lg mb-4">
               <div className="flex items-center gap-3 mb-2">
-                <Sparkles className="h-5 w-5 text-[#FF9933]" />
-                <h3 className="font-semibold text-white">Gratis Welkomstcadeau!</h3>
+                <Sparkles className="h-5 w-5 text-emerald-400" />
+                <h3 className="font-semibold text-white">Wat krijg je?</h3>
               </div>
               <ul className="text-sm text-zinc-300 space-y-1 ml-8">
-                <li>✅ 1000 gratis credits (≈ 20 blogs)</li>
-                <li>✅ AI-geschreven artikelen (2000+ woorden)</li>
-                <li>✅ Volledige toegang tot alle tools</li>
+                <li>✅ Toegang tot AI Blog Generator</li>
+                <li>✅ Zoekwoord Onderzoek Tool</li>
+                <li>✅ Content & Afbeelding Generator</li>
+                <li>✅ Agency diensten op aanvraag</li>
               </ul>
             </div>
 
