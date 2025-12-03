@@ -10,6 +10,8 @@ import { generateYoastMeta } from '@/lib/content-hub/seo-optimizer';
  * Publish article to WordPress
  */
 export async function POST(req: NextRequest) {
+  let articleId: string | undefined;
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -33,10 +35,12 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { 
-      articleId,
+      articleId: bodyArticleId,
       status = 'publish', // 'publish' or 'draft'
       scheduledDate,
     } = body;
+    
+    articleId = bodyArticleId;
 
     if (!articleId) {
       return NextResponse.json(
@@ -172,11 +176,10 @@ export async function POST(req: NextRequest) {
     console.error('[Content Hub] Publishing error:', error);
     
     // Update article status to failed
-    const body = await req.json();
-    if (body.articleId) {
+    if (articleId) {
       try {
         await prisma.contentHubArticle.update({
-          where: { id: body.articleId },
+          where: { id: articleId },
           data: { status: 'failed' },
         });
       } catch (e) {

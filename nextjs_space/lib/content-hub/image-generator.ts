@@ -91,6 +91,8 @@ export async function generateFeaturedImage(
 
 /**
  * Generate image prompts from article content
+ * Note: This function extracts text from HTML for use as AI image generation prompts only.
+ * The output is never inserted back into HTML, so XSS concerns don't apply here.
  */
 export function extractImagePrompts(
   content: string,
@@ -100,9 +102,17 @@ export function extractImagePrompts(
   const prompts: string[] = [];
   
   // Extract H2 headings as potential image topics
+  // Using simple regex for extraction since output is only used for AI prompts, not HTML
   const headingMatches = content.match(/<h2[^>]*>(.*?)<\/h2>/gi) || [];
   const headings = headingMatches
-    .map(h => h.replace(/<[^>]*>/g, '').trim())
+    .map(h => {
+      // Strip HTML tags - safe here since we're generating prompts, not rendering HTML
+      let text = h.replace(/<[^>]*>/g, '');
+      // Remove potentially problematic characters for AI prompts
+      text = text.replace(/[<>'"]/g, '').trim();
+      return text;
+    })
+    .filter(h => h.length > 0 && h.length < 200) // Reasonable length for prompts
     .slice(0, maxImages);
   
   headings.forEach(heading => {
@@ -111,7 +121,8 @@ export function extractImagePrompts(
   
   // If we don't have enough headings, add a generic one
   if (prompts.length === 0) {
-    prompts.push(`Professional image for article about: ${articleTitle}`);
+    const cleanTitle = articleTitle.replace(/[<>'"]/g, '').substring(0, 200);
+    prompts.push(`Professional image for article about: ${cleanTitle}`);
   }
   
   return prompts.slice(0, maxImages);

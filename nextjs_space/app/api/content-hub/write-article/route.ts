@@ -14,6 +14,7 @@ import { generateMetaTitle, generateMetaDescription, generateSlug, generateArtic
  */
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
+  let articleId: string | undefined;
   
   try {
     const session = await getServerSession(authOptions);
@@ -38,11 +39,13 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { 
-      articleId,
+      articleId: bodyArticleId,
       generateImages = true,
       includeFAQ = true,
       autoPublish = false,
     } = body;
+    
+    articleId = bodyArticleId;
 
     if (!articleId) {
       return NextResponse.json(
@@ -191,11 +194,10 @@ export async function POST(req: NextRequest) {
     console.error('[Content Hub] Article generation error:', error);
     
     // Update article status to failed
-    const body = await req.json();
-    if (body.articleId) {
+    if (articleId) {
       try {
         await prisma.contentHubArticle.update({
-          where: { id: body.articleId },
+          where: { id: articleId },
           data: { status: 'failed' },
         });
       } catch (e) {

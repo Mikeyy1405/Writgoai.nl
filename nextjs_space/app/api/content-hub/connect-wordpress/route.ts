@@ -76,10 +76,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // TODO: SECURITY - Implement encryption for WordPress application passwords before production
+    // Consider using a library like 'crypto' to encrypt passwords before storing
+    // and decrypt when retrieving for API calls
     const siteData = {
       wordpressUrl,
       wordpressUsername: username,
-      wordpressAppPassword: applicationPassword, // TODO: Encrypt in production
+      wordpressAppPassword: applicationPassword,
       isConnected: true,
       lastSyncedAt: new Date(),
       existingPages,
