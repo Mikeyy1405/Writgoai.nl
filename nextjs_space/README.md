@@ -1,74 +1,58 @@
 # WritGo AI - Content & SEO Platform
 
-WritGo AI is een complete AI-gedreven content en SEO platform met agency portal, automatische content generatie, en Stripe betalingsintegratie.
+🚀 **Live op: [writgoai.nl](https://writgoai.nl)**
 
-## ✨ Features
+## 📋 Overzicht
 
-### 🎯 Core Features
-- **AI Content Generator** - Automatische blog en content generatie met SEO optimalisatie
-- **Site Planner** - Complete content planning met sitemap integratie
-- **Image Generator** - AI-powered afbeeldingen met 11+ modellen (2-18 credits)
-- **Video Generator** - Automatische video creatie met scripts en voice-overs
-- **Keyword Research** - SEO zoekwoordonderzoek en analyse
-- **Social Media Studio** - Social media content planning en publishing
+WritGo AI is een volledig AI-powered content en SEO platform met geavanceerde functies voor:
+- 🤖 AI Content Generatie (blogs, artikelen, producten)
+- 📊 SEO Planning & Optimalisatie
+- 🎥 Video Generatie
+- 🔗 Affiliate Integratie (Bol.com)
+- 📝 WordPress Publishing
+- 💼 **Agency Portal** - Klantbeheer, opdrachten, facturen
+- 💳 **Stripe Betalingen** - Automatische factuurverwerking
 
-### 🏢 Agency Portal
-- **Client Management** - Volledig client management systeem
-- **Assignments** - Kanban board voor opdrachten
-- **Invoices** - Facturatie met Stripe integratie (iDEAL + credit card)
-- **Client Requests** - Request management systeem
-- **PDF Generation** - Automatische PDF facturen
-- **Email Notifications** - MailerLite integratie voor notificaties
+---
 
-### 💳 Payment & Credits
-- **Pay-as-you-go** - Credit-based pricing model
-- **Stripe Payments** - Volledige Stripe integratie voor facturen
-- **Subscription Credits** - Abonnement credits + top-up credits
-- **Unlimited Credits** - Optie voor onbeperkte credits
+## 🏗️ Tech Stack
 
-### 🔗 Integrations
-- **WordPress** - Direct publiceren naar WordPress
-- **Bol.com** - Affiliate product integratie
-- **MailerLite** - Email marketing integratie
-- **Stripe** - Betalingen en facturatie
-- **Google Search Console** - SEO data integratie
+- **Framework**: Next.js 14 (App Router)
+- **Database**: PostgreSQL + Prisma ORM
+- **Authenticatie**: NextAuth.js
+- **Betalingen**: Stripe (iDEAL + Credit Card)
+- **AI**: Abacus.AI + OpenAI + AIML API
+- **Email**: MailerLite
+- **Cloud Storage**: AWS S3
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Icons**: Lucide React
 
-## 🚀 Quick Start
+---
 
-### Prerequisites
-- Node.js 18+
-- PostgreSQL database
-- Yarn package manager
+## 🚀 Installatie
 
-### Installation
+### 1. Clone het project
 
 ```bash
-# Clone het project
 git clone https://github.com/Mikeyy1405/Writgoai.nl.git
 cd Writgoai.nl
-
-# Installeer dependencies
-yarn install
-
-# Setup environment variables
-cp .env.example .env
-# Vul je credentials in .env
-
-# Generate Prisma client
-yarn prisma generate
-
-# Run database migrations
-yarn prisma migrate deploy
-
-# Start development server
-yarn dev
 ```
 
-De app draait nu op [http://localhost:3000](http://localhost:3000)
+### 2. Installeer dependencies
 
-## 📝 Environment Variables
+```bash
+yarn install
+```
 
-Maak een `.env` bestand in de root directory:
+### 3. Environment Variables
+
+Kopieer `.env.example` naar `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Vul de volgende credentials in:
 
 ```env
 # Database
@@ -79,191 +63,166 @@ NEXTAUTH_SECRET=your-secret-here
 NEXTAUTH_URL=https://writgoai.nl
 
 # Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# AWS S3 (Cloud Storage)
-AWS_BUCKET_NAME=your-bucket-name
+# AWS S3
+AWS_BUCKET_NAME=your-bucket
 AWS_FOLDER_PREFIX=writgo/
 
-# Cron Secret
-CRON_SECRET=your-cron-secret-here
+# Cron
+CRON_SECRET=your-cron-secret
 ```
 
-**Note:** API keys voor MailerLite, Bol.com, AIML, en OpenAI worden geladen vanuit `/home/ubuntu/.config/abacusai_auth_secrets.json`
-
-## 🏗️ Project Structure
-
-```
-writgoai.nl/
-├── app/                          # Next.js App Router
-│   ├── api/                      # API routes
-│   │   ├── admin/agency/         # Agency admin endpoints
-│   │   ├── client/               # Client portal endpoints
-│   │   └── webhooks/stripe/      # Stripe webhook handler
-│   ├── dashboard/agency/         # Agency dashboard pages
-│   ├── client-portal/            # Client portal pages
-│   └── page.tsx                  # Landing page
-├── components/                   # React components
-│   ├── ui/                       # Shadcn UI components
-│   └── ...                       # Custom components
-├── lib/                          # Utility libraries
-│   ├── email-service.ts          # MailerLite integration
-│   ├── pdf-invoice-generator.tsx # PDF generation
-│   ├── stripe.ts                 # Stripe client
-│   └── ...                       # Other utilities
-├── prisma/
-│   └── schema.prisma             # Database schema
-└── public/                       # Static assets
-```
-
-## 🎨 Tech Stack
-
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **UI Components:** Shadcn UI + Radix UI
-- **Database:** PostgreSQL + Prisma ORM
-- **Authentication:** NextAuth.js
-- **Payments:** Stripe
-- **Email:** MailerLite API
-- **PDF:** @react-pdf/renderer
-- **AI:** AIML API + OpenAI (fallback)
-
-## 📋 Key API Endpoints
-
-### Agency Admin
-- `POST /api/admin/agency/clients` - Create client
-- `GET /api/admin/agency/assignments` - List assignments
-- `POST /api/admin/agency/invoices` - Create invoice
-- `POST /api/admin/agency/invoices/[id]/checkout` - Generate payment link
-- `GET /api/admin/agency/invoices/[id]/pdf` - Download PDF invoice
-
-### Client Portal
-- `GET /api/client/assignments` - View assignments
-- `POST /api/client/requests` - Submit request
-- `GET /api/client/invoices` - View invoices
-- `POST /api/client/invoices/[id]/pay` - Pay invoice via Stripe
-
-### Webhooks
-- `POST /api/webhooks/stripe` - Handle Stripe events
-- `POST /api/cron/payment-reminders` - Send payment reminders (cron job)
-
-## 🔐 Authentication
-
-Default admin account:
-- **Email:** info@writgo.nl
-- **Password:** (zie database seeding)
-
-Test client:
-- **Email:** test@writgo.nl
-- **Password:** (zie database seeding)
-
-## 💰 Credit System
-
-- **Subscription Credits:** Hernieuwt maandelijks
-- **Top-up Credits:** Eenmalige credits
-- **Infinity Credits:** Onbeperkte credits optie
-- **Credit Costs:**
-  - AI Images: 2-18 credits (afhankelijk van model)
-  - Blog/Content: 5-50 credits
-  - Video: 50-150 credits
-
-## 📦 Deployment
-
-### Vercel Deployment
+### 4. Database Setup
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
-```
-
-### Environment Variables in Vercel
-Voeg alle environment variables toe in Vercel dashboard → Project Settings → Environment Variables
-
-### Database Migrations
-```bash
-# In Vercel deployment
-yarn prisma migrate deploy
-```
-
-## 🔧 Development
-
-### Running Tests
-```bash
-yarn test
-```
-
-### Database Management
-```bash
-# Generate Prisma client
+# Genereer Prisma Client
 yarn prisma generate
 
-# Run migrations
-yarn prisma migrate dev
+# Run migraties (als nodig)
+yarn prisma migrate deploy
 
-# Seed database
+# Seed database (optioneel)
 yarn prisma db seed
-
-# Open Prisma Studio
-yarn prisma studio
 ```
 
-### Build Production
+### 5. Start Development Server
+
 ```bash
-yarn build
-yarn start
+yarn dev
 ```
 
-## 📊 Database Schema
-
-### Key Models
-- **Client** - Gebruikers/clients met subscription info
-- **Assignment** - Opdrachten voor clients
-- **ClientRequest** - Verzoeken van clients
-- **Invoice** - Facturen met Stripe integratie
-- **InvoiceItem** - Factuurregels
-- **Project** - Client projecten met WordPress integratie
-- **Content** - Gegenereerde content (blogs, video's, etc.)
-
-## 🎯 Roadmap
-
-### Fase 1 (✅ Voltooid)
-- [x] Agency Portal
-- [x] Stripe Payments
-- [x] PDF Invoices
-- [x] Email Notifications
-
-### Fase 2 (Toekomst)
-- [ ] Payment Reminders (automatisch)
-- [ ] Recurring Payments
-- [ ] Advanced Analytics
-- [ ] API Access voor clients
-- [ ] White-label optie
-
-## 🐛 Known Issues
-
-- Sitemap loader kan falen bij ontoegankelijke websites
-- Bol.com API rate limits bij grote volumes
-- Image generation kan timeout bij hoge load
-
-## 🤝 Contributing
-
-Dit is een private project. Voor vragen of suggesties, neem contact op met info@writgo.nl.
-
-## 📄 License
-
-Proprietary - All rights reserved
-
-## 📞 Support
-
-- **Website:** [writgoai.nl](https://writgoai.nl)
-- **Email:** info@writgo.nl
+Open [http://localhost:3000](http://localhost:3000) in je browser.
 
 ---
 
-**Built with ❤️ by WritGo AI Team**
+## 📦 API Secrets (Externe Services)
+
+De volgende API keys worden opgeslagen in `/home/ubuntu/.config/abacusai_auth_secrets.json`:
+
+- **AIML API** - AI modellen voor content generatie
+- **OpenAI API** - GPT modellen
+- **MailerLite API** - Email notificaties
+- **Bol.com API** - Affiliate producten
+- **Originality.AI** - Plagiaatcontrole
+- **ElevenLabs** - Text-to-speech
+- **Runway ML** - Video generatie
+
+---
+
+## 🏢 Agency Portal (Fase 3)
+
+### Features:
+
+#### Admin Dashboard (`/dashboard/agency`)
+- ✅ Klantenbeheer met creditoverzicht
+- ✅ Opdrachten (Kanban board + lijstweergave)
+- ✅ Verzoeken beheer (nieuwe aanvragen)
+- ✅ Facturen met Stripe integratie
+- ✅ PDF facturen genereren
+- ✅ Email notificaties (facturen, betalingen, herinneringen)
+
+#### Client Portal (`/client-portal`)
+- ✅ Dashboard met opdrachten/facturen overzicht
+- ✅ Nieuw verzoek indienen
+- ✅ Mijn opdrachten bekijken
+- ✅ Facturen betalen (iDEAL + Credit Card)
+- ✅ PDF facturen downloaden
+
+### Stripe Integratie:
+
+1. **Admin Flow**:
+   - Maak factuur aan
+   - Stuur betaallink via email of kopieer URL
+   - Klant betaalt via Stripe Checkout
+   - Webhook update factuur status automatisch
+
+2. **Client Flow**:
+   - Bekijk onbetaalde facturen
+   - Klik "Nu Betalen"
+   - Betaal via iDEAL of Credit Card
+   - Automatische redirect na betaling
+
+---
+
+## 🔧 Belangrijke Bestanden
+
+### Database Schema
+```
+prisma/schema.prisma
+```
+
+### API Routes
+```
+app/api/admin/agency/        # Admin agency routes
+app/api/client/              # Client routes
+app/api/webhooks/stripe/     # Stripe webhook handler
+```
+
+### Email Templates
+```
+lib/email-service.ts         # Email service
+lib/notification-helper.ts   # Notificatie functies
+```
+
+### PDF Generatie
+```
+lib/pdf-invoice-generator.tsx  # PDF templates
+```
+
+---
+
+## 🌐 Deployment
+
+### Productie URL:
+**[writgoai.nl](https://writgoai.nl)**
+
+### Webhook Configuratie:
+
+1. Ga naar [Stripe Dashboard](https://dashboard.stripe.com/webhooks)
+2. Voeg endpoint toe: `https://writgoai.nl/api/webhooks/stripe`
+3. Selecteer events:
+   - `checkout.session.completed`
+   - `invoice.paid`
+   - `invoice.payment_failed`
+4. Kopieer webhook secret naar `.env`
+
+---
+
+## 👥 Gebruikers
+
+### Admin Account
+```
+Email: info@writgo.nl
+Role: admin
+```
+
+### Test Client
+```
+Email: test@client.nl
+Role: client
+```
+
+---
+
+## 📚 Documentatie
+
+- [Stripe Integration Guide](STRIPE_INTEGRATION.md)
+- [Email Templates](EMAIL_TEMPLATES.md)
+- [API Documentation](API_DOCS.md)
+
+---
+
+## 🆘 Support
+
+Voor vragen of problemen:
+- Email: info@writgo.nl
+- GitHub Issues: [Maak een issue aan](https://github.com/Mikeyy1405/Writgoai.nl/issues)
+
+---
+
+## 📄 Licentie
+
+Private Project - Alle rechten voorbehouden © 2024 WritGo AI
