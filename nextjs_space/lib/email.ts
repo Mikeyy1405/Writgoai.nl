@@ -24,8 +24,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
   tls: {
-    // Use STARTTLS for port 587
-    ciphers: 'SSLv3',
+    // Do not fail on invalid certificates (useful for self-signed certificates)
     rejectUnauthorized: false,
   },
   connectionTimeout: 10000, // 10 seconds
