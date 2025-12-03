@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,10 +29,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       authenticated: true,
+      userType: decoded.userType || 'client', // Default to 'client' for backwards compatibility
+      role: decoded.role || 'client',
       user: {
-        id: decoded.clientId,
+        id: decoded.clientId || decoded.userId,
         email: decoded.email,
         name: decoded.name,
+        role: decoded.role,
       },
     });
   } catch (error: any) {
