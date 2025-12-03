@@ -2,9 +2,70 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { ModernSidebar } from '@/components/modern-sidebar';
+import { useEffect } from 'react';
+import {
+  LayoutDashboard,
+  FileText,
+  Video,
+  ShoppingBag,
+  Receipt,
+  Settings,
+  PenTool,
+  Search,
+  Map,
+  Image,
+  Wand2,
+  Library,
+  FolderKanban,
+  Send,
+  Plus,
+} from 'lucide-react';
+import { UnifiedLayout } from '@/components/dashboard/unified-layout';
 import WritgoAgentWidget from '@/components/writgo-agent-widget';
+
+const clientNavItems = [
+  // Shared items
+  {
+    label: 'Dashboard',
+    href: '/client-portal',
+    icon: LayoutDashboard,
+  },
+  {
+    label: 'Artikelen',
+    href: '/client-portal/blog-generator',
+    icon: FileText,
+  },
+  {
+    label: 'Video Reels',
+    href: '/client-portal/video-generator',
+    icon: Video,
+  },
+  {
+    label: 'Opdrachten',
+    href: '/client-portal/opdrachten',
+    icon: FolderKanban,
+  },
+  {
+    label: 'Verzoeken',
+    href: '/client-portal/verzoeken',
+    icon: Send,
+  },
+  {
+    label: 'Facturen',
+    href: '/client-portal/facturen',
+    icon: Receipt,
+  },
+  {
+    label: 'Content Library',
+    href: '/client-portal/content-library',
+    icon: Library,
+  },
+  {
+    label: 'Instellingen',
+    href: '/client-portal/account',
+    icon: Settings,
+  },
+];
 
 export default function ClientPortalLayout({
   children,
@@ -13,11 +74,6 @@ export default function ClientPortalLayout({
 }) {
   const { data: session, status } = useSession() || {};
   const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -27,10 +83,10 @@ export default function ClientPortalLayout({
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          {isMounted && <p className="text-gray-400">Laden...</p>}
+          <div className="w-16 h-16 border-4 border-[#FF9933] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400">Laden...</p>
         </div>
       </div>
     );
@@ -40,17 +96,21 @@ export default function ClientPortalLayout({
     return null;
   }
 
-  // Allow both clients and admins to access the portal
+  // Check if user is admin
+  const isAdmin = session?.user?.email === 'info@writgo.nl';
+
   return (
-    <div className="flex min-h-screen bg-gray-950">
-      <ModernSidebar />
-      <div className="flex-1 overflow-x-hidden lg:ml-0">
-        <div className="pt-16 lg:pt-0">
-          {children}
-        </div>
-      </div>
+    <>
+      <UnifiedLayout
+        navItems={clientNavItems}
+        isAdmin={isAdmin}
+        headerTitle="Client Portal"
+        headerDescription="Jouw persoonlijke content dashboard"
+      >
+        {children}
+      </UnifiedLayout>
       {/* AI Agent Widget - altijd beschikbaar */}
       <WritgoAgentWidget />
-    </div>
+    </>
   );
 }

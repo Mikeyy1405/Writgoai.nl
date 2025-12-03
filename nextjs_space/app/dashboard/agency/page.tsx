@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import { StatsCard } from '@/components/dashboard/stats-card';
 
 interface Stats {
   totalClients: number;
@@ -149,7 +150,7 @@ export default function AgencyDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] p-8">
+      <div className="space-y-8">
         <div className="animate-pulse space-y-8">
           <div className="h-12 bg-white/10 rounded w-1/3"></div>
           <div className="grid grid-cols-4 gap-6">
@@ -163,7 +164,7 @@ export default function AgencyDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -190,97 +191,79 @@ export default function AgencyDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Link href="/dashboard/agency/clients" className="group">
-          <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 rounded-xl p-6 hover:border-blue-400/50 transition-all">
-            <div className="flex items-center justify-between">
-              <Users className="w-8 h-8 text-blue-400" />
-              <ArrowRight className="w-5 h-5 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <p className="text-3xl font-bold text-white mt-4">{stats.totalClients}</p>
-            <p className="text-blue-300 text-sm">Totaal Klanten</p>
-          </div>
-        </Link>
-
-        <Link href="/dashboard/agency/assignments" className="group">
-          <div className="bg-gradient-to-br from-yellow-600/20 to-yellow-800/20 border border-yellow-500/30 rounded-xl p-6 hover:border-yellow-400/50 transition-all">
-            <div className="flex items-center justify-between">
-              <ClipboardList className="w-8 h-8 text-yellow-400" />
-              <ArrowRight className="w-5 h-5 text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <p className="text-3xl font-bold text-white mt-4">{stats.openAssignments}</p>
-            <p className="text-yellow-300 text-sm">Openstaande Opdrachten</p>
-          </div>
-        </Link>
-
-        <Link href="/dashboard/agency/requests" className="group">
-          <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 rounded-xl p-6 hover:border-purple-400/50 transition-all">
-            <div className="flex items-center justify-between">
-              <AlertCircle className="w-8 h-8 text-purple-400" />
-              <ArrowRight className="w-5 h-5 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <p className="text-3xl font-bold text-white mt-4">{stats.pendingRequests}</p>
-            <p className="text-purple-300 text-sm">Nieuwe Verzoeken</p>
-          </div>
-        </Link>
-
-        <Link href="/dashboard/agency/invoices" className="group">
-          <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-xl p-6 hover:border-green-400/50 transition-all">
-            <div className="flex items-center justify-between">
-              <Euro className="w-8 h-8 text-green-400" />
-              <ArrowRight className="w-5 h-5 text-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <p className="text-3xl font-bold text-white mt-4">€{stats.totalRevenue.toLocaleString()}</p>
-            <p className="text-green-300 text-sm">Totale Omzet</p>
-          </div>
-        </Link>
+        <StatsCard
+          title="Totaal Klanten"
+          value={stats.totalClients}
+          icon={Users}
+          href="/dashboard/agency/clients"
+          color="blue"
+        />
+        <StatsCard
+          title="Openstaande Opdrachten"
+          value={stats.openAssignments}
+          icon={ClipboardList}
+          href="/dashboard/agency/assignments"
+          color="yellow"
+        />
+        <StatsCard
+          title="Nieuwe Verzoeken"
+          value={stats.pendingRequests}
+          icon={AlertCircle}
+          href="/dashboard/agency/requests"
+          color="purple"
+        />
+        <StatsCard
+          title="Totale Omzet"
+          value={`€${stats.totalRevenue.toLocaleString()}`}
+          icon={Euro}
+          href="/dashboard/agency/invoices"
+          color="green"
+        />
       </div>
 
       {/* Secondary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <CheckCircle className="w-6 h-6 text-green-400" />
-            <h3 className="text-lg font-semibold text-white">Deze Maand Voltooid</h3>
-          </div>
-          <p className="text-4xl font-bold text-green-400">{stats.completedThisMonth}</p>
-          <p className="text-gray-400 text-sm mt-1">opdrachten afgerond</p>
-        </div>
-
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <FileText className="w-6 h-6 text-orange-400" />
-            <h3 className="text-lg font-semibold text-white">Openstaande Facturen</h3>
-          </div>
-          <p className="text-4xl font-bold text-orange-400">{stats.unpaidInvoices}</p>
-          <p className="text-gray-400 text-sm mt-1">wachtend op betaling</p>
-        </div>
+        <StatsCard
+          title="Deze Maand Voltooid"
+          value={stats.completedThisMonth}
+          icon={CheckCircle}
+          color="green"
+          description="opdrachten afgerond"
+        />
+        <StatsCard
+          title="Openstaande Facturen"
+          value={stats.unpaidInvoices}
+          icon={FileText}
+          color="orange"
+          description="wachtend op betaling"
+        />
       </div>
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Assignments */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+        <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/50 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white">Recente Opdrachten</h3>
-            <Link href="/dashboard/agency/assignments" className="text-blue-400 hover:text-blue-300 text-sm">
+            <Link href="/dashboard/agency/assignments" className="text-[#FF9933] hover:text-[#FFAD33] text-sm transition-colors">
               Bekijk alles →
             </Link>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {recentAssignments.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">Geen opdrachten</p>
+              <p className="text-zinc-500 text-center py-8">Geen opdrachten</p>
             ) : (
               recentAssignments.map((assignment) => (
                 <Link
                   key={assignment.id}
                   href={`/dashboard/agency/assignments/${assignment.id}`}
-                  className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                  className="flex items-center justify-between p-4 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-all duration-200 hover:scale-[1.01]"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{getTypeIcon(assignment.type)}</span>
                     <div>
                       <p className="text-white font-medium">{assignment.title}</p>
-                      <p className="text-gray-400 text-sm">{assignment.client?.name}</p>
+                      <p className="text-zinc-400 text-sm">{assignment.client?.name}</p>
                     </div>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(assignment.status)}`}>
@@ -293,33 +276,33 @@ export default function AgencyDashboard() {
         </div>
 
         {/* New Requests */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+        <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/50 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white">Nieuwe Verzoeken</h3>
-            <Link href="/dashboard/agency/requests" className="text-purple-400 hover:text-purple-300 text-sm">
+            <Link href="/dashboard/agency/requests" className="text-[#FF9933] hover:text-[#FFAD33] text-sm transition-colors">
               Bekijk alles →
             </Link>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {recentRequests.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">Geen nieuwe verzoeken</p>
+              <p className="text-zinc-500 text-center py-8">Geen nieuwe verzoeken</p>
             ) : (
               recentRequests.map((request) => (
                 <Link
                   key={request.id}
                   href={`/dashboard/agency/requests`}
-                  className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                  className="flex items-center justify-between p-4 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-all duration-200 hover:scale-[1.01]"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{getTypeIcon(request.type)}</span>
                     <div>
                       <p className="text-white font-medium">{request.title}</p>
-                      <p className="text-gray-400 text-sm">{request.client?.name}</p>
+                      <p className="text-zinc-400 text-sm">{request.client?.name}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-400 text-sm">
+                    <Clock className="w-4 h-4 text-zinc-400" />
+                    <span className="text-zinc-400 text-sm">
                       {new Date(request.createdAt).toLocaleDateString('nl-NL')}
                     </span>
                   </div>
