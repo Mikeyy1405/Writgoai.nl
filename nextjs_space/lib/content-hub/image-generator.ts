@@ -40,7 +40,7 @@ export async function generateArticleImage(
     
     const result = await generateSmartImage({
       prompt: options.prompt,
-      projectId: undefined, // Content Hub context - no specific project
+      // No projectId - Content Hub context without specific project
       type: 'featured', // Content hub images are featured images
       width: dimensions.width,
       height: dimensions.height,
