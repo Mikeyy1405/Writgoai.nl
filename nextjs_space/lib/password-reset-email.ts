@@ -1,4 +1,4 @@
-import { sendEmail } from './email-service';
+import { sendEmail } from './email';
 
 interface PasswordResetEmailParams {
   to: string;
@@ -7,13 +7,14 @@ interface PasswordResetEmailParams {
 }
 
 export async function sendPasswordResetEmail({ to, name, resetLink }: PasswordResetEmailParams) {
-  const subject = 'Wachtwoord herstellen - WritGo AI';
+  const subject = '🔒 Wachtwoord herstellen - WritgoAI';
   
   const html = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
         body { 
           font-family: Arial, sans-serif; 
@@ -66,16 +67,13 @@ export async function sendPasswordResetEmail({ to, name, resetLink }: PasswordRe
         }
         .button { 
           display: inline-block; 
-          background: #18181b;
+          background: #f97316;
           color: white !important;
           padding: 14px 32px; 
           text-decoration: none; 
           border-radius: 6px;
           font-weight: 600;
           font-size: 16px;
-        }
-        .button:hover {
-          background: #27272a;
         }
         .footer { 
           text-align: center; 
@@ -103,7 +101,7 @@ export async function sendPasswordResetEmail({ to, name, resetLink }: PasswordRe
         <div class="content">
           <p>Hallo ${name},</p>
           
-          <p>Je hebt een verzoek ingediend om je wachtwoord te herstellen voor je WritGo AI account.</p>
+          <p>Je hebt een verzoek ingediend om je wachtwoord te herstellen voor je WritgoAI account.</p>
           
           <p>Klik op de onderstaande knop om een nieuw wachtwoord in te stellen:</p>
           
@@ -121,13 +119,13 @@ export async function sendPasswordResetEmail({ to, name, resetLink }: PasswordRe
           <p>Als de knop niet werkt, kopieer en plak dan deze link in je browser:</p>
           <p class="link-text">${resetLink}</p>
           
-          <p style="margin-top: 32px;">Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+          <p style="margin-top: 32px;">Met vriendelijke groet,<br><strong>Team WritgoAI</strong></p>
         </div>
         <div class="footer">
-          <p><strong>WritGo AI</strong> - Uw AI Content Partner</p>
-          <p>info@writgo.nl | www.writgoai.nl</p>
+          <p><strong>WritgoAI</strong> - Automatiseer je content creatie</p>
+          <p>info@writgoai.nl | www.writgoai.nl</p>
           <p style="margin-top: 16px; font-size: 12px;">
-            Deze email is verstuurd omdat er een wachtwoordherstel is aangevraagd voor dit email adres.
+            Deze email is verstuurd omdat er een wachtwoordherstel is aangevraagd voor dit emailadres.
           </p>
         </div>
       </div>
@@ -135,10 +133,28 @@ export async function sendPasswordResetEmail({ to, name, resetLink }: PasswordRe
     </html>
   `;
 
-  return sendEmail({
-    to,
-    subject,
-    html,
-    from: 'WritGo AI <info@writgo.nl>',
-  });
+  const text = `
+Wachtwoord Herstellen - WritgoAI
+
+Hallo ${name},
+
+Je hebt een verzoek ingediend om je wachtwoord te herstellen voor je WritgoAI account.
+
+Klik op deze link om een nieuw wachtwoord in te stellen:
+${resetLink}
+
+⚠️ Belangrijk:
+• Deze link is 1 uur geldig
+• De link kan maar één keer gebruikt worden
+• Als je dit verzoek niet hebt gedaan, kun je deze email negeren
+
+Met vriendelijke groet,
+Team WritgoAI
+
+---
+WritgoAI - Automatiseer je content creatie
+info@writgoai.nl | www.writgoai.nl
+  `;
+
+  return sendEmail(to, subject, html, text);
 }
