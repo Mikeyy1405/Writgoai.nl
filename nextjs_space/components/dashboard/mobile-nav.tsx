@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LucideIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './logo';
+import { isNavItemActive } from '@/lib/navigation-utils';
 
 interface NavItem {
   label: string;
@@ -22,14 +24,6 @@ interface MobileNavProps {
 
 export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNavProps) {
   const pathname = usePathname();
-
-  const isActive = (href: string) => {
-    if (href === '/client-portal' || href === '/dashboard/agency') {
-      return pathname === href;
-    }
-    return pathname?.startsWith(href);
-  };
-
   const visibleItems = items.filter(item => !item.adminOnly || isAdmin);
 
   return (
@@ -56,12 +50,7 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-zinc-800/50">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#FF9933] to-[#FFAD33] rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">W</span>
-                </div>
-                <span className="text-white font-semibold">WritGo AI</span>
-              </div>
+              <Logo size="md" showText={true} />
               <button
                 onClick={onClose}
                 className="p-2 rounded-lg hover:bg-zinc-800/50 text-zinc-400 hover:text-white transition-colors"
@@ -74,7 +63,7 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
             <nav className="p-3 space-y-1">
               {visibleItems.map((item, index) => {
                 const Icon = item.icon;
-                const active = isActive(item.href);
+                const active = isNavItemActive(item.href, pathname);
 
                 return (
                   <motion.div

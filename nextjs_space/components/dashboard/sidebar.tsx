@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LucideIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './logo';
+import { isNavItemActive } from '@/lib/navigation-utils';
 
 interface NavItem {
   label: string;
@@ -23,13 +25,6 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const isActive = (href: string) => {
-    if (href === '/client-portal' || href === '/dashboard/agency') {
-      return pathname === href;
-    }
-    return pathname?.startsWith(href);
-  };
-
   const visibleItems = items.filter(item => !item.adminOnly || isAdmin);
 
   return (
@@ -45,18 +40,23 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
       {/* Sidebar Header */}
       <div className="flex items-center justify-between p-4 border-b border-zinc-800/50">
         <AnimatePresence mode="wait">
-          {!isCollapsed && (
+          {!isCollapsed ? (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="flex items-center gap-2"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-[#FF9933] to-[#FFAD33] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">W</span>
-              </div>
-              <span className="text-white font-semibold text-sm">WritGo AI</span>
+              <Logo size="md" showText={true} />
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Logo size="md" showText={false} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -77,7 +77,7 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {visibleItems.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.href);
+          const active = isNavItemActive(item.href, pathname);
 
           return (
             <Link
