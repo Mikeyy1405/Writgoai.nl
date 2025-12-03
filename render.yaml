@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: writgoai
+    env: node
+    region: frankfurt
+    plan: starter
+    rootDir: nextjs_space
+    buildCommand: yarn install && yarn prisma generate && yarn build
+    startCommand: yarn start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: NODE_ENV
+        value: production
+      - fromGroup: writgo-env-vars
