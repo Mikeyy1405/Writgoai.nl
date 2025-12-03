@@ -84,7 +84,7 @@ export async function processAgentChat(
 
     // Check if the model wants to call tools
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCalls: ToolCall[] = assistantMessage.tool_calls.map(tc => ({
+      const toolCalls: ToolCall[] = assistantMessage.tool_calls.map((tc: any) => ({
         id: tc.id,
         name: tc.function.name,
         parameters: JSON.parse(tc.function.arguments),
