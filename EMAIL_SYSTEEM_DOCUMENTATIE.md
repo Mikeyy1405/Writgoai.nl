@@ -344,15 +344,22 @@ Alle emails worden gelogd in de `EmailLog` tabel:
 
 ### Vereiste Environment Variables
 ```env
-# SMTP Settings (Mailerlite of andere provider)
-SMTP_HOST=WritgoAI.nl
-SMTP_PORT=465
-SMTP_USER=noreply@WritgoAI.nl
+# SMTP Settings (Cloud86 of andere provider)
+SMTP_HOST=writgoai.nl
+SMTP_PORT=587
+SMTP_USER=info@writgoai.nl
 SMTP_PASS=your_password_here
+SMTP_SECURE=false
 
 # Cron Secret (voor automatische emails)
 CRON_SECRET=your_secure_random_string
 ```
+
+### Poort Configuratie
+- **Port 587 (Recommended):** STARTTLS - Gebruik `SMTP_SECURE=false`
+- **Port 465:** SSL/TLS - Gebruik `SMTP_SECURE=true`
+
+De configuratie ondersteunt beide poorten en past automatisch de juiste beveiligingsmethode toe.
 
 ### Test Email Functie
 ```typescript
