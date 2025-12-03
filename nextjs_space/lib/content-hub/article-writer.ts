@@ -3,7 +3,7 @@
  * Generates SEO-optimized articles with streaming support
  */
 
-import { sendChatCompletion, streamChatCompletion } from '../aiml-chat-client';
+import { sendChatCompletion, sendStreamingChatCompletion } from '../aiml-chat-client';
 import { TEXT_MODELS } from '../aiml-api';
 import type { SERPAnalysis } from './serp-analyzer';
 
@@ -88,7 +88,7 @@ Respond in JSON format:
 }`;
 
     const response = await sendChatCompletion({
-      model: TEXT_MODELS.SMART,
+      model: TEXT_MODELS.REASONING,
       messages: [
         {
           role: 'system',
@@ -101,9 +101,10 @@ Respond in JSON format:
       ],
       temperature: 0.7,
       max_tokens: Math.min(targetWordCount * 2, 8000),
+      stream: false,
     });
 
-    const content = response.choices[0]?.message?.content || '{}';
+    const content = (response as any).choices[0]?.message?.content || '{}';
     
     // Parse JSON response
     let result;
@@ -161,9 +162,10 @@ Respond with just the outline in markdown format.`;
       messages: [{ role: 'user', content: outlinePrompt }],
       temperature: 0.7,
       max_tokens: 1000,
+      stream: false,
     });
 
-    const outline = outlineResponse.choices[0]?.message?.content || '';
+    const outline = (outlineResponse as any).choices[0]?.message?.content || '';
     yield { type: 'outline', content: outline };
 
     // Generate full content
@@ -184,8 +186,8 @@ Requirements:
 Write the full article:`;
 
     // Stream the article content
-    const stream = await streamChatCompletion({
-      model: TEXT_MODELS.SMART,
+    const stream = await sendStreamingChatCompletion({
+      model: TEXT_MODELS.REASONING,
       messages: [
         {
           role: 'system',
@@ -236,9 +238,10 @@ Respond in JSON format:
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
       max_tokens: 2000,
+      stream: false,
     });
 
-    const content = response.choices[0]?.message?.content || '{}';
+    const content = (response as any).choices[0]?.message?.content || '{}';
     const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
                      content.match(/```\n([\s\S]*?)\n```/) ||
                      [null, content];
