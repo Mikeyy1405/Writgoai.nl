@@ -11,9 +11,10 @@ import { isNavItemActive } from '@/lib/navigation-utils';
 interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: LucideIcon | null;
   badge?: string;
   adminOnly?: boolean;
+  isDivider?: boolean;
 }
 
 interface SidebarProps {
@@ -75,8 +76,15 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
 
       {/* Navigation Items */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {visibleItems.map((item) => {
-          const Icon = item.icon;
+        {visibleItems.map((item, index) => {
+          // Handle dividers
+          if (item.isDivider) {
+            return (
+              <div key={`divider-${index}`} className="my-2 border-t border-zinc-800" />
+            );
+          }
+
+          const Icon = item.icon as LucideIcon;
           const active = isNavItemActive(item.href, pathname);
 
           return (

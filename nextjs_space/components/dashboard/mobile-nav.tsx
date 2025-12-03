@@ -10,9 +10,10 @@ import { isNavItemActive } from '@/lib/navigation-utils';
 interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: LucideIcon | null;
   badge?: string;
   adminOnly?: boolean;
+  isDivider?: boolean;
 }
 
 interface MobileNavProps {
@@ -62,7 +63,14 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
             {/* Navigation Items */}
             <nav className="p-3 space-y-1">
               {visibleItems.map((item, index) => {
-                const Icon = item.icon;
+                // Handle dividers
+                if (item.isDivider) {
+                  return (
+                    <div key={`divider-${index}`} className="my-2 border-t border-zinc-800" />
+                  );
+                }
+
+                const Icon = item.icon as LucideIcon;
                 const active = isNavItemActive(item.href, pathname);
 
                 return (

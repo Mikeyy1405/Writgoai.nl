@@ -12,6 +12,8 @@ import {
   Receipt,
   Settings,
   TrendingUp,
+  Bot,
+  FolderKanban,
 } from 'lucide-react';
 import { UnifiedLayout } from '@/components/dashboard/unified-layout';
 
@@ -53,6 +55,32 @@ const agencyNavItems = [
     href: '/dashboard/agency/analytics',
     icon: TrendingUp,
     adminOnly: true,
+  },
+  {
+    label: 'divider',
+    href: '',
+    icon: null as any,
+    isDivider: true,
+  },
+  {
+    label: 'AI Agent',
+    href: '/dashboard/agent',
+    icon: Bot,
+    adminOnly: true,
+    badge: 'NEW',
+  },
+  {
+    label: 'Content Hub',
+    href: '/dashboard/content-hub',
+    icon: FolderKanban,
+    adminOnly: true,
+    badge: 'NEW',
+  },
+  {
+    label: 'divider',
+    href: '',
+    icon: null as any,
+    isDivider: true,
   },
   {
     label: 'Instellingen',
