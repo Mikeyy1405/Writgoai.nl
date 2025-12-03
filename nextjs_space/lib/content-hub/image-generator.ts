@@ -3,7 +3,7 @@
  * Generates featured images and article images using FLUX or free stock images
  */
 
-import { generateImage } from '../smart-image-generator';
+import { generateSmartImage } from '../smart-image-generator';
 
 export interface ImageGenerationOptions {
   prompt: string;
@@ -27,18 +27,33 @@ export async function generateArticleImage(
   try {
     console.log(`[Image Generator] Generating image: ${options.prompt}`);
     
-    const imageUrl = await generateImage({
+    // Map aspect ratio to width/height
+    const aspectRatioDimensions: Record<string, { width: number; height: number }> = {
+      '1:1': { width: 1024, height: 1024 },
+      '16:9': { width: 1920, height: 1080 },
+      '9:16': { width: 1080, height: 1920 },
+      '4:3': { width: 1600, height: 1200 },
+      '3:4': { width: 1200, height: 1600 },
+    };
+    
+    const dimensions = aspectRatioDimensions[options.aspectRatio || '16:9'];
+    
+    const result = await generateSmartImage({
       prompt: options.prompt,
-      model: options.model || 'flux-pro',
-      aspectRatio: options.aspectRatio || '16:9',
-      projectId: null, // Content Hub context
-      useFreeStockImages: options.useFreeStock || false,
+      // No projectId - Content Hub context without specific project
+      type: 'featured', // Content hub images are featured images
+      width: dimensions.width,
+      height: dimensions.height,
     });
     
+    if (!result.success || !result.imageUrl) {
+      throw new Error(result.error || 'Image generation failed');
+    }
+    
     return {
-      url: imageUrl,
+      url: result.imageUrl,
       prompt: options.prompt,
-      source: options.useFreeStock ? 'stock' : 'ai',
+      source: result.source === 'free-stock' ? 'stock' : 'ai',
     };
   } catch (error: any) {
     console.error('[Image Generator] Error:', error);

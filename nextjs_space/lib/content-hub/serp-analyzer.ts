@@ -66,9 +66,10 @@ Respond in JSON format:
       ],
       temperature: 0.7,
       max_tokens: 2000,
+      stream: false,
     });
 
-    const content = response.choices[0]?.message?.content || '{}';
+    const content = (response as any).choices[0]?.message?.content || '{}';
     
     // Parse JSON from response
     let analysis;
@@ -134,9 +135,10 @@ Respond in JSON format:
       ],
       temperature: 0.7,
       max_tokens: 1500,
+      stream: false,
     });
 
-    const content = response.choices[0]?.message?.content || '{}';
+    const content = (response as any).choices[0]?.message?.content || '{}';
     
     let result;
     try {
