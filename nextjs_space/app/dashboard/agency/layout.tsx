@@ -59,7 +59,7 @@ const agencyNavItems = [
   {
     label: 'divider',
     href: '',
-    icon: null as any,
+    icon: null,
     isDivider: true,
   },
   {
@@ -79,7 +79,7 @@ const agencyNavItems = [
   {
     label: 'divider',
     href: '',
-    icon: null as any,
+    icon: null,
     isDivider: true,
   },
   {
