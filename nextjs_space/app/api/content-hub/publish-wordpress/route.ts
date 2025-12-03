@@ -1,0 +1,195 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { prisma } from '@/lib/db';
+import { WordPressClient } from '@/lib/content-hub/wordpress-client';
+import { generateYoastMeta } from '@/lib/content-hub/seo-optimizer';
+
+/**
+ * POST /api/content-hub/publish-wordpress
+ * Publish article to WordPress
+ */
+export async function POST(req: NextRequest) {
+  let articleId: string | undefined;
+  
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Client not found' },
+        { status: 404 }
+      );
+    }
+
+    const body = await req.json();
+    const { 
+      articleId: bodyArticleId,
+      status = 'publish', // 'publish' or 'draft'
+      scheduledDate,
+    } = body;
+    
+    articleId = bodyArticleId;
+
+    if (!articleId) {
+      return NextResponse.json(
+        { error: 'Article ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get article with site
+    const article = await prisma.contentHubArticle.findUnique({
+      where: { id: articleId },
+      include: {
+        site: true,
+      },
+    });
+
+    if (!article || article.site.clientId !== client.id) {
+      return NextResponse.json(
+        { error: 'Article not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!article.content) {
+      return NextResponse.json(
+        { error: 'Article has no content to publish' },
+        { status: 400 }
+      );
+    }
+
+    if (!article.site.isConnected || !article.site.wordpressAppPassword) {
+      return NextResponse.json(
+        { error: 'WordPress not connected' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`[Content Hub] Publishing article to WordPress: ${article.title}`);
+
+    // Update status
+    await prisma.contentHubArticle.update({
+      where: { id: articleId },
+      data: { status: 'publishing' },
+    });
+
+    // Initialize WordPress client
+    const wpClient = new WordPressClient({
+      siteUrl: article.site.wordpressUrl,
+      username: article.site.wordpressUsername || '',
+      applicationPassword: article.site.wordpressAppPassword,
+    });
+
+    // Upload featured image if exists
+    let featuredMediaId;
+    if (article.featuredImage) {
+      try {
+        const media = await wpClient.uploadMedia(
+          article.featuredImage,
+          `${article.slug || 'article'}-featured.jpg`
+        );
+        featuredMediaId = media.id;
+        console.log(`[Content Hub] Uploaded featured image: ${media.id}`);
+      } catch (error) {
+        console.error('[Content Hub] Featured image upload failed:', error);
+      }
+    }
+
+    // Get or create category
+    let categoryId;
+    try {
+      categoryId = await wpClient.getOrCreateCategory(article.cluster);
+      console.log(`[Content Hub] Category ID: ${categoryId}`);
+    } catch (error) {
+      console.error('[Content Hub] Category creation failed:', error);
+    }
+
+    // Prepare meta fields for Yoast/RankMath
+    const yoastMeta = article.metaTitle && article.metaDescription
+      ? generateYoastMeta({
+          metaTitle: article.metaTitle,
+          metaDescription: article.metaDescription,
+          focusKeyword: article.keywords[0] || article.title,
+          schema: article.schemaMarkup as any,
+        })
+      : {};
+
+    // Create WordPress post
+    const wpPost = await wpClient.createPost({
+      title: article.title,
+      content: article.content,
+      excerpt: article.metaDescription || '',
+      status: status as 'publish' | 'draft',
+      featured_media: featuredMediaId,
+      categories: categoryId ? [categoryId] : undefined,
+      tags: article.keywords,
+      meta: yoastMeta,
+      date: scheduledDate || undefined,
+    });
+
+    console.log(`[Content Hub] Published to WordPress: ${wpPost.link}`);
+
+    // Update article in database
+    await prisma.contentHubArticle.update({
+      where: { id: articleId },
+      data: {
+        status: 'published',
+        wordpressPostId: wpPost.id,
+        wordpressUrl: wpPost.link,
+        publishedAt: new Date(),
+      },
+    });
+
+    // Update site completed articles count
+    await prisma.contentHubSite.update({
+      where: { id: article.siteId },
+      data: {
+        completedArticles: {
+          increment: 1,
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Article published successfully',
+      wordpress: {
+        postId: wpPost.id,
+        url: wpPost.link,
+        status: wpPost.status,
+      },
+    });
+  } catch (error: any) {
+    console.error('[Content Hub] Publishing error:', error);
+    
+    // Update article status to failed
+    if (articleId) {
+      try {
+        await prisma.contentHubArticle.update({
+          where: { id: articleId },
+          data: { status: 'failed' },
+        });
+      } catch (e) {
+        console.error('Failed to update article status:', e);
+      }
+    }
+    
+    return NextResponse.json(
+      { error: error.message || 'Failed to publish to WordPress' },
+      { status: 500 }
+    );
+  }
+}

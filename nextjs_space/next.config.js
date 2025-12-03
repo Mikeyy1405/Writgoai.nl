@@ -14,6 +14,35 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   images: { unoptimized: true },
+  async redirects() {
+    return [
+      {
+        source: '/client-portal/blog-generator',
+        destination: '/client-portal/content-hub',
+        permanent: false,
+      },
+      {
+        source: '/client-portal/topical-mapping',
+        destination: '/client-portal/content-hub',
+        permanent: false,
+      },
+      {
+        source: '/client-portal/content-research',
+        destination: '/client-portal/content-hub',
+        permanent: false,
+      },
+      {
+        source: '/client-portal/auto-writer',
+        destination: '/client-portal/content-hub',
+        permanent: false,
+      },
+      {
+        source: '/client-portal/content-library',
+        destination: '/client-portal/content-hub',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

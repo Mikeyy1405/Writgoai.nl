@@ -134,6 +134,7 @@ model Client {
   clientRequests                    ClientRequest[]
   invoices                          Invoice[]
   toolUsage                         ToolUsage[]
+  contentHubSites                   ContentHubSite[]
 }
 
 model Project {
@@ -2158,4 +2159,89 @@ model ToolUsage {
   @@index([tool])
   @@index([invoiced])
   @@index([createdAt])
+}
+
+// ============================================
+// CONTENT HUB MODELS
+// ============================================
+
+model ContentHubSite {
+  id                String   @id @default(cuid())
+  clientId          String
+  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  // WordPress Connection
+  wordpressUrl      String
+  wordpressUsername String?
+  wordpressAppPassword String? // Encrypted
+  isConnected       Boolean  @default(false)
+  lastSyncedAt      DateTime?
+  
+  // Site Analysis
+  existingPages     Int      @default(0)
+  authorityScore    Float?
+  niche             String?
+  
+  // Topical Map
+  topicalMap        Json?    // Clusters & articles
+  totalArticles     Int      @default(0)
+  completedArticles Int      @default(0)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  articles          ContentHubArticle[]
+  
+  @@index([clientId])
+  @@index([wordpressUrl])
+}
+
+model ContentHubArticle {
+  id                String   @id @default(cuid())
+  siteId            String
+  site              ContentHubSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  // Article Info
+  title             String
+  slug              String?
+  cluster           String
+  keywords          String[]
+  searchVolume      Int?
+  difficulty        Int?
+  searchIntent      String?  // informational, commercial, transactional
+  priority          Int      @default(0)
+  
+  // Status
+  status            String   @default("pending") // pending, researching, writing, publishing, published, failed
+  
+  // Research Data
+  researchData      Json?    // SERP analysis, sources, etc.
+  
+  // Generated Content
+  content           String?  @db.Text
+  metaTitle         String?
+  metaDescription   String?
+  featuredImage     String?
+  images            String[] // Array of image URLs
+  internalLinks     Json?
+  faqSection        Json?
+  schemaMarkup      Json?
+  
+  // WordPress
+  wordpressPostId   Int?
+  wordpressUrl      String?
+  publishedAt       DateTime?
+  
+  // Stats
+  wordCount         Int?
+  generationTime    Int?     // seconds
+  creditsUsed       Int?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([siteId])
+  @@index([status])
+  @@index([cluster])
+  @@index([priority])
 }
