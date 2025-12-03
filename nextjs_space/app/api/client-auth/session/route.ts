@@ -29,10 +29,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       authenticated: true,
+      userType: decoded.userType || 'client', // Default to 'client' for backwards compatibility
+      role: decoded.role || 'client',
       user: {
-        id: decoded.clientId,
+        id: decoded.clientId || decoded.userId,
         email: decoded.email,
         name: decoded.name,
+        role: decoded.role,
       },
     });
   } catch (error: any) {
