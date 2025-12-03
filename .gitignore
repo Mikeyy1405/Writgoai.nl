@@ -18,3 +18,10 @@ out
 .deploy
 .logs
 *.tsbuildinfo
+
+# Local environment files (should NEVER be committed!)
+*.env
+*.env.local
+*.env.development
+*.env.production
+!.env.example
