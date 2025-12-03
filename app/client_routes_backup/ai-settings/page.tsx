@@ -1,0 +1,871 @@
+
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Sparkles, Brain, Save, ArrowLeft, Scan, Zap } from 'lucide-react';
+import toast from 'react-hot-toast';
+import Link from 'next/link';
+
+const IMAGE_STYLES = [
+  { value: 'Modern Gradient Illustration', label: 'Modern Gradient Illustration' },
+  { value: 'Minimal Line Art', label: 'Minimal Line Art' },
+  { value: 'Editorial Photography', label: 'Editorial Photography' },
+  { value: 'Playful 3D Render', label: 'Playful 3D Render' },
+  { value: 'Bold Geometric Collage', label: 'Bold Geometric Collage' },
+  { value: 'Organic Watercolor', label: 'Organic Watercolor' },
+];
+
+const PUBLISHING_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_LABELS: Record<string, string> = {
+  Mon: 'Ma',
+  Tue: 'Di',
+  Wed: 'Wo',
+  Thu: 'Do',
+  Fri: 'Vr',
+  Sat: 'Za',
+  Sun: 'Zo',
+};
+
+export default function AISettingsPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession() || {};
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanUrl, setScanUrl] = useState('');
+  const scanUrlInputRef = React.useRef<HTMLInputElement>(null);
+  const [scanResults, setScanResults] = useState<any>(null);
+  const [showScanResults, setShowScanResults] = useState(false);
+  const [formData, setFormData] = useState({
+    websiteName: '',
+    websiteUrl: '',
+    blogUrl: '',
+    companyDescription: '',
+    targetAudience: '',
+    problemStatement: '',
+    solutionStatement: '',
+    uniqueFeatures: [] as string[],
+    youtubeChannelUrl: '',
+    contentStyle: [] as string[],
+    contentLanguage: 'Dutch',
+    toneOfVoice: '',
+    customBlogInstructions: '',
+    imageSize: '1536x1024',
+    imageStyle: '',
+    brandAccentColor: '',
+    customImageInstructions: '',
+    autopilotEnabled: false,
+    publishingDays: [] as string[],
+    publishingTime: '09:00',
+    postsPerDay: 1,
+  });
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/client-login');
+    } else if (status === 'authenticated') {
+      fetchProfile();
+    }
+  }, [status, router]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch('/api/client/ai-profile');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.profile) {
+          setFormData({
+            ...data.profile,
+            uniqueFeatures: data.profile.uniqueFeatures || [],
+          });
+          
+          // Load scan results if available
+          if (data.profile.aiScanResults) {
+            try {
+              const parsedResults = JSON.parse(data.profile.aiScanResults);
+              setScanResults(parsedResults);
+            } catch (e) {
+              console.error('Error parsing scan results:', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAIScan = async () => {
+    // Get URL from scan input (using ref to get actual DOM value) or form data
+    const scanInputValue = scanUrlInputRef.current?.value || '';
+    const urlToScan = scanInputValue.trim() || formData.websiteUrl.trim();
+    
+    if (!urlToScan) {
+      toast.error('⚠️ Voer eerst een website URL in het veld hierboven of in het "Website URL" veld onder "Bedrijf" tab');
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(urlToScan);
+    } catch (e) {
+      toast.error('⚠️ Ongeldige URL. Gebruik formaat: https://example.com');
+      return;
+    }
+
+    setScanning(true);
+    const toastId = toast.loading('🔍 Website scannen...');
+    
+    try {
+      const response = await fetch('/api/client/ai-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ websiteUrl: urlToScan }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Scan failed');
+      }
+
+      const result = await response.json();
+      
+      // Store comprehensive scan results
+      setScanResults(result.data);
+      setShowScanResults(true);
+      
+      // Also update form with key extracted data
+      const companyInfo = result.data.companyInfo || {};
+      const contentStyle = result.data.contentStyle || {};
+      const technicalInfo = result.data.technicalInfo || {};
+      
+      setFormData(prev => ({
+        ...prev,
+        websiteName: companyInfo.name || prev.websiteName,
+        websiteUrl: urlToScan,
+        blogUrl: technicalInfo.blogUrl || prev.blogUrl,
+        companyDescription: companyInfo.description || prev.companyDescription,
+        targetAudience: result.data.targetAudience?.primaryAudience || prev.targetAudience,
+        problemStatement: (result.data.targetAudience?.painPoints || []).join(', ') || prev.problemStatement,
+        solutionStatement: companyInfo.tagline || prev.solutionStatement,
+        uniqueFeatures: companyInfo.values || prev.uniqueFeatures,
+        toneOfVoice: contentStyle.toneOfVoice || prev.toneOfVoice,
+        brandAccentColor: (companyInfo.brandColors || [])[0] || prev.brandAccentColor,
+      }));
+
+      toast.success('✨ Website succesvol gescand! Bekijk de volledige analyse hieronder.', { id: toastId, duration: 5000 });
+      
+      // Clear scan URL input
+      setScanUrl('');
+      if (scanUrlInputRef.current) {
+        scanUrlInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error scanning website:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Onbekende fout';
+      toast.error(`❌ Scan mislukt: ${errorMessage}`, { id: toastId });
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleStyleToggle = (style: string) => {
+    setFormData(prev => ({
+      ...prev,
+      contentStyle: prev.contentStyle.includes(style)
+        ? prev.contentStyle.filter(s => s !== style)
+        : [...prev.contentStyle, style]
+    }));
+  };
+
+  const handleDayToggle = (day: string) => {
+    setFormData(prev => ({
+      ...prev,
+      publishingDays: prev.publishingDays.includes(day)
+        ? prev.publishingDays.filter(d => d !== day)
+        : [...prev.publishingDays, day]
+    }));
+  };
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/client/ai-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to save profile');
+
+      toast.success('✨ AI-instellingen opgeslagen!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Er ging iets mis bij het opslaan');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-[#FF6B35]" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50 py-8 px-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <Link href="/client-portal">
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Terug naar Dashboard
+            </Button>
+          </Link>
+          
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-[#FF6B35] to-[#0B3C5D] rounded-2xl shadow-lg">
+              <Brain className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B35] to-[#0B3C5D]">
+                AI Instellingen
+              </h1>
+              <p className="text-gray-600">Personaliseer je AI-gedreven content automation</p>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Scan Banner */}
+        <Card className="mb-6 bg-gradient-to-r from-[#FF6B35]/10 via-purple-500/10 to-[#0B3C5D]/10 border-2 border-[#FF6B35]">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="h-14 w-14 bg-gradient-to-br from-[#FF6B35] to-[#0B3C5D] rounded-2xl flex items-center justify-center shrink-0">
+                <Zap className="h-7 w-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-black text-xl text-[#0B3C5D] mb-2">
+                  🚀 AI Website Scanner
+                </h3>
+                <p className="text-sm text-gray-700 mb-4 leading-relaxed">
+                  Laat de AI automatisch je website analyseren en het formulier invullen! Bespaar tijd en krijg direct 
+                  een compleet profiel gebaseerd op je website content.
+                </p>
+                <div className="flex gap-3">
+                  <Input
+                    ref={scanUrlInputRef}
+                    placeholder="https://jouwwebsite.nl"
+                    defaultValue={scanUrl}
+                    onChange={(e) => setScanUrl(e.target.value)}
+                    className="max-w-md border-2 border-[#FF6B35]/30 focus:border-[#FF6B35]"
+                  />
+                  <Button
+                    onClick={handleAIScan}
+                    disabled={scanning}
+                    className="bg-gradient-to-r from-[#FF6B35] to-[#0B3C5D] hover:opacity-90 font-bold"
+                  >
+                    {scanning ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Scannen...
+                      </>
+                    ) : (
+                      <>
+                        <Scan className="mr-2 h-4 w-4" />
+                        Start AI Scan
+                      </>
+                    )}
+                  </Button>
+                  {scanResults && !showScanResults && (
+                    <Button
+                      onClick={() => setShowScanResults(true)}
+                      variant="outline"
+                      className="border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35]/10"
+                    >
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Bekijk Vorige Scan
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI Scan Results */}
+        {showScanResults && scanResults && (
+          <Card className="mb-6 border-2 border-green-300 bg-green-50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-green-900 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    AI Analyse Resultaten
+                  </CardTitle>
+                  <CardDescription className="text-green-700">
+                    De AI heeft je website geanalyseerd. Hieronder zie je alle gevonden informatie.
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowScanResults(false)}
+                >
+                  Verberg
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Company Info */}
+              {scanResults.companyInfo && (
+                <div className="p-4 bg-white rounded-lg border border-green-200">
+                  <h3 className="font-bold text-lg mb-3 text-[#0B3C5D]">📊 Bedrijfsinformatie</h3>
+                  <div className="grid gap-2 text-sm">
+                    {scanResults.companyInfo.name && (
+                      <p><strong>Naam:</strong> {scanResults.companyInfo.name}</p>
+                    )}
+                    {scanResults.companyInfo.tagline && (
+                      <p><strong>Tagline:</strong> {scanResults.companyInfo.tagline}</p>
+                    )}
+                    {scanResults.companyInfo.description && (
+                      <p><strong>Beschrijving:</strong> {scanResults.companyInfo.description}</p>
+                    )}
+                    {scanResults.companyInfo.mission && (
+                      <p><strong>Missie:</strong> {scanResults.companyInfo.mission}</p>
+                    )}
+                    {scanResults.companyInfo.values && scanResults.companyInfo.values.length > 0 && (
+                      <p><strong>Waarden:</strong> {scanResults.companyInfo.values.join(', ')}</p>
+                    )}
+                    {scanResults.companyInfo.brandColors && scanResults.companyInfo.brandColors.length > 0 && (
+                      <p><strong>Merkleuren:</strong> {scanResults.companyInfo.brandColors.join(', ')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Target Audience */}
+              {scanResults.targetAudience && (
+                <div className="p-4 bg-white rounded-lg border border-green-200">
+                  <h3 className="font-bold text-lg mb-3 text-[#0B3C5D]">🎯 Doelgroep</h3>
+                  <div className="grid gap-2 text-sm">
+                    {scanResults.targetAudience.primaryAudience && (
+                      <p><strong>Primaire doelgroep:</strong> {scanResults.targetAudience.primaryAudience}</p>
+                    )}
+                    {scanResults.targetAudience.demographics && (
+                      <p><strong>Demographics:</strong> {scanResults.targetAudience.demographics}</p>
+                    )}
+                    {scanResults.targetAudience.painPoints && scanResults.targetAudience.painPoints.length > 0 && (
+                      <div>
+                        <strong>Pain points:</strong>
+                        <ul className="list-disc list-inside ml-2 mt-1">
+                          {scanResults.targetAudience.painPoints.map((point: string, idx: number) => (
+                            <li key={idx}>{point}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {scanResults.targetAudience.desires && scanResults.targetAudience.desires.length > 0 && (
+                      <div>
+                        <strong>Wensen:</strong>
+                        <ul className="list-disc list-inside ml-2 mt-1">
+                          {scanResults.targetAudience.desires.map((desire: string, idx: number) => (
+                            <li key={idx}>{desire}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Content Style */}
+              {scanResults.contentStyle && (
+                <div className="p-4 bg-white rounded-lg border border-green-200">
+                  <h3 className="font-bold text-lg mb-3 text-[#0B3C5D]">✍️ Content Stijl</h3>
+                  <div className="grid gap-2 text-sm">
+                    {scanResults.contentStyle.toneOfVoice && (
+                      <p><strong>Tone of Voice:</strong> {scanResults.contentStyle.toneOfVoice}</p>
+                    )}
+                    {scanResults.contentStyle.formalityLevel && (
+                      <p><strong>Formaliteit:</strong> {scanResults.contentStyle.formalityLevel}</p>
+                    )}
+                    {scanResults.contentStyle.writingStyle && (
+                      <p><strong>Schrijfstijl:</strong> {scanResults.contentStyle.writingStyle}</p>
+                    )}
+                    {scanResults.contentStyle.perspective && (
+                      <p><strong>Perspectief:</strong> {scanResults.contentStyle.perspective}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Products/Services */}
+              {scanResults.productServices && scanResults.productServices.length > 0 && (
+                <div className="p-4 bg-white rounded-lg border border-green-200">
+                  <h3 className="font-bold text-lg mb-3 text-[#0B3C5D]">💼 Producten & Diensten</h3>
+                  <div className="space-y-3">
+                    {scanResults.productServices.map((product: any, idx: number) => (
+                      <div key={idx} className="pl-3 border-l-2 border-[#FF6B35]">
+                        <p className="font-semibold">{product.name}</p>
+                        {product.description && <p className="text-sm text-gray-600">{product.description}</p>}
+                        {product.targetGroup && <p className="text-sm"><strong>Voor:</strong> {product.targetGroup}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Content Topics & Keywords */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {scanResults.contentTopics && scanResults.contentTopics.length > 0 && (
+                  <div className="p-4 bg-white rounded-lg border border-green-200">
+                    <h3 className="font-bold mb-2 text-[#0B3C5D]">📝 Content Topics</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {scanResults.contentTopics.map((topic: string, idx: number) => (
+                        <span key={idx} className="px-2 py-1 bg-[#FF6B35]/10 text-[#FF6B35] rounded-md text-xs">
+                          {topic}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {scanResults.seoKeywords && scanResults.seoKeywords.length > 0 && (
+                  <div className="p-4 bg-white rounded-lg border border-green-200">
+                    <h3 className="font-bold mb-2 text-[#0B3C5D]">🔍 SEO Keywords</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {scanResults.seoKeywords.map((keyword: string, idx: number) => (
+                        <span key={idx} className="px-2 py-1 bg-[#0B3C5D]/10 text-[#0B3C5D] rounded-md text-xs">
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Recommendations */}
+              {scanResults.recommendations && (
+                <div className="p-4 bg-gradient-to-r from-[#FF6B35]/10 to-[#0B3C5D]/10 rounded-lg border-2 border-[#FF6B35]">
+                  <h3 className="font-bold text-lg mb-3 text-[#0B3C5D]">💡 AI Aanbevelingen</h3>
+                  <div className="space-y-3">
+                    {scanResults.recommendations.contentIdeas && scanResults.recommendations.contentIdeas.length > 0 && (
+                      <div>
+                        <strong className="text-sm">Content Ideeën:</strong>
+                        <ul className="list-disc list-inside ml-2 mt-1 text-sm">
+                          {scanResults.recommendations.contentIdeas.map((idea: string, idx: number) => (
+                            <li key={idx}>{idea}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {scanResults.recommendations.seoOpportunities && scanResults.recommendations.seoOpportunities.length > 0 && (
+                      <div>
+                        <strong className="text-sm">SEO Kansen:</strong>
+                        <ul className="list-disc list-inside ml-2 mt-1 text-sm">
+                          {scanResults.recommendations.seoOpportunities.map((opp: string, idx: number) => (
+                            <li key={idx}>{opp}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-center pt-4">
+                <Button
+                  onClick={() => {
+                    setShowScanResults(false);
+                    toast.success('Je kunt de instellingen hieronder aanvullen en aanpassen!');
+                  }}
+                  className="bg-gradient-to-r from-[#FF6B35] to-[#0B3C5D]"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Bekijk & Bewerk Instellingen
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Settings Tabs */}
+        <Tabs defaultValue="company" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4 bg-white p-1 border-2 border-gray-200">
+            <TabsTrigger value="company" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B35] data-[state=active]:to-[#0B3C5D] data-[state=active]:text-white">
+              Bedrijf
+            </TabsTrigger>
+            <TabsTrigger value="content" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B35] data-[state=active]:to-[#0B3C5D] data-[state=active]:text-white">
+              Content
+            </TabsTrigger>
+            <TabsTrigger value="visual" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B35] data-[state=active]:to-[#0B3C5D] data-[state=active]:text-white">
+              Visueel
+            </TabsTrigger>
+            <TabsTrigger value="planning" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B35] data-[state=active]:to-[#0B3C5D] data-[state=active]:text-white">
+              Planning
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Company Tab */}
+          <TabsContent value="company">
+            <Card className="border-2 border-gray-200">
+              <CardHeader>
+                <CardTitle>Bedrijfsinformatie</CardTitle>
+                <CardDescription>
+                  Vertel de AI over je bedrijf, doelgroep en unieke waardepropositie
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="websiteName">Website Naam</Label>
+                    <Input
+                      id="websiteName"
+                      placeholder="bijv. WritgoAI.nl"
+                      value={formData.websiteName}
+                      onChange={(e) => handleInputChange('websiteName', e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="websiteUrl">Website URL</Label>
+                    <Input
+                      id="websiteUrl"
+                      placeholder="https://WritgoAI.nl"
+                      value={formData.websiteUrl}
+                      onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="blogUrl">Blog URL (optioneel)</Label>
+                  <Input
+                    id="blogUrl"
+                    placeholder="https://WritgoAI.nl/blog"
+                    value={formData.blogUrl}
+                    onChange={(e) => handleInputChange('blogUrl', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="companyDescription">Bedrijfsomschrijving</Label>
+                  <Textarea
+                    id="companyDescription"
+                    placeholder="Vertel over je bedrijf, wat jullie doen en voor wie..."
+                    rows={4}
+                    value={formData.companyDescription}
+                    onChange={(e) => handleInputChange('companyDescription', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="targetAudience">Doelgroep</Label>
+                  <Textarea
+                    id="targetAudience"
+                    placeholder="Wie zijn je klanten? Ondernemers, ZZP'ers, bedrijven?"
+                    rows={3}
+                    value={formData.targetAudience}
+                    onChange={(e) => handleInputChange('targetAudience', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="problemStatement">Welk probleem los je op?</Label>
+                  <Textarea
+                    id="problemStatement"
+                    placeholder="Welk probleem hebben je klanten waar jij de oplossing voor biedt?"
+                    rows={3}
+                    value={formData.problemStatement}
+                    onChange={(e) => handleInputChange('problemStatement', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="solutionStatement">Jouw oplossing</Label>
+                  <Textarea
+                    id="solutionStatement"
+                    placeholder="Hoe lost jouw bedrijf dit probleem op?"
+                    rows={3}
+                    value={formData.solutionStatement}
+                    onChange={(e) => handleInputChange('solutionStatement', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="youtubeChannelUrl">YouTube Kanaal URL (optioneel)</Label>
+                  <Input
+                    id="youtubeChannelUrl"
+                    placeholder="https://youtube.com/@yourchannelhere"
+                    value={formData.youtubeChannelUrl}
+                    onChange={(e) => handleInputChange('youtubeChannelUrl', e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Content Tab */}
+          <TabsContent value="content">
+            <Card className="border-2 border-gray-200">
+              <CardHeader>
+                <CardTitle>Content Strategie</CardTitle>
+                <CardDescription>
+                  Definieer hoe de AI moet schrijven en communiceren
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Content Stijl (meerdere mogelijk)</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                    {['Conversational', 'Informative', 'Professional'].map(style => (
+                      <div
+                        key={style}
+                        onClick={() => handleStyleToggle(style)}
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.contentStyle.includes(style)
+                            ? 'border-[#FF6B35] bg-[#FF6B35]/5'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <span className="font-medium">{style}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="contentLanguage">Content Taal</Label>
+                  <Input
+                    id="contentLanguage"
+                    value={formData.contentLanguage}
+                    onChange={(e) => handleInputChange('contentLanguage', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="toneOfVoice">Tone of Voice</Label>
+                  <Textarea
+                    id="toneOfVoice"
+                    placeholder="Bijv: Vriendelijk en toegankelijk, gebruik 'je/jij', informeel maar professioneel..."
+                    rows={3}
+                    value={formData.toneOfVoice}
+                    onChange={(e) => handleInputChange('toneOfVoice', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="customBlogInstructions">Custom Blog Instructies</Label>
+                  <Textarea
+                    id="customBlogInstructions"
+                    placeholder="Specifieke instructies voor de AI bij het genereren van blogs..."
+                    rows={6}
+                    value={formData.customBlogInstructions}
+                    onChange={(e) => handleInputChange('customBlogInstructions', e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tip: Vermeld hier specifieke woorden die vermeden moeten worden, gewenste zinslengte, etc.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Visual Tab */}
+          <TabsContent value="visual">
+            <Card className="border-2 border-gray-200">
+              <CardHeader>
+                <CardTitle>Visuele Identiteit</CardTitle>
+                <CardDescription>
+                  Configureer hoe de AI afbeeldingen moet genereren
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Afbeelding Formaat</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                    {[
+                      { value: '1536x1024', label: 'Landscape' },
+                      { value: '1024x1024', label: 'Square' },
+                      { value: '1024x1536', label: 'Portrait' },
+                    ].map(size => (
+                      <div
+                        key={size.value}
+                        onClick={() => handleInputChange('imageSize', size.value)}
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.imageSize === size.value
+                            ? 'border-[#FF6B35] bg-[#FF6B35]/5'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <span className="font-medium">{size.label}</span>
+                        <p className="text-xs text-gray-500 mt-1">{size.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Afbeelding Stijl</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                    {IMAGE_STYLES.map(style => (
+                      <div
+                        key={style.value}
+                        onClick={() => handleInputChange('imageStyle', 
+                          formData.imageStyle === style.value ? '' : style.value
+                        )}
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.imageStyle === style.value
+                            ? 'border-[#FF6B35] bg-[#FF6B35]/5'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <span className="font-medium text-sm">{style.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="brandAccentColor">Merk Accent Kleur</Label>
+                  <Input
+                    id="brandAccentColor"
+                    placeholder="bijv. #FF6B35 of orange"
+                    value={formData.brandAccentColor}
+                    onChange={(e) => handleInputChange('brandAccentColor', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="customImageInstructions">Custom Image Instructies</Label>
+                  <Textarea
+                    id="customImageInstructions"
+                    placeholder="Specifieke instructies voor AI image generator..."
+                    rows={3}
+                    value={formData.customImageInstructions}
+                    onChange={(e) => handleInputChange('customImageInstructions', e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Planning Tab */}
+          <TabsContent value="planning">
+            <Card className="border-2 border-gray-200">
+              <CardHeader>
+                <CardTitle>Content Planning</CardTitle>
+                <CardDescription>
+                  Stel in wanneer en hoe vaak content gepubliceerd moet worden
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <Checkbox
+                    id="autopilot"
+                    checked={formData.autopilotEnabled}
+                    onCheckedChange={(checked) => handleInputChange('autopilotEnabled', checked)}
+                  />
+                  <Label htmlFor="autopilot" className="cursor-pointer text-sm">
+                    <span className="font-semibold text-blue-900">Autopilot Mode</span>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Laat de AI automatisch content genereren en publiceren volgens jouw schema
+                    </p>
+                  </Label>
+                </div>
+
+                {formData.autopilotEnabled && (
+                  <>
+                    <div>
+                      <Label>Publicatie Dagen</Label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {PUBLISHING_DAYS.map(day => (
+                          <div
+                            key={day}
+                            onClick={() => handleDayToggle(day)}
+                            className={`px-4 py-2 rounded-lg border-2 cursor-pointer transition-all ${
+                              formData.publishingDays.includes(day)
+                                ? 'border-[#FF6B35] bg-[#FF6B35] text-white'
+                                : 'border-gray-300 hover:border-gray-400'
+                            }`}
+                          >
+                            {DAY_LABELS[day]}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="publishingTime">Publicatie Tijd</Label>
+                        <Input
+                          id="publishingTime"
+                          type="time"
+                          value={formData.publishingTime}
+                          onChange={(e) => handleInputChange('publishingTime', e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="postsPerDay">Posts Per Dag</Label>
+                        <Input
+                          id="postsPerDay"
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={formData.postsPerDay}
+                          onChange={(e) => handleInputChange('postsPerDay', parseInt(e.target.value))}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Save Button */}
+        <div className="flex justify-end mt-6">
+          <Button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="bg-gradient-to-r from-[#FF6B35] to-[#0B3C5D] hover:opacity-90 font-bold"
+            size="lg"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Opslaan...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Instellingen Opslaan
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

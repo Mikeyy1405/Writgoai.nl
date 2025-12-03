@@ -1,0 +1,2161 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/writgo_planning_app/nextjs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  videos    Video[]
+}
+
+model Client {
+  id                                String                      @id @default(cuid())
+  email                             String                      @unique
+  name                              String
+  companyName                       String?
+  website                           String?
+  password                          String
+  automationActive                  Boolean                     @default(false)
+  automationStartDate               DateTime?
+  targetAudience                    String?
+  brandVoice                        String?
+  keywords                          String[]
+  wordpressUrl                      String?
+  wordpressUsername                 String?
+  wordpressPassword                 String?
+  youtubeChannelId                  String?
+  youtubeApiKey                     String?
+  tiktokAccessToken                 String?
+  facebookPageId                    String?
+  instagramAccountId                String?
+  linkedinPageId                    String?
+  createdAt                         DateTime                    @default(now())
+  updatedAt                         DateTime                    @updatedAt
+  facebookAccessToken               String?
+  facebookConnected                 Boolean                     @default(false)
+  facebookPageName                  String?
+  instagramAccessToken              String?
+  instagramConnected                Boolean                     @default(false)
+  instagramUsername                 String?
+  tiktokConnected                   Boolean                     @default(false)
+  youtubeAccessToken                String?
+  youtubeChannelName                String?
+  youtubeConnected                  Boolean                     @default(false)
+  youtubeRefreshToken               String?
+  youtubeTokenExpiry                DateTime?
+  tiktokOpenId                      String?
+  tiktokRefreshToken                String?
+  tiktokTokenExpiry                 DateTime?
+  tiktokUsername                    String?
+  lateDevProfileId                  String?
+  wordpressSitemap                  Json?
+  wordpressSitemapDate              DateTime?
+  contentPlan                       Json?
+  lastPlanGenerated                 DateTime?
+  isUnlimited                       Boolean                     @default(false)
+  totalCreditsPurchased             Float                       @default(0)
+  totalCreditsUsed                  Float                       @default(0)
+  monthlyCredits                    Float?
+  subscriptionEndDate               DateTime?
+  subscriptionId                    String?                     @unique
+  subscriptionPlan                  String?
+  subscriptionStartDate             DateTime?
+  subscriptionStatus                String?
+  subscriptionCredits               Float                       @default(0)
+  topUpCredits                      Float                       @default(0)
+  hasFullyManagedService            Boolean                     @default(false)
+  managedServiceStartDate           DateTime?
+  managedServiceSubscriptionId      String?
+  affiliateCode                     String?                     @unique
+  affiliateCommissionRate           Float                       @default(0.10)
+  affiliateEnabled                  Boolean                     @default(true)
+  affiliateTotalEarnings            Float                       @default(0)
+  affiliateWithdrawn                Float                       @default(0)
+  linkbuildingEnabled               Boolean                     @default(false)
+  referredBy                        String?
+  hasCompletedOnboarding            Boolean                     @default(false)
+  affiliateEarnings                 AffiliateEarning[]
+  affiliatePayouts                  AffiliatePayout[]
+  affiliateReferrals                AffiliateReferral[]         @relation("Referrer")
+  apiUsage                          ApiUsage[]
+  articleIdeas                      ArticleIdea[]
+  autopilotJobs                     AutopilotJob[]
+  autopilotSchedules                AutopilotSchedule[]
+  AIProfile                         ClientAIProfile?
+  aiSettings                        ClientAISettings?
+  contentAutomations                ContentAutomation[]
+  calendarItems                     ContentCalendarItem[]
+  contentCategories                 ContentCategory[]
+  contentPieces                     ContentPiece[]
+  conversations                     Conversation[]
+  creditPurchases                   CreditPurchase[]
+  creditTransactions                CreditTransaction[]
+  messages                          DirectMessage[]
+  emailDrafts                       EmailDraft[]
+  emailLogs                         EmailLog[]
+  feedback                          Feedback[]
+  savedKeywords                     Keyword[]
+  lateDevAccounts                   LateDevAccount[]
+  linkbuildingLinksGiven            LinkbuildingLink[]          @relation("LinkGiver")
+  linkbuildingLinksReceived         LinkbuildingLink[]          @relation("LinkReceiver")
+  linkbuildingPartnershipsRequested LinkbuildingPartnership[]   @relation("RequestingPartner")
+  linkbuildingPartnershipsTargeted  LinkbuildingPartnership[]   @relation("TargetPartner")
+  linkbuildingRequestsSent          LinkbuildingRequest[]       @relation("RequestsSent")
+  linkbuildingRequestsReceived      LinkbuildingRequest[]       @relation("RequestsReceived")
+  managedServiceSubscription        ManagedServiceSubscription?
+  projects                          Project[]
+  savedContent                      SavedContent[]
+  orders                            Order[]                  @relation("ClientOrders")
+  socialMediaAccounts               SocialMediaAccount[]
+  supportEmails                     SupportEmail[]
+  taskRequests                      TaskRequest[]
+  textOrders                        TextOrder[]
+  videos                            Video[]
+  textEditorConversations           TextEditorConversation[]
+  generatedImages                   GeneratedImage[]
+  VideoProject                      VideoProject[]
+  sitePlans                         SitePlan[]
+  adminNotes                        AdminNote[]
+  activityLogs                      ClientActivityLog[]
+  contentQueue                      ContentQueue[]
+  assignments                       Assignment[]
+  clientRequests                    ClientRequest[]
+  invoices                          Invoice[]
+  toolUsage                         ToolUsage[]
+}
+
+model Project {
+  id                             String                      @id @default(cuid())
+  clientId                       String
+  name                           String
+  websiteUrl                     String
+  description                    String?
+  sitemap                        Json?
+  sitemapScannedAt               DateTime?
+  targetAudience                 String?
+  brandVoice                     String?
+  niche                          String?
+  keywords                       String[]
+  contentPillars                 String[]
+  writingStyle                   String?
+  customInstructions             String?
+  personalInfo                   Json?
+  preferredProducts              String[]
+  importantPages                 Json?
+  linkingGuidelines              String?
+  wordpressUrl                   String?
+  wordpressUsername              String?
+  wordpressPassword              String?
+  wordpressCategory              String?
+  wordpressAutoPublish           Boolean                     @default(false)
+  isActive                       Boolean                     @default(true)
+  isPrimary                      Boolean                     @default(false)
+  createdAt                      DateTime                    @default(now())
+  updatedAt                      DateTime                    @updatedAt
+  additionalInfo                 String?
+  budget                         String?
+  businessGoals                  String?
+  competitors                    String?
+  contentTopics                  String?
+  currentChallenges              String?
+  desiredOutcome                 String?
+  socialMediaChannels            String?
+  timeline                       String?
+  uniqueSellingPoints            String?
+  contentAnalysis                Json?
+  contentAnalysisDate            DateTime?
+  contentAnalysisStatus          String?
+  contentStrategy                Json?
+  contentStrategyDate            DateTime?
+  contentStrategyStatus          String?
+  keywordResearch                Json?
+  keywordResearchDate            DateTime?
+  keywordResearchStatus          String?
+  bolcomAffiliateId              String?
+  bolcomClientId                 String?
+  bolcomClientSecret             String?
+  bolcomEnabled                  Boolean                     @default(false)
+  autopilotArticlesPerRun        Int                         @default(5)
+  autopilotAutoPublish           Boolean                     @default(false)
+  autopilotContentType           String?
+  autopilotEnabled               Boolean                     @default(false)
+  autopilotFrequency             String?
+  autopilotLastRun               DateTime?
+  autopilotNextRun               DateTime?
+  autopilotPriority              String?
+  autopilotMode                  String                      @default("fast")
+  autopilotWordCount             Int                         @default(2000)
+  tradeTrackerCampaignId         String?
+  tradeTrackerEnabled            Boolean                     @default(false)
+  tradeTrackerPassphrase         String?
+  tradeTrackerSiteId             String?
+  autopilotIncludeDirectAnswer   Boolean                     @default(false)
+  autopilotIncludeFAQ            Boolean                     @default(false)
+  autopilotIncludeYouTube        Boolean                     @default(false)
+  googleSearchConsoleEnabled     Boolean                     @default(false)
+  googleSearchConsoleLastSync    DateTime?
+  googleSearchConsoleSiteUrl     String?
+  autopilotPublishToWritgoaiBlog Boolean                     @default(false)
+  customTones                    String[]                    @default([])
+  language                       Language                    @default(NL)
+  autopilotImageCount            Int                         @default(2)
+  autopilotPublishingDays        String[]                    @default([])
+  autopilotPublishingTime        String                      @default("09:00")
+  wooCommerceEnabled             Boolean                     @default(false)
+  imageModel                     String                      @default("flux-pro")
+  useFreeStockImages             Boolean                     @default(true)
+  wooCommerceAutoUpdate          Boolean?                    @default(false)
+  wooCommerceUpdateSchedule      String?                     @default("weekly")
+  aiDetectionProvider            String                      @default("originality")
+  affiliateLinks                 AffiliateLink[]
+  apiUsage                       ApiUsage[]
+  articleIdeas                   ArticleIdea[]               @relation("ArticleIdeas")
+  autoLinkProducts               AutoLinkProduct[]
+  autopilotSchedules             AutopilotSchedule[]
+  contentAutomations             ContentAutomation[]
+  managedServiceSubscription     ManagedServiceSubscription?
+  newsArticles                   NewsArticle[]
+  newsResearches                 NewsResearch[]
+  client                         Client                      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  collaborators                  ProjectCollaborator[]
+  knowledgeBase                  ProjectKnowledge[]
+  savedContent                   SavedContent[]
+  searchConsolePerformance       SearchConsolePerformance[]
+  socialMediaConfig              SocialMediaConfig?
+  socialMediaIdeas               SocialMediaIdea[]
+  socialMediaPosts               SocialMediaPost[]
+  socialMediaTopics              SocialMediaTopic[]
+  textOrders                     TextOrder[]
+  wooCommerceProducts            WooCommerceProduct[]
+  lateDevAccounts                LateDevAccount[]
+  generatedImages                GeneratedImage[]
+  VideoProject                   VideoProject[]
+  topicalMaps                    TopicalMap[]
+  sitePlan                       SitePlan?
+  toolUsage                      ToolUsage[]
+
+  @@index([clientId])
+  @@index([websiteUrl])
+}
+
+model ProjectCollaborator {
+  id              String    @id @default(cuid())
+  projectId       String
+  email           String
+  name            String?
+  status          String    @default("pending")
+  accessToken     String    @unique
+  notifyOnPublish Boolean   @default(true)
+  invitedAt       DateTime  @default(now())
+  lastAccessAt    DateTime?
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  role            String    @default("employee")
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, email])
+  @@index([projectId])
+  @@index([email])
+  @@index([accessToken])
+  @@index([role])
+}
+
+model AffiliateLink {
+  id          String    @id @default(cuid())
+  projectId   String
+  url         String
+  anchorText  String
+  category    String?
+  description String?
+  keywords    String[]
+  isActive    Boolean   @default(true)
+  usageCount  Int       @default(0)
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([category])
+  @@index([keywords])
+}
+
+model ProjectKnowledge {
+  id         String   @id @default(cuid())
+  projectId  String
+  title      String
+  type       String
+  content    String
+  category   String?
+  tags       String[]
+  importance String   @default("normal")
+  fileUrl    String?
+  fileType   String?
+  fileSize   Int?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([type])
+  @@index([importance])
+  @@index([isActive])
+}
+
+model LateDevAccount {
+  id        String  @id @default(cuid())
+  projectId String?
+  clientId  String
+
+  // Late.dev profile data
+  lateDevProfileId String? @unique
+  platform         String // linkedin, facebook, instagram, twitter, tiktok, etc
+  username         String?
+  displayName      String?
+  avatar           String?
+
+  // Connection metadata
+  connectedAt DateTime  @default(now())
+  lastUsedAt  DateTime?
+  isActive    Boolean   @default(true)
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([clientId])
+  @@index([platform])
+}
+
+model ContentPiece {
+  id                String    @id @default(cuid())
+  clientId          String
+  theme             String
+  blogTitle         String?
+  blogContent       String?
+  blogPublished     Boolean   @default(false)
+  blogUrl           String?
+  socialCaption     String?
+  socialPublished   Boolean   @default(false)
+  socialImageUrl    String?
+  scheduledFor      DateTime
+  generatedAt       DateTime?
+  status            String    @default("generating")
+  error             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  blogKeywords      String[]
+  blogMetaDesc      String?
+  blogPublishedAt   DateTime?
+  blogWordpressId   Int?
+  dayNumber         Int
+  publishedAt       DateTime?
+  reelDuration      Int?
+  reelHashtags      String[]
+  reelHooks         String[]
+  reelPlatforms     String[]
+  reelPublished     Boolean   @default(false)
+  reelPublishedAt   DateTime?
+  reelScript        String?
+  reelTitle         String?
+  retryCount        Int       @default(0)
+  reviewedAt        DateTime?
+  socialHashtags    String[]
+  socialImagePrompt String?
+  socialLateDevId   String?
+  socialPlatforms   String[]
+  socialPublishedAt DateTime?
+  blogImages        String[]
+  blogInternalLinks Json?
+  reelThumbnailUrl  String?
+  reelVadooId       String?
+  reelVideoStatus   String?   @default("pending")
+  reelVideoUrl      String?
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([scheduledFor])
+  @@index([status])
+  @@index([dayNumber])
+}
+
+model Video {
+  id           String   @id @default(cuid())
+  vid          String   @unique
+  topic        String
+  script       String
+  language     String   @default("Dutch")
+  voiceId      String?
+  style        String   @default("Cinematic")
+  duration     String   @default("30-60")
+  status       String   @default("processing")
+  videoUrl     String?
+  thumbnailUrl String?
+  error        String?
+  clientId     String?
+  userId       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  client       Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Conversation {
+  id            String        @id @default(cuid())
+  title         String        @default("Nieuw gesprek")
+  clientId      String
+  isPinned      Boolean       @default(false)
+  isArchived    Boolean       @default(false)
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  messages      ChatMessage[]
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([lastMessageAt])
+}
+
+model BackgroundJob {
+  id             String    @id @default(cuid())
+  clientId       String
+  conversationId String?
+  type           String
+  status         String    @default("pending")
+  input          Json
+  output         Json?
+  error          String?
+  progress       Int       @default(0)
+  currentStep    String?
+  retryCount     Int       @default(0)
+  maxRetries     Int       @default(3)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  role           String
+  content        String
+  model          String?
+  toolCalls      Json?
+  images         String[]
+  videos         Json?
+  attachments    Json? // {name, url, type, size}[]
+  codeBlocks     Json? // {language, code, title}[]
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model ClientAISettings {
+  id                 String   @id @default(cuid())
+  clientId           String   @unique
+  nickname           String?
+  customInstructions String?
+  preferredModel     String   @default("gpt-4")
+  temperature        Float    @default(0.7)
+  enableWebSearch    Boolean  @default(true)
+  enableImageGen     Boolean  @default(true)
+  enableVideoGen     Boolean  @default(true)
+  toneOfVoice        String?
+  writingStyle       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  client             Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model ClientAIProfile {
+  id                         String    @id @default(cuid())
+  clientId                   String    @unique
+  websiteName                String?
+  websiteUrl                 String?
+  blogUrl                    String?
+  companyDescription         String?
+  targetAudience             String?
+  problemStatement           String?
+  solutionStatement          String?
+  uniqueFeatures             String[]  @default([])
+  youtubeChannelUrl          String?
+  contentStyle               String[]  @default([])
+  contentLanguage            String    @default("Dutch")
+  toneOfVoice                String?
+  forbiddenWords             String[]  @default([])
+  customBlogInstructions     String?
+  contentPlannerInstructions String?
+  imageSize                  String    @default("1536x1024")
+  imageStyle                 String?
+  brandAccentColor           String?
+  customImageInstructions    String?
+  includeYoutubeVideos       Boolean   @default(true)
+  usePeopleAlsoAsk           Boolean   @default(true)
+  maxInternalLinks           Int       @default(5)
+  targetWordCount            Int       @default(2000)
+  autopilotEnabled           Boolean   @default(false)
+  publishingDays             String[]  @default([])
+  publishingTime             String    @default("09:00")
+  postsPerDay                Int       @default(1)
+  publishMode                String    @default("IMMEDIATE")
+  lastAIScanAt               DateTime?
+  aiScanCompleted            Boolean   @default(false)
+  aiScanResults              String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  client                     Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+model CreditTransaction {
+  id           String   @id @default(cuid())
+  clientId     String
+  amount       Float
+  type         String
+  description  String
+  model        String?
+  tokensUsed   Int?
+  messageId    String?
+  balanceAfter Float
+  createdAt    DateTime @default(now())
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+model CreditPurchase {
+  id              String    @id @default(cuid())
+  clientId        String
+  packageId       String
+  packageName     String
+  credits         Float
+  priceEur        Float
+  stripePaymentId String?   @unique
+  stripeSessionId String?
+  paymentStatus   String    @default("pending")
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([stripePaymentId])
+  @@index([paymentStatus])
+}
+
+model CreditPackage {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  credits     Float
+  priceEur    Float
+  discount    Int      @default(0)
+  popular     Boolean  @default(false)
+  active      Boolean  @default(true)
+  description String?
+  features    String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SubscriptionPlan {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  displayName    String
+  monthlyCredits Float
+  priceEur       Float
+  popular        Boolean  @default(false)
+  active         Boolean  @default(true)
+  description    String?
+  features       String[]
+  stripePriceId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model TaskRequest {
+  id                String    @id @default(cuid())
+  clientId          String
+  taskType          String
+  title             String
+  description       String
+  specifications    Json?
+  estimatedCost     Float?
+  creditCost        Float?
+  priceApproved     Boolean   @default(false)
+  status            String    @default("pending")
+  priority          String    @default("normal")
+  requestedDeadline DateTime?
+  actualDeadline    DateTime?
+  completedAt       DateTime?
+  deliverables      Json?
+  feedback          String?
+  adminNotes        String?
+  assignedTo        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
+  @@index([taskType])
+}
+
+model DirectMessage {
+  id          String          @id @default(cuid())
+  clientId    String
+  fromRole    String
+  fromName    String
+  fromEmail   String
+  subject     String?
+  message     String
+  isRead      Boolean         @default(false)
+  readAt      DateTime?
+  attachments String[]
+  replyToId   String?
+  createdAt   DateTime        @default(now())
+  client      Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  replyTo     DirectMessage?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies     DirectMessage[] @relation("MessageReplies")
+
+  @@index([clientId])
+  @@index([fromRole])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model SavedContent {
+  id                String       @id @default(cuid())
+  clientId          String
+  type              String
+  title             String
+  content           String
+  contentHtml       String?
+  category          String?
+  tags              String[]
+  description       String?
+  keywords          String[]
+  metaDesc          String?
+  slug              String?
+  thumbnailUrl      String?
+  imageUrls         String[]
+  isFavorite        Boolean      @default(false)
+  isArchived        Boolean      @default(false)
+  publishedUrl      String?
+  publishedAt       DateTime?
+  wordCount         Int?
+  characterCount    Int?
+  projectId         String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  generatorType     String?
+  wordpressCategory String?
+  language          Language     @default(NL)
+  articleIdea       ArticleIdea?
+  client            Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project           Project?     @relation(fields: [projectId], references: [id])
+  topicalTopic      TopicalTopic?
+
+  @@index([clientId])
+  @@index([type])
+  @@index([category])
+  @@index([isFavorite])
+  @@index([isArchived])
+  @@index([createdAt])
+  @@index([generatorType])
+}
+
+model ContentCategory {
+  id          String   @id @default(cuid())
+  clientId    String
+  name        String
+  description String?
+  color       String?
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, name])
+  @@index([clientId])
+}
+
+model SocialMediaAccount {
+  id            String    @id @default(cuid())
+  clientId      String
+  platform      String
+  accountName   String?
+  accountHandle String?
+  profileId     String
+  accountId     String?
+  isActive      Boolean   @default(true)
+  lateDevData   Json?
+  connectedAt   DateTime  @default(now())
+  lastUsedAt    DateTime?
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, platform, profileId])
+  @@index([clientId])
+  @@index([platform])
+}
+
+model ContentCalendarItem {
+  id              String    @id @default(cuid())
+  clientId        String
+  title           String
+  content         String
+  mediaType       String?
+  mediaUrl        String?
+  mediaStyle      String?
+  scheduledFor    DateTime
+  publishedAt     DateTime?
+  status          String    @default("scheduled")
+  platforms       String[]
+  lateDevPostId   String?
+  lateDevResponse Json?
+  includeHashtags Boolean   @default(true)
+  includeEmojis   Boolean   @default(true)
+  tone            String?
+  isStorytelling  Boolean   @default(false)
+  storyType       String?
+  errorMessage    String?
+  retryCount      Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([scheduledFor])
+  @@index([status])
+  @@index([publishedAt])
+}
+
+model Keyword {
+  id              String   @id @default(cuid())
+  clientId        String
+  keyword         String
+  searchVolume    Int?
+  difficulty      Int?
+  cpc             Float?
+  competition     String?
+  intent          String?
+  currentRanking  Int?
+  potentialScore  Int?
+  relevance       String?
+  category        String?
+  relatedKeywords String[]
+  questions       String[]
+  hasContent      Boolean  @default(false)
+  contentId       String?
+  contentIdeas    String[]
+  source          String?
+  notes           String?
+  isSaved         Boolean  @default(true)
+  priority        String   @default("medium")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([keyword])
+  @@index([priority])
+  @@index([hasContent])
+}
+
+model ArticleIdea {
+  id                       String                     @id @default(cuid())
+  clientId                 String
+  title                    String
+  slug                     String
+  focusKeyword             String
+  topic                    String
+  secondaryKeywords        String[]
+  searchIntent             String?
+  searchVolume             Int?
+  difficulty               Int?
+  contentOutline           Json?
+  targetWordCount          Int?
+  contentType              String?
+  contentCategory          String? // "commercial" or "informational"
+  internalLinks            Json?
+  relatedArticles          String[]
+  imageIdeas               String[]
+  videoIdeas               String[]
+  priority                 String                     @default("medium")
+  category                 String?
+  cluster                  String?
+  scheduledFor             DateTime?
+  status                   String                     @default("idea")
+  hasContent               Boolean                    @default(false)
+  contentId                String?                    @unique
+  generatedAt              DateTime?
+  publishedAt              DateTime?
+  aiScore                  Int?
+  trending                 Boolean                    @default(false)
+  seasonal                 Boolean                    @default(false)
+  competitorGap            Boolean                    @default(false)
+  notes                    String?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  projectId                String?
+  language                 Language                   @default(NL)
+  client                   Client                     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  savedContent             SavedContent?              @relation(fields: [contentId], references: [id])
+  project                  Project?                   @relation("ArticleIdeas", fields: [projectId], references: [id])
+  searchConsolePerformance SearchConsolePerformance[]
+  socialMediaPosts         SocialMediaPost[]
+
+  @@unique([clientId, slug])
+  @@index([clientId])
+  @@index([projectId])
+  @@index([focusKeyword])
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledFor])
+  @@index([category])
+  @@index([cluster])
+}
+
+model Feedback {
+  id             String    @id @default(cuid())
+  clientId       String
+  category       String
+  title          String
+  description    String
+  priority       String    @default("normal")
+  status         String    @default("pending")
+  creditsAwarded Float     @default(0)
+  adminNotes     String?
+  adminResponse  String?
+  respondedAt    DateTime?
+  respondedBy    String?
+  screenshotUrl  String?
+  attachments    String[]
+  rating         Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model AutopilotJob {
+  id           String    @id @default(cuid())
+  clientId     String
+  articleId    String
+  projectId    String?
+  status       String    @default("pending")
+  progress     Int       @default(0)
+  currentStep  String?
+  contentId    String?
+  publishedUrl String?
+  error        String?
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  updatedAt    DateTime  @updatedAt
+  client       Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([articleId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  subject     String
+  htmlBody    String
+  textBody    String?
+  variables   Json
+  category    String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([code])
+  @@index([category])
+  @@index([isActive])
+}
+
+model EmailCampaign {
+  id             String              @id @default(cuid())
+  name           String
+  description    String?
+  triggerType    String
+  targetAudience Json?
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  steps          EmailCampaignStep[]
+
+  @@index([triggerType])
+  @@index([isActive])
+}
+
+model EmailCampaignStep {
+  id         String        @id @default(cuid())
+  campaignId String
+  templateId String
+  stepNumber Int
+  delayHours Int           @default(0)
+  conditions Json?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  campaign   EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([stepNumber])
+}
+
+model EmailLog {
+  id             String    @id @default(cuid())
+  clientId       String
+  campaignId     String?
+  stepId         String?
+  templateCode   String
+  subject        String
+  recipientEmail String
+  status         String    @default("sent")
+  sentAt         DateTime  @default(now())
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  errorMessage   String?
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([campaignId])
+  @@index([status])
+  @@index([sentAt])
+}
+
+model SupportEmail {
+  id          String    @id @default(cuid())
+  fromEmail   String
+  fromName    String?
+  subject     String
+  body        String
+  htmlBody    String?
+  clientId    String?
+  isRead      Boolean   @default(false)
+  status      String    @default("new")
+  priority    String    @default("normal")
+  category    String?
+  assignedTo  String?
+  tags        String[]
+  attachments Json[]
+  threadId    String?
+  replyTo     String?
+  receivedAt  DateTime  @default(now())
+  readAt      DateTime?
+  resolvedAt  DateTime?
+  updatedAt   DateTime  @updatedAt
+  client      Client?   @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+  @@index([status])
+  @@index([isRead])
+  @@index([receivedAt])
+  @@index([priority])
+}
+
+model ContentAutomation {
+  id                    String    @id @default(cuid())
+  clientId              String
+  projectId             String?
+  isActive              Boolean   @default(true)
+  frequency             String
+  dayOfWeek             Int?
+  dayOfMonth            Int?
+  timeOfDay             String    @default("09:00")
+  websiteUrl            String?
+  customInstructions    String?
+  includeImages         Boolean   @default(true)
+  includeBolcomProducts Boolean   @default(false)
+  numberOfImages        Int       @default(12)
+  autoPublishWordpress  Boolean   @default(false)
+  wordpressStatus       String    @default("draft")
+  wordpressCategories   String[]  @default([])
+  wordpressTags         String[]  @default([])
+  lastRunAt             DateTime?
+  nextRunAt             DateTime?
+  totalRuns             Int       @default(0)
+  successfulRuns        Int       @default(0)
+  failedRuns            Int       @default(0)
+  lastError             String?
+  lastGeneratedTopic    String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project               Project?  @relation(fields: [projectId], references: [id])
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([isActive])
+  @@index([nextRunAt])
+}
+
+model AutopilotSchedule {
+  id                    String    @id @default(cuid())
+  clientId              String
+  projectId             String
+  name                  String
+  isActive              Boolean   @default(true)
+  scheduleType          String
+  scheduledDate         DateTime?
+  frequency             String?
+  dayOfWeek             Int?
+  dayOfMonth            Int?
+  timeOfDay             String    @default("09:00")
+  customInterval        Int?
+  articleIds            String[]
+  processingStrategy    String    @default("sequential")
+  articlesPerRun        Int       @default(1)
+  autoPublish           Boolean   @default(true)
+  notifyOnCompletion    Boolean   @default(true)
+  lastRunAt             DateTime?
+  nextRunAt             DateTime?
+  totalRuns             Int       @default(0)
+  successfulRuns        Int       @default(0)
+  failedRuns            Int       @default(0)
+  lastError             String?
+  processedArticleIds   String[]  @default([])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  contentType           String    @default("blog")
+  includeAffiliateLinks Boolean   @default(true)
+  includeBolcomProducts Boolean   @default(true)
+  includeImages         Boolean   @default(true)
+  secondTimeOfDay       String?
+  autoSelectMode        Boolean   @default(false)
+  daysOfWeek            Int[]     @default([])
+  platforms             String[]  @default([])
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project               Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([isActive])
+  @@index([nextRunAt])
+  @@index([scheduleType])
+}
+
+model LinkbuildingPartnership {
+  id                     String    @id @default(cuid())
+  requestingClientId     String
+  targetClientId         String
+  requestingProjectId    String?
+  targetProjectId        String?
+  status                 String    @default("active")
+  startDate              DateTime  @default(now())
+  endDate                DateTime?
+  relevantTopics         String[]
+  niche                  String?
+  linksGiven             Int       @default(0)
+  linksReceived          Int       @default(0)
+  lastLinkDate           DateTime?
+  creditsEarned          Float     @default(0)
+  creditsSpent           Float     @default(0)
+  averageDomainAuthority Float?
+  averageRelevanceScore  Float?
+  maxLinksPerMonth       Int       @default(5)
+  autoApproveLinks       Boolean   @default(false)
+  requireReview          Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  requestingClient       Client    @relation("RequestingPartner", fields: [requestingClientId], references: [id], onDelete: Cascade)
+  targetClient           Client    @relation("TargetPartner", fields: [targetClientId], references: [id], onDelete: Cascade)
+
+  @@unique([requestingClientId, targetClientId])
+  @@index([requestingClientId])
+  @@index([targetClientId])
+  @@index([status])
+  @@index([relevantTopics])
+}
+
+model LinkbuildingRequest {
+  id              String    @id @default(cuid())
+  fromClientId    String
+  toClientId      String
+  fromProjectId   String?
+  toProjectId     String?
+  message         String?
+  proposedTopics  String[]
+  niche           String?
+  relevanceScore  Float?
+  matchingTopics  String[]
+  status          String    @default("pending")
+  respondedAt     DateTime?
+  responseMessage String?
+  creditsOffered  Float     @default(0)
+  linksPerMonth   Int       @default(2)
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  fromClient      Client    @relation("RequestsSent", fields: [fromClientId], references: [id], onDelete: Cascade)
+  toClient        Client    @relation("RequestsReceived", fields: [toClientId], references: [id], onDelete: Cascade)
+
+  @@index([fromClientId])
+  @@index([toClientId])
+  @@index([status])
+  @@index([relevanceScore])
+  @@index([expiresAt])
+}
+
+model LinkbuildingLink {
+  id                 String    @id @default(cuid())
+  sourceClientId     String
+  sourceProjectId    String?
+  sourceArticleId    String
+  sourceArticleTitle String
+  sourceArticleUrl   String
+  targetClientId     String
+  targetProjectId    String?
+  targetArticleId    String
+  targetArticleTitle String
+  targetArticleUrl   String
+  anchorText         String
+  linkContext        String?
+  placement          String?
+  status             String    @default("active")
+  insertedAt         DateTime  @default(now())
+  verifiedAt         DateTime?
+  lastCheckedAt      DateTime?
+  creditsCharged     Float     @default(15)
+  creditsPaid        Boolean   @default(false)
+  billedAt           DateTime?
+  relevanceScore     Float?
+  isDoFollow         Boolean   @default(true)
+  isAutomatic        Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  sourceClient       Client    @relation("LinkGiver", fields: [sourceClientId], references: [id], onDelete: Cascade)
+  targetClient       Client    @relation("LinkReceiver", fields: [targetClientId], references: [id], onDelete: Cascade)
+
+  @@index([sourceClientId])
+  @@index([targetClientId])
+  @@index([status])
+  @@index([insertedAt])
+  @@index([sourceArticleId])
+  @@index([targetArticleId])
+}
+
+model AffiliateReferral {
+  id                  String    @id @default(cuid())
+  referrerClientId    String
+  referredClientId    String
+  referralCode        String
+  signupIp            String?
+  signupSource        String?
+  status              String    @default("active")
+  isVerified          Boolean   @default(false)
+  verifiedAt          DateTime?
+  firstPurchaseAt     DateTime?
+  firstPurchaseAmount Float?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  referrer            Client    @relation("Referrer", fields: [referrerClientId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerClientId, referredClientId])
+  @@index([referrerClientId])
+  @@index([referredClientId])
+  @@index([referralCode])
+  @@index([status])
+}
+
+model AffiliateEarning {
+  id                String    @id @default(cuid())
+  affiliateClientId String
+  referredClientId  String
+  month             Int
+  year              Int
+  referredRevenue   Float
+  commissionRate    Float
+  commissionAmount  Float
+  status            String    @default("pending")
+  isPaid            Boolean   @default(false)
+  paidAt            DateTime?
+  payoutId          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  affiliateClient   Client    @relation(fields: [affiliateClientId], references: [id], onDelete: Cascade)
+
+  @@unique([affiliateClientId, referredClientId, month, year])
+  @@index([affiliateClientId])
+  @@index([referredClientId])
+  @@index([year, month])
+  @@index([status])
+  @@index([isPaid])
+}
+
+model AffiliatePayout {
+  id                String    @id @default(cuid())
+  affiliateClientId String
+  amount            Float
+  paymentMethod     String?
+  paymentDetails    Json?
+  status            String    @default("requested")
+  requestedAt       DateTime  @default(now())
+  processedAt       DateTime?
+  paidAt            DateTime?
+  processedBy       String?
+  rejectionReason   String?
+  transactionId     String?
+  notes             String?
+  includesEarnings  String[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  affiliateClient   Client    @relation(fields: [affiliateClientId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateClientId])
+  @@index([status])
+  @@index([requestedAt])
+}
+
+model SocialMediaConfig {
+  id                       String    @id @default(cuid())
+  projectId                String    @unique
+  autopilotEnabled         Boolean   @default(false)
+  postsPerWeek             Int       @default(3)
+  contentTypes             String[]
+  postTone                 String?
+  includeHashtags          Boolean   @default(true)
+  includeEmojis            Boolean   @default(true)
+  scheduleDays             String[]
+  scheduleTime             String?
+  timezone                 String    @default("Europe/Amsterdam")
+  autoPublishBlog          Boolean   @default(false)
+  autoApprove              Boolean   @default(false)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  autoPublish              Boolean   @default(false)
+  lastAutopilotRun         DateTime?
+  nextScheduledRun         DateTime?
+  postsPerRun              Int       @default(1)
+  scheduleFrequency        String    @default("weekly")
+  connectedAccounts        Json?
+  lastConnectionTest       DateTime?
+  accountIds               String[]  @default([])
+  lateDevProfileId         String?
+  lateDevProfileName       String?
+  ayrshareProfileKey       String?
+  getlateAccountIds        String[]  @default([])
+  getlateConnectedAccounts Json?
+  getlateEnabled           Boolean   @default(false)
+  getlateLastSync          DateTime?
+  getlateProfileId         String?
+  getlateProfileName       String?
+  project                  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([autopilotEnabled])
+  @@index([nextScheduledRun])
+}
+
+model SocialMediaTopic {
+  id          String    @id @default(cuid())
+  projectId   String
+  topic       String
+  description String
+  category    String // bijv. "tutorial", "tip", "nieuws", "vraag-antwoord"
+  language    Language  @default(NL)
+  keywords    String[]
+  usageCount  Int       @default(0)
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([category])
+  @@index([usageCount])
+}
+
+model SocialMediaIdea {
+  id                 String           @id @default(cuid())
+  projectId          String
+  title              String
+  description        String
+  contentType        String
+  language           Language         @default(NL)
+  suggestedPlatforms String[]
+  status             String           @default("idea")
+  aiPrompt           String?
+  keywords           String[]
+  visualIdea         String?
+  topicId            String? // Link naar contentplan topic
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  project            Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  generatedPost      SocialMediaPost?
+
+  @@index([projectId])
+  @@index([status])
+  @@index([contentType])
+  @@index([topicId])
+}
+
+model SocialMediaPost {
+  id               String           @id @default(cuid())
+  projectId        String
+  content          String
+  mediaUrl         String?
+  linkUrl          String?
+  contentType      String
+  sourceArticleId  String?
+  status           String           @default("draft")
+  scheduledFor     DateTime?
+  publishedAt      DateTime?
+  engagementData   Json?
+  creditsUsed      Int              @default(0)
+  approvedBy       String?
+  approvedAt       DateTime?
+  error            String?
+  retryCount       Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  platformErrors   Json?
+  platformPostIds  Json?
+  platformStatuses Json?
+  platforms        String[]
+  language         Language         @default(NL)
+  sourceIdeaId     String?          @unique
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceArticle    ArticleIdea?     @relation(fields: [sourceArticleId], references: [id])
+  sourceIdea       SocialMediaIdea? @relation(fields: [sourceIdeaId], references: [id])
+
+  @@index([projectId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([platforms])
+  @@index([sourceIdeaId])
+}
+
+model SearchConsolePerformance {
+  id                String       @id @default(cuid())
+  projectId         String
+  url               String
+  articleIdeaId     String?
+  clicks            Int          @default(0)
+  impressions       Int          @default(0)
+  ctr               Float        @default(0)
+  averagePosition   Float        @default(0)
+  clicksChange      Float        @default(0)
+  impressionsChange Float        @default(0)
+  ctrChange         Float        @default(0)
+  positionChange    Float        @default(0)
+  topQueries        Json?
+  dataDate          DateTime     @default(now())
+  periodDays        Int          @default(28)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  articleIdea       ArticleIdea? @relation(fields: [articleIdeaId], references: [id])
+  project           Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, url, dataDate])
+  @@index([projectId])
+  @@index([url])
+  @@index([dataDate])
+  @@index([articleIdeaId])
+}
+
+model BlogPost {
+  id                 String    @id @default(cuid())
+  title              String
+  slug               String    @unique
+  excerpt            String
+  content            String
+  featuredImage      String?
+  metaTitle          String?
+  metaDescription    String?
+  focusKeyword       String?
+  category           String    @default("AI & Content Marketing")
+  tags               String[]
+  status             String    @default("draft")
+  publishedAt        DateTime?
+  scheduledFor       DateTime?
+  authorId           String?
+  authorName         String    @default("WritgoAI Team")
+  views              Int       @default(0)
+  readingTimeMinutes Int       @default(5)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  language           Language  @default(NL)
+
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([category])
+}
+
+model EmailDraft {
+  id                 String    @id @default(cuid())
+  clientId           String
+  title              String
+  subject            String?
+  recipient          String?
+  recipientName      String?
+  content            String
+  language           Language  @default(NL)
+  emailType          String    @default("reply")
+  originalContext    String?
+  customInstructions String?
+  tone               String    @default("professional")
+  length             String    @default("medium")
+  status             String    @default("draft")
+  isFavorite         Boolean   @default(false)
+  isTemplate         Boolean   @default(false)
+  sentAt             DateTime?
+  sentVia            String?
+  aiGenerated        Boolean   @default(true)
+  aiModel            String?
+  tokensUsed         Int?
+  generatedAt        DateTime?
+  tags               String[]
+  category           String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  client             Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
+  @@index([emailType])
+  @@index([isTemplate])
+  @@index([createdAt])
+}
+
+model AutoLinkProduct {
+  id           String    @id @default(cuid())
+  projectId    String
+  productName  String
+  searchTerm   String?
+  ean          String?
+  bolProductId Int?
+  affiliateUrl String?
+  price        Float?
+  imageUrl     String?
+  lastFetched  DateTime?
+  enabled      Boolean   @default(true)
+  linkType     String    @default("inline")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([productName])
+  @@index([enabled])
+}
+
+model EmailThread {
+  id           String   @id @default(cuid())
+  subject      String
+  participants String[]
+  status       String   @default("open")
+  priority     String   @default("normal")
+  assignedTo   String?
+  tags         String[]
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  emails       Email[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([lastActivity])
+}
+
+model Email {
+  id               String            @id @default(cuid())
+  threadId         String
+  messageId        String            @unique
+  inReplyTo        String?
+  references       String[]
+  from             String
+  fromName         String?
+  to               String[]
+  cc               String[]
+  bcc              String[]
+  replyTo          String?
+  subject          String
+  textBody         String?
+  htmlBody         String?
+  snippet          String?
+  isRead           Boolean           @default(false)
+  isStarred        Boolean           @default(false)
+  isIncoming       Boolean           @default(true)
+  hasAttachments   Boolean           @default(false)
+  aiDraft          String?
+  aiDraftCreatedAt DateTime?
+  receivedAt       DateTime
+  sentAt           DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  thread           EmailThread       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  attachments      EmailAttachment[]
+
+  @@index([threadId])
+  @@index([messageId])
+  @@index([from])
+  @@index([isRead])
+  @@index([receivedAt])
+}
+
+model EmailAttachment {
+  id               String   @id @default(cuid())
+  emailId          String
+  filename         String
+  mimeType         String
+  size             Int
+  cloudStoragePath String
+  createdAt        DateTime @default(now())
+  email            Email    @relation(fields: [emailId], references: [id], onDelete: Cascade)
+
+  @@index([emailId])
+}
+
+model ApiUsage {
+  id           String   @id @default(cuid())
+  clientId     String?
+  projectId    String?
+  feature      String
+  model        String
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  totalTokens  Int      @default(0)
+  inputCost    Float    @default(0)
+  outputCost   Float    @default(0)
+  totalCost    Float    @default(0)
+  success      Boolean  @default(true)
+  errorMessage String?
+  responseTime Int?
+  contentId    String?
+  createdAt    DateTime @default(now())
+  client       Client?  @relation(fields: [clientId], references: [id])
+  project      Project? @relation(fields: [projectId], references: [id])
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([feature])
+  @@index([createdAt])
+  @@index([success])
+}
+
+model WooCommerceProduct {
+  id                String    @id @default(cuid())
+  projectId         String
+  wooProductId      Int
+  sku               String?
+  name              String
+  description       String?
+  shortDescription  String?
+  price             String?
+  regularPrice      String?
+  salePrice         String?
+  stockStatus       String?
+  stockQuantity     Int?
+  categories        Json?
+  tags              Json?
+  images            Json?
+  attributes        Json?
+  importSource      String?
+  importDate        DateTime  @default(now())
+  sourceUrl         String?
+  sourceData        Json?
+  aiOptimized       Boolean   @default(false)
+  lastOptimized     DateTime?
+  optimizationCount Int       @default(0)
+  status            String    @default("draft")
+  permalink         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  bolAffiliateLink  String?
+  bolPrice          String?
+  bolProductId      Int?
+  ean               String?
+  lastBolSync       DateTime?
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, wooProductId])
+  @@index([projectId])
+  @@index([importSource])
+  @@index([aiOptimized])
+  @@index([status])
+  @@index([ean])
+  @@index([bolProductId])
+}
+
+model NewsResearch {
+  id           String        @id @default(cuid())
+  projectId    String
+  sourceType   String
+  sourceInput  String
+  researchData Json?
+  suggestions  Json[]
+  status       String        @default("pending")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  articles     NewsArticle[]
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model NewsArticle {
+  id              String        @id @default(cuid())
+  projectId       String
+  researchId      String?
+  title           String
+  content         String
+  wordCount       Int
+  language        String        @default("nl")
+  wordpressPostId String?
+  publishedUrl    String?
+  status          String        @default("draft")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  research        NewsResearch? @relation(fields: [researchId], references: [id])
+
+  @@index([projectId])
+  @@index([researchId])
+  @@index([status])
+}
+
+model TextOrder {
+  id               String    @id @default(cuid())
+  clientId         String
+  projectId        String?
+  title            String
+  description      String
+  wordCount        Int
+  language         String    @default("NL")
+  pricePerWord     Float     @default(0.04)
+  totalPrice       Float
+  status           String    @default("pending")
+  paymentStatus    String    @default("unpaid")
+  stripePaymentId  String?
+  deliveryDate     DateTime?
+  completedContent String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  client           Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project          Project?  @relation(fields: [projectId], references: [id])
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([status])
+  @@index([paymentStatus])
+}
+
+model ManagedServiceSubscription {
+  id                     String    @id @default(cuid())
+  clientId               String    @unique
+  projectId              String?   @unique
+  status                 String    @default("active")
+  monthlyPrice           Float     @default(199.00)
+  stripeSubscriptionId   String?
+  contentPiecesPerMonth  Int       @default(8)
+  socialPostsPerWeek     Int       @default(5)
+  platforms              String[]  @default([])
+  language               String    @default("NL")
+  lastContentGeneratedAt DateTime?
+  lastSocialGeneratedAt  DateTime?
+  nextScheduledAt        DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  client                 Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project                Project?  @relation(fields: [projectId], references: [id])
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([status])
+}
+
+enum Language {
+  NL
+  EN
+  DE
+  ES
+  FR
+  IT
+  PT
+  PL
+  SV
+  DA
+}
+
+model TextEditorConversation {
+  id        String              @id @default(cuid())
+  clientId  String
+  title     String
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  client    Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  messages  TextEditorMessage[]
+
+  @@index([clientId])
+  @@index([updatedAt])
+}
+
+model TextEditorMessage {
+  id              String                 @id @default(cuid())
+  conversationId  String
+  role            String
+  content         String                 @db.Text
+  originalContent String?                @db.Text
+  createdAt       DateTime               @default(now())
+  conversation    TextEditorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model GeneratedImage {
+  id               String   @id @default(cuid())
+  clientId         String
+  projectId        String?
+  prompt           String   @db.Text
+  translatedPrompt String   @db.Text
+  model            String
+  imageUrl         String
+  cost             Float
+  createdAt        DateTime @default(now())
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project          Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+model VideoProject {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?
+
+  // Script
+  scriptText     String @db.Text
+  scriptLanguage String @default("Dutch")
+
+  // Media
+  videoClips        Json // Array of {id, url, duration, name, source}
+  musicTrack        Json? // {id, title, url, duration}
+  voiceoverSegments Json // Array of {id, text, audioUrl, startTime, duration}
+
+  // Effects
+  effects Json // Array of {type, name, settings, startTime, duration}
+
+  // Timeline
+  totalDuration Int   @default(0) // in seconds
+  timelineData  Json? // Timeline configuration
+
+  // Export
+  exportStatus String    @default("draft") // draft, processing, completed, failed
+  exportUrl    String?
+  exportedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+model AdminNote {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  adminEmail String  // info@writgo.nl
+  note      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([createdAt])
+}
+
+model ClientActivityLog {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  action      String   // "login", "credit_purchase", "content_generated", "subscription_changed", etc.
+  description String   @db.Text
+  metadata    Json?    // Additional data like amount, model used, etc.
+  createdAt   DateTime @default(now())
+
+  @@index([clientId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================
+// TOPICAL AUTHORITY MAPPING MODELS
+// ============================================
+
+model TopicalMap {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  mainTopic     String
+  language      String   @default("NL")
+  depth         Int      @default(3)
+  totalArticles Int
+  
+  categories    TopicalCategory[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([mainTopic])
+}
+
+model TopicalCategory {
+  id              String  @id @default(cuid())
+  topicalMapId    String
+  topicalMap      TopicalMap @relation(fields: [topicalMapId], references: [id], onDelete: Cascade)
+  
+  name            String
+  priority        String  @default("medium") // high, medium, low
+  articleCount    Int
+  commercialRatio Float   @default(0.4)
+  
+  parentId        String?
+  parent          TopicalCategory? @relation("SubCategories", fields: [parentId], references: [id], onDelete: Restrict)
+  subcategories   TopicalCategory[] @relation("SubCategories")
+  
+  topics          TopicalTopic[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([topicalMapId])
+  @@index([parentId])
+}
+
+model TopicalTopic {
+  id            String @id @default(cuid())
+  categoryId    String
+  category      TopicalCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  title         String
+  type          String  @default("informational") // commercial, informational
+  keywords      String[]
+  searchVolume  Int?
+  difficulty    Int?
+  priority      Int     @default(5)
+  
+  // DataForSEO enriched data
+  cpc           Float?   // Cost per click (€)
+  competition   Float?   // Competition level (0-1)
+  trend         Int[]    @default([]) // Monthly search volume trend (last 12 months)
+  relatedKeywords String[] @default([]) // Related keywords
+  questions     String[] @default([]) // Question keywords
+  seasonalityScore Int? // 0-100, higher = more seasonal
+  opportunityScore Int? // 0-100, our calculated score
+  
+  // Status tracking
+  status        String   @default("pending") // pending | scheduled | generating | completed
+  isCompleted   Boolean @default(false)
+  contentId     String? @unique
+  content       SavedContent? @relation(fields: [contentId], references: [id])
+  
+  // Custom configuration
+  customOutline Json?    // Custom outline if user wants to modify
+  selectedImages String[] @default([]) // Pre-selected image URLs
+  internalLinks Json?    // Custom internal links configuration
+  scheduledFor  DateTime? // When to generate this content
+  notes         String?   // User notes for this topic
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([isCompleted])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([priority])
+  @@index([opportunityScore])
+}
+
+// ========================================
+// Order Management System
+// ========================================
+
+model Order {
+  id             String         @id @default(cuid())
+  title          String
+  clientId       String
+  client         Client         @relation("ClientOrders", fields: [clientId], references: [id], onDelete: Cascade)
+  category       String         // blog, web, app, landing
+  words          Int
+  notes          String?        @db.Text
+  deadline       DateTime
+  status         String         @default("open") // open, assigned, busy, review, revision, done
+  priority       Boolean        @default(false)
+  paymentStatus  String         @default("unpaid") // paid, unpaid
+  invoiceNumber  String?
+  assignedWriter String?
+  assignedEmail  String?        // Email of assigned admin/writer
+  rate           Float?
+  price          Float?
+  vat            Float?
+  totalPrice     Float?
+  writerFee      Float?
+  rating         Int?
+  deliveryUrl    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  messages       OrderMessage[]
+  timeline       OrderTimeline[]
+
+  @@index([clientId, status, createdAt])
+  @@index([assignedEmail, status])
+}
+
+model OrderMessage {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender    String
+  text      String   @db.Text
+  type      String   @default("text") // text, file, system
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+model OrderTimeline {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  action    String
+  details   String
+  user      String
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+model SitePlan {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectId   String   @unique // Elk project heeft 1 plan
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  keywords    String[]
+  targetAudience String?
+  language    String   @default("nl")
+  planData    Json     // Stores the complete plan structure
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clientId, createdAt(sort: Desc)])
+  @@index([projectId])
+}
+
+
+model ContentQueue {
+  id                String    @id @default(cuid())
+  clientId          String
+  projectId         String?
+  title             String
+  type              String
+  category          String?
+  keywords          String[]
+  searchIntent      String?
+  priority          String    @default("medium")
+  estimatedWords    Int       @default(1500)
+  productKeyword    String?
+  scheduledFor      DateTime
+  status            String    @default("queued") // queued, scheduled, processing, completed, failed
+  autoPublish       Boolean   @default(false)
+  bolcomEnabled     Boolean   @default(false)
+  bolcomAffiliateId String?
+  position          Int       @default(0)
+  completedAt       DateTime?
+  savedContentId    String?
+  errorMessage      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([position])
+}
+// ============================================
+// AGENCY PORTAL MODELS
+// ============================================
+
+model Assignment {
+  id              String    @id @default(cuid())
+  clientId        String
+  projectId       String?
+  title           String
+  description     String    @db.Text
+  type            String    // blog, video, chatbot, automation, website, design, custom
+  status          String    @default("open") // open, in_progress, review, completed, cancelled
+  priority        String    @default("normal") // low, normal, high, urgent
+  deadline        DateTime?
+  estimatedHours  Float?
+  actualHours     Float?
+  budget          Float?
+  finalPrice      Float?
+  deliverables    Json?     // Array of deliverable items
+  notes           String?   @db.Text
+  adminNotes      String?   @db.Text
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invoiceItems    InvoiceItem[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
+  @@index([deadline])
+}
+
+model ClientRequest {
+  id              String    @id @default(cuid())
+  clientId        String
+  title           String
+  description     String    @db.Text
+  type            String    // blog, video, chatbot, automation, website, design, custom, other
+  budget          String?   // Budget indication from client
+  deadline        String?   // Deadline indication from client
+  attachments     String[]  // URLs to attached files
+  status          String    @default("new") // new, reviewed, converted, rejected
+  adminResponse   String?   @db.Text
+  assignmentId    String?   // Link to created assignment
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  clientId        String
+  invoiceNumber   String    @unique
+  status          String    @default("draft") // draft, sent, paid, overdue, cancelled
+  issueDate       DateTime  @default(now())
+  dueDate         DateTime?
+  paidAt          DateTime?
+  subtotal        Float     @default(0)
+  taxRate         Float     @default(21) // BTW percentage
+  taxAmount       Float     @default(0)
+  total           Float     @default(0)
+  notes           String?   @db.Text
+  paymentTerms    String?
+  stripeInvoiceId String?
+  stripePaymentUrl String?
+  pdfUrl          String?
+  sentAt          DateTime?
+  reminderSentAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  items           InvoiceItem[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@index([dueDate])
+}
+
+model InvoiceItem {
+  id              String    @id @default(cuid())
+  invoiceId       String
+  assignmentId    String?
+  usageId         String?
+  description     String
+  quantity        Float     @default(1)
+  unitPrice       Float
+  total           Float
+  createdAt       DateTime  @default(now())
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  assignment      Assignment? @relation(fields: [assignmentId], references: [id])
+  usage           ToolUsage? @relation(fields: [usageId], references: [id])
+
+  @@index([invoiceId])
+  @@index([assignmentId])
+  @@index([usageId])
+}
+
+// ===== TOOL USAGE TRACKING (Pay-as-you-go) =====
+model ToolUsage {
+  id              String    @id @default(cuid())
+  clientId        String
+  projectId       String?
+  tool            String    // blog_generator, keyword_research, image_generator, content_generator, site_planner
+  action          String    // generate, research, create, etc.
+  details         Json?     // Extra info like keyword, title, etc.
+  tokenCount      Int?      // AI tokens used
+  imageCount      Int?      // Images generated
+  wordCount       Int?      // Words generated
+  suggestedPrice  Float     @default(0) // Suggested price based on usage
+  invoiced        Boolean   @default(false)
+  invoiceItemId   String?
+  createdAt       DateTime  @default(now())
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project         Project?  @relation(fields: [projectId], references: [id])
+  invoiceItems    InvoiceItem[]
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([tool])
+  @@index([invoiced])
+  @@index([createdAt])
+}

@@ -1,0 +1,567 @@
+
+/**
+ * Isolated Blog Generator
+ * Volledig onafhankelijk systeem voor SEO blog generatie
+ */
+
+import { chatCompletion } from './aiml-api';
+import { MODEL_CATEGORIES } from './smart-model-router';
+import { getBannedWordsInstructions, detectBannedWords, removeBannedWords, isContentValid } from './banned-words';
+import { loadWordPressSitemap, findRelevantInternalLinks, type SitemapData } from './sitemap-loader';
+import { addYouTubeToContent } from './youtube-search';
+
+export interface BlogGenerationOptions {
+  topic: string;
+  keywords?: string[];
+  length?: number;
+  tone?: 'professional' | 'casual' | 'friendly' | string; // Support custom tone of voice
+  customToneOfVoice?: string; // Detailed custom tone of voice instructions
+  customInstructions?: string; // Additional custom instructions (SEO, style, etc.)
+  includeSEO?: boolean;
+  includeImages?: boolean;
+  includeYouTube?: boolean; // YouTube video embed optie
+  includeFAQ?: boolean; // FAQ sectie toevoegen
+  includeDirectAnswer?: boolean; // Direct antwoord box
+  generateFeaturedImage?: boolean; // Generate 16:9 featured image
+  targetAudience?: string;
+  sitemapUrl?: string; // URL voor interne links
+  wordpressApiUrl?: string; // WordPress REST API URL
+  projectContext?: {
+    name: string;
+    url?: string;
+    description?: string;
+    targetKeywords?: string[];
+  };
+}
+
+export interface BlogGenerationResult {
+  title: string;
+  content: string;
+  metaDescription: string;
+  keywords: string[];
+  readingTime: number;
+  seoScore: number;
+  suggestions: string[];
+  research?: string[];
+  featuredImageUrl?: string; // 16:9 featured image
+  seoMetadata?: {
+    seoTitle: string;
+    metaDescription: string;
+    focusKeyword: string;
+    extraKeywords: string[];
+    lsiKeywords: string[]; // Minimaal 20 LSI keywords
+  };
+}
+
+/**
+ * Generate tone of voice instructions based on custom settings
+ */
+function getToneOfVoiceInstructions(options: BlogGenerationOptions): string {
+  // If custom tone of voice is provided, use it
+  if (options.customToneOfVoice) {
+    return `
+TONE OF VOICE (CUSTOM):
+${options.customToneOfVoice}
+
+Volg deze instructies nauwkeurig bij het schrijven van de content. Dit is de stem van het merk.
+`;
+  }
+  
+  // Otherwise use default tone
+  const toneMap: Record<string, string> = {
+    professional: 'Professioneel en zakelijk, maar toegankelijk. Gebruik "u" of "je" afhankelijk van de context.',
+    casual: 'Casual en vriendelijk. Gebruik "je/jij" en schrijf alsof je een vriend adviseert.',
+    friendly: 'Vriendelijk en warm. Persoonlijk en toegankelijk, maar wel professioneel.',
+  };
+  
+  const toneInstructions = toneMap[options.tone || 'professional'] || toneMap.professional;
+  
+  return `TONE: ${toneInstructions}`;
+}
+
+/**
+ * Genereer een SEO-geoptimaliseerde blog
+ * Deze functie is volledig geïsoleerd en kan niet andere tools beïnvloeden
+ */
+export async function generateSEOBlog(
+  options: BlogGenerationOptions,
+  onProgress?: (step: string, progress: number) => void
+): Promise<BlogGenerationResult> {
+  
+  try {
+    // STAP 0: Laad sitemap EERST als beschikbaar
+    let sitemapData: SitemapData | null = null;
+    let relevantLinks: Array<{ title: string; url: string; relevance: number }> = [];
+    
+    if (options.sitemapUrl) {
+      try {
+        onProgress?.('📋 Sitemap laden...', 5);
+        console.log('🔍 Sitemap laden van:', options.sitemapUrl);
+        
+        sitemapData = await loadWordPressSitemap(
+          options.sitemapUrl,
+          options.wordpressApiUrl
+        );
+        
+        console.log(`✅ Sitemap geladen: ${sitemapData.totalPages} pagina's gevonden`);
+        
+        // Zoek relevante interne links voor dit onderwerp
+        relevantLinks = findRelevantInternalLinks(sitemapData, options.topic, 5);
+        console.log(`🔗 ${relevantLinks.length} relevante interne links gevonden:`, 
+          relevantLinks.map(l => l.title));
+        
+        onProgress?.('✅ Sitemap geladen', 8);
+      } catch (error) {
+        console.error('⚠️ Sitemap laden mislukt:', error);
+        // Doorgaan zonder sitemap - niet blokkeren
+      }
+    }
+    
+    onProgress?.('🔍 Web research starten...', 10);
+    
+    // STAP 1: Web Research (ALTIJD met web search model)
+    const researchPrompt = `
+Je bent een expert SEO researcher. Zoek actuele informatie over: ${options.topic}
+
+${options.keywords ? `Focus op deze keywords: ${options.keywords.join(', ')}` : ''}
+${options.projectContext ? `Context: ${options.projectContext.description}` : ''}
+
+Geef een uitgebreid overzicht met:
+1. Actuele trends en statistieken
+2. Veelgestelde vragen
+3. Belangrijke feiten
+4. Relevante bronnen
+5. Gerelateerde onderwerpen
+
+Formaat: Gestructureerd overzicht in het Nederlands
+`;
+
+    const researchResponse = await chatCompletion({
+      messages: [{ role: 'user', content: researchPrompt }],
+      model: MODEL_CATEGORIES.WEB_SEARCH.primary, // gpt-4o-search-preview
+      temperature: 0.3,
+      max_tokens: 4000
+    });
+    
+    const research = researchResponse.choices[0]?.message?.content || '';
+    onProgress?.('✅ Research voltooid', 40);
+    
+    // STAP 2: Blog structuur maken
+    onProgress?.('📝 Blog structuur maken...', 50);
+    
+    const toneInstructions = getToneOfVoiceInstructions(options);
+    
+    const structurePrompt = `
+Op basis van deze research, maak een gedetailleerde blog structuur:
+
+RESEARCH:
+${research}
+
+TOPIC: ${options.topic}
+LENGTE: ${options.length || 1000} woorden
+${toneInstructions}
+${options.targetAudience ? `DOELGROEP: ${options.targetAudience}` : ''}
+${options.customInstructions ? `\nEXTRA INSTRUCTIES:\n${options.customInstructions}` : ''}
+
+Maak een structuur met:
+- Pakkende titel (met keyword)
+- Inleiding
+- 5-7 secties met H2 headers
+- Relevante afsluitende sectie (GEEN "Conclusie", maar specifiek voor het onderwerp)
+- Meta description (155 karakters)
+
+BELANGRIJKE REGELS:
+- ❌ GEEN headings zoals "Conclusie", "Afsluiting", "Call to Action", "Samenvatting"
+- ✅ Gebruik specifieke headings die bij het onderwerp passen
+- ✅ Laatste sectie moet natuurlijk aansluiten bij de inhoud
+
+Geef alleen de structuur in JSON formaat:
+{
+  "title": "...",
+  "metaDescription": "...",
+  "sections": [
+    {"heading": "...", "keyPoints": ["...", "..."]}
+  ]
+}
+`;
+    
+    const structureResponse = await chatCompletion({
+      messages: [{ role: 'user', content: structurePrompt }],
+      model: MODEL_CATEGORIES.SEO_WRITING.primary, // claude-3-7-sonnet
+      temperature: 0.7,
+      max_tokens: 2000
+    });
+    
+    const structureText = structureResponse.choices[0]?.message?.content || '{}';
+    let structure;
+    try {
+      // Extract JSON from markdown if needed
+      const jsonMatch = structureText.match(/\{[\s\S]*\}/);
+      structure = JSON.parse(jsonMatch ? jsonMatch[0] : structureText);
+    } catch (e) {
+      // Fallback structure
+      structure = {
+        title: options.topic,
+        metaDescription: `Alles over ${options.topic}`,
+        sections: [
+          { heading: 'Inleiding', keyPoints: [] },
+          { heading: 'Wat is belangrijk?', keyPoints: [] },
+          { heading: 'Conclusie', keyPoints: [] }
+        ]
+      };
+    }
+    
+    onProgress?.('✅ Structuur klaar', 60);
+    
+    // STAP 3: Volledige blog schrijven
+    onProgress?.('✍️ Blog schrijven...', 70);
+    
+    const writingPrompt = `
+Je bent een expert SEO content writer die artikelen schrijft die 100% menselijk scoren in Originality AI.
+
+STRUCTUUR:
+${JSON.stringify(structure, null, 2)}
+
+RESEARCH:
+${research}
+
+ARTIKEL STRUCTUUR (VERPLICHT):
+- 1 H1 titel: SEO geoptimaliseerd, kort en pakkend (schrijf in normale zinsvorm, NIET Elke Woord Met Hoofdletter)
+- Intro: 3-4 zinnen met variërende lengtes, noem het keyword
+- H2 en/of H3 titels: elk met een menselijke, doorlopende alinea (schrijf in normale zinsvorm, NIET Elke Woord Met Hoofdletter)
+- Afsluitende alinea: 4-5 zinnen
+- ❌ NOOIT twee headings direct achter elkaar - ALTIJD een paragraaf ertussen
+
+HOOFDLETTERS IN TITELS:
+✅ GOED: "Hoe werkt kunstmatige intelligentie in marketing?"
+✅ GOED: "De voordelen van AI voor kleine bedrijven"
+❌ FOUT: "Hoe Werkt Kunstmatige Intelligentie In Marketing?"
+❌ FOUT: "De Voordelen Van AI Voor Kleine Bedrijven"
+
+SCHRIJFSTIJL VOOR 100% HUMAN SCORE:
+✅ Conversationeel op B1-niveau (toegankelijk en begrijpelijk)
+✅ Gebruik 'je/jij' vorm en persoonlijke voorbeelden
+✅ Wissel zinslengtes af:
+   - Korte zinnen (8-12 woorden)
+   - Middellange zinnen (15-20 woorden)
+   - Enkele lange zinnen (25+ woorden)
+✅ Begin zinnen gevarieerd (NIET steeds met 'Je', 'Het', 'De', etc.)
+✅ Gebruik spreektaal en informele wendingen
+✅ Vermijd herhalingen binnen één alinea
+✅ Maak natuurlijke overgangen: 'daarnaast', 'bovendien', 'ook'
+✅ Voeg concrete voorbeelden en scenario's toe (geen mensen)
+✅ Gebruik emotionele woorden die betrokkenheid tonen
+
+OPMAAK ELEMENTEN (VERPLICHT):
+✅ Voeg minimaal 2-3 opsommingslijsten toe met <ul><li> voor leesbaarheid
+✅ Voeg waar relevant blockquotes toe met <blockquote> voor belangrijke citaten of tips
+✅ Gebruik <strong> voor belangrijke punten (max 2-3 per paragraaf)
+✅ Gebruik <em> voor subtiele nadruk waar passend
+✅ Voeg waar mogelijk een tabel toe met <table> voor data/vergelijkingen
+
+VERBODEN ELEMENTEN:
+❌ Geen vaktermen of clichés
+❌ Geen formele/stijve taal
+❌ Geen overmatig gebruik van bijvoeglijke naamwoorden
+❌ Keyword max 1 keer in headings
+❌ Niet meer dan één keyword per alinea
+❌ Geen voorbeelden van mensen (geen "Stel je voor dat Jan...")
+❌ NOOIT headings zoals "Conclusie", "Afsluiting", "Call to Action", "Samenvatting"
+
+SEO EISEN:
+- ${options.length || 1000} woorden
+${toneInstructions}
+${options.customInstructions ? `\nEXTRA INSTRUCTIES:\n${options.customInstructions}\n` : ''}
+- Keywords natuurlijk verwerken (max 1x per alinea)
+- Links en keywords verspreiden door verschillende alinea's
+${relevantLinks.length > 0 ? `
+INTERNE LINKS (VERPLICHT - GEBRUIK ALLEEN DEZE EXACTE LINKS):
+${relevantLinks.map((link, i) => `${i + 1}. <a href="${link.url}">${link.title}</a>`).join('\n')}
+
+REGELS VOOR INTERNE LINKS:
+- Gebruik ALLEEN de bovenstaande links - GEEN andere URLs verzinnen
+- Voeg alle ${relevantLinks.length} links toe op natuurlijke plekken in de tekst
+- Gebruik contextbewuste ankertekst (gebaseerd op de titel van de pagina)
+- Plaats links verspreid door verschillende secties
+- Format: <a href="[exacte URL hierboven]">[natuurlijke ankertekst]</a>
+- Voorbeeld: "Voor meer informatie over <a href="${relevantLinks[0]?.url}">${relevantLinks[0]?.title.toLowerCase()}</a> kun je deze pagina bekijken."
+` : options.sitemapUrl ? `
+INTERNE LINKS:
+- Geen relevante interne links gevonden in de sitemap voor dit onderwerp
+- Ga door zonder interne links
+` : ''}
+${options.projectContext?.url ? `- Vermeld waar relevant: ${options.projectContext.url}` : ''}
+
+${getBannedWordsInstructions()}
+
+AFBEELDINGEN & MEDIA (VERPLICHT):
+- Voeg ${Math.ceil((options.length || 1000) / 300)} product/thema-gerelateerde afbeelding(en) toe
+- Format: <img src="IMAGE_PLACEHOLDER_X" alt="Gedetailleerde beschrijving van de afbeelding" />
+- Plaats afbeeldingen VERSPREID door de hele tekst:
+  * Na elke 2-3 alinea's een afbeelding
+  * Bij product reviews: productafbeeldingen in de tekst (niet alleen bovenaan)
+  * Bij vergelijkingen: afbeeldingen van verschillende producten/items
+  * Zorg dat ELKE sectie (H2/H3) minimaal 1 afbeelding heeft
+- Gebruik specifieke, beschrijvende alt teksten voor SEO
+- Afbeeldingen moeten relevant zijn voor de tekst eromheen
+
+BELANGRIJK:
+- Schrijf zoals een mens schrijft: natuurlijk, gevarieerd, persoonlijk
+- Gebruik korte EN lange zinnen door elkaar
+- Begin alinea's op verschillende manieren
+- Maak het leesbaar en toegankelijk (B1-niveau)
+- GEEN AI-achtige patronen of herhalingen
+
+Formaat: Markdown met headers, paragrafen, en lijsten.
+`;
+    
+    const contentResponse = await chatCompletion({
+      messages: [{ role: 'user', content: writingPrompt }],
+      model: MODEL_CATEGORIES.SEO_WRITING.primary, // claude-3-7-sonnet
+      temperature: 0.8,
+      max_tokens: 8000
+    });
+    
+    let content = contentResponse.choices[0]?.message?.content || '';
+    
+    // STAP 3.5: Verboden woorden check en filter
+    const validation = isContentValid(content);
+    if (!validation.valid) {
+      console.warn('⚠️ Verboden woorden gevonden:', validation.bannedWords);
+      console.log('🔄 Automatisch filteren van verboden woorden...');
+      content = removeBannedWords(content);
+      
+      // Dubbele check
+      const revalidation = isContentValid(content);
+      if (!revalidation.valid) {
+        console.error('❌ Verboden woorden konden niet volledig verwijderd worden:', revalidation.bannedWords);
+      }
+    }
+    
+    onProgress?.('✅ Blog geschreven', 80);
+    
+    // STAP 3.6: Voeg YouTube video toe
+    onProgress?.('🎥 YouTube video zoeken...', 82);
+    try {
+      content = await addYouTubeToContent(content, options.topic);
+      console.log('✅ YouTube video verwerkt');
+    } catch (error) {
+      console.warn('⚠️ YouTube video kon niet toegevoegd worden:', error);
+      // Geen error throwen, gewoon doorgaan zonder video
+    }
+    onProgress?.('✅ Media toegevoegd', 85);
+    
+    // STAP 3.7: Genereer SEO Metadata
+    onProgress?.('📊 SEO metadata genereren...', 90);
+    
+    const seoMetadata = await generateSEOMetadata({
+      topic: options.topic,
+      content,
+      keywords: options.keywords || []
+    });
+    
+    onProgress?.('✅ SEO metadata klaar', 93);
+    
+    // STAP 4: SEO analyse
+    onProgress?.('📊 SEO analyse...', 95);
+    
+    const wordCount = content.split(/\s+/).length;
+    const readingTime = Math.ceil(wordCount / 200); // 200 woorden per minuut
+    
+    // Simpele SEO score
+    let seoScore = 50;
+    if (content.includes(options.topic)) seoScore += 10;
+    if (wordCount >= (options.length || 1000)) seoScore += 10;
+    if (content.match(/##/g)?.length >= 3) seoScore += 10;
+    if (structure.metaDescription.length <= 160) seoScore += 10;
+    if (content.length > 500) seoScore += 10;
+    
+    onProgress?.('✅ Klaar!', 100);
+    
+    return {
+      title: structure.title,
+      content,
+      metaDescription: structure.metaDescription,
+      keywords: options.keywords || [options.topic],
+      readingTime,
+      seoScore: Math.min(seoScore, 100),
+      suggestions: [
+        seoScore < 80 ? 'Overweeg om meer keywords toe te voegen' : '',
+        readingTime < 3 ? 'Blog is mogelijk te kort voor goede SEO' : '',
+        content.match(/##/g)?.length < 3 ? 'Voeg meer subheaders toe' : ''
+      ].filter(Boolean),
+      research: [research],
+      seoMetadata
+    };
+    
+  } catch (error: any) {
+    console.error('Blog generation error:', error);
+    throw new Error(`Blog generatie mislukt: ${error?.message || 'Unknown error'}`);
+  }
+}
+
+/**
+ * Genereer SEO Metadata voor een blog
+ */
+async function generateSEOMetadata(params: {
+  topic: string;
+  content: string;
+  keywords: string[];
+}): Promise<{
+  seoTitle: string;
+  metaDescription: string;
+  focusKeyword: string;
+  extraKeywords: string[];
+  lsiKeywords: string[];
+}> {
+  try {
+    const metadataPrompt = `
+Je bent een SEO expert. Analyseer de volgende blog en genereer professionele SEO metadata.
+
+ONDERWERP: ${params.topic}
+OPGEGEVEN KEYWORDS: ${params.keywords.join(', ')}
+
+BLOG CONTENT:
+${params.content.substring(0, 3000)}... [Blog content]
+
+OPDRACHT - Genereer EXACTE SEO metadata:
+
+1. **SEO Titel** (EXACT 55-60 tekens):
+   - Moet het focus keyword bevatten
+   - Moet pakkend en klikwaardig zijn
+   - Optimaal voor Google search results
+   
+2. **Meta Omschrijving** (EXACT 150-155 tekens):
+   - Moet het focus keyword bevatten
+   - Moet een call-to-action bevatten
+   - Moet overtuigend zijn om te klikken
+   - Gebruik actieve taal
+   
+3. **Focus Keyword**:
+   - Het belangrijkste zoekwoord voor dit artikel
+   - Meestal 1-3 woorden
+   - Dit keyword MOET prominent aanwezig zijn in de content
+   
+4. **Extra Keywords** (8-12 keywords):
+   - Gerelateerde zoekwoorden die in het artikel gebruikt zijn
+   - Variaties van het focus keyword
+   - Long-tail keywords
+   - Synoniemen en gerelateerde termen
+   
+5. **LSI Keywords** (MINIMAAL 20-25 keywords):
+   - Semantisch gerelateerde keywords (Latent Semantic Indexing)
+   - Keywords die zoekmachines verwachten bij dit onderwerp
+   - Zoals SurferSEO en Yoast SEO analyseren
+   - Deze keywords verhogen topical relevance en E-E-A-T score
+   - Bijvoorbeeld: als focus keyword "digital marketing" is, dan LSI keywords: 
+     "online advertising, content strategy, SEO optimization, social media management, 
+     email campaigns, brand awareness, customer engagement, conversion rate, 
+     analytics tracking, marketing automation, lead generation, customer journey,
+     brand positioning, content marketing, influencer marketing, video marketing,
+     marketing funnel, ROI optimization, audience targeting, marketing analytics"
+
+FORMAAT - Geef ALLEEN JSON terug:
+{
+  "seoTitle": "[EXACT 55-60 tekens]",
+  "metaDescription": "[EXACT 150-155 tekens]",
+  "focusKeyword": "[hoofdkeyword]",
+  "extraKeywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6", "keyword7", "keyword8"],
+  "lsiKeywords": ["lsi1", "lsi2", "lsi3", "lsi4", "lsi5", "lsi6", "lsi7", "lsi8", "lsi9", "lsi10", "lsi11", "lsi12", "lsi13", "lsi14", "lsi15", "lsi16", "lsi17", "lsi18", "lsi19", "lsi20", "lsi21", "lsi22", "lsi23", "lsi24", "lsi25"]
+}
+
+BELANGRIJK:
+- Zorg dat de lengtes EXACT kloppen
+- Gebruik het focus keyword in ZOWEL titel als description
+- LSI keywords moeten semantisch relevant zijn
+- Geen markdown, ALLEEN pure JSON
+`;
+
+    const metadataResponse = await chatCompletion({
+      messages: [
+        {
+          role: 'system',
+          content: 'Je bent een SEO expert die perfecte metadata genereert. Je geeft ALLEEN JSON terug, geen extra tekst.'
+        },
+        {
+          role: 'user',
+          content: metadataPrompt
+        }
+      ],
+      model: MODEL_CATEGORIES.SEO_WRITING.primary, // claude-3-7-sonnet
+      temperature: 0.3,
+      max_tokens: 1000
+    });
+
+    const metadataText = metadataResponse.choices[0]?.message?.content || '{}';
+    
+    // Extract JSON
+    let metadata;
+    try {
+      const jsonMatch = metadataText.match(/\{[\s\S]*\}/);
+      metadata = JSON.parse(jsonMatch ? jsonMatch[0] : metadataText);
+    } catch (e) {
+      console.warn('⚠️ Failed to parse metadata JSON, using fallback');
+      metadata = {
+        seoTitle: params.topic.substring(0, 60),
+        metaDescription: `Lees alles over ${params.topic}. Ontdek tips, tricks en meer.`,
+        focusKeyword: params.keywords[0] || params.topic,
+        extraKeywords: params.keywords.slice(0, 5),
+        lsiKeywords: []
+      };
+    }
+
+    // Validate lengths and fix if needed
+    if (metadata.seoTitle.length < 55 || metadata.seoTitle.length > 60) {
+      console.warn(`⚠️ SEO Title length is ${metadata.seoTitle.length}, should be 55-60 - fixing...`);
+      if (metadata.seoTitle.length > 60) {
+        metadata.seoTitle = metadata.seoTitle.substring(0, 57) + '...';
+      }
+    }
+    if (metadata.metaDescription.length < 150 || metadata.metaDescription.length > 155) {
+      console.warn(`⚠️ Meta Description length is ${metadata.metaDescription.length}, should be 150-155 - fixing...`);
+      if (metadata.metaDescription.length > 155) {
+        metadata.metaDescription = metadata.metaDescription.substring(0, 152) + '...';
+      }
+    }
+
+    // Ensure we have at least 20 LSI keywords
+    if (!metadata.lsiKeywords || metadata.lsiKeywords.length < 20) {
+      console.warn(`⚠️ Only ${metadata.lsiKeywords?.length || 0} LSI keywords found, should be at least 20`);
+      // Fallback: generate basic LSI keywords from topic and focus keyword
+      const basicLSI = [
+        ...(metadata.lsiKeywords || []),
+        params.topic.toLowerCase(),
+        metadata.focusKeyword.toLowerCase(),
+        ...params.keywords.map(k => k.toLowerCase()),
+      ];
+      // Add generic related terms to reach 20
+      const genericTerms = [
+        'tips', 'guide', 'tutorial', 'best practices', 'how to', 
+        'examples', 'benefits', 'advantages', 'features', 'comparison',
+        'review', 'analysis', 'overview', 'introduction', 'basics',
+        'advanced', 'beginner', 'expert', 'professional', 'complete guide'
+      ];
+      while (basicLSI.length < 20 && genericTerms.length > 0) {
+        const term = genericTerms.shift();
+        if (term && !basicLSI.includes(term)) {
+          basicLSI.push(term);
+        }
+      }
+      metadata.lsiKeywords = basicLSI.slice(0, 25); // Cap at 25
+    }
+
+    console.log(`✅ SEO Metadata: Title (${metadata.seoTitle.length} chars), Description (${metadata.metaDescription.length} chars), ${metadata.lsiKeywords.length} LSI keywords`);
+
+    return metadata;
+  } catch (error) {
+    console.error('❌ SEO metadata generation failed:', error);
+    // Return fallback metadata
+    return {
+      seoTitle: params.topic.substring(0, 60),
+      metaDescription: `Lees alles over ${params.topic}. Ontdek tips, tricks en meer.`,
+      focusKeyword: params.keywords[0] || params.topic,
+      extraKeywords: params.keywords.slice(0, 5),
+      lsiKeywords: []
+    };
+  }
+}

@@ -1,0 +1,1753 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  Search, 
+  Loader2, 
+  TrendingUp, 
+  Copy, 
+  Save,
+  Trash2,
+  FileText,
+  AlertCircle,
+  Star,
+  BookOpen,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Target,
+  BarChart3,
+  Lightbulb,
+  Plus
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+interface KeywordData {
+  keyword: string;
+  searchVolume: number;
+  difficulty: number;
+  cpc: number;
+  competition: 'low' | 'medium' | 'high';
+  intent: 'informational' | 'transactional' | 'navigational' | 'commercial';
+  potentialScore: number;
+  relevance: string;
+  category: string;
+  relatedKeywords: string[];
+  questions: string[];
+  contentIdeas: string[];
+}
+
+interface SavedKeyword extends KeywordData {
+  id: string;
+  hasContent: boolean;
+  priority: 'low' | 'medium' | 'high';
+  createdAt: string;
+}
+
+interface WebsiteStructure {
+  pages: string[];
+  blogs: string[];
+  totalPages: number;
+  totalBlogs: number;
+  mainTopics: string[];
+}
+
+interface CompetitorData {
+  name: string;
+  url: string;
+  description: string;
+  topKeywords: string[];
+  contentFocus: string[];
+  estimatedTraffic: number;
+}
+
+interface KeywordGap {
+  keyword: string;
+  usedByCompetitors: string[];
+  missingInOwnSite: boolean;
+  opportunity: 'high' | 'medium' | 'low';
+  reason: string;
+}
+
+// WritgoAI Brand Colors
+const BRAND_COLORS = {
+  black: '#000000',
+  orange: '#ff6b35',
+  white: '#FFFFFF',
+  cardBg: '#0a0a0a',
+  cardBorder: '#1a1a1a',
+};
+
+export default function KeywordResearchPage() {
+  const router = useRouter();
+  const { data: session } = useSession() || {};
+  const [url, setUrl] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [researchMode, setResearchMode] = useState<'url-scan' | 'keyword-research' | 'content-silos' | 'site-plan'>('url-scan');
+  const [scanMode, setScanMode] = useState<'quick' | 'deep'>('quick');
+  const [existingKeywords, setExistingKeywords] = useState<string[]>([]);
+  const [newKeywords, setNewKeywords] = useState<KeywordData[]>([]);
+  const [savedKeywords, setSavedKeywords] = useState<SavedKeyword[]>([]);
+  const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'research' | 'saved' | 'competitors' | 'gaps'>('research');
+  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [progressStep, setProgressStep] = useState<string>('');
+  const [progressValue, setProgressValue] = useState<number>(0);
+  
+  // NIEUWE STATE voor uitgebreide analyse
+  const [websiteStructure, setWebsiteStructure] = useState<WebsiteStructure | null>(null);
+  const [competitors, setCompetitors] = useState<CompetitorData[]>([]);
+  const [keywordGaps, setKeywordGaps] = useState<KeywordGap[]>([]);
+  
+  // NIEUWE STATE voor content silos en site plan
+  const [contentSilos, setContentSilos] = useState<any>(null);
+  const [sitePlan, setSitePlan] = useState<any>(null);
+  
+  // Sorting state voor keywords
+  const [sortBy, setSortBy] = useState<'score' | 'volume' | 'difficulty'>('score');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Load saved keywords
+  useEffect(() => {
+    if (activeTab === 'saved') {
+      loadSavedKeywords();
+    }
+  }, [activeTab]);
+
+  const loadSavedKeywords = async () => {
+    try {
+      const res = await fetch('/api/client/keyword-research');
+      const data = await res.json();
+      if (data.success) {
+        setSavedKeywords(data.keywords || []);
+      }
+    } catch (error) {
+      console.error('Error loading keywords:', error);
+    }
+  };
+
+  const handleResearch = async () => {
+    // Validatie gebaseerd op research mode
+    if (researchMode === 'url-scan' || researchMode === 'site-plan') {
+      if (!url.trim()) {
+        toast.error('Voer een website URL in');
+        return;
+      }
+    } else if (researchMode === 'keyword-research' || researchMode === 'content-silos') {
+      if (!keyword.trim()) {
+        toast.error('Voer een keyword in');
+        return;
+      }
+    }
+
+    setLoading(true);
+    setProgressValue(0);
+    
+    // Status updates gebaseerd op research mode EN scan mode
+    let statusUpdates: Array<{ step: string; progress: number; delay: number }> = [];
+    
+    if (researchMode === 'url-scan') {
+      if (scanMode === 'deep') {
+        statusUpdates = [
+          { step: `🚀 UITGEBREIDE analyse gestart voor ${url}`, progress: 3, delay: 0 },
+          { step: '🔍 Website structuur analyseren...', progress: 8, delay: 800 },
+          { step: '📄 Sitemap scannen voor alle paginas...', progress: 12, delay: 1500 },
+          { step: '📰 Blog artikelen identificeren...', progress: 16, delay: 2200 },
+          { step: '🎯 Hoofdonderwerpen bepalen...', progress: 20, delay: 3000 },
+          { step: '🔍 Bestaande keywords extraheren...', progress: 25, delay: 4000 },
+          { step: '🌐 Concurrenten zoeken via web search...', progress: 32, delay: 6000 },
+          { step: '🕵️ Top 5 concurrenten identificeren...', progress: 38, delay: 8000 },
+          { step: '🔍 Concurrent 1/5 analyseren...', progress: 44, delay: 11000 },
+          { step: '🔍 Concurrent 2/5 analyseren...', progress: 50, delay: 13000 },
+          { step: '🔍 Concurrent 3/5 analyseren...', progress: 56, delay: 15000 },
+          { step: '🔍 Concurrent 4/5 analyseren...', progress: 62, delay: 17000 },
+          { step: '🔍 Concurrent 5/5 analyseren...', progress: 68, delay: 19000 },
+          { step: '📊 Keyword gap analyse uitvoeren...', progress: 75, delay: 22000 },
+          { step: '⚡ Nieuwe keyword kansen genereren...', progress: 82, delay: 24000 },
+          { step: '🎯 Potentie scores berekenen...', progress: 90, delay: 28000 },
+          { step: '✨ Alle data combineren en optimaliseren...', progress: 96, delay: 30000 },
+        ];
+      } else {
+        statusUpdates = [
+          { step: `📊 Website analyse gestart voor ${url}`, progress: 5, delay: 0 },
+          { step: '🌐 Verbinden met website...', progress: 8, delay: 500 },
+          { step: '📄 HTML content ophalen en parsen...', progress: 12, delay: 800 },
+          { step: '🔍 Bestaande keywords extraheren...', progress: 18, delay: 1200 },
+          { step: '🤖 GPT-4 AI model wordt geïnitialiseerd...', progress: 25, delay: 1800 },
+          { step: '🧠 AI analyseert jouw niche en bestaande content...', progress: 32, delay: 2500 },
+          { step: '⚡ Genereren van 75 nieuwe keyword kansen...', progress: 40, delay: 3500 },
+          { step: '📊 Zoekvolume data ophalen...', progress: 50, delay: 7000 },
+          { step: '🎯 Moeilijkheidsgraad berekenen...', progress: 58, delay: 9000 },
+          { step: '💡 Content ideeën genereren...', progress: 65, delay: 11000 },
+          { step: '❓ Veelgestelde vragen verzamelen...', progress: 72, delay: 13000 },
+          { step: '🔗 Gerelateerde keywords zoeken...', progress: 78, delay: 15000 },
+          { step: '📈 Potentie scores berekenen...', progress: 85, delay: 17000 },
+          { step: '🎯 Beste kansen identificeren...', progress: 92, delay: 18000 },
+          { step: '✨ Resultaten sorteren en optimaliseren...', progress: 96, delay: 19000 },
+        ];
+      }
+    } else if (researchMode === 'keyword-research') {
+      statusUpdates = [
+        { step: `🎯 Keyword research gestart voor "${keyword}"`, progress: 5, delay: 0 },
+        { step: '🤖 AI model initialiseren...', progress: 10, delay: 500 },
+        { step: '🔍 Hoofdkeyword analyseren...', progress: 15, delay: 1000 },
+        { step: '⚡ 75 keyword kansen genereren met AI...', progress: 25, delay: 2000 },
+        { step: '📥 AI response verwerken...', progress: 45, delay: 6000 },
+        { step: '✓ Keywords succesvol gegenereerd!', progress: 65, delay: 8000 },
+        { step: '📊 Potentie scores berekenen...', progress: 75, delay: 9000 },
+        { step: '⚡ Zoekvolume en moeilijkheidsgraad analyseren...', progress: 85, delay: 10000 },
+        { step: '🎯 Keywords sorteren op potentie...', progress: 92, delay: 11000 },
+        { step: '✨ Keyword research afgerond!', progress: 98, delay: 12000 },
+      ];
+    } else if (researchMode === 'content-silos') {
+      statusUpdates = [
+        { step: `📚 Content Silos genereren voor "${keyword}"`, progress: 5, delay: 0 },
+        { step: '🤖 AI model initialiseren...', progress: 10, delay: 500 },
+        { step: '🔍 Niche analyse uitvoeren...', progress: 18, delay: 1500 },
+        { step: '🎯 Hoofdonderwerpen identificeren...', progress: 28, delay: 3000 },
+        { step: '📊 Zoekvolume en relevantie analyseren...', progress: 38, delay: 5000 },
+        { step: '🧩 Pillar pages bepalen...', progress: 48, delay: 7000 },
+        { step: '📝 Sub-topics genereren (1/4)...', progress: 58, delay: 9000 },
+        { step: '📝 Sub-topics genereren (2/4)...', progress: 68, delay: 11000 },
+        { step: '📝 Sub-topics genereren (3/4)...', progress: 78, delay: 13000 },
+        { step: '📝 Sub-topics genereren (4/4)...', progress: 85, delay: 15000 },
+        { step: '🔗 Internal linking strategie bepalen...', progress: 92, delay: 17000 },
+        { step: '✨ Content silos structuur optimaliseren...', progress: 98, delay: 18000 },
+      ];
+    } else if (researchMode === 'site-plan') {
+      statusUpdates = [
+        { step: `🚀 Complete site planning gestart voor ${url}`, progress: 3, delay: 0 },
+        { step: '🌐 Website analyseren en scrapen...', progress: 8, delay: 1000 },
+        { step: '📄 Bestaande content inventariseren...', progress: 14, delay: 2000 },
+        { step: '🎯 Niche en doelgroep bepalen...', progress: 20, delay: 3500 },
+        { step: '🔍 Content gaps identificeren...', progress: 28, delay: 5000 },
+        { step: '📚 Content silos structuur bouwen...', progress: 38, delay: 7000 },
+        { step: '📊 Traffic potentie berekenen...', progress: 48, delay: 9000 },
+        { step: '🗺️ Fase 1 roadmap plannen...', progress: 58, delay: 11000 },
+        { step: '🗺️ Fase 2 roadmap plannen...', progress: 68, delay: 13000 },
+        { step: '🗺️ Fase 3 roadmap plannen...', progress: 78, delay: 15000 },
+        { step: '🗺️ Fase 4 roadmap plannen...', progress: 85, delay: 17000 },
+        { step: '📈 ROI en verwachtingen bepalen...', progress: 92, delay: 19000 },
+        { step: '✨ Complete strategie finaliseren...', progress: 98, delay: 21000 },
+      ];
+    }
+
+    let currentUpdateIndex = 0;
+    const updateStatus = () => {
+      if (currentUpdateIndex < statusUpdates.length) {
+        const update = statusUpdates[currentUpdateIndex];
+        setProgressStep(update.step);
+        setProgressValue(update.progress);
+        currentUpdateIndex++;
+      }
+    };
+
+    // Start status updates
+    const statusInterval = setInterval(updateStatus, 1000);
+    updateStatus(); // Eerste update direct
+    
+    try {
+      const startTime = Date.now();
+      
+      // Bepaal action en body gebaseerd op research mode
+      let action = '';
+      let requestBody: any = {};
+      
+      switch(researchMode) {
+        case 'url-scan':
+          action = scanMode === 'deep' ? 'deep-scan' : 'scan';
+          requestBody = { action, url };
+          break;
+        case 'keyword-research':
+          action = 'keyword-research';
+          requestBody = { action, keyword };
+          break;
+        case 'content-silos':
+          action = 'generate-silos';
+          requestBody = { action, keyword };
+          break;
+        case 'site-plan':
+          action = 'generate-site-plan';
+          requestBody = { action, url };
+          break;
+      }
+      
+      const res = await fetch('/api/client/keyword-research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      clearInterval(statusInterval);
+      
+      const data = await res.json();
+      if (data.success) {
+        // Handle verschillende response types
+        if (researchMode === 'content-silos') {
+          setContentSilos(data.silos);
+          setProgressStep(`✅ ${data.silos?.silos?.length || 0} Content Silos succesvol gegenereerd!`);
+          setProgressValue(100);
+          setTimeout(() => {
+            toast.success(`🎉 Content Silos Plan Compleet!`, {
+              description: `${data.silos?.silos?.length || 0} hoofdonderwerpen met sub-topics en linking strategie`
+            });
+            setProgressStep('');
+            setProgressValue(0);
+          }, 1500);
+        } else if (researchMode === 'site-plan') {
+          setSitePlan(data.plan);
+          setProgressStep(`✅ Complete Site Planning succesvol gegenereerd!`);
+          setProgressValue(100);
+          setTimeout(() => {
+            toast.success(`🎉 Site Plan Compleet!`, {
+              description: `Volledige strategie met ${data.plan?.silos?.silos?.length || 0} hoofdonderwerpen en 4-fase roadmap`
+            });
+            setProgressStep('');
+            setProgressValue(0);
+          }, 1500);
+        } else {
+          // Normal keyword research
+          const totalKeywords = data.total || 0;
+          const excellentCount = (data.newKeywords || []).filter((k: KeywordData) => k.potentialScore > 70).length;
+          const goodCount = (data.newKeywords || []).filter((k: KeywordData) => k.potentialScore > 50 && k.potentialScore <= 70).length;
+          
+          // Set basic data
+          setExistingKeywords(data.existingKeywords || []);
+          setNewKeywords(data.newKeywords || []);
+          
+          // Set extended data (if deep scan)
+          if (scanMode === 'deep') {
+            setWebsiteStructure(data.websiteStructure || null);
+            setCompetitors(data.competitors || []);
+            setKeywordGaps(data.keywordGaps || []);
+            
+            setProgressStep(`✅ Volledige analyse compleet! ${totalKeywords} keywords + ${data.competitors?.length || 0} concurrenten geanalyseerd`);
+          } else {
+            setProgressStep(`✅ ${totalKeywords} keywords gevonden! (${excellentCount} excellent, ${goodCount} goed)`);
+          }
+          
+          setProgressValue(100);
+          
+          setTimeout(() => {
+            toast.success(`🎉 ${totalKeywords} keyword kansen succesvol gegenereerd!`, {
+              description: scanMode === 'deep' 
+                ? `${data.competitors?.length || 0} concurrenten + ${data.keywordGaps?.length || 0} gap kansen gevonden`
+                : `${excellentCount} excellente kansen en ${goodCount} goede kansen gevonden`
+            });
+            setProgressStep('');
+            setProgressValue(0);
+          }, 1500);
+        }
+      } else {
+        throw new Error(data.error || 'Failed');
+      }
+    } catch (error: any) {
+      clearInterval(statusInterval);
+      toast.error('Er ging iets mis bij het zoeken naar keywords');
+      console.error(error);
+      setProgressStep('');
+      setProgressValue(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveKeyword = async (keyword: KeywordData) => {
+    try {
+      const res = await fetch('/api/client/keyword-research/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(keyword),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Keyword opgeslagen!');
+        // Remove from new keywords list
+        setNewKeywords(prev => prev.filter(k => k.keyword !== keyword.keyword));
+      } else {
+        throw new Error(data.error || 'Failed');
+      }
+    } catch (error: any) {
+      if (error.message.includes('already saved')) {
+        toast.error('Dit keyword is al opgeslagen');
+      } else {
+        toast.error('Kon keyword niet opslaan');
+      }
+      console.error(error);
+    }
+  };
+
+  const handleDeleteKeyword = async (keywordId: string) => {
+    try {
+      const res = await fetch(`/api/client/keyword-research/save?id=${keywordId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Keyword verwijderd');
+        setSavedKeywords(prev => prev.filter(k => k.id !== keywordId));
+      }
+    } catch (error) {
+      toast.error('Kon keyword niet verwijderen');
+      console.error(error);
+    }
+  };
+
+  const handleGenerateContent = async (keyword: SavedKeyword) => {
+    // Redirect to blog generator with keyword pre-filled
+    router.push(`/client-portal/blog-generator?keyword=${encodeURIComponent(keyword.keyword)}`);
+  };
+
+  const handleUpdatePriority = async (keywordId: string, priority: string) => {
+    try {
+      const res = await fetch('/api/client/keyword-research/save', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywordId, priority }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSavedKeywords(prev =>
+          prev.map(k => k.id === keywordId ? { ...k, priority: priority as any } : k)
+        );
+        toast.success('Prioriteit aangepast');
+      }
+    } catch (error) {
+      toast.error('Kon prioriteit niet aanpassen');
+      console.error(error);
+    }
+  };
+
+  const getDifficultyColor = (difficulty: number) => {
+    if (difficulty < 30) return 'text-green-600';
+    if (difficulty < 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getCompetitionBadge = (competition: string) => {
+    const colors = {
+      low: 'bg-green-100 text-green-700',
+      medium: 'bg-yellow-100 text-yellow-700',
+      high: 'bg-red-100 text-red-700'
+    };
+    return colors[competition as keyof typeof colors] || colors.medium;
+  };
+
+  const getIntentIcon = (intent: string) => {
+    switch (intent) {
+      case 'informational': return <BookOpen className="w-4 h-4" />;
+      case 'transactional': return <Target className="w-4 h-4" />;
+      case 'commercial': return <BarChart3 className="w-4 h-4" />;
+      default: return <Search className="w-4 h-4" />;
+    }
+  };
+
+  const filteredSavedKeywords = savedKeywords.filter(k => 
+    filterPriority === 'all' || k.priority === filterPriority
+  );
+  
+  // Sorteer keywords functie
+  const getSortedKeywords = (keywords: KeywordData[]) => {
+    return [...keywords].sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'score':
+          comparison = a.potentialScore - b.potentialScore;
+          break;
+        case 'volume':
+          comparison = a.searchVolume - b.searchVolume;
+          break;
+        case 'difficulty':
+          comparison = a.difficulty - b.difficulty;
+          break;
+      }
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+  };
+  
+  const sortedKeywords = getSortedKeywords(newKeywords);
+
+  return (
+    <div className="container mx-auto p-4 sm:p-6 max-w-7xl space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-gradient-to-br bg-[#ff6b35] rounded-xl">
+            <Search className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Zoekwoordonderzoek</h1>
+            <p className="text-gray-300">Ontdek waardevolle keyword kansen en genereer content</p>
+          </div>
+        </div>
+        <Button
+          onClick={() => router.push('/client-portal')}
+          variant="outline"
+          className="border-[#ff6b35] text-[#ff6b35] hover:bg-[#ff6b35] hover:text-white"
+        >
+          ← Terug naar Tools
+        </Button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('research')}
+          className={`px-4 py-2 font-medium transition-colors border-b-2 whitespace-nowrap ${
+            activeTab === 'research'
+              ? 'border-[#ff6b35] text-[#ff6b35]'
+              : 'border-transparent text-gray-300 hover:text-foreground'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            Nieuw Onderzoek
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab('saved')}
+          className={`px-4 py-2 font-medium transition-colors border-b-2 whitespace-nowrap ${
+            activeTab === 'saved'
+              ? 'border-[#ff6b35] text-[#ff6b35]'
+              : 'border-transparent text-gray-300 hover:text-foreground'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Save className="w-4 h-4" />
+            Opgeslagen ({savedKeywords.length})
+          </div>
+        </button>
+        {scanMode === 'deep' && competitors.length > 0 && (
+          <button
+            onClick={() => setActiveTab('competitors')}
+            className={`px-4 py-2 font-medium transition-colors border-b-2 whitespace-nowrap ${
+              activeTab === 'competitors'
+                ? 'border-[#ff6b35] text-[#ff6b35]'
+                : 'border-transparent text-gray-300 hover:text-foreground'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Concurrenten ({competitors.length})
+            </div>
+          </button>
+        )}
+        {scanMode === 'deep' && keywordGaps.length > 0 && (
+          <button
+            onClick={() => setActiveTab('gaps')}
+            className={`px-4 py-2 font-medium transition-colors border-b-2 whitespace-nowrap ${
+              activeTab === 'gaps'
+                ? 'border-[#ff6b35] text-[#ff6b35]'
+                : 'border-transparent text-gray-300 hover:text-foreground'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Keyword Gaps ({keywordGaps.length})
+            </div>
+          </button>
+        )}
+      </div>
+
+      {/* Research Tab */}
+      {activeTab === 'research' && (
+        <>
+          {/* Research Mode Selector */}
+          <Card className="bg-zinc-900 border-zinc-800 shadow-lg p-6 space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-3 block">Kies je onderzoeks methode:</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <button
+                  onClick={() => setResearchMode('url-scan')}
+                  disabled={loading}
+                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                    researchMode === 'url-scan'
+                      ? 'border-[#ff6b35] bg-orange-50 shadow-md'
+                      : 'border-zinc-700 hover:border-zinc-600 hover:shadow'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <Search className={`w-5 h-5 mt-0.5 ${researchMode === 'url-scan' ? 'text-[#ff6b35]' : 'text-gray-300'}`} />
+                    <div>
+                      <div className={`font-semibold ${researchMode === 'url-scan' ? 'text-[#ff6b35]' : 'text-white'}`}>
+                        URL Scan
+                      </div>
+                      <div className="text-xs text-gray-300 mt-1">Analyseer bestaande website voor keyword kansen</div>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setResearchMode('keyword-research')}
+                  disabled={loading}
+                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                    researchMode === 'keyword-research'
+                      ? 'border-[#ff6b35] bg-orange-50 shadow-md'
+                      : 'border-zinc-700 hover:border-zinc-600 hover:shadow'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <Sparkles className={`w-5 h-5 mt-0.5 ${researchMode === 'keyword-research' ? 'text-[#ff6b35]' : 'text-gray-300'}`} />
+                    <div>
+                      <div className={`font-semibold ${researchMode === 'keyword-research' ? 'text-[#ff6b35]' : 'text-white'}`}>
+                        Keyword Research
+                      </div>
+                      <div className="text-xs text-gray-300 mt-1">Start met één keyword, krijg 75 gerelateerde keywords</div>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setResearchMode('content-silos')}
+                  disabled={loading}
+                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                    researchMode === 'content-silos'
+                      ? 'border-[#ff6b35] bg-orange-50 shadow-md'
+                      : 'border-zinc-700 hover:border-zinc-600 hover:shadow'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <BookOpen className={`w-5 h-5 mt-0.5 ${researchMode === 'content-silos' ? 'text-[#ff6b35]' : 'text-gray-300'}`} />
+                    <div>
+                      <div className={`font-semibold ${researchMode === 'content-silos' ? 'text-[#ff6b35]' : 'text-white'}`}>
+                        Content Silos
+                      </div>
+                      <div className="text-xs text-gray-300 mt-1">Genereer topical authority structuur met linking strategie</div>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setResearchMode('site-plan')}
+                  disabled={loading}
+                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                    researchMode === 'site-plan'
+                      ? 'border-[#ff6b35] bg-orange-50 shadow-md'
+                      : 'border-zinc-700 hover:border-zinc-600 hover:shadow'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <Target className={`w-5 h-5 mt-0.5 ${researchMode === 'site-plan' ? 'text-[#ff6b35]' : 'text-gray-300'}`} />
+                    <div>
+                      <div className={`font-semibold ${researchMode === 'site-plan' ? 'text-[#ff6b35]' : 'text-white'}`}>
+                        Volledige Site Plan
+                      </div>
+                      <div className="text-xs text-gray-300 mt-1">Complete content strategie met roadmap en traffic estimates</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Input & Analysis Card */}
+          <Card className="bg-zinc-900 border-zinc-800 shadow-lg p-6 space-y-4">
+            <div className="space-y-4">
+              {/* Scan Mode voor URL Scan */}
+              {researchMode === 'url-scan' && (
+                <div className="flex flex-col sm:flex-row gap-4 p-4 bg-zinc-900 rounded-lg">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-2 block">Scan Modus:</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setScanMode('quick')}
+                        disabled={loading}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          scanMode === 'quick'
+                            ? 'border-[#ff6b35] bg-orange-50 text-[#ff6b35]'
+                            : 'border-zinc-700 hover:border-zinc-600'
+                        }`}
+                      >
+                        <div className="text-left">
+                          <div className="font-semibold">⚡ Snelle Scan</div>
+                          <div className="text-xs text-gray-300 mt-1">75 keywords (2-3 min)</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setScanMode('deep')}
+                        disabled={loading}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          scanMode === 'deep'
+                            ? 'border-[#ff6b35] bg-orange-50 text-[#ff6b35]'
+                            : 'border-zinc-700 hover:border-zinc-600'
+                        }`}
+                      >
+                        <div className="text-left">
+                          <div className="font-semibold">🚀 Uitgebreide Scan</div>
+                          <div className="text-xs text-gray-300 mt-1">+ Concurrenten (5-7 min)</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                  {scanMode === 'deep' && (
+                    <div className="flex-1 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="text-sm font-medium text-blue-900 mb-1">📊 Uitgebreide analyse includeert:</div>
+                      <ul className="text-xs text-blue-800 space-y-1">
+                        <li>✓ Website structuur (alle pagina's & blogs)</li>
+                        <li>✓ Top 5 concurrenten analyse</li>
+                        <li>✓ Concurrent keywords</li>
+                        <li>✓ Keyword gap opportunities</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Input Field */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                {(researchMode === 'url-scan' || researchMode === 'site-plan') ? (
+                  <Input
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="https://jouwwebsite.nl"
+                    className="flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && !loading && handleResearch()}
+                    disabled={loading}
+                  />
+                ) : (
+                  <Input
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    placeholder="Bijvoorbeeld: yoga voor beginners"
+                    className="flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && !loading && handleResearch()}
+                    disabled={loading}
+                  />
+                )}
+                <Button
+                  onClick={handleResearch}
+                  disabled={loading || (
+                    (researchMode === 'url-scan' || researchMode === 'site-plan') ? !url.trim() : !keyword.trim()
+                  )}
+                  className="bg-gradient-to-r bg-[#ff6b35] hover:bg-[#ff8c42] w-full sm:w-auto"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyseren...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4 mr-2" />
+                      {researchMode === 'url-scan' && 'Analyseer Website'}
+                      {researchMode === 'keyword-research' && 'Genereer Keywords'}
+                      {researchMode === 'content-silos' && 'Genereer Silos'}
+                      {researchMode === 'site-plan' && 'Genereer Site Plan'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            
+              {/* Progress Bar */}
+              {loading && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-300 font-medium">{progressStep}</span>
+                    <span className="text-[#ff6b35] font-semibold">{Math.round(progressValue)}%</span>
+                  </div>
+                  <div className="relative h-2 bg-zinc-700 rounded-full overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#ff6b35] via-[#ff8c42] to-[#ff6b35] transition-all duration-300 ease-out"
+                      style={{ width: `${progressValue}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-300">
+                    <Sparkles className="w-3 h-3 text-[#ff6b35] animate-pulse" />
+                    <span>AI keyword analyse in uitvoering...</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Tips */}
+              {!loading && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-gray-200 flex items-start gap-2">
+                    <Lightbulb className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    {researchMode === 'url-scan' && 'Voer je website URL in om te ontdekken welke keywords je nog niet gebruikt'}
+                    {researchMode === 'keyword-research' && 'Voer een hoofdkeyword in en krijg 75 gerelateerde keyword kansen met zoekvolumes'}
+                    {researchMode === 'content-silos' && 'Voer je niche keyword in en krijg een complete topical authority structuur met pillar pages en sub-topics'}
+                    {researchMode === 'site-plan' && 'Voer je website URL in en krijg een complete content strategie met 4-fase roadmap en traffic potentie'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Existing Keywords */}
+          {existingKeywords.length > 0 && (
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[#ff6b35]" />
+                <h3 className="font-semibold">Huidige Keywords ({existingKeywords.length})</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {existingKeywords.map((kw, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-sm">
+                    {kw}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* New Keyword Opportunities */}
+          {newKeywords.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-[#ff6b35]" />
+                  <h3 className="font-semibold text-lg">Nieuwe Keyword Kansen ({newKeywords.length})</h3>
+                </div>
+                
+                {/* Sorteer opties */}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-300">Sorteer op:</span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={sortBy === 'score' ? 'default' : 'outline'}
+                      onClick={() => {
+                        if (sortBy === 'score') {
+                          setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                        } else {
+                          setSortBy('score');
+                          setSortOrder('desc');
+                        }
+                      }}
+                      className={sortBy === 'score' ? 'bg-[#ff6b35] hover:bg-[#ff8c42]' : ''}
+                    >
+                      Score {sortBy === 'score' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={sortBy === 'volume' ? 'default' : 'outline'}
+                      onClick={() => {
+                        if (sortBy === 'volume') {
+                          setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                        } else {
+                          setSortBy('volume');
+                          setSortOrder('desc');
+                        }
+                      }}
+                      className={sortBy === 'volume' ? 'bg-[#ff6b35] hover:bg-[#ff8c42]' : ''}
+                    >
+                      Volume {sortBy === 'volume' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={sortBy === 'difficulty' ? 'default' : 'outline'}
+                      onClick={() => {
+                        if (sortBy === 'difficulty') {
+                          setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                        } else {
+                          setSortBy('difficulty');
+                          setSortOrder('asc');
+                        }
+                      }}
+                      className={sortBy === 'difficulty' ? 'bg-[#ff6b35] hover:bg-[#ff8c42]' : ''}
+                    >
+                      Moeilijkheid {sortBy === 'difficulty' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Keywords Tabel Weergave */}
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-zinc-800 border-b-2 border-[#ff6b35]">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-sm">Keyword</th>
+                        <th className="text-center p-4 font-semibold text-sm">Score</th>
+                        <th className="text-center p-4 font-semibold text-sm">Volume</th>
+                        <th className="text-center p-4 font-semibold text-sm">Moeilijkheid</th>
+                        <th className="text-center p-4 font-semibold text-sm">Competitie</th>
+                        <th className="text-center p-4 font-semibold text-sm">Acties</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedKeywords.map((kw, idx) => (
+                        <>
+                          <tr key={idx} className="border-b hover:bg-zinc-900 transition-colors">
+                            <td className="p-4">
+                              <div className="space-y-1">
+                                <div className="font-semibold text-white">{kw.keyword}</div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge variant="outline" className="text-xs">
+                                    {kw.category}
+                                  </Badge>
+                                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                                    {getIntentIcon(kw.intent)}
+                                    <span className="capitalize">{kw.intent}</span>
+                                  </Badge>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-center">
+                              <Badge 
+                                className={`${
+                                  kw.potentialScore > 70 ? 'bg-green-100 text-green-700' :
+                                  kw.potentialScore > 50 ? 'bg-orange-100 text-[#ff6b35]' :
+                                  'bg-zinc-700 text-gray-200'
+                                }`}
+                              >
+                                <Star className="w-3 h-3 mr-1" />
+                                {kw.potentialScore}
+                              </Badge>
+                            </td>
+                            <td className="p-4 text-center">
+                              <div className="flex flex-col items-center">
+                                <div className="font-semibold text-white">{kw.searchVolume.toLocaleString()}</div>
+                                <div className="text-xs text-gray-400">/ maand</div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-center">
+                              <div className={`font-semibold ${getDifficultyColor(kw.difficulty)}`}>
+                                {kw.difficulty}/100
+                              </div>
+                            </td>
+                            <td className="p-4 text-center">
+                              <Badge variant="secondary" className={getCompetitionBadge(kw.competition)}>
+                                {kw.competition}
+                              </Badge>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveKeyword(kw)}
+                                  className="bg-[#ff6b35] hover:bg-[#ff8c42]"
+                                >
+                                  <Save className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setExpandedKeyword(
+                                    expandedKeyword === kw.keyword ? null : kw.keyword
+                                  )}
+                                  className="text-[#ff6b35] hover:text-[#ff6b35]"
+                                >
+                                  {expandedKeyword === kw.keyword ? (
+                                    <ChevronUp className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                          {/* Expanded Details Row */}
+                          {expandedKeyword === kw.keyword && (
+                            <tr key={`${idx}-expanded`} className="bg-zinc-900">
+                              <td colSpan={6} className="p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                  {/* Related Keywords */}
+                                  {kw.relatedKeywords.length > 0 && (
+                                    <div>
+                                      <p className="text-sm font-semibold mb-2 flex items-center gap-1">
+                                        <TrendingUp className="w-4 h-4 text-[#ff6b35]" />
+                                        Gerelateerde Keywords
+                                      </p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {kw.relatedKeywords.slice(0, 8).map((rel, i) => (
+                                          <Badge key={i} variant="secondary" className="text-xs">
+                                            {rel}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Questions */}
+                                  {kw.questions.length > 0 && (
+                                    <div>
+                                      <p className="text-sm font-semibold mb-2 flex items-center gap-1">
+                                        <AlertCircle className="w-4 h-4 text-blue-600" />
+                                        Vragen
+                                      </p>
+                                      <ul className="space-y-1">
+                                        {kw.questions.slice(0, 3).map((q, i) => (
+                                          <li key={i} className="text-xs text-gray-300 flex items-start gap-1">
+                                            <span className="text-[#ff6b35] mt-0.5">•</span>
+                                            {q}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+
+                                  {/* Content Ideas */}
+                                  {kw.contentIdeas.length > 0 && (
+                                    <div>
+                                      <p className="text-sm font-semibold mb-2 flex items-center gap-1">
+                                        <Lightbulb className="w-4 h-4 text-yellow-600" />
+                                        Content Ideeën
+                                      </p>
+                                      <ul className="space-y-1">
+                                        {kw.contentIdeas.slice(0, 3).map((idea, i) => (
+                                          <li key={i} className="text-xs text-gray-300 flex items-start gap-1">
+                                            <span className="text-[#ff6b35] mt-0.5">•</span>
+                                            {idea}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Content Silos Display */}
+          {contentSilos && contentSilos.silos && (
+            <div className="space-y-6">
+              {/* Header met Samenvatting */}
+              <Card className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-[#ff6b35] p-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-[#ff6b35] rounded-xl">
+                    <BookOpen className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold mb-2">🎯 Content Silos Strategie</h3>
+                    <p className="text-gray-200 mb-4">{contentSilos.overview || 'Complete content structuur voor maximale topical authority en betere rankings'}</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      <div className="bg-zinc-900 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-[#ff6b35]">{contentSilos.silos.length}</div>
+                        <div className="text-xs text-gray-300">Hoofdonderwerpen</div>
+                      </div>
+                      <div className="bg-zinc-900 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {contentSilos.silos.reduce((acc: number, s: any) => acc + (s.subTopics?.length || 0), 0)}
+                        </div>
+                        <div className="text-xs text-gray-300">Sub-Topics</div>
+                      </div>
+                      <div className="bg-zinc-900 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          {contentSilos.silos.reduce((acc: number, s: any) => acc + (s.subTopics?.length || 0), 0) + contentSilos.silos.length}
+                        </div>
+                        <div className="text-xs text-gray-300">Totaal Artikelen</div>
+                      </div>
+                      <div className="bg-zinc-900 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-purple-600">4-6</div>
+                        <div className="text-xs text-gray-300">Maanden Plan</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Silos in Compacte Weergave */}
+              <div className="space-y-3">
+                {contentSilos.silos.map((silo: any, siloIdx: number) => (
+                  <Card key={siloIdx} className="overflow-hidden border-l-4 border-[#ff6b35] hover:shadow-lg transition-shadow">
+                    {/* Silo Header - Altijd Zichtbaar */}
+                    <div className="p-5 bg-zinc-900">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge className="bg-[#ff6b35] text-white font-semibold">
+                              Pillar {siloIdx + 1}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {silo.subTopics?.length || 0} sub-topics
+                            </Badge>
+                          </div>
+                          <h4 className="font-bold text-xl text-white mb-2">{silo.topic}</h4>
+                          <p className="text-gray-300 text-sm">{silo.description}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => router.push(`/client-portal/blog-generator?keyword=${encodeURIComponent(silo.topic)}`)}
+                            className="bg-[#ff6b35] hover:bg-[#ff8c42]"
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            Schrijf Nu
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setExpandedKeyword(expandedKeyword === `silo-${siloIdx}` ? null : `silo-${siloIdx}`)}
+                          >
+                            {expandedKeyword === `silo-${siloIdx}` ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expandable Details */}
+                    {expandedKeyword === `silo-${siloIdx}` && (
+                      <div className="border-t bg-zinc-900 p-5 space-y-4">
+                        {/* Sub-topics */}
+                        {silo.subTopics && silo.subTopics.length > 0 && (
+                          <div>
+                            <h5 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-[#ff6b35]" />
+                              Sub-Topics om te Schrijven:
+                            </h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {silo.subTopics.map((subTopic: string, subIdx: number) => (
+                                <div key={subIdx} className="flex items-start gap-2 text-sm bg-zinc-900 p-2 rounded border">
+                                  <span className="text-[#ff6b35] font-bold">{subIdx + 1}.</span>
+                                  <span className="text-gray-200 flex-1">{subTopic}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Internal Linking Strategy */}
+                        {silo.internalLinkingStrategy && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                              <ExternalLink className="w-4 h-4 text-blue-600" />
+                              Linking Strategie:
+                            </h5>
+                            <p className="text-sm text-gray-200">{silo.internalLinkingStrategy}</p>
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const textToCopy = `${silo.topic}\n\n${silo.description}\n\nSub-topics:\n${silo.subTopics?.map((st: string, i: number) => `${i + 1}. ${st}`).join('\n') || ''}`;
+                            navigator.clipboard.writeText(textToCopy);
+                            toast.success('Silo structuur gekopieerd!');
+                          }}
+                          variant="outline"
+                          className="text-[#ff6b35] border-[#ff6b35]"
+                        >
+                          <Copy className="w-4 h-4 mr-1" />
+                          Kopieer Volledige Structuur
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Site Plan Display */}
+          {sitePlan && (
+            <div className="space-y-6">
+              {/* Header met Samenvatting */}
+              <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-500 p-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-purple-600 rounded-xl">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold mb-2">🚀 Complete Site Planning Strategie</h3>
+                    <p className="text-gray-200 mb-4">Een complete roadmap voor het opbouwen van je content autoriteit en organische traffic</p>
+                    
+                    {sitePlan.silos && sitePlan.silos.silos && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-zinc-900 rounded-lg p-3 text-center">
+                          <div className="text-2xl font-bold text-purple-600">{sitePlan.silos.silos.length}</div>
+                          <div className="text-xs text-gray-300">Hoofdonderwerpen</div>
+                        </div>
+                        <div className="bg-zinc-900 rounded-lg p-3 text-center">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {sitePlan.silos.silos.reduce((acc: number, silo: any) => acc + (silo.subTopics?.length || 0), 0)}
+                          </div>
+                          <div className="text-xs text-gray-300">Content Artikelen</div>
+                        </div>
+                        <div className="bg-zinc-900 rounded-lg p-3 text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {sitePlan.estimatedTraffic ? `${(sitePlan.estimatedTraffic / 1000).toFixed(0)}K` : '---'}
+                          </div>
+                          <div className="text-xs text-gray-300">Est. Traffic/maand</div>
+                        </div>
+                        <div className="bg-zinc-900 rounded-lg p-3 text-center">
+                          <div className="text-2xl font-bold text-orange-600">
+                            {sitePlan.roadmap?.phases?.length || 4}
+                          </div>
+                          <div className="text-xs text-gray-300">Implementatie Fases</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+
+              {/* Implementation Roadmap - Compacte Weergave */}
+              {sitePlan.roadmap && sitePlan.roadmap.phases && (
+                <div className="space-y-3">
+                  <h4 className="font-bold text-xl flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-purple-600" />
+                    Implementatie Roadmap
+                  </h4>
+                  {sitePlan.roadmap.phases.map((phase: any, phaseIdx: number) => (
+                    <Card key={phaseIdx} className="overflow-hidden border-l-4 border-purple-500">
+                      <div className="p-5 bg-zinc-900">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge className="bg-purple-600 text-white font-semibold">
+                                Fase {phaseIdx + 1}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {phase.duration || 'N/A'}
+                              </Badge>
+                            </div>
+                            <h5 className="font-bold text-lg mb-1">{phase.name}</h5>
+                            <p className="text-gray-300 text-sm">{phase.description}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setExpandedKeyword(expandedKeyword === `phase-${phaseIdx}` ? null : `phase-${phaseIdx}`)}
+                          >
+                            {expandedKeyword === `phase-${phaseIdx}` ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Expandable Details */}
+                      {expandedKeyword === `phase-${phaseIdx}` && (
+                        <div className="border-t bg-zinc-900 p-5 space-y-4">
+                          {/* Focus Areas */}
+                          {phase.focus && phase.focus.length > 0 && (
+                            <div>
+                              <h6 className="text-sm font-semibold mb-2">🎯 Focus Gebieden:</h6>
+                              <div className="flex flex-wrap gap-2">
+                                {phase.focus.map((item: string, itemIdx: number) => (
+                                  <Badge key={itemIdx} variant="secondary" className="bg-purple-100 text-purple-700">
+                                    {item}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Expected Results */}
+                          {phase.expectedResults && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                              <h6 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                                <TrendingUp className="w-4 h-4 text-green-600" />
+                                Verwachte Resultaten:
+                              </h6>
+                              <p className="text-sm text-gray-200">{phase.expectedResults}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Content Silos binnen Site Plan */}
+              {sitePlan.silos && sitePlan.silos.silos && sitePlan.silos.silos.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-bold text-xl flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-[#ff6b35]" />
+                    Content Structuur
+                  </h4>
+                  {sitePlan.silos.silos.map((silo: any, siloIdx: number) => (
+                    <Card key={siloIdx} className="p-4 border-l-4 border-[#ff6b35] hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge className="bg-[#ff6b35] text-white font-semibold">
+                              Silo {siloIdx + 1}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {silo.subTopics?.length || 0} sub-topics
+                            </Badge>
+                          </div>
+                          <h5 className="font-bold text-lg mb-1">{silo.topic}</h5>
+                          <p className="text-gray-300 text-sm">{silo.description}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => router.push(`/client-portal/blog-generator?keyword=${encodeURIComponent(silo.topic)}`)}
+                          className="bg-[#ff6b35] hover:bg-[#ff8c42]"
+                        >
+                          <FileText className="w-4 h-4 mr-1" />
+                          Schrijf
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Saved Keywords Tab */}
+      {activeTab === 'saved' && (
+        <>
+          {/* Filter */}
+          <div className="flex items-center gap-3">
+            <Select value={filterPriority} onValueChange={setFilterPriority}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter prioriteit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle prioriteiten</SelectItem>
+                <SelectItem value="high">Hoog</SelectItem>
+                <SelectItem value="medium">Gemiddeld</SelectItem>
+                <SelectItem value="low">Laag</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-300">
+              {filteredSavedKeywords.length} van {savedKeywords.length} keywords
+            </p>
+          </div>
+
+          {/* Saved Keywords List */}
+          {filteredSavedKeywords.length === 0 ? (
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg p-12 text-center">
+              <Save className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <h3 className="font-semibold text-lg mb-2">Nog geen opgeslagen keywords</h3>
+              <p className="text-gray-300 mb-4">
+                Begin met keyword research om waardevolle keywords te ontdekken
+              </p>
+              <Button
+                onClick={() => setActiveTab('research')}
+                className="bg-gradient-to-r bg-[#ff6b35]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Start Onderzoek
+              </Button>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredSavedKeywords.map((kw) => (
+                <Card key={kw.id} className="p-4 sm:p-6 space-y-4 hover:shadow-lg transition-shadow">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="flex-1 space-y-3">
+                      {/* Keyword Title with Priority */}
+                      <div className="flex flex-wrap items-start gap-2">
+                        <h4 className="font-semibold text-lg flex-1 min-w-[200px]">{kw.keyword}</h4>
+                        <Select
+                          value={kw.priority}
+                          onValueChange={(value) => handleUpdatePriority(kw.id, value)}
+                        >
+                          <SelectTrigger className="w-[120px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="high">🔴 Hoog</SelectItem>
+                            <SelectItem value="medium">🟡 Gemiddeld</SelectItem>
+                            <SelectItem value="low">🟢 Laag</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Badge 
+                          className={`${
+                            kw.potentialScore > 70 ? 'bg-green-100 text-green-700' :
+                            kw.potentialScore > 50 ? 'bg-orange-100 text-[#ff6b35]' :
+                            'bg-[#002040] text-gray-200'
+                          }`}
+                        >
+                          <Star className="w-3 h-3 mr-1" />
+                          {kw.potentialScore}/100
+                        </Badge>
+                      </div>
+
+                      {/* Metrics */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-300 text-xs">Zoekvolume</p>
+                          <p className="font-medium">{kw.searchVolume?.toLocaleString() || 'N/A'}/maand</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-300 text-xs">Moeilijkheid</p>
+                          <p className={`font-medium ${getDifficultyColor(kw.difficulty || 50)}`}>
+                            {kw.difficulty || 'N/A'}/100
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-300 text-xs">Competitie</p>
+                          <Badge variant="secondary" className={getCompetitionBadge(kw.competition || 'medium')}>
+                            {kw.competition || 'medium'}
+                          </Badge>
+                        </div>
+                        <div>
+                          <p className="text-gray-300 text-xs">Intent</p>
+                          <p className="font-medium capitalize">{kw.intent || 'informational'}</p>
+                        </div>
+                      </div>
+
+                      {/* Content Status */}
+                      {kw.hasContent && (
+                        <Badge variant="secondary" className="bg-green-100 text-green-700">
+                          <FileText className="w-3 h-3 mr-1" />
+                          Content gegenereerd
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex sm:flex-col gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleGenerateContent(kw)}
+                        className="bg-[#ff6b35] hover:bg-[#ff8c42] flex-1 sm:flex-none"
+                      >
+                        <FileText className="w-4 h-4 mr-1" />
+                        Schrijf Content
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(kw.keyword);
+                          toast.success('Keyword gekopieerd!');
+                        }}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm('Weet je zeker dat je dit keyword wilt verwijderen?')) {
+                            handleDeleteKeyword(kw.id);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Competitors Tab */}
+      {activeTab === 'competitors' && (
+        <div className="space-y-4">
+          {/* Website Structure */}
+          {websiteStructure && (
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg p-6">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-[#ff6b35]" />
+                Jouw Website Structuur
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="text-3xl font-bold text-blue-600">{websiteStructure.totalPages}</div>
+                  <div className="text-sm text-gray-300">Pagina's</div>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="text-3xl font-bold text-green-600">{websiteStructure.totalBlogs}</div>
+                  <div className="text-sm text-gray-300">Blog Artikelen</div>
+                </div>
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="text-3xl font-bold text-orange-600">{websiteStructure.mainTopics.length}</div>
+                  <div className="text-sm text-gray-300">Hoofdonderwerpen</div>
+                </div>
+              </div>
+              {websiteStructure.mainTopics.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-semibold mb-2">Hoofdonderwerpen:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {websiteStructure.mainTopics.map((topic, idx) => (
+                      <Badge key={idx} variant="secondary" className="bg-zinc-800">
+                        {topic}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* Competitors */}
+          {competitors.length === 0 ? (
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg p-12 text-center">
+              <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Geen concurrenten gevonden</h3>
+              <p className="text-gray-300">Voer een uitgebreide scan uit om concurrenten te analyseren</p>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[#ff6b35]" />
+                Jouw Concurrenten ({competitors.length})
+              </h3>
+              {competitors.map((competitor, idx) => (
+                <Card key={idx} className="bg-zinc-900 border-zinc-800 shadow-lg p-6">
+                  <div className="space-y-4">
+                    {/* Competitor Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-lg font-bold flex items-center gap-2">
+                          {competitor.name}
+                          <a 
+                            href={competitor.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[#ff6b35] hover:text-[#ff8c42]"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </h4>
+                        <p className="text-gray-300 text-sm mt-1">{competitor.description}</p>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-700">
+                        ~{(competitor.estimatedTraffic / 1000).toFixed(1)}K traffic
+                      </Badge>
+                    </div>
+
+                    {/* Content Focus */}
+                    {competitor.contentFocus && competitor.contentFocus.length > 0 && (
+                      <div>
+                        <div className="text-sm font-semibold mb-2">Focus Onderwerpen:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {competitor.contentFocus.map((focus, focusIdx) => (
+                            <Badge key={focusIdx} variant="secondary" className="bg-purple-100 text-purple-700">
+                              <Target className="w-3 h-3 mr-1" />
+                              {focus}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Top Keywords */}
+                    {competitor.topKeywords && competitor.topKeywords.length > 0 && (
+                      <div>
+                        <div className="text-sm font-semibold mb-2">Top Keywords ({competitor.topKeywords.length}):</div>
+                        <div className="flex flex-wrap gap-2">
+                          {competitor.topKeywords.slice(0, 10).map((keyword, kwIdx) => (
+                            <Badge key={kwIdx} variant="outline" className="text-xs">
+                              {keyword}
+                            </Badge>
+                          ))}
+                          {competitor.topKeywords.length > 10 && (
+                            <Badge variant="secondary" className="text-xs bg-zinc-800">
+                              +{competitor.topKeywords.length - 10} meer
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Keyword Gaps Tab */}
+      {activeTab === 'gaps' && (
+        <div className="space-y-4">
+          {keywordGaps.length === 0 ? (
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg p-12 text-center">
+              <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Geen keyword gaps gevonden</h3>
+              <p className="text-gray-300">Voer een uitgebreide scan uit om keyword gaps te analyseren</p>
+            </Card>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-[#ff6b35]" />
+                  Keyword Kansen die Concurrenten Gebruiken ({keywordGaps.length})
+                </h3>
+              </div>
+
+              {/* Gap Info */}
+              <Card className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 p-4">
+                <div className="flex items-start gap-3">
+                  <Lightbulb className="w-5 h-5 text-[#ff6b35] mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-white">Wat zijn Keyword Gaps?</h4>
+                    <p className="text-sm text-gray-200 mt-1">
+                      Dit zijn keywords die meerdere van jouw concurrenten gebruiken, maar die jij nog niet hebt.
+                      Deze keywords zijn bewezen waardevol en geven jou directe content kansen!
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* High Priority Gaps */}
+              {keywordGaps.filter(g => g.opportunity === 'high').length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-red-600" />
+                    Hoge Prioriteit
+                  </h4>
+                  <div className="space-y-2">
+                    {keywordGaps.filter(g => g.opportunity === 'high').map((gap, idx) => (
+                      <Card key={idx} className="bg-zinc-900 border-l-4 border-red-500 p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="font-semibold text-lg">{gap.keyword}</div>
+                            <div className="text-sm text-gray-300 mt-1">{gap.reason}</div>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {gap.usedByCompetitors.map((comp, compIdx) => (
+                                <Badge key={compIdx} variant="secondary" className="text-xs bg-red-100 text-red-700">
+                                  {comp}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(gap.keyword);
+                                toast.success('Keyword gekopieerd!');
+                              }}
+                              variant="outline"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => router.push(`/client-portal/blog-generator?keyword=${encodeURIComponent(gap.keyword)}`)}
+                              className="bg-[#ff6b35] hover:bg-[#ff8c42]"
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              Schrijf Content
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Medium Priority Gaps */}
+              {keywordGaps.filter(g => g.opportunity === 'medium').length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-yellow-600" />
+                    Gemiddelde Prioriteit
+                  </h4>
+                  <div className="space-y-2">
+                    {keywordGaps.filter(g => g.opportunity === 'medium').slice(0, 10).map((gap, idx) => (
+                      <Card key={idx} className="bg-zinc-900 border-l-4 border-yellow-500 p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="font-semibold">{gap.keyword}</div>
+                            <div className="text-sm text-gray-300 mt-1">{gap.reason}</div>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {gap.usedByCompetitors.map((comp, compIdx) => (
+                                <Badge key={compIdx} variant="secondary" className="text-xs bg-yellow-100 text-yellow-700">
+                                  {comp}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(gap.keyword);
+                                toast.success('Keyword gekopieerd!');
+                              }}
+                              variant="outline"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => router.push(`/client-portal/blog-generator?keyword=${encodeURIComponent(gap.keyword)}`)}
+                              className="bg-[#ff6b35] hover:bg-[#ff8c42]"
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              Schrijf
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Low Priority Gaps */}
+              {keywordGaps.filter(g => g.opportunity === 'low').length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-gray-300" />
+                    Lagere Prioriteit
+                  </h4>
+                  <div className="space-y-2">
+                    {keywordGaps.filter(g => g.opportunity === 'low').slice(0, 5).map((gap, idx) => (
+                      <Card key={idx} className="bg-zinc-900 border-l-4 border-zinc-700 p-3">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="font-medium">{gap.keyword}</div>
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              Gebruikt door: {gap.usedByCompetitors.join(', ')}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(gap.keyword);
+                              toast.success('Keyword gekopieerd!');
+                            }}
+                            variant="outline"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

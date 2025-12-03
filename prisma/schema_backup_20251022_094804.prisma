@@ -1,0 +1,805 @@
+
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/writgo_planning_app/nextjs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// ============================================
+// WRITGO AI - AUTOMATED CONTENT SYSTEM
+// Categories: Content, Social Media, YouTube
+// ============================================
+
+// Admin users
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  role          String    @default("admin")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  Account       Account[]
+  Session       Session[]
+  Task          Task[]
+  Message       Message[] @relation("TeamMessages")
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Klanten
+model Client {
+  id                 String               @id @default(cuid())
+  name               String
+  email              String               @unique
+  password           String
+  phone              String?
+  companyName        String?
+  website            String?
+  bufferEmail        String?
+  bufferConnected    Boolean              @default(false)
+  bufferConnectedAt  DateTime?
+  isActive           Boolean              @default(true)
+  onboardingCompleted Boolean             @default(false)
+  
+  // Gratis trial credits
+  freeArticleCredits Int                  @default(1)
+  freeReelCredits    Int                  @default(1)
+  
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  Task               Task[]
+  ClientSubscription ClientSubscription[]
+  Message            Message[]            @relation("ClientMessages")
+  AIProfile          ClientAIProfile?
+  ContentPlans       ContentPlan[]
+  MasterContentPlan      MasterContentPlan?
+  PublishedArticles      PublishedArticle[]
+  WordPressConfig        WordPressConfig?
+  AffiliateLinks         AffiliateLink[]
+  VideoSeries            VideoSeries[]
+  VideoIdeas             VideoIdea[]
+  SocialMediaCredentials SocialMediaCredentials?
+  AutoContentStrategy    AutoContentStrategy?
+}
+
+// AI Profiel voor complete personalisatie
+model ClientAIProfile {
+  id                          String   @id @default(cuid())
+  clientId                    String   @unique
+  
+  // Bedrijfsinformatie
+  websiteName                 String?
+  websiteUrl                  String?
+  blogUrl                     String?
+  companyDescription          String?
+  targetAudience              String?
+  problemStatement            String?
+  solutionStatement           String?
+  uniqueFeatures              String[] @default([])
+  youtubeChannelUrl           String?
+  
+  // Content voorkeuren
+  contentStyle                String[] @default([])
+  contentLanguage             String   @default("Dutch")
+  toneOfVoice                 String?
+  forbiddenWords              String[] @default([])
+  
+  // Blog generatie instructies
+  customBlogInstructions      String?  @db.Text
+  contentPlannerInstructions  String?  @db.Text
+  
+  // Image settings
+  imageSize                   String   @default("1536x1024")
+  imageStyle                  String?
+  brandAccentColor            String?
+  customImageInstructions     String?  @db.Text
+  
+  // Content preferences
+  includeYoutubeVideos        Boolean  @default(true)
+  usePeopleAlsoAsk            Boolean  @default(true)
+  maxInternalLinks            Int      @default(5)
+  targetWordCount             Int      @default(2000)
+  
+  // Autopilot instellingen
+  autopilotEnabled            Boolean  @default(false)
+  publishingDays              String[] @default([])
+  publishingTime              String   @default("09:00")
+  postsPerDay                 Int      @default(1)
+  publishMode                 String   @default("IMMEDIATE")
+  
+  // AI Scan status
+  lastAIScanAt                DateTime?
+  aiScanCompleted             Boolean  @default(false)
+  aiScanResults               String?  @db.Text  // JSON with free-form AI analysis
+  
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+  Client                      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId])
+}
+
+// Affiliate Links Management
+model AffiliateLink {
+  id              String   @id @default(cuid())
+  clientId        String
+  title           String   // "Amazon Associates", "bol.com Partner", etc.
+  url             String   // Actual affiliate link
+  description     String?  // Optional notes
+  category        String?  // "Product", "Service", etc.
+  isActive        Boolean  @default(true)
+  usageCount      Int      @default(0) // Track how many times it was used
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  Client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId])
+  @@index([isActive])
+}
+
+// Opdrachten
+model Task {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  category    TaskCategory
+  status      TaskStatus     @default(TODO)
+  deadline    DateTime?
+  clientId    String
+  createdById String
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  completedAt DateTime?
+  Client      Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  CreatedBy   User           @relation(fields: [createdById], references: [id])
+  Deliverable Deliverable[]
+  Message     Message[]
+
+  @@index([clientId])
+  @@index([category])
+  @@index([status])
+}
+
+// Deliverables (afgeleverde bestanden)
+model Deliverable {
+  id        String   @id @default(cuid())
+  taskId    String
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  notes     String?
+  createdAt DateTime @default(now())
+  Task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+// Subscription Packages
+model SubscriptionPackage {
+  id                 String               @id @default(cuid())
+  tier               String
+  serviceType        String
+  displayName        String
+  description        String
+  monthlyPrice       Float
+  articlesPerMonth   Int?
+  reelsFrequency     String?
+  features           String[]             @default([])
+  isPopular          Boolean              @default(false)
+  isActive           Boolean              @default(true)
+  order              Int                  @default(0)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  ClientSubscription ClientSubscription[]
+
+  @@unique([tier, serviceType])
+  @@index([isActive])
+  @@index([tier])
+}
+
+// Klant abonnementen
+model ClientSubscription {
+  id             String              @id @default(cuid())
+  clientId       String              @unique
+  packageId      String
+  status         SubscriptionStatus  @default(ACTIVE)
+  startDate      DateTime            @default(now())
+  endDate        DateTime?
+  nextBillingDate DateTime?
+  articlesUsed   Int                 @default(0)
+  reelsUsed      Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  Client         Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  Package        SubscriptionPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([status])
+}
+
+// Chat berichten
+model Message {
+  id         String        @id @default(cuid())
+  taskId     String?
+  clientId   String?
+  userId     String?
+  senderType MessageSender
+  content    String
+  isRead     Boolean       @default(false)
+  readAt     DateTime?
+  createdAt  DateTime      @default(now())
+  Task       Task?         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  Client     Client?       @relation("ClientMessages", fields: [clientId], references: [id], onDelete: Cascade)
+  User       User?         @relation("TeamMessages", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([taskId])
+  @@index([clientId])
+  @@index([userId])
+}
+
+// Master Content Plan - 200 artikelen per klant (Jim Methode)
+model MasterContentPlan {
+  id                     String                  @id @default(cuid())
+  clientId               String                  @unique
+  totalArticles          Int                     @default(200)
+  articlesReleased       Int                     @default(0)
+  status                 MasterPlanStatus        @default(GENERATING)
+  generatedAt            DateTime                @default(now())
+  jimAnalysisData        String?                 @db.Text  // Complete Jim methode analyse
+  websiteAnalysis        String?                 @db.Text  // Website + Google analyse
+  competitorAnalysis     String?                 @db.Text  // Top 10 concurrenten
+  keywordResearch        String?                 @db.Text  // 200+ keywords
+  seoStrategy            String?                 @db.Text  // SEO & linkbuilding
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  Client                 Client                  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  MasterArticles         MasterArticle[]
+  
+  @@index([clientId])
+  @@index([status])
+}
+
+// Master Article - Alle 200 artikelen in de library
+model MasterArticle {
+  id                     String                  @id @default(cuid())
+  masterPlanId           String
+  articleNumber          Int                     // 1-200
+  title                  String
+  topic                  String
+  mainKeyword            String
+  lsiKeywords            String[]                @default([])
+  targetWordCount        Int                     @default(1500)
+  searchVolume           Int?
+  difficulty             String?                 // "Easy", "Medium", "Hard"
+  category               String?
+  contentType            String?                 // "Informational", "Commercial", "How-to", etc.
+  priority               String                  @default("MEDIUM") // "HIGH", "MEDIUM", "LOW"
+  isReleased             Boolean                 @default(false)
+  releasedAt             DateTime?
+  status                 MasterArticleStatus     @default(LOCKED)
+  generatedContent       String?                 @db.Text
+  publishedArticleId     String?                 @unique
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  MasterPlan             MasterContentPlan       @relation(fields: [masterPlanId], references: [id], onDelete: Cascade)
+  PublishedArticle       PublishedArticle?       @relation("MasterToPublished")
+  
+  @@unique([masterPlanId, articleNumber])
+  @@index([masterPlanId])
+  @@index([isReleased])
+  @@index([status])
+  @@index([priority])
+}
+
+// Content Plan - Maandelijkse planning (deprecated maar behouden voor backwards compatibility)
+model ContentPlan {
+  id                String             @id @default(cuid())
+  clientId          String
+  month             Int
+  year              Int
+  status            ContentPlanStatus  @default(DRAFT)
+  generatedAt       DateTime           @default(now())
+  approvedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  Client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  PlannedArticles   PlannedArticle[]
+  
+  @@unique([clientId, month, year])
+  @@index([clientId])
+  @@index([status])
+}
+
+// Geplande artikelen binnen een content plan (deprecated)
+model PlannedArticle {
+  id                String            @id @default(cuid())
+  contentPlanId     String
+  title             String
+  suggestedTopic    String
+  keywords          String[]          @default([])
+  scheduledDate     DateTime
+  status            ArticleStatus     @default(PLANNED)
+  generatedAt       DateTime?
+  publishedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  ContentPlan       ContentPlan       @relation(fields: [contentPlanId], references: [id], onDelete: Cascade)
+  PublishedArticle  PublishedArticle?
+  
+  @@index([contentPlanId])
+  @@index([scheduledDate])
+  @@index([status])
+}
+
+// Gepubliceerde artikelen met tracking
+model PublishedArticle {
+  id                    String          @id @default(cuid())
+  plannedArticleId      String?         @unique  // Optional now (can be from MasterArticle)
+  masterArticleId       String?         @unique  // Link to Master Article
+  clientId              String
+  title                 String
+  slug                  String
+  content               String          @db.Text
+  excerpt               String?
+  seoTitle              String
+  metaDescription       String
+  keywords              String[]        @default([])
+  wordpressPostId       Int?
+  wordpressUrl          String?
+  publishStatus         PublishStatus   @default(DRAFT)
+  internalLinks         String[]        @default([])
+  externalLinks         String[]        @default([])
+  affiliateLinksUsed    String[]        @default([]) // Track which affiliate links were included
+  viewCount             Int             @default(0)
+  publishedAt           DateTime        @default(now())
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  PlannedArticle        PlannedArticle? @relation(fields: [plannedArticleId], references: [id], onDelete: Cascade)
+  MasterArticle         MasterArticle?  @relation("MasterToPublished", fields: [masterArticleId], references: [id], onDelete: Cascade)
+  Client                Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  IncomingLinks         LinkReference[] @relation("TargetArticle")
+  OutgoingLinks         LinkReference[] @relation("SourceArticle")
+  
+  @@unique([clientId, slug])
+  @@index([clientId])
+  @@index([publishedAt])
+  @@index([publishStatus])
+}
+
+// Link referenties voor linkbuilding tracking
+model LinkReference {
+  id                String           @id @default(cuid())
+  sourceArticleId   String
+  targetArticleId   String
+  anchorText        String
+  linkType          LinkType
+  createdAt         DateTime         @default(now())
+  SourceArticle     PublishedArticle @relation("SourceArticle", fields: [sourceArticleId], references: [id], onDelete: Cascade)
+  TargetArticle     PublishedArticle @relation("TargetArticle", fields: [targetArticleId], references: [id], onDelete: Cascade)
+  
+  @@unique([sourceArticleId, targetArticleId])
+  @@index([sourceArticleId])
+  @@index([targetArticleId])
+}
+
+// WordPress credentials per klant
+model WordPressConfig {
+  id              String   @id @default(cuid())
+  clientId        String   @unique
+  siteUrl         String
+  username        String
+  applicationPassword String
+  verified        Boolean  @default(false)
+  lastSyncAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  Client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId])
+}
+
+// Enums
+enum TaskCategory {
+  CONTENT_AUTOMATION
+  SOCIAL_MEDIA_AUTOMATION
+  YOUTUBE_FACELESS_AUTOMATION
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+enum MessageSender {
+  CLIENT
+  TEAM
+}
+
+enum ContentPlanStatus {
+  DRAFT
+  APPROVED
+  ACTIVE
+  COMPLETED
+}
+
+enum ArticleStatus {
+  PLANNED
+  GENERATING
+  GENERATED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}
+
+enum LinkType {
+  INTERNAL
+  EXTERNAL
+}
+
+enum MasterPlanStatus {
+  GENERATING
+  READY
+  ACTIVE
+  COMPLETED
+}
+
+enum MasterArticleStatus {
+  LOCKED
+  AVAILABLE
+  GENERATING
+  GENERATED
+  PUBLISHED
+  FAILED
+}
+
+enum PublishStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+// ============================================
+// VIDEO/REELS AUTOMATION (VADOO INTEGRATION)
+// ============================================
+
+// Video Series - Vergelijkbaar met content automation
+model VideoSeries {
+  id                  String              @id @default(cuid())
+  clientId            String
+  name                String
+  description         String?
+  niche               String              // Topic/niche for the videos
+  voice               String              @default("Charlie")
+  captionTheme        String              @default("Hormozi_1")
+  imageStyle          String?
+  language            String              @default("English")
+  duration            String              @default("30-60") // "30-60", "60-90", "90-120", "5 min", "10 min"
+  aspectRatio         String              @default("9:16")   // "9:16", "1:1", "16:9"
+  backgroundMusic     String?
+  backgroundMusicVolume Int               @default(50)
+  includeVoiceover    Boolean             @default(true)
+  useAI               Boolean             @default(true)
+  customInstructions  String?             @db.Text
+  
+  // Auto-posting settings
+  autopilotEnabled    Boolean             @default(false)
+  publishingDays      String[]            @default([])
+  publishingTime      String              @default("09:00")
+  videosPerWeek       Int                 @default(3)
+  
+  // Social media connections
+  postToYouTube       Boolean             @default(false)
+  postToInstagram     Boolean             @default(false)
+  postToTikTok        Boolean             @default(false)
+  postToFacebook      Boolean             @default(false)
+  postToLinkedIn      Boolean             @default(false)
+  
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  Client              Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  GeneratedVideos     GeneratedVideo[]
+  
+  @@index([clientId])
+  @@index([isActive])
+}
+
+// Generated Videos
+model GeneratedVideo {
+  id                  String              @id @default(cuid())
+  seriesId            String?             // Optional - can be null for one-off videos
+  videoTopic          String              // User-provided or auto-generated topic
+  vadooVideoId        String?             @unique  // ID from Vadoo API
+  status              VideoStatus         @default(GENERATING)
+  videoUrl            String?             // URL to download the video
+  thumbnailUrl        String?
+  duration            Int?                // Duration in seconds
+  fileSize            Int?                // File size in bytes
+  
+  // Generation settings (snapshot)
+  generationType      VideoGenerationType @default(TEXT_TO_VIDEO)
+  voice               String
+  captionTheme        String
+  imageStyle          String?
+  language            String
+  aspectRatio         String
+  backgroundMusic     String?
+  backgroundMusicVolume Int?
+  customInstructions  String?             @db.Text
+  
+  // Posting status
+  postedToYouTube     Boolean             @default(false)
+  postedToInstagram   Boolean             @default(false)
+  postedToTikTok      Boolean             @default(false)
+  postedToFacebook    Boolean             @default(false)
+  postedToLinkedIn    Boolean             @default(false)
+  youtubeVideoId      String?
+  instagramPostId     String?
+  tiktokVideoId       String?
+  facebookPostId      String?
+  linkedinPostId      String?
+  
+  // Metadata
+  title               String?
+  description         String?             @db.Text
+  hashtags            String[]            @default([])
+  
+  errorMessage        String?             @db.Text
+  generatedAt         DateTime            @default(now())
+  completedAt         DateTime?
+  publishedAt         DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  Series              VideoSeries?        @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  
+  @@index([seriesId])
+  @@index([status])
+  @@index([vadooVideoId])
+}
+
+// Social Media Credentials per klant
+model SocialMediaCredentials {
+  id                    String   @id @default(cuid())
+  clientId              String   @unique
+  
+  // YouTube
+  youtubeAccessToken    String?  @db.Text
+  youtubeRefreshToken   String?  @db.Text
+  youtubeChannelId      String?
+  youtubeConnected      Boolean  @default(false)
+  youtubeConnectedAt    DateTime?
+  
+  // Instagram (via Facebook Graph API)
+  instagramAccessToken  String?  @db.Text
+  instagramUserId       String?
+  instagramConnected    Boolean  @default(false)
+  instagramConnectedAt  DateTime?
+  
+  // TikTok
+  tiktokAccessToken     String?  @db.Text
+  tiktokUserId          String?
+  tiktokConnected       Boolean  @default(false)
+  tiktokConnectedAt     DateTime?
+  
+  // Facebook
+  facebookAccessToken   String?  @db.Text
+  facebookPageId        String?
+  facebookConnected     Boolean  @default(false)
+  facebookConnectedAt   DateTime?
+  
+  // LinkedIn
+  linkedinAccessToken   String?  @db.Text
+  linkedinUserId        String?
+  linkedinConnected     Boolean  @default(false)
+  linkedinConnectedAt   DateTime?
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  Client                Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId])
+}
+
+// Video Ideas for Content Calendar Workflow
+model VideoIdea {
+  id                    String              @id @default(cuid())
+  clientId              String
+  title                 String
+  description           String?             @db.Text
+  hook                  String?             // Opening hook for the video
+  keywords              String[]            @default([])
+  niche                 String
+  targetAudience        String?
+  duration              Int                 @default(30) // Target duration in seconds
+  order                 Int                 @default(0)  // Order in content calendar
+  
+  // Workflow status
+  status                VideoIdeaStatus     @default(PENDING)
+  
+  // Script generation
+  script                String?             @db.Text
+  scriptGeneratedAt     DateTime?
+  
+  // Voiceover generation
+  voiceId               String?
+  voiceoverUrl          String?
+  voiceoverGeneratedAt  DateTime?
+  
+  // Video generation (Vadoo)
+  vadooVideoId          String?
+  vadooVideoUrl         String?
+  videoGeneratedAt      DateTime?
+  
+  // Final merged video
+  finalVideoUrl         String?
+  backgroundMusicUrl    String?
+  completedAt           DateTime?
+  
+  // Error handling
+  errorMessage          String?             @db.Text
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  Client                Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId])
+  @@index([status])
+  @@index([order])
+}
+
+enum VideoIdeaStatus {
+  PENDING
+  SCRIPT_READY
+  VOICEOVER_READY
+  VIDEO_GENERATING
+  VIDEO_READY
+  MERGING
+  COMPLETED
+  FAILED
+}
+
+enum VideoStatus {
+  PENDING
+  SCHEDULED
+  GENERATING
+  COMPLETED
+  FAILED
+  PUBLISHING
+  PUBLISHED
+}
+
+enum VideoGenerationType {
+  TEXT_TO_VIDEO
+  AUDIO_TO_VIDEO
+  BLOG_TO_VIDEO
+}
+
+// ============================================
+// AUTO CONTENT AUTOMATION - NICHE BASED
+// ============================================
+
+// Auto Content Strategy - Simplified niche-based automation
+model AutoContentStrategy {
+  id                    String              @id @default(cuid())
+  clientId              String              @unique
+  
+  // Niche/Topic
+  niche                 String              // Main niche/topic for content
+  subTopics             String[]            @default([])  // Optional sub-topics
+  targetAudience        String?             // Who is the content for?
+  
+  // Automation settings
+  isEnabled             Boolean             @default(true)
+  postsPerDay           Int                 @default(1)    // How many posts per day
+  preferredPostTime     String              @default("09:00")
+  
+  // Content preferences
+  contentTypes          String[]            @default(["article", "social-post", "video"])
+  toneOfVoice           String              @default("professional")  // professional, casual, friendly, authoritative
+  language              String              @default("Dutch")
+  
+  // AI generation settings
+  useAITopicGeneration  Boolean             @default(true)
+  autoPublish           Boolean             @default(false)  // Auto-publish or save as draft
+  
+  // Stats
+  totalGenerated        Int                 @default(0)
+  totalPublished        Int                 @default(0)
+  lastGeneratedAt       DateTime?
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  Client                Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  GeneratedTopics       AutoGeneratedTopic[]
+  
+  @@index([clientId])
+  @@index([isEnabled])
+}
+
+// Auto-generated topics from the niche
+model AutoGeneratedTopic {
+  id                String                  @id @default(cuid())
+  strategyId        String
+  
+  topic             String                  // Generated topic/title
+  description       String?                 @db.Text
+  keywords          String[]                @default([])
+  contentType       String                  @default("article")  // article, social-post, video
+  
+  status            AutoTopicStatus         @default(PENDING)
+  scheduledFor      DateTime?
+  generatedAt       DateTime?
+  publishedAt       DateTime?
+  
+  // Links to actual content
+  articleId         String?                 // Link to PublishedArticle if generated
+  videoId           String?                 // Link to GeneratedVideo if generated
+  
+  errorMessage      String?
+  
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  Strategy          AutoContentStrategy     @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  
+  @@index([strategyId])
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+enum AutoTopicStatus {
+  PENDING
+  SCHEDULED
+  GENERATING
+  GENERATED
+  PUBLISHED
+  FAILED
+}
