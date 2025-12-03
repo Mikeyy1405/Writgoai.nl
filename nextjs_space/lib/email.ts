@@ -14,18 +14,22 @@ import {
   getNewYearEmailTemplate,
 } from './email-templates';
 
-// Create transporter with WritgoAI SMTP or other service
+// Create transporter with SMTP configuration
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'WritgoAI.nl',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: true, // true for 465, false for other ports
+  host: process.env.SMTP_HOST || 'writgoai.nl',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for 587
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
   tls: {
-    rejectUnauthorized: false // Accept self-signed certificates
-  }
+    // Do not fail on invalid certificates (useful for self-signed certificates)
+    rejectUnauthorized: false,
+  },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
 // Check if email is configured
