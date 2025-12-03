@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!resetToken) {
-      log('warn', 'Invalid password reset token used', { token: token.substring(0, 10) + '...' });
+      log('warn', 'Invalid password reset token used');
       return NextResponse.json(
         { error: 'Ongeldige of verlopen reset link. Vraag een nieuwe aan.' },
         { status: 400 }

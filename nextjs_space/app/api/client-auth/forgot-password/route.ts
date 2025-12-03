@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
-import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { rateLimiters } from '@/lib/rate-limiter';
 import { sendPasswordResetEmail } from '@/lib/password-reset-email';
 import { log, logError } from '@/lib/logger';
 
 const prisma = new PrismaClient();
-
-// Rate limiter: max 3 requests per email per hour
-const forgotPasswordLimiter = new RateLimiterMemory({
-  points: 3,
-  duration: 60 * 60, // 1 hour
-  blockDuration: 60 * 60,
-});
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting per email address
     try {
-      await forgotPasswordLimiter.consume(normalizedEmail);
+      await rateLimiters.forgotPassword.consume(normalizedEmail);
     } catch (error) {
       log('warn', 'Rate limit exceeded for forgot password', { email: normalizedEmail });
       // Still return success to prevent email enumeration

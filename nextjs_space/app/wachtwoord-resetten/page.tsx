@@ -62,10 +62,6 @@ function ResetPasswordForm() {
       if (res.ok) {
         setIsSuccess(true);
         toast.success('Wachtwoord succesvol gewijzigd!');
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-          router.push('/inloggen?reset=success');
-        }, 2000);
       } else {
         setError(data.error || 'Er is iets misgegaan');
         toast.error(data.error || 'Er is iets misgegaan');
@@ -189,7 +185,7 @@ function ResetPasswordForm() {
                     Wachtwoord gewijzigd!
                   </h3>
                   <p className="text-sm text-zinc-400">
-                    Je wachtwoord is succesvol gewijzigd. Je wordt doorgestuurd naar de inlog pagina...
+                    Je wachtwoord is succesvol gewijzigd. Je kunt nu inloggen met je nieuwe wachtwoord.
                   </p>
                 </div>
               </div>
