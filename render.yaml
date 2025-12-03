@@ -5,7 +5,7 @@ services:
     region: frankfurt
     plan: starter
     rootDir: nextjs_space
-    buildCommand: yarn install && yarn prisma generate && yarn build
+    buildCommand: yarn install && yarn prisma generate && yarn prisma db push && yarn build
     startCommand: yarn start
     envVars:
       - key: NODE_VERSION
