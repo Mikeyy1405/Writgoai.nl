@@ -53,6 +53,13 @@ export const rateLimiters = {
     blockDuration: 60 * 60,
   }),
 
+  // Password reset - Prevent abuse
+  forgotPassword: new RateLimiterMemory({
+    points: 3, // 3 attempts
+    duration: 60 * 60, // per hour
+    blockDuration: 60 * 60, // block for 1 hour
+  }),
+
   // Algemene API calls
   api: new RateLimiterMemory({
     points: 200, // 200 requests

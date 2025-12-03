@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Loader2, Sparkles, Gift, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -211,7 +212,15 @@ function LoginRegisterForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="login-password" className="text-zinc-200">Wachtwoord</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="login-password" className="text-zinc-200">Wachtwoord</Label>
+                  <Link
+                    href="/wachtwoord-vergeten"
+                    className="text-sm text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Wachtwoord vergeten?
+                  </Link>
+                </div>
                 <Input
                   id="login-password"
                   type="password"
