@@ -187,9 +187,13 @@ export default function BibliotheekView({ siteId }: BibliotheekViewProps) {
         const data = await response.json();
         setSocialPosts(data.posts || []);
         setFilteredSocialPosts(data.posts || []);
+      } else {
+        console.error('Failed to load social posts:', response.statusText);
+        // Don't show error toast since this is not critical
       }
     } catch (error) {
       console.error('Error loading social posts:', error);
+      // Don't show error toast since this is not critical
     }
   };
 
@@ -299,9 +303,10 @@ export default function BibliotheekView({ siteId }: BibliotheekViewProps) {
     }
   };
 
-  const handleRewrite = async (item: ContentPiece) => {
-    toast.info('Herschrijven functie wordt binnenkort toegevoegd');
+  const handleRewrite = (item: ContentPiece) => {
     // TODO: Implement rewrite functionality
+    // This should trigger a content rewrite process
+    toast.info('Herschrijven functie wordt binnenkort toegevoegd');
   };
 
   if (editMode && selectedContent) {
@@ -609,7 +614,7 @@ export default function BibliotheekView({ siteId }: BibliotheekViewProps) {
                       >
                         {copiedPostId === post.id ? (
                           <>
-                            <Check className="w-4 w-4 mr-1 text-green-500" />
+                            <Check className="w-4 h-4 mr-1 text-green-500" />
                             Gekopieerd
                           </>
                         ) : (
