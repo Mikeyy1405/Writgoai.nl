@@ -35,20 +35,37 @@ interface ContentHubSite {
   createdAt: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  websiteUrl: string;
+  description?: string;
+  niche?: string;
+  isPrimary: boolean;
+  wordpressUrl?: string;
+  createdAt: string;
+}
+
 export default function ContentHubPage() {
   const { data: session } = useSession();
   const [sites, setSites] = useState<ContentHubSite[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedSite, setSelectedSite] = useState<ContentHubSite | null>(null);
   const [loading, setLoading] = useState(true);
   const [showConnector, setShowConnector] = useState(false);
 
   useEffect(() => {
-    loadSites();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    await Promise.all([loadSites(), loadProjects()]);
+    setLoading(false);
+  };
 
   const loadSites = async () => {
     try {
-      setLoading(true);
       const response = await fetch('/api/content-hub/connect-wordpress');
       
       if (!response.ok) {
@@ -65,16 +82,32 @@ export default function ContentHubPage() {
     } catch (error: any) {
       console.error('Failed to load sites:', error);
       toast.error('Failed to load connected websites');
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const loadProjects = async () => {
+    try {
+      const response = await fetch('/api/client/projects');
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(data.projects || []);
+      }
+    } catch (error: any) {
+      console.error('Failed to load projects:', error);
     }
   };
 
   const handleSiteConnected = (site: any) => {
-    loadSites();
+    loadData();
     setShowConnector(false);
     setSelectedSite(site);
     toast.success('Website connected successfully!');
+  };
+
+  const convertProjectToContentHubSite = async (project: Project) => {
+    // Open the WebsiteConnector modal with project URL
+    setShowConnector(true);
+    toast.info(`Koppel ${project.name} aan Content Hub door WordPress gegevens in te vullen`);
   };
 
   const getAuthorityProgress = (site: ContentHubSite) => {
@@ -118,21 +151,74 @@ export default function ContentHubPage() {
         </Button>
       </div>
 
-      {/* No sites connected */}
+      {/* No sites connected - show projects if available */}
       {sites.length === 0 && !showConnector && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Globe className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No websites connected</h3>
-            <p className="text-muted-foreground mb-4 text-center max-w-md">
-              Connect your WordPress website to start generating SEO-optimized content automatically.
-            </p>
-            <Button onClick={() => setShowConnector(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Connect Your First Website
-            </Button>
-          </CardContent>
-        </Card>
+        <>
+          {projects.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Globe className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No websites connected</h3>
+                <p className="text-muted-foreground mb-4 text-center max-w-md">
+                  Connect your WordPress website to start generating SEO-optimized content automatically.
+                </p>
+                <Button onClick={() => setShowConnector(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Connect Your First Website
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-8">
+                  <Globe className="h-12 w-12 text-muted-foreground mb-3" />
+                  <h3 className="text-lg font-semibold mb-2">Geen Content Hub websites gekoppeld</h3>
+                  <p className="text-muted-foreground text-center max-w-md mb-4">
+                    Maar je hebt wel {projects.length} bestaande project{projects.length !== 1 ? 'en' : ''}. Klik op een project hieronder om het te koppelen aan Content Hub.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Bestaande Projecten</h3>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {projects.map((project) => (
+                    <Card key={project.id} className="cursor-pointer hover:border-[#FF9933] transition-colors">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg">{project.name}</CardTitle>
+                            <CardDescription className="mt-1">
+                              {project.websiteUrl}
+                            </CardDescription>
+                          </div>
+                          {project.isPrimary && (
+                            <Badge variant="secondary" className="ml-2">Primary</Badge>
+                          )}
+                        </div>
+                        {project.niche && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Niche: {project.niche}
+                          </p>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        <Button 
+                          onClick={() => convertProjectToContentHubSite(project)}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Koppelen aan Content Hub
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Website Connector Modal */}
@@ -177,7 +263,7 @@ export default function ContentHubPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={loadSites}>
+                      <Button variant="outline" size="sm" onClick={loadData}>
                         <RefreshCw className="h-4 w-4" />
                       </Button>
                       <Button variant="outline" size="sm">
