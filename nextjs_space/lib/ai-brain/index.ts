@@ -16,8 +16,8 @@ const aimlClient = new OpenAI({
   baseURL: AIML_API_BASE,
 });
 
-// Default orchestrator model - Claude Sonnet 4.5
-const ORCHESTRATOR_MODEL = 'claude-sonnet-4-5-20250514';
+// Default orchestrator model - Gemini 3 Pro Preview
+const ORCHESTRATOR_MODEL = 'google/gemini-3-pro-preview';
 
 export interface Message {
   role: 'system' | 'user' | 'assistant' | 'tool';
