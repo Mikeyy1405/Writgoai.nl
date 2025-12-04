@@ -68,28 +68,28 @@ Respond in JSON format:
   "suggestedLength": number
 }`;
 
-    // Create AbortController with 30 second timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.warn('[SERP Analyzer] Request timeout after 30s, using defaults');
-      controller.abort();
-    }, 30000); // 30 seconds
+    // Race between API call and 30-second timeout
+    const apiCallPromise = sendChatCompletion({
+      model: TEXT_MODELS.FAST,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+      stream: false,
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('SERP analysis timeout after 30s'));
+      }, 30000); // 30 seconds
+    });
 
     try {
-      const response = await sendChatCompletion({
-        model: TEXT_MODELS.FAST,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: false,
-      });
-
-      clearTimeout(timeoutId);
+      const response = await Promise.race([apiCallPromise, timeoutPromise]) as any;
 
       const content = (response as any).choices[0]?.message?.content || '{}';
       
@@ -113,10 +113,8 @@ Respond in JSON format:
         ...analysis,
       };
     } catch (apiError: any) {
-      clearTimeout(timeoutId);
-      
       // Check if it was a timeout
-      if (apiError.name === 'AbortError') {
+      if (apiError.message && apiError.message.includes('timeout')) {
         console.warn('[SERP Analyzer] API call timed out, using default values');
         return defaultAnalysis;
       }
@@ -157,28 +155,28 @@ Respond in JSON format:
   "insights": string[]
 }`;
 
-    // Create AbortController with 30 second timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.warn('[SERP Analyzer] Source gathering timeout after 30s');
-      controller.abort();
-    }, 30000); // 30 seconds
+    // Race between API call and 30-second timeout
+    const apiCallPromise = sendChatCompletion({
+      model: TEXT_MODELS.FAST,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 1500,
+      stream: false,
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Source gathering timeout after 30s'));
+      }, 30000); // 30 seconds
+    });
 
     try {
-      const response = await sendChatCompletion({
-        model: TEXT_MODELS.FAST,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-        stream: false,
-      });
-
-      clearTimeout(timeoutId);
+      const response = await Promise.race([apiCallPromise, timeoutPromise]) as any;
 
       const content = (response as any).choices[0]?.message?.content || '{}';
       
@@ -195,9 +193,7 @@ Respond in JSON format:
 
       return result;
     } catch (apiError: any) {
-      clearTimeout(timeoutId);
-      
-      if (apiError.name === 'AbortError') {
+      if (apiError.message && apiError.message.includes('timeout')) {
         console.warn('[SERP Analyzer] Source gathering timed out');
         return defaultResult;
       }
