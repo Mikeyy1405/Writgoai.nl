@@ -16,7 +16,7 @@ import { uploadFile, getDownloadUrl } from './s3';
 import { getNichePreset, LANGUAGE_OPTIONS, VIDEO_LENGTH_OPTIONS } from './niche-presets';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { writeFile, unlink, mkdir } from 'fs/promises';
+import { writeFile, unlink, mkdir, readFile, rm } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
@@ -142,7 +142,7 @@ export class AIVideoCreatorPro {
   private tempDir: string;
 
   constructor() {
-    this.sessionId = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.sessionId = `video_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     this.tempDir = path.join(TEMP_DIR, this.sessionId);
   }
 
@@ -583,8 +583,8 @@ Geef ALLEEN de prompt terug, geen extra tekst of uitleg.`;
     );
 
     // Upload to S3
-    const videoBuffer = await require('fs/promises').readFile(videoPath);
-    const thumbnailBuffer = await require('fs/promises').readFile(thumbnailPath);
+    const videoBuffer = await readFile(videoPath);
+    const thumbnailBuffer = await readFile(thumbnailPath);
 
     const videoFileName = `${this.sessionId}_final.mp4`;
     const thumbnailFileName = `${this.sessionId}_thumbnail.jpg`;
@@ -630,7 +630,6 @@ Geef ALLEEN de prompt terug, geen extra tekst of uitleg.`;
    */
   async cleanup() {
     try {
-      const { rm } = require('fs/promises');
       await rm(this.tempDir, { recursive: true, force: true });
       console.log('🧹 Temp files opgeruimd');
     } catch (error) {
