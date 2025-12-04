@@ -123,18 +123,47 @@ Geef het herschreven artikel terug in JSON formaat:
       maxTokens: 8000,
     });
 
+    // Parse JSON response with robust error handling
     let rewrittenData;
     try {
-      // Parse JSON response
       const content = response.content || response.choices?.[0]?.message?.content || '';
-      // Extract JSON from markdown code blocks if present
+      
+      if (!content) {
+        throw new Error('Geen content ontvangen van AI model');
+      }
+      
+      // Try to extract JSON from markdown code blocks first
       const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/```\s*([\s\S]*?)\s*```/);
-      const jsonText = jsonMatch ? jsonMatch[1] : content;
-      rewrittenData = JSON.parse(jsonText);
-    } catch (parseError) {
+      let jsonText = jsonMatch ? jsonMatch[1] : content;
+      
+      // Clean up common issues in JSON
+      jsonText = jsonText.trim();
+      
+      // Try parsing
+      try {
+        rewrittenData = JSON.parse(jsonText);
+      } catch (firstParseError) {
+        // If parsing fails, try to find JSON object in the text
+        const objectMatch = jsonText.match(/\{[\s\S]*\}/);
+        if (objectMatch) {
+          rewrittenData = JSON.parse(objectMatch[0]);
+        } else {
+          throw firstParseError;
+        }
+      }
+      
+      // Validate required fields
+      if (!rewrittenData.content || !rewrittenData.metaTitle || !rewrittenData.metaDescription) {
+        throw new Error('Onvolledige response van AI: ontbrekende velden');
+      }
+    } catch (parseError: any) {
       console.error('[Content Hub] Failed to parse rewrite response:', parseError);
+      console.error('[Content Hub] Raw response:', response.content || response);
       return NextResponse.json(
-        { error: 'Kon herschreven content niet verwerken' },
+        { 
+          error: 'Kon herschreven content niet verwerken',
+          details: parseError.message 
+        },
         { status: 500 }
       );
     }

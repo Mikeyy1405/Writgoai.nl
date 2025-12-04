@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,12 +40,7 @@ export default function RewriteModal({ article, onClose, onComplete }: RewriteMo
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-start rewriting when modal opens
-  useEffect(() => {
-    handleRewrite();
-  }, []);
-
-  const handleRewrite = async () => {
+  const handleRewrite = useCallback(async () => {
     setLoading(true);
     setError(null);
     setRewrittenContent(null);
@@ -76,7 +71,12 @@ export default function RewriteModal({ article, onClose, onComplete }: RewriteMo
     } finally {
       setLoading(false);
     }
-  };
+  }, [article.id]);
+
+  // Auto-start rewriting when modal opens
+  useEffect(() => {
+    handleRewrite();
+  }, [handleRewrite]);
 
   const handleAcceptRewrite = async () => {
     if (!rewrittenContent) return;
@@ -146,6 +146,17 @@ export default function RewriteModal({ article, onClose, onComplete }: RewriteMo
     const text = html.replace(/<[^>]*>/g, ' ');
     const words = text.trim().split(/\s+/).filter(w => w.length > 0);
     return words.length;
+  };
+
+  const sanitizeHtml = (html: string) => {
+    // Basic HTML sanitization for content from AI
+    // Remove script tags and event handlers
+    let sanitized = html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+      .replace(/javascript:/gi, '');
+    
+    return sanitized;
   };
 
   return (
@@ -268,7 +279,7 @@ export default function RewriteModal({ article, onClose, onComplete }: RewriteMo
                   <CardContent>
                     <div 
                       className="prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: rewrittenContent.content }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(rewrittenContent.content) }}
                     />
                   </CardContent>
                 </Card>
@@ -308,7 +319,7 @@ export default function RewriteModal({ article, onClose, onComplete }: RewriteMo
                   <CardContent>
                     <div 
                       className="prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: rewrittenContent.originalContent }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(rewrittenContent.originalContent) }}
                     />
                   </CardContent>
                 </Card>

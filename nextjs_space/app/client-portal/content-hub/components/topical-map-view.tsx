@@ -209,15 +209,79 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
 
   // Auto-sync when published filter is active (only once per filter change)
   useEffect(() => {
-    if (filter === 'published' && siteId) {
-      const syncKey = `${siteId}-${filter}`;
-      // Only sync once per filter change, not on every render
-      if (!hasSyncedForFilterRef.current.has(syncKey)) {
-        hasSyncedForFilterRef.current.add(syncKey);
-        syncExistingContent(true); // silent sync on initial load
-      }
+    // Only sync for published filter
+    if (filter !== 'published' || !siteId) {
+      return;
     }
-  }, [filter, siteId]); // Remove syncExistingContent from dependencies to prevent loops
+    
+    const syncKey = `${siteId}-${filter}`;
+    
+    // Skip if already synced for this combination
+    if (hasSyncedForFilterRef.current.has(syncKey)) {
+      return;
+    }
+    
+    // Mark as synced before calling to prevent race conditions
+    hasSyncedForFilterRef.current.add(syncKey);
+    
+    // Perform silent sync
+    const performSync = async () => {
+      // Check if already syncing
+      if (isSyncingRef.current) {
+        return;
+      }
+      
+      // Check cooldown
+      const SYNC_COOLDOWN_MS = 30000;
+      const lastSyncKey = `content-hub-last-sync-${siteId}`;
+      const lastSyncTime = localStorage.getItem(lastSyncKey);
+      
+      if (lastSyncTime) {
+        const timeSinceLastSync = Date.now() - parseInt(lastSyncTime, 10);
+        if (timeSinceLastSync < SYNC_COOLDOWN_MS) {
+          return; // Skip if in cooldown
+        }
+      }
+      
+      // Start sync
+      isSyncingRef.current = true;
+      setSyncing(true);
+      setSyncError(null);
+      setSyncMessage(null);
+      
+      try {
+        const response = await fetch('/api/content-hub/sync-existing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siteId }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Synchronisatie mislukt');
+        }
+        
+        localStorage.setItem(lastSyncKey, Date.now().toString());
+        
+        if (data.warning) {
+          setSyncMessage(data.message);
+        } else {
+          setSyncMessage(`${data.stats.synced} artikelen gesynchroniseerd`);
+        }
+        
+        await loadTopicalMap();
+      } catch (error: any) {
+        console.error('Sync failed:', error);
+        setSyncError(error.message);
+      } finally {
+        setSyncing(false);
+        isSyncingRef.current = false;
+      }
+    };
+    
+    performSync();
+  }, [filter, siteId, loadTopicalMap]);
 
   const handleGenerateMap = async () => {
     setGenerating(true);
