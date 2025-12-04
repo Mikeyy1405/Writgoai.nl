@@ -29,6 +29,8 @@ import {
   Mailbox,
   Calendar,
   Link,
+  DollarSign,
+  Package,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -125,13 +127,42 @@ export const adminOnlyItems: NavigationItem[] = [
   // DIVIDER: Admin
   { isDivider: true, label: 'Admin', adminOnly: true },
   
-  { label: 'Klanten Beheer', href: '/admin/clients', icon: Users, adminOnly: true },
-  { label: 'Alle Opdrachten', href: '/admin/assignments', icon: ClipboardList, adminOnly: true },
-  { label: 'Facturen Beheer', href: '/admin/invoices', icon: Receipt, adminOnly: true },
-  { label: 'Blog CMS', href: '/admin/blog', icon: FileText, adminOnly: true },
-  { label: 'Content Hub', href: '/dashboard/content-hub', icon: FolderKanban, adminOnly: true },
-  { label: 'AI Agent', href: '/dashboard/agent', icon: Bot, adminOnly: true },
-  { label: 'Admin Instellingen', href: '/admin/settings', icon: Settings, adminOnly: true },
+  // 📊 Dashboard
+  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, adminOnly: true },
+  
+  // 👥 Klanten
+  { label: 'Klanten', href: '/admin/clients', icon: Users, adminOnly: true },
+  
+  // 📦 Opdrachten
+  { label: 'Opdrachten', href: '/admin/assignments', icon: Package, adminOnly: true },
+  
+  // 💰 Financieel
+  {
+    isSuite: true,
+    label: 'Financieel',
+    icon: DollarSign,
+    adminOnly: true,
+    items: [
+      { label: 'Facturen', href: '/admin/invoices', icon: Receipt, adminOnly: true },
+      { label: 'Affiliate Payouts', href: '/admin/affiliate-payouts', icon: CreditCard, adminOnly: true },
+    ],
+  },
+  
+  // 📝 Content
+  {
+    isSuite: true,
+    label: 'Content',
+    icon: FileText,
+    adminOnly: true,
+    items: [
+      { label: 'Blog CMS', href: '/admin/blog', icon: FileText, adminOnly: true },
+      { label: 'Content Hub', href: '/dashboard/content-hub', icon: FolderKanban, adminOnly: true },
+      { label: 'AI Agent', href: '/dashboard/agent', icon: Bot, adminOnly: true },
+    ],
+  },
+  
+  // ⚙️ Instellingen
+  { label: 'Instellingen', href: '/admin/settings', icon: Settings, adminOnly: true },
 ];
 
 // Functie om de juiste navigatie items te krijgen op basis van admin status

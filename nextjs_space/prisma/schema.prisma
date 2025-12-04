@@ -2278,6 +2278,9 @@ model ContentHubArticle {
   wordpressUrl      String?
   publishedAt       DateTime?
   
+  // Content Library Link
+  contentId         String?  // Link to SavedContent
+  
   // Stats
   wordCount         Int?
   generationTime    Int?     // seconds
@@ -2577,4 +2580,14 @@ model EmailAutoReply {
   @@index([configId])
   @@index([recipientEmail])
   @@index([sentAt])
+}
+
+model AdminDashboardNote {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  content   String   @db.Text
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
 }
