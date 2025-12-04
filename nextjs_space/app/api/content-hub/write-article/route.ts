@@ -180,12 +180,21 @@ export async function POST(req: NextRequest) {
 
     // Save to Content Library
     console.log('[Content Hub] Saving to Content Library...');
-    const saveResult = await autoSaveToLibrary({
+    // Initialize saveResult at function scope to ensure it's accessible in return
+    let saveResult = {
+      success: false,
+      saved: false,
+      duplicate: false,
+      contentId: undefined as string | undefined,
+      message: 'Not saved',
+    };
+    
+    saveResult = await autoSaveToLibrary({
       clientId: client.id,
       type: 'blog',
       title: article.title,
       content: articleResult.content,
-      contentHtml: articleResult.content,
+      contentHtml: articleResult.content, // Both are HTML in this case
       category: 'blog',
       tags: article.keywords,
       description: articleResult.excerpt,
@@ -247,15 +256,20 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          // Update SavedContent with WordPress info
+          // Update SavedContent with WordPress info (separate try-catch)
           if (saveResult.contentId) {
-            await prisma.savedContent.update({
-              where: { id: saveResult.contentId },
-              data: {
-                publishedUrl: wordpressUrl,
-                publishedAt: new Date(),
-              },
-            });
+            try {
+              await prisma.savedContent.update({
+                where: { id: saveResult.contentId },
+                data: {
+                  publishedUrl: wordpressUrl,
+                  publishedAt: new Date(),
+                },
+              });
+            } catch (updateError) {
+              console.error('[Content Hub] Failed to update SavedContent with WordPress info:', updateError);
+              // Don't throw - WordPress publish was successful
+            }
           }
 
           console.log(`[Content Hub] Published to WordPress: ${wordpressUrl}`);
