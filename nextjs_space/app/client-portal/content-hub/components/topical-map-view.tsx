@@ -69,7 +69,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       const response = await fetch(`/api/content-hub/generate-map?siteId=${siteId}`);
       
       if (!response.ok) {
-        throw new Error('Failed to load topical map');
+        throw new Error('Kon topical map niet laden');
       }
 
       const data = await response.json();
@@ -81,7 +81,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       }
     } catch (error: any) {
       console.error('Failed to load topical map:', error);
-      toast.error('Failed to load articles');
+      toast.error('Kon artikelen niet laden');
     } finally {
       setLoading(false);
     }
@@ -127,6 +127,8 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
 
   const handleGenerateMap = async () => {
     setGenerating(true);
+    toast.loading('Topical map genereren... Dit kan 1-2 minuten duren.', { id: 'generating' });
+    
     try {
       const response = await fetch('/api/content-hub/generate-map', {
         method: 'POST',
@@ -141,15 +143,16 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate map');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Kon topical map niet genereren');
       }
 
       const data = await response.json();
-      toast.success(`Generated ${data.map.totalArticles} article ideas!`);
+      toast.success(`${data.map.totalArticles} artikel ideeën gegenereerd!`, { id: 'generating' });
       await loadTopicalMap();
     } catch (error: any) {
       console.error('Failed to generate map:', error);
-      toast.error('Failed to generate topical map');
+      toast.error(error.message || 'Kon topical map niet genereren. Probeer het later opnieuw.', { id: 'generating' });
     } finally {
       setGenerating(false);
     }
@@ -175,6 +178,18 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     }
   };
 
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'published': 'Gepubliceerd',
+      'pending': 'Wachtend',
+      'writing': 'Schrijven...',
+      'researching': 'Onderzoeken...',
+      'publishing': 'Publiceren...',
+      'failed': 'Mislukt',
+    };
+    return statusMap[status] || status;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -188,15 +203,21 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center justify-center py-12">
           <Sparkles className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-semibold mb-2">No topical map generated yet</h3>
+          <h3 className="text-xl font-semibold mb-2">Nog geen topical map gegenereerd</h3>
           <p className="text-muted-foreground mb-4 text-center max-w-md">
-            Generate a comprehensive topical authority map with 400-500+ article ideas.
+            Genereer een uitgebreide topical authority map met 400-500+ artikel ideeën.
+            Dit proces duurt ongeveer 1-2 minuten.
           </p>
           <Button onClick={handleGenerateMap} disabled={generating} className="gap-2">
             {generating && <Loader2 className="h-4 w-4 animate-spin" />}
             <Sparkles className="h-4 w-4" />
-            Generate Topical Map
+            {generating ? 'Genereren...' : 'Genereer Topical Map'}
           </Button>
+          {generating && (
+            <p className="text-sm text-muted-foreground mt-4">
+              Even geduld, we analyseren je niche en creëren een contentplan...
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -208,7 +229,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       <div className="space-y-3">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold">Clusters</h3>
-          <Button variant="outline" size="sm" onClick={handleGenerateMap} disabled={generating}>
+          <Button variant="outline" size="sm" onClick={handleGenerateMap} disabled={generating} title="Regenereer topical map">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           </Button>
         </div>
@@ -242,7 +263,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search articles..."
+              placeholder="Zoek artikelen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -256,7 +277,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
             <div>
               <h2 className="text-2xl font-bold">{selectedCluster}</h2>
               <p className="text-muted-foreground">
-                {getArticlesByCluster(selectedCluster).length} articles
+                {getArticlesByCluster(selectedCluster).length} artikelen
               </p>
             </div>
           </div>
@@ -278,7 +299,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">No articles found</p>
+                <p className="text-muted-foreground">Geen artikelen gevonden</p>
               </CardContent>
             </Card>
           )}

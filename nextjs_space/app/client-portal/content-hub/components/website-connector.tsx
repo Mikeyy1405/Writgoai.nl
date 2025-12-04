@@ -23,7 +23,7 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
 
   const handleConnect = async () => {
     if (!wordpressUrl || !username || !applicationPassword) {
-      toast.error('Please fill in all fields');
+      toast.error('Vul alle velden in');
       return;
     }
 
@@ -31,7 +31,7 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
     try {
       new URL(wordpressUrl);
     } catch {
-      toast.error('Please enter a valid URL');
+      toast.error('Voer een geldige URL in');
       return;
     }
 
@@ -64,11 +64,11 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
 
       setTestResult({
         success: true,
-        message: 'Connection successful!',
+        message: 'Verbinding succesvol!',
         siteInfo: data.siteInfo,
       });
 
-      toast.success('WordPress connected successfully!');
+      toast.success('WordPress succesvol verbonden!');
       
       // Wait a moment to show success, then call onSuccess
       setTimeout(() => {
@@ -78,9 +78,9 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
       console.error('Connection error:', error);
       setTestResult({
         success: false,
-        message: error.message || 'Connection failed',
+        message: error.message || 'Verbinding mislukt',
       });
-      toast.error('Failed to connect to WordPress');
+      toast.error('Kon niet verbinden met WordPress');
     } finally {
       setLoading(false);
     }
@@ -92,9 +92,9 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Connect WordPress Website</CardTitle>
+              <CardTitle>WordPress Website Koppelen</CardTitle>
               <CardDescription>
-                Add your WordPress site to start generating content
+                Voeg je WordPress site toe om content te genereren
               </CardDescription>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -109,23 +109,23 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
             <Input
               id="wordpress-url"
               type="url"
-              placeholder="https://example.com"
+              placeholder="https://voorbeeld.nl"
               value={wordpressUrl}
               onChange={(e) => setWordpressUrl(e.target.value)}
               disabled={loading}
             />
             <p className="text-sm text-muted-foreground">
-              The full URL of your WordPress website
+              De volledige URL van je WordPress website
             </p>
           </div>
 
           {/* Username */}
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">Gebruikersnaam</Label>
             <Input
               id="username"
               type="text"
-              placeholder="your-username"
+              placeholder="jouw-gebruikersnaam"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={loading}
@@ -134,7 +134,7 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
 
           {/* Application Password */}
           <div className="space-y-2">
-            <Label htmlFor="app-password">Application Password</Label>
+            <Label htmlFor="app-password">Applicatie Wachtwoord</Label>
             <Input
               id="app-password"
               type="password"
@@ -144,20 +144,20 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
               disabled={loading}
             />
             <p className="text-sm text-muted-foreground">
-              Generate an Application Password in WordPress under Users → Profile
+              Genereer een Applicatie Wachtwoord in WordPress onder Gebruikers → Profiel
             </p>
           </div>
 
           {/* Instructions */}
           <Alert>
             <AlertDescription className="text-sm space-y-2">
-              <div className="font-semibold mb-2">How to create an Application Password:</div>
+              <div className="font-semibold mb-2">Hoe maak je een Applicatie Wachtwoord aan:</div>
               <ol className="list-decimal list-inside space-y-1">
-                <li>Log in to your WordPress admin dashboard</li>
-                <li>Go to Users → Profile (your user)</li>
-                <li>Scroll down to "Application Passwords"</li>
-                <li>Enter a name (e.g., "Content Hub") and click "Add New Application Password"</li>
-                <li>Copy the generated password and paste it above</li>
+                <li>Log in op je WordPress admin dashboard</li>
+                <li>Ga naar Gebruikers → Profiel (jouw gebruiker)</li>
+                <li>Scroll naar beneden naar "Applicatie Wachtwoorden"</li>
+                <li>Voer een naam in (bijv. "Content Hub") en klik op "Nieuw toepassingswachtwoord toevoegen"</li>
+                <li>Kopieer het gegenereerde wachtwoord en plak het hierboven</li>
               </ol>
               <a 
                 href="https://wordpress.org/support/article/application-passwords/" 
@@ -165,7 +165,7 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline mt-2"
               >
-                Learn more <ExternalLink className="h-3 w-3" />
+                Meer informatie <ExternalLink className="h-3 w-3" />
               </a>
             </AlertDescription>
           </Alert>
@@ -184,7 +184,7 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
                     {testResult.message}
                     {testResult.siteInfo && (
                       <div className="mt-2 text-sm">
-                        <div><strong>Site Name:</strong> {testResult.siteInfo.name}</div>
+                        <div><strong>Site Naam:</strong> {testResult.siteInfo.name}</div>
                         <div><strong>URL:</strong> {testResult.siteInfo.url}</div>
                       </div>
                     )}
@@ -196,11 +196,11 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
+            Annuleren
           </Button>
           <Button onClick={handleConnect} disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {testResult?.success ? 'Connected' : 'Connect & Test'}
+            {testResult?.success ? 'Verbonden' : 'Verbinden & Testen'}
           </Button>
         </CardFooter>
       </Card>

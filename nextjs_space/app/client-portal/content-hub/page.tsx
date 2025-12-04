@@ -21,6 +21,7 @@ import {
 import { toast } from 'sonner';
 import WebsiteConnector from './components/website-connector';
 import TopicalMapView from './components/topical-map-view';
+import AutopilotSettings from './components/autopilot-settings';
 
 interface ContentHubSite {
   id: string;
@@ -41,6 +42,7 @@ export default function ContentHubPage() {
   const [selectedSite, setSelectedSite] = useState<ContentHubSite | null>(null);
   const [loading, setLoading] = useState(true);
   const [showConnector, setShowConnector] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadSites();
@@ -74,7 +76,42 @@ export default function ContentHubPage() {
     loadSites();
     setShowConnector(false);
     setSelectedSite(site);
-    toast.success('Website connected successfully!');
+    toast.success('Website succesvol verbonden!');
+  };
+
+  const handleSyncExisting = async () => {
+    if (!selectedSite) return;
+    
+    setSyncing(true);
+    toast.loading('Bestaande WordPress content synchroniseren...', { id: 'sync' });
+    
+    try {
+      const response = await fetch('/api/content-hub/sync-existing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          siteId: selectedSite.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Synchronisatie mislukt');
+      }
+
+      const data = await response.json();
+      toast.success(`${data.stats.synced} artikelen gesynchroniseerd!`, { id: 'sync' });
+      
+      // Reload sites and topical map to show synced content
+      await loadSites();
+    } catch (error: any) {
+      console.error('Failed to sync:', error);
+      toast.error(error.message || 'Kon bestaande content niet synchroniseren', { id: 'sync' });
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const getAuthorityProgress = (site: ContentHubSite) => {
@@ -93,7 +130,7 @@ export default function ContentHubPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading Content Hub...</p>
+          <p className="text-muted-foreground">Content Hub laden...</p>
         </div>
       </div>
     );
@@ -114,7 +151,7 @@ export default function ContentHubPage() {
         </div>
         <Button onClick={() => setShowConnector(true)} className="gap-2">
           <Plus className="h-4 w-4" />
-          Add Website
+          Website Toevoegen
         </Button>
       </div>
 
@@ -123,13 +160,13 @@ export default function ContentHubPage() {
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Globe className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No websites connected</h3>
+            <h3 className="text-xl font-semibold mb-2">Geen websites gekoppeld</h3>
             <p className="text-muted-foreground mb-4 text-center max-w-md">
-              Connect your WordPress website to start generating SEO-optimized content automatically.
+              Koppel je WordPress website om automatisch SEO-geoptimaliseerde content te genereren.
             </p>
             <Button onClick={() => setShowConnector(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              Connect Your First Website
+              Koppel Je Eerste Website
             </Button>
           </CardContent>
         </Card>
@@ -177,8 +214,18 @@ export default function ContentHubPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={loadSites}>
-                        <RefreshCw className="h-4 w-4" />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleSyncExisting}
+                        disabled={syncing}
+                        title="Synchroniseer bestaande WordPress artikelen"
+                      >
+                        {syncing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
                       </Button>
                       <Button variant="outline" size="sm">
                         <Settings className="h-4 w-4" />
@@ -191,7 +238,7 @@ export default function ContentHubPage() {
                     {/* Authority Score */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Authority</span>
+                        <span className="text-sm text-muted-foreground">Autoriteit</span>
                         <BarChart3 className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="text-2xl font-bold">
@@ -208,42 +255,42 @@ export default function ContentHubPage() {
                     {/* Existing Pages */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Existing</span>
+                        <span className="text-sm text-muted-foreground">Bestaand</span>
                         <FileText className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="text-2xl font-bold">
                         {selectedSite.existingPages}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        pages
+                        pagina's
                       </div>
                     </div>
 
                     {/* To Write */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">To Write</span>
+                        <span className="text-sm text-muted-foreground">Te Schrijven</span>
                         <Clock className="h-4 w-4 text-orange-500" />
                       </div>
                       <div className="text-2xl font-bold text-orange-500">
                         {selectedSite.totalArticles - selectedSite.completedArticles}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        articles
+                        artikelen
                       </div>
                     </div>
 
                     {/* Completed */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Completed</span>
+                        <span className="text-sm text-muted-foreground">Voltooid</span>
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                       </div>
                       <div className="text-2xl font-bold text-green-500">
                         {selectedSite.completedArticles}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {getCompletionPercentage(selectedSite)}% done
+                        {getCompletionPercentage(selectedSite)}% klaar
                       </div>
                     </div>
                   </div>
@@ -253,9 +300,10 @@ export default function ContentHubPage() {
               {/* Content Tabs */}
               <Tabs defaultValue="all" className="w-full">
                 <TabsList>
-                  <TabsTrigger value="all">All Articles</TabsTrigger>
-                  <TabsTrigger value="pending">To Write</TabsTrigger>
-                  <TabsTrigger value="published">Published</TabsTrigger>
+                  <TabsTrigger value="all">Alle Artikelen</TabsTrigger>
+                  <TabsTrigger value="pending">Te Schrijven</TabsTrigger>
+                  <TabsTrigger value="published">Gepubliceerd</TabsTrigger>
+                  <TabsTrigger value="autopilot">Autopilot</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="all" className="mt-6">
@@ -268,6 +316,10 @@ export default function ContentHubPage() {
 
                 <TabsContent value="published" className="mt-6">
                   <TopicalMapView siteId={selectedSite.id} filter="published" />
+                </TabsContent>
+
+                <TabsContent value="autopilot" className="mt-6">
+                  <AutopilotSettings siteId={selectedSite.id} />
                 </TabsContent>
               </Tabs>
             </>
