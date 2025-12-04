@@ -25,13 +25,12 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: string;
   adminOnly?: boolean;
-  isDivider?: boolean;
+  isDivider?: false;
 }
 
 export interface DividerItem {
   isDivider: true;
   label: string;
-  icon?: LucideIcon;
   adminOnly?: boolean;
 }
 
