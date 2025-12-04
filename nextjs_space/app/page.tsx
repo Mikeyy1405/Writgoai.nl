@@ -107,7 +107,7 @@ export default function HomePage() {
     {
       icon: <Sparkles className="w-6 h-6 text-electric-violet" />,
       title: 'Nieuwste AI Modellen',
-      description: 'GPT-4o & Claude 4.5',
+      description: 'GPT-5.1, Claude 4.5, Gemini 2.0',
     },
     {
       icon: <Search className="w-6 h-6 text-electric-violet" />,
@@ -237,7 +237,7 @@ export default function HomePage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 glass-violet rounded-full backdrop-blur-sm animate-fade-in">
               <Sparkles className="w-4 h-4 text-neon-cyan" />
-              <span className="text-sm font-medium text-pearl-white">AI Content Platform - Nieuw: Claude 4.5 & GPT-4o</span>
+              <span className="text-sm font-medium text-pearl-white">AI Content Platform - Nieuw: Claude 4.5 & GPT-5.1</span>
             </div>
 
             {/* Main heading */}
@@ -322,12 +322,12 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Self-Service Card */}
             <Card className="glass-violet border-electric-violet/20 hover:border-electric-violet/40 transition-all duration-300 group">
-              <CardContent className="p-8">
-                <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-electric-violet to-soft-lavender mb-6 group-hover:scale-110 transition-transform">
+              <CardContent className="p-8 text-center">
+                <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-electric-violet to-soft-lavender mb-6 group-hover:scale-110 transition-transform mx-auto">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-pearl-white mb-4">Zelf aan de slag met AI</h3>
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-3 mb-6 text-left inline-block">
                   <li className="flex items-start gap-3 text-gray-300">
                     <Check className="w-5 h-5 text-neon-cyan flex-shrink-0 mt-0.5" />
                     <span>12+ AI-powered tools voor alle content</span>
@@ -359,12 +359,12 @@ export default function HomePage() {
               <div className="absolute top-4 right-4">
                 <Badge className="bg-neon-cyan text-deep-space font-bold">POPULAIR</Badge>
               </div>
-              <CardContent className="p-8">
-                <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-neon-cyan to-electric-violet mb-6 group-hover:scale-110 transition-transform">
+              <CardContent className="p-8 text-center">
+                <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-neon-cyan to-electric-violet mb-6 group-hover:scale-110 transition-transform mx-auto">
                   <Handshake className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-pearl-white mb-4">Laat ons het regelen</h3>
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-3 mb-6 text-left inline-block">
                   <li className="flex items-start gap-3 text-gray-300">
                     <Check className="w-5 h-5 text-neon-cyan flex-shrink-0 mt-0.5" />
                     <span>Volledig contentplan op maat</span>
@@ -415,8 +415,8 @@ export default function HomePage() {
                 key={index}
                 className="glass-violet border-electric-violet/20 hover:border-electric-violet/40 transition-all duration-300 hover:scale-105 group"
               >
-                <CardContent className="p-6">
-                  <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-electric-violet to-neon-cyan mb-4 group-hover:scale-110 transition-transform text-white">
+                <CardContent className="p-6 text-center">
+                  <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-electric-violet to-neon-cyan mb-4 group-hover:scale-110 transition-transform text-white mx-auto">
                     {tool.icon}
                   </div>
                   <h3 className="text-lg font-bold text-pearl-white mb-2">{tool.title}</h3>
@@ -469,7 +469,7 @@ export default function HomePage() {
       <section id="managed-service" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-midnight/50 to-transparent">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="text-center lg:text-left">
               <Badge className="mb-4 glass-violet text-neon-cyan border-neon-cyan/20">
                 Managed Service
               </Badge>
@@ -509,12 +509,14 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <Link href="/contact">
-                <Button size="lg" className="btn-gradient-violet-cyan text-white font-semibold border-0">
-                  Plan een Vrijblijvend Gesprek
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
+              <div className="flex justify-center lg:justify-start">
+                <Link href="/contact">
+                  <Button size="lg" className="btn-gradient-violet-cyan text-white font-semibold border-0">
+                    Plan een Vrijblijvend Gesprek
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             <div className="relative">
@@ -598,14 +600,14 @@ export default function HomePage() {
                     <Badge className="bg-neon-cyan text-deep-space font-bold">POPULAIR</Badge>
                   </div>
                 )}
-                <CardContent className="p-8">
+                <CardContent className="p-8 text-center">
                   <h3 className="text-2xl font-bold text-pearl-white mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline gap-2 mb-1">
+                  <div className="flex items-baseline justify-center gap-2 mb-1">
                     <span className="text-4xl font-bold text-pearl-white">{plan.price}</span>
                     <span className="text-gray-400">{plan.period}</span>
                   </div>
                   <p className="text-neon-cyan font-semibold mb-6">{plan.credits}</p>
-                  <ul className="space-y-3 mb-8">
+                  <ul className="space-y-3 mb-8 text-left inline-block">
                     {plan.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-3 text-gray-300">
                         <Check className="w-5 h-5 text-neon-cyan flex-shrink-0 mt-0.5" />
@@ -650,18 +652,18 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="glass-violet border-slate/30 hover:border-electric-violet/40 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex gap-1 mb-4">
+                <CardContent className="p-6 text-center">
+                  <div className="flex gap-1 mb-4 justify-center">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-neon-cyan text-neon-cyan" />
                     ))}
                   </div>
                   <p className="text-gray-300 mb-6 italic">"{testimonial.text}"</p>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 justify-center">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-electric-violet to-neon-cyan flex items-center justify-center text-white font-bold">
                       {testimonial.avatar}
                     </div>
-                    <div>
+                    <div className="text-left">
                       <div className="font-semibold text-pearl-white">{testimonial.name}</div>
                       <div className="text-sm text-gray-400">{testimonial.role}</div>
                     </div>
