@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Language = 'nl' | 'en';
+export type Language = 'nl' | 'en' | 'de';
 
 interface LanguageContextType {
   language: Language;
@@ -22,7 +22,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     // Mark as hydrated and load saved language
     setIsHydrated(true);
     const saved = localStorage.getItem('writgo_language');
-    if (saved && ['nl', 'en'].includes(saved)) {
+    if (saved && ['nl', 'en', 'de'].includes(saved)) {
       setLanguageState(saved as Language);
     }
   }, []);

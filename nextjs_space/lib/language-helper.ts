@@ -31,8 +31,8 @@ export const LANGUAGES: Record<LanguageCode, LanguageInfo> = {
     code: 'EN',
     name: 'English',
     nativeName: 'English',
-    flag: '🇬🇧',
-    locale: 'en-GB',
+    flag: '🇺🇸',
+    locale: 'en-US',
     direction: 'ltr',
   },
   DE: {

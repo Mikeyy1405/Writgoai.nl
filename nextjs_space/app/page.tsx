@@ -156,7 +156,7 @@ export default function HomePage() {
     {
       icon: <Languages className="w-6 h-6 text-writgo-secondary" />,
       title: 'Multi-Language',
-      description: '30+ talen ondersteund',
+      description: 'NL, EN & DE - meer talen volgen',
     },
     {
       icon: <Image className="w-6 h-6 text-writgo-primary" />,

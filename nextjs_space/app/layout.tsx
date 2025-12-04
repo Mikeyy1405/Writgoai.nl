@@ -10,7 +10,7 @@ import CookieBanner from '@/components/cookie-banner';
 // const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://writgo.nl'),
+  metadataBase: new URL('https://writgoai.nl'),
   title: {
     default: 'Writgo Media - Omnipresence Content Platform | Complete Online Aanwezigheid',
     template: '%s | Writgo Media - Content Platform'
@@ -90,6 +90,12 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: 'https://writgo.nl',
+    languages: {
+      'nl': 'https://writgoai.nl',
+      'en-US': 'https://writgoai.nl/en',
+      'de': 'https://writgoai.nl/de',
+      'x-default': 'https://writgoai.nl',
+    },
   },
   verification: {
     google: 'p_boU5OFOBKAI5HGrq85ZU5MOXuddbZPLEU0wtDmAhI',
