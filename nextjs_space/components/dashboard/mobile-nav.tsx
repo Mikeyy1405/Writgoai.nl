@@ -84,8 +84,13 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
                   );
                 }
 
+                if (!item.href) {
+                  // Skip items without href
+                  return null;
+                }
+
                 const Icon = item.icon as LucideIcon;
-                const active = item.href ? isNavItemActive(item.href, pathname) : false;
+                const active = isNavItemActive(item.href, pathname);
                 const isAdminItem = item.adminOnly;
 
                 return (
@@ -96,7 +101,7 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
                     transition={{ duration: 0.2, delay: index * 0.05 }}
                   >
                     <Link
-                      href={item.href || '#'}
+                      href={item.href}
                       onClick={onClose}
                       className={`
                         group relative flex items-center gap-3 px-4 py-3 rounded-lg

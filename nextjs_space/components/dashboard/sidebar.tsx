@@ -114,14 +114,19 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
             );
           }
 
+          if (!item.href) {
+            // Skip items without href
+            return null;
+          }
+
           const Icon = item.icon as LucideIcon;
-          const active = item.href ? isNavItemActive(item.href, pathname) : false;
+          const active = isNavItemActive(item.href, pathname);
           const isAdminItem = item.adminOnly;
 
           return (
             <Link
               key={item.href}
-              href={item.href || '#'}
+              href={item.href}
               className={`
                 group relative flex items-center gap-3 px-3 py-3 rounded-lg
                 transition-all duration-200

@@ -31,8 +31,8 @@ export default function AgencyLayout({ children }: AgencyLayoutProps) {
   // Check if user is admin
   const isAdmin = isUserAdmin(session?.user?.email, session?.user?.role);
   
-  // Get navigation items based on admin status - always show admin items in agency dashboard
-  const navItems = getNavItems(true);
+  // Get navigation items based on admin status
+  const navItems = getNavItems(isAdmin);
 
   return (
     <UnifiedLayout
