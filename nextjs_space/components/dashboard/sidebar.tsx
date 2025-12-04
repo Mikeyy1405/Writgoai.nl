@@ -111,16 +111,21 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
             );
           }
 
-          // TypeScript now knows this is a NavItem, not a DividerItem
-          const navItem = item as { label: string; href: string; icon: LucideIcon; badge?: string; adminOnly?: boolean };
-          const Icon = navItem.icon;
-          const active = isNavItemActive(navItem.href, pathname);
-          const isAdminItem = navItem.adminOnly;
+          // After isDivider check, TypeScript knows this is a NavItem
+          // But we need to explicitly help TypeScript understand this
+          if (!('icon' in item) || !('href' in item)) {
+            return null;
+          }
+
+          const Icon = item.icon;
+          const active = isNavItemActive(item.href, pathname);
+          const isAdminItem = item.adminOnly;
+          const iconColor = active ? (isAdminItem ? 'text-blue-400' : 'text-[#FF9933]') : '';
 
           return (
             <Link
-              key={navItem.href}
-              href={navItem.href}
+              key={item.href}
+              href={item.href}
               className={`
                 group relative flex items-center gap-3 px-3 py-3 rounded-lg
                 transition-all duration-200
@@ -135,7 +140,7 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
                 }
               `}
             >
-              {Icon && <Icon className={`w-5 h-5 shrink-0 ${active ? (isAdminItem ? 'text-blue-400' : 'text-[#FF9933]') : ''}`} />}
+              {Icon && <Icon className={`w-5 h-5 shrink-0 ${iconColor}`} />}
               
               <AnimatePresence mode="wait">
                 {!isCollapsed && (
@@ -146,12 +151,12 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
                     transition={{ duration: 0.2 }}
                     className="font-medium text-sm truncate"
                   >
-                    {navItem.label}
+                    {item.label}
                   </motion.span>
                 )}
               </AnimatePresence>
 
-              {!isCollapsed && navItem.badge && (
+              {!isCollapsed && item.badge && (
                 <motion.span
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -161,7 +166,7 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
                       : 'bg-[#FF9933]/20 text-[#FF9933]'
                   }`}
                 >
-                  {navItem.badge}
+                  {item.badge}
                 </motion.span>
               )}
 
