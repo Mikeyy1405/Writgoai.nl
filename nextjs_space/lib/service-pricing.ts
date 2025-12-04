@@ -55,6 +55,35 @@ export const SERVICE_PRICING = {
     description: 'Overige AI-gerelateerde diensten',
     details: 'Custom AI oplossingen op maat, prijs op aanvraag',
   },
+  
+  // Email Marketing Suite
+  email_marketing_send: {
+    label: 'Marketing Email Versturen',
+    credits: 1, // Per 10 emails
+    description: 'Marketing emails versturen naar je lijst',
+    details: '1 credit per 10 emails, inclusief tracking',
+  },
+  
+  email_ai_analysis: {
+    label: 'AI Email Analyse',
+    credits: 5,
+    description: 'AI analyse van inkomende emails',
+    details: 'Sentiment analyse, categorisatie, samenvatting',
+  },
+  
+  email_ai_reply: {
+    label: 'AI Email Antwoord',
+    credits: 10,
+    description: 'AI gegenereerd email antwoord',
+    details: 'Handmatig gegenereerd AI antwoord met tone selector',
+  },
+  
+  email_auto_reply: {
+    label: 'AI Auto-Reply',
+    credits: 8,
+    description: 'Automatisch AI email antwoord',
+    details: 'Automatische beantwoording met configureerbare regels',
+  },
 } as const;
 
 export type ServiceType = keyof typeof SERVICE_PRICING;

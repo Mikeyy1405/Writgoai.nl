@@ -135,6 +135,11 @@ model Client {
   invoices                          Invoice[]
   toolUsage                         ToolUsage[]
   contentHubSites                   ContentHubSite[]
+  emailLists                        EmailList[]
+  marketingCampaigns                MarketingCampaign[]
+  emailAutomations                  EmailAutomation[]
+  mailboxConnections                MailboxConnection[]
+  emailAutoReplyConfigs             EmailAutoReplyConfig[]
 }
 
 model Project {
@@ -2296,4 +2301,280 @@ model PasswordResetToken {
   
   @@index([email])
   @@index([token])
+}
+
+// Email Marketing Suite Models
+
+model EmailList {
+  id              String              @id @default(cuid())
+  clientId        String
+  name            String
+  description     String?
+  isActive        Boolean             @default(true)
+  subscriberCount Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  client          Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subscribers     EmailSubscriber[]
+  campaigns       MarketingCampaign[]
+  
+  @@index([clientId])
+  @@index([isActive])
+}
+
+model EmailSubscriber {
+  id              String            @id @default(cuid())
+  listId          String
+  email           String
+  firstName       String?
+  lastName        String?
+  customFields    Json?
+  status          String            @default("active") // active, unsubscribed, bounced
+  source          String?           // form, import, api
+  subscribedAt    DateTime          @default(now())
+  unsubscribedAt  DateTime?
+  lastEmailSent   DateTime?
+  openCount       Int               @default(0)
+  clickCount      Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  list            EmailList         @relation(fields: [listId], references: [id], onDelete: Cascade)
+  
+  @@unique([listId, email])
+  @@index([listId])
+  @@index([email])
+  @@index([status])
+}
+
+model MarketingCampaign {
+  id              String                    @id @default(cuid())
+  clientId        String
+  listId          String?
+  name            String
+  subject         String
+  previewText     String?
+  templateHtml    String                    @db.Text
+  templateJson    Json?                     // For drag-drop editor state
+  status          String                    @default("draft") // draft, scheduled, sending, sent, paused
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  recipientCount  Int                       @default(0)
+  openedCount     Int                       @default(0)
+  clickedCount    Int                       @default(0)
+  bouncedCount    Int                       @default(0)
+  unsubscribedCount Int                     @default(0)
+  creditsUsed     Int                       @default(0)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  client          Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  list            EmailList?                @relation(fields: [listId], references: [id])
+  analytics       MarketingCampaignAnalytics[]
+  automationSteps EmailAutomationStep[]
+  
+  @@index([clientId])
+  @@index([listId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model MarketingCampaignAnalytics {
+  id           String            @id @default(cuid())
+  campaignId   String
+  subscriberId String
+  opened       Boolean           @default(false)
+  openedAt     DateTime?
+  clicked      Boolean           @default(false)
+  clickedAt    DateTime?
+  clickedUrls  String[]
+  bounced      Boolean           @default(false)
+  unsubscribed Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  campaign     MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  @@unique([campaignId, subscriberId])
+  @@index([campaignId])
+  @@index([opened])
+  @@index([clicked])
+}
+
+model EmailAutomation {
+  id          String                @id @default(cuid())
+  clientId    String
+  name        String
+  description String?
+  triggerType String                // signup, purchase, abandoned_cart, date_based, custom
+  isActive    Boolean               @default(false)
+  conditions  Json?                 // Trigger conditions
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  client      Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  steps       EmailAutomationStep[]
+  
+  @@index([clientId])
+  @@index([triggerType])
+  @@index([isActive])
+}
+
+model EmailAutomationStep {
+  id           String            @id @default(cuid())
+  automationId String
+  campaignId   String?
+  stepNumber   Int
+  delayDays    Int               @default(0)
+  delayHours   Int               @default(0)
+  conditions   Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  automation   EmailAutomation   @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  campaign     MarketingCampaign? @relation(fields: [campaignId], references: [id])
+  
+  @@index([automationId])
+  @@index([stepNumber])
+}
+
+model MailboxConnection {
+  id              String    @id @default(cuid())
+  clientId        String
+  provider        String    // gmail, outlook, custom
+  email           String
+  displayName     String?
+  authType        String    // oauth2, imap_smtp
+  
+  // OAuth 2.0 fields
+  accessToken     String?   @db.Text
+  refreshToken    String?   @db.Text
+  tokenExpiry     DateTime?
+  
+  // IMAP/SMTP fields (encrypted)
+  imapHost        String?
+  imapPort        Int?
+  imapUsername    String?
+  imapPassword    String?   @db.Text
+  smtpHost        String?
+  smtpPort        Int?
+  smtpUsername    String?
+  smtpPassword    String?   @db.Text
+  
+  isActive        Boolean   @default(true)
+  lastSyncAt      DateTime?
+  syncFrequency   Int       @default(15) // minutes
+  emailsCount     Int       @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  inboxEmails     InboxEmail[]
+  
+  @@unique([clientId, email])
+  @@index([clientId])
+  @@index([provider])
+  @@index([isActive])
+}
+
+model InboxEmail {
+  id              String              @id @default(cuid())
+  mailboxId       String
+  messageId       String              @unique
+  threadId        String?
+  subject         String
+  from            String
+  fromName        String?
+  to              String[]
+  cc              String[]
+  body            String              @db.Text
+  htmlBody        String?             @db.Text
+  snippet         String?
+  
+  // AI Analysis
+  aiSummary       String?             @db.Text
+  aiSentiment     String?             // positive, negative, neutral, urgent
+  aiCategory      String?             // support, sales, newsletter, spam, personal
+  aiPriority      String              @default("normal") // high, normal, low
+  aiSuggestedReply String?            @db.Text
+  
+  hasAttachments  Boolean             @default(false)
+  attachments     Json?
+  
+  isRead          Boolean             @default(false)
+  isStarred       Boolean             @default(false)
+  isReplied       Boolean             @default(false)
+  isAutoReplied   Boolean             @default(false)
+  autoReplyId     String?
+  
+  receivedAt      DateTime
+  analyzedAt      DateTime?
+  repliedAt       DateTime?
+  
+  creditsUsed     Int                 @default(0)
+  
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  mailbox         MailboxConnection   @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  autoReply       EmailAutoReply?     @relation(fields: [autoReplyId], references: [id])
+  
+  @@index([mailboxId])
+  @@index([messageId])
+  @@index([threadId])
+  @@index([from])
+  @@index([isRead])
+  @@index([aiCategory])
+  @@index([receivedAt])
+}
+
+model EmailAutoReplyConfig {
+  id                  String   @id @default(cuid())
+  clientId            String
+  mailboxId           String?
+  isActive            Boolean  @default(false)
+  
+  // Business hours filter
+  businessHoursOnly   Boolean  @default(false)
+  businessHoursStart  String?  // HH:mm format
+  businessHoursEnd    String?  // HH:mm format
+  businessDays        Int[]    // 0-6 (Sunday-Saturday)
+  
+  // Category filter
+  allowedCategories   String[] // Only auto-reply to these categories
+  
+  // Exclude list
+  excludedSenders     String[] // Email addresses to never auto-reply
+  
+  // Reply settings
+  tone                String   @default("professional") // professional, friendly, formal, casual
+  includeSignature    Boolean  @default(true)
+  signature           String?  @db.Text
+  
+  // Template
+  replyTemplate       String?  @db.Text
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  client              Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  replies             EmailAutoReply[]
+  
+  @@unique([clientId, mailboxId])
+  @@index([clientId])
+  @@index([isActive])
+}
+
+model EmailAutoReply {
+  id              String                @id @default(cuid())
+  configId        String
+  inboxEmailId    String?
+  recipientEmail  String
+  recipientName   String?
+  subject         String
+  replyContent    String                @db.Text
+  tone            String
+  creditsUsed     Int                   @default(8)
+  sentAt          DateTime              @default(now())
+  success         Boolean               @default(true)
+  errorMessage    String?
+  createdAt       DateTime              @default(now())
+  config          EmailAutoReplyConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+  inboxEmails     InboxEmail[]
+  
+  @@index([configId])
+  @@index([recipientEmail])
+  @@index([sentAt])
 }
