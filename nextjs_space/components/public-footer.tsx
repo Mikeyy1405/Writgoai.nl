@@ -72,13 +72,23 @@ export default function PublicFooter() {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
-                  Privacy Policy
+                <Link href="/privacybeleid" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                  Privacybeleid
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/algemene-voorwaarden" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
                   Algemene Voorwaarden
+                </Link>
+              </li>
+              <li>
+                <Link href="/terugbetalingsbeleid" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                  Terugbetalingsbeleid
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookiebeleid" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                  Cookiebeleid
                 </Link>
               </li>
             </ul>

@@ -5,6 +5,7 @@ import './globals.css';
 import { Providers } from '@/components/providers';
 import RegisterServiceWorker from './register-sw';
 import InstallPrompt from '@/components/install-prompt';
+import CookieBanner from '@/components/cookie-banner';
 
 // const inter = Inter({ subsets: ['latin'] });
 
@@ -125,6 +126,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <InstallPrompt />
+          <CookieBanner />
         </Providers>
         <RegisterServiceWorker />
       </body>
