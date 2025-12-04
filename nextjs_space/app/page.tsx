@@ -46,7 +46,7 @@ export default function HomePage() {
             <div className="absolute inset-0 border-4 border-writgo-primary/30 rounded-full" />
             <div className="absolute inset-0 border-4 border-writgo-primary border-t-transparent rounded-full animate-spin" />
           </div>
-          <p className="text-xl text-pearl-white font-semibold">WritGo wordt geladen...</p>
+          <p className="text-xl text-pearl-white font-semibold">Writgo Media wordt geladen...</p>
         </div>
       </div>
     );
@@ -56,73 +56,73 @@ export default function HomePage() {
     {
       icon: <FileText className="w-6 h-6" />,
       title: 'Blog Generator',
-      description: 'Genereer volledige SEO-geoptimaliseerde blogs',
+      description: 'Complete artikelen in minuten',
       credits: '70 credits',
     },
     {
       icon: <Search className="w-6 h-6" />,
       title: 'Keyword Research',
-      description: 'Vind de beste zoekwoorden voor je niche',
+      description: 'Ontdek kansen om te scoren',
       credits: '40 credits',
     },
     {
       icon: <Video className="w-6 h-6" />,
-      title: 'Video Generator',
-      description: "Creëer AI-gegenereerde video's",
+      title: 'Video Creator',
+      description: "Professionele video's maken",
       credits: '120 credits',
     },
     {
       icon: <Share2 className="w-6 h-6" />,
       title: 'Social Media Studio',
-      description: 'Posts voor alle sociale platformen',
+      description: 'Posts voor elk platform',
       credits: '20 credits',
     },
     {
       icon: <ShoppingBag className="w-6 h-6" />,
       title: 'Product Reviews',
-      description: 'Schrijf overtuigende productreviews',
+      description: 'Overtuigende reviews schrijven',
       credits: '70 credits',
     },
     {
       icon: <Bot className="w-6 h-6" />,
-      title: 'AI Chatbot',
-      description: 'Beantwoord vragen met AI',
+      title: 'Content Assistent',
+      description: '24/7 hulp bij je content',
       credits: '1-5 credits',
     },
     {
       icon: <Calendar className="w-6 h-6" />,
-      title: 'Content Planning',
-      description: 'Plan je content strategie',
+      title: 'Content Planner',
+      description: 'Plan weken vooruit',
       credits: '40 credits',
     },
     {
       icon: <Target className="w-6 h-6" />,
       title: 'Link Building',
-      description: 'SEO linkbuilding strategieën',
+      description: 'Versterk je autoriteit',
       credits: '50 credits',
     },
     {
       icon: <Newspaper className="w-6 h-6" />,
-      title: 'News Articles',
-      description: 'Actuele nieuwsartikelen schrijven',
+      title: 'Nieuws & Artikelen',
+      description: 'Actuele content creëren',
       credits: '60 credits',
     },
     {
-      icon: <Code className="w-6 h-6" />,
-      title: 'Code Generator',
-      description: 'Genereer code snippets en scripts',
+      icon: <BarChart className="w-6 h-6" />,
+      title: 'Analytics',
+      description: 'Meet je resultaten',
       credits: '30 credits',
     },
     {
       icon: <Layout className="w-6 h-6" />,
       title: 'Content Library',
-      description: 'Toegang tot content bibliotheek',
+      description: 'Al je werk op één plek',
       credits: 'Gratis',
     },
     {
       icon: <Globe className="w-6 h-6" />,
-      title: 'WordPress Integratie',
-      description: 'Direct publiceren naar WordPress',
+      title: 'WordPress Sync',
+      description: 'Direct publiceren',
       credits: 'Gratis',
     },
   ];
@@ -130,8 +130,8 @@ export default function HomePage() {
   const features = [
     {
       icon: <Sparkles className="w-6 h-6 text-writgo-primary" />,
-      title: 'Nieuwste AI Modellen',
-      description: 'GPT-5.1, Claude 4.5, Gemini 2.0',
+      title: 'Slimme Technologie',
+      description: 'Nieuwste modellen onder de motorkap',
     },
     {
       icon: <Search className="w-6 h-6 text-writgo-secondary" />,
@@ -141,7 +141,7 @@ export default function HomePage() {
     {
       icon: <Zap className="w-6 h-6 text-writgo-primary" />,
       title: '10x Sneller',
-      description: 'Dan handmatig schrijven',
+      description: 'Dan zelf schrijven',
     },
     {
       icon: <MessageSquare className="w-6 h-6 text-writgo-secondary" />,
@@ -160,7 +160,7 @@ export default function HomePage() {
     },
     {
       icon: <Image className="w-6 h-6 text-writgo-primary" />,
-      title: 'AI Afbeeldingen',
+      title: 'Professionele Afbeeldingen',
       description: 'Automatisch gegenereerd',
     },
     {
@@ -216,32 +216,32 @@ export default function HomePage() {
   ];
 
   const stats = [
-    { value: '100K+', label: 'Artikelen gegenereerd' },
-    { value: '5M+', label: 'Woorden per maand' },
-    { value: '10x', label: 'Sneller dan handmatig' },
-    { value: '99%', label: 'Klanttevredenheid' },
+    { value: '100K+', label: 'Artikelen gepubliceerd' },
+    { value: '500+', label: 'Tevreden klanten' },
+    { value: '10x', label: 'Sneller dan zelf schrijven' },
+    { value: '#1', label: 'Rankings behaald' },
   ];
 
   const testimonials = [
     {
       name: 'Sarah van der Berg',
-      role: 'Content Manager',
+      role: 'Online Marketing Manager',
       avatar: 'S',
-      text: 'WritGo heeft ons contentproces compleet getransformeerd. We publiceren nu 3x meer artikelen met betere SEO resultaten.',
+      text: 'Van 0 naar 10.000 bezoekers per maand',
       rating: 5,
     },
     {
       name: 'Mark Jansen',
-      role: 'Digital Marketer',
+      role: 'E-commerce Ondernemer',
       avatar: 'M',
-      text: 'De managed service is fantastisch. Elke week nieuwe content zonder dat ik er naar om hoef te kijken.',
+      text: '50% meer leads door betere content',
       rating: 5,
     },
     {
       name: 'Lisa Bakker',
-      role: 'E-commerce Eigenaar',
+      role: 'Startup Founder',
       avatar: 'L',
-      text: 'De self-service tools zijn intuïtief en krachtig. Ik kan nu zelf professionele content maken in minuten.',
+      text: 'Eindelijk tijd voor mijn core business',
       rating: 5,
     },
   ];
@@ -264,21 +264,22 @@ export default function HomePage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-writgo-secondary rounded-full backdrop-blur-sm animate-fade-in">
               <Sparkles className="w-4 h-4 text-white" />
-              <span className="text-sm font-medium text-white">AI Content Platform - Nieuw: GPT-5.1 & Claude 4.5</span>
+              <span className="text-sm font-medium text-white">Content Bureau</span>
             </div>
 
             {/* Main heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in">
-              Genereer SEO-blogs in
+              WRITGO MEDIA
               <br />
-              <span className="text-pearl-white">
-                minuten, niet in uren.
+              <span className="text-writgo-primary">
+                Content die scoort
               </span>
             </h1>
 
             {/* Subheading */}
             <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto animate-fade-in">
-              Het AI-platform voor content creatie. Doe het zelf met onze tools, of laat ons team het volledig voor je regelen.
+              Professionele blogs en artikelen die ranken in Google.
+              Zelf maken met onze tools, of door ons team laten regelen.
             </p>
 
             {/* CTA Buttons */}
@@ -300,15 +301,15 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center items-center gap-6 pt-8 animate-fade-in">
               <div className="flex items-center gap-2 text-pearl-white">
                 <Check className="w-5 h-5 text-pearl-white" />
+                <span className="text-sm">Direct online</span>
+              </div>
+              <div className="flex items-center gap-2 text-pearl-white">
+                <Check className="w-5 h-5 text-pearl-white" />
                 <span className="text-sm">Geen creditcard</span>
               </div>
               <div className="flex items-center gap-2 text-pearl-white">
                 <Check className="w-5 h-5 text-pearl-white" />
-                <span className="text-sm">Direct starten</span>
-              </div>
-              <div className="flex items-center gap-2 text-pearl-white">
-                <Check className="w-5 h-5 text-pearl-white" />
-                <span className="text-sm">Cancel anytime</span>
+                <span className="text-sm">Resultaatgarantie</span>
               </div>
             </div>
           </div>
@@ -353,25 +354,27 @@ export default function HomePage() {
                 <div className="inline-flex p-4 rounded-2xl bg-writgo-primary mb-6 group-hover:scale-110 transition-transform">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-pearl-white mb-4">Zelf aan de slag met AI</h3>
+                <h3 className="text-2xl font-bold text-pearl-white mb-4">Zelf aan de slag</h3>
+                <p className="text-text-muted mb-6">Gebruik onze tools om snel professionele content te maken. Jij houdt de controle.</p>
                 <ul className="space-y-3 mb-6 text-left inline-block">
                   <li className="flex items-start gap-3 text-text-muted">
                     <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>12+ AI-powered tools</span>
+                    <span>Blog Generator - complete artikelen in minuten</span>
                   </li>
                   <li className="flex items-start gap-3 text-text-muted">
                     <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Blog Generator, Keyword Research, Video's</span>
+                    <span>Keyword Research - ontdek waar je op moet scoren</span>
                   </li>
                   <li className="flex items-start gap-3 text-text-muted">
                     <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Direct resultaat, jij hebt controle</span>
+                    <span>Social Media Studio - posts voor alle kanalen</span>
                   </li>
                   <li className="flex items-start gap-3 text-text-muted">
                     <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Betaal per credit (vanaf €29/maand)</span>
+                    <span>Content Planner - plan weken vooruit</span>
                   </li>
                 </ul>
+                <p className="text-sm text-text-muted mb-4">Vanaf €29/maand</p>
                 <Link href="#tools" className="block">
                   <span className="text-writgo-secondary hover:underline font-semibold inline-flex items-center">
                     Bekijk Tools <ArrowRight className="ml-2 w-4 h-4" />
@@ -386,25 +389,27 @@ export default function HomePage() {
                 <div className="inline-flex p-4 rounded-2xl bg-writgo-primary mb-6 group-hover:scale-110 transition-transform">
                   <Users className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-pearl-white mb-4">Laat ons het regelen</h3>
+                <h3 className="text-2xl font-bold text-pearl-white mb-4">Wij doen het voor je</h3>
+                <p className="text-text-muted mb-6">Ons team schrijft, optimaliseert en publiceert. Jij focust op je business.</p>
                 <ul className="space-y-3 mb-6 text-left inline-block">
                   <li className="flex items-start gap-3 text-text-muted">
                     <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Volledig contentplan op maat</span>
+                    <span>Maandelijks contentplan op maat</span>
                   </li>
                   <li className="flex items-start gap-3 text-text-muted">
                     <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Wekelijks nieuwe SEO-content</span>
+                    <span>SEO-geoptimaliseerde artikelen</span>
                   </li>
                   <li className="flex items-start gap-3 text-text-muted">
                     <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>WordPress publicatie inclusief</span>
+                    <span>Direct publicatie naar WordPress</span>
                   </li>
                   <li className="flex items-start gap-3 text-text-muted">
                     <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Persoonlijke accountmanager</span>
+                    <span>Maandelijkse rapportages</span>
                   </li>
                 </ul>
+                <p className="text-sm text-text-muted mb-4">Vanaf €499/maand</p>
                 <Link href="#managed-service" className="block">
                   <span className="text-writgo-secondary hover:underline font-semibold inline-flex items-center">
                     Plan een Gesprek <ArrowRight className="ml-2 w-4 h-4" />
@@ -424,10 +429,10 @@ export default function HomePage() {
               Self-Service Tools
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-pearl-white mb-4">
-              12+ AI-Powered Tools
+              Alles wat je nodig hebt
             </h2>
             <p className="text-lg text-text-muted max-w-2xl mx-auto">
-              Professionele content tools voor elke use case
+              Krachtige tools voor professionele content
             </p>
           </div>
 
@@ -495,11 +500,11 @@ export default function HomePage() {
               Managed Service
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-pearl-white mb-6">
-              Geen tijd? Wij doen het voor je.
+              Geen tijd? Wij regelen het.
             </h2>
             <p className="text-lg text-text-muted max-w-3xl mx-auto mb-8">
-              Laat content over aan de experts. Wij maken een volledig contentplan op maat, schrijven wekelijks 
-              nieuwe SEO-geoptimaliseerde artikelen en publiceren ze direct op je WordPress website.
+              Focus op je business, wij zorgen voor de content. Persoonlijke content strateeg, maandelijks contentplan 
+              en professionele artikelen die direct op je WordPress worden gepubliceerd.
             </p>
           </div>
 
@@ -557,11 +562,19 @@ export default function HomePage() {
               <ul className="space-y-3 mb-8 text-left max-w-md mx-auto">
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
+                  <span>Persoonlijke content strateeg</span>
+                </li>
+                <li className="flex items-center gap-3 text-text-muted">
+                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
+                  <span>Maandelijks contentplan</span>
+                </li>
+                <li className="flex items-center gap-3 text-text-muted">
+                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
                   <span>4-8 artikelen per maand</span>
                 </li>
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Volledig contentplan</span>
+                  <span>SEO-optimalisatie inclusief</span>
                 </li>
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
@@ -569,11 +582,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>SEO-optimalisatie</span>
-                </li>
-                <li className="flex items-center gap-3 text-text-muted">
-                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Persoonlijke accountmanager</span>
+                  <span>Maandelijkse rapportage & call</span>
                 </li>
               </ul>
               <Link href="/contact">
@@ -595,7 +604,7 @@ export default function HomePage() {
               Prijzen
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-pearl-white mb-4">
-              Kies het plan dat bij je past
+              Kies wat bij je past
             </h2>
             <p className="text-lg text-text-muted max-w-2xl mx-auto">
               Transparante prijzen zonder verborgen kosten. Start vandaag nog.
@@ -657,13 +666,13 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-writgo-secondary text-white border-0">
-              Succesverhalen
+              Resultaten
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-pearl-white mb-4">
-              Wat onze klanten zeggen
+              Resultaten die tellen
             </h2>
             <p className="text-lg text-text-muted">
-              Echte resultaten van tevreden gebruikers
+              Échte resultaten van tevreden gebruikers
             </p>
           </div>
 
@@ -701,10 +710,10 @@ export default function HomePage() {
             <CardContent className="p-12 text-center relative z-10">
               <Sparkles className="w-12 h-12 text-white mx-auto mb-6" />
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                Klaar om te beginnen?
+                Klaar om te groeien?
               </h2>
               <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
-                Begin vandaag nog met professionele content creatie. Kies self-service of managed service.
+                Start vandaag nog met content die scoort.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/registreren">
@@ -732,11 +741,14 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-1 md:col-span-2 text-center md:text-left">
-              <h3 className="text-2xl font-bold text-writgo-primary mb-4">
-                WritGo
+              <h3 className="text-2xl font-bold text-writgo-primary mb-2">
+                Writgo Media
               </h3>
+              <p className="text-text-muted mb-4 italic">
+                Content die scoort
+              </p>
               <p className="text-text-muted mb-4">
-                Het AI Content Platform. Self-service tools of managed service - kies wat bij jou past.
+                Professionele content voor ambitieuze bedrijven. Self-service tools of managed service - kies wat bij jou past.
               </p>
               <div className="flex gap-4 justify-center md:justify-start">
                 <Link href="/privacy" className="text-text-muted hover:text-pearl-white transition-colors">
@@ -751,7 +763,7 @@ export default function HomePage() {
             <div className="text-center md:text-left">
               <h4 className="font-semibold text-pearl-white mb-4">Product</h4>
               <ul className="space-y-2">
-                <li><Link href="#tools" className="text-text-muted hover:text-pearl-white transition-colors">AI Tools</Link></li>
+                <li><Link href="#tools" className="text-text-muted hover:text-pearl-white transition-colors">Tools</Link></li>
                 <li><Link href="#pricing" className="text-text-muted hover:text-pearl-white transition-colors">Prijzen</Link></li>
                 <li><Link href="#managed-service" className="text-text-muted hover:text-pearl-white transition-colors">Managed Service</Link></li>
                 <li><Link href="/inloggen" className="text-text-muted hover:text-pearl-white transition-colors">Inloggen</Link></li>
@@ -761,13 +773,13 @@ export default function HomePage() {
             <div className="text-center md:text-left">
               <h4 className="font-semibold text-pearl-white mb-4">Contact</h4>
               <ul className="space-y-2">
-                <li className="text-text-muted">support@writgo.nl</li>
+                <li className="text-text-muted">info@writgo.nl</li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-border-dark pt-8 text-center text-text-muted text-sm">
-            <p>&copy; {new Date().getFullYear()} WritGo. Alle rechten voorbehouden.</p>
+            <p>&copy; {new Date().getFullYear()} Writgo Media. Alle rechten voorbehouden.</p>
           </div>
         </div>
       </footer>
