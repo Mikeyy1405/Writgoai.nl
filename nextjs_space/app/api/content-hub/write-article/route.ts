@@ -81,12 +81,37 @@ export async function POST(req: NextRequest) {
 
     // Phase 1: Research
     console.log('[Content Hub] Phase 1: Research & Analysis');
-    const serpAnalysis = await analyzeSERP(
-      article.keywords[0] || article.title,
-      'nl'
-    );
+    
+    let serpAnalysis;
+    try {
+      serpAnalysis = await analyzeSERP(
+        article.keywords[0] || article.title,
+        'nl'
+      );
+      console.log('[Content Hub] SERP analysis voltooid');
+    } catch (error: any) {
+      console.error('[Content Hub] SERP analysis failed, using defaults:', error);
+      // Use default analysis if SERP analysis fails
+      serpAnalysis = {
+        keyword: article.keywords[0] || article.title,
+        topResults: [],
+        averageWordCount: 2000,
+        commonHeadings: ['Introductie', 'Voordelen', 'Nadelen', 'Tips', 'Conclusie'],
+        topicsCovered: [article.keywords[0] || article.title],
+        questionsFound: [],
+        contentGaps: [],
+        suggestedLength: 2400,
+      };
+    }
 
-    const sources = await gatherSources(article.title, 'nl');
+    let sources;
+    try {
+      sources = await gatherSources(article.title, 'nl');
+      console.log('[Content Hub] Bronnen verzameld');
+    } catch (error: any) {
+      console.error('[Content Hub] Source gathering failed:', error);
+      sources = { sources: [], insights: [] };
+    }
 
     // Phase 2: Writing
     console.log('[Content Hub] Phase 2: Content Generation');
@@ -101,17 +126,33 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const articleResult = await writeArticle({
-      title: article.title,
-      keywords: article.keywords,
-      targetWordCount: serpAnalysis.suggestedLength || 2000,
-      tone: 'professional',
-      language: 'nl',
-      serpAnalysis,
-      includeFAQ,
-    });
+    let articleResult;
+    try {
+      articleResult = await writeArticle({
+        title: article.title,
+        keywords: article.keywords,
+        targetWordCount: serpAnalysis.suggestedLength || 2000,
+        tone: 'professional',
+        language: 'nl',
+        serpAnalysis,
+        includeFAQ,
+      });
 
-    console.log(`[Content Hub] Generated ${articleResult.wordCount} words`);
+      console.log(`[Content Hub] Generated ${articleResult.wordCount} words`);
+    } catch (writeError: any) {
+      console.error('[Content Hub] Article writing failed:', writeError);
+      
+      // Update article status to failed
+      await prisma.contentHubArticle.update({
+        where: { id: articleId },
+        data: { status: 'failed' },
+      });
+      
+      return NextResponse.json(
+        { error: writeError.message || 'Het schrijven van het artikel is mislukt' },
+        { status: 500 }
+      );
+    }
 
     // Generate FAQ if requested and not included
     let faqSection = articleResult.faqSection;
