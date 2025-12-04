@@ -19,15 +19,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = await prisma.client.findUnique({
+    // Find or create client
+    let client = await prisma.client.findUnique({
       where: { email: session.user.email },
     });
 
+    // Auto-create client if not found
     if (!client) {
-      return NextResponse.json(
-        { error: 'Client not found' },
-        { status: 404 }
-      );
+      client = await prisma.client.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name || session.user.email,
+          userId: session.user.id || session.user.email,
+        },
+      });
     }
 
     const body = await req.json();
@@ -139,7 +144,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const client = await prisma.client.findUnique({
+    // Find or create client
+    let client = await prisma.client.findUnique({
       where: { email: session.user.email },
       include: {
         contentHubSites: {
@@ -162,11 +168,37 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Auto-create client if not found
     if (!client) {
-      return NextResponse.json(
-        { error: 'Client not found' },
-        { status: 404 }
-      );
+      client = await prisma.client.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name || session.user.email,
+          userId: session.user.id || session.user.email,
+          contentHubSites: {
+            create: [],
+          },
+        },
+        include: {
+          contentHubSites: {
+            select: {
+              id: true,
+              wordpressUrl: true,
+              isConnected: true,
+              lastSyncedAt: true,
+              existingPages: true,
+              authorityScore: true,
+              niche: true,
+              totalArticles: true,
+              completedArticles: true,
+              createdAt: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
+      });
     }
 
     return NextResponse.json({
