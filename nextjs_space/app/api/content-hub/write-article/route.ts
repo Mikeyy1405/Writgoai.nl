@@ -7,6 +7,8 @@ import { analyzeSERP, gatherSources } from '@/lib/content-hub/serp-analyzer';
 import { generateFeaturedImage } from '@/lib/content-hub/image-generator';
 import { findLinkOpportunities } from '@/lib/content-hub/internal-linker';
 import { generateMetaTitle, generateMetaDescription, generateSlug, generateArticleSchema, generateYoastMeta } from '@/lib/content-hub/seo-optimizer';
+import { autoSaveToLibrary } from '@/lib/content-library-helper';
+import { getWordPressConfig, publishToWordPress } from '@/lib/wordpress-publisher';
 
 /**
  * POST /api/content-hub/write-article
@@ -175,6 +177,102 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Content Hub] Article completed in ${generationTime}s`);
 
+    // Phase 4: Save to Content Library
+    console.log('[Content Hub] Phase 4: Saving to Content Library');
+    let savedContentId: string | null = null;
+    try {
+      const saveResult = await autoSaveToLibrary({
+        clientId: article.site.clientId,
+        type: 'blog',
+        title: article.title,
+        content: articleResult.content,
+        contentHtml: articleResult.content,
+        metaDesc: metaDescription,
+        thumbnailUrl: featuredImageUrl || undefined,
+        keywords: article.keywords,
+        tags: article.keywords,
+        language: 'NL',
+      });
+
+      if (saveResult.success && saveResult.contentId) {
+        savedContentId = saveResult.contentId;
+        console.log(`[Content Hub] Saved to library: ${savedContentId}`);
+      } else if (saveResult.duplicate) {
+        console.log(`[Content Hub] Duplicate detected, skipping save: ${saveResult.message}`);
+      }
+    } catch (error) {
+      console.error('[Content Hub] Failed to save to library:', error);
+      // Continue anyway - don't fail article generation if library save fails
+    }
+
+    // Phase 5: WordPress Auto-Publish (if enabled)
+    let wordpressPublishResult: { id: number; link: string } | null = null;
+    if (autoPublish) {
+      console.log('[Content Hub] Phase 5: Auto-publishing to WordPress');
+      try {
+        // Get WordPress config for the site
+        const wpConfig = await getWordPressConfig({
+          clientEmail: client.email!,
+        });
+
+        if (wpConfig) {
+          console.log('[Content Hub] WordPress config found, publishing...');
+          
+          // Publish to WordPress
+          wordpressPublishResult = await publishToWordPress(wpConfig, {
+            title: article.title,
+            content: articleResult.content,
+            excerpt: articleResult.excerpt || metaDescription,
+            status: 'publish',
+            tags: article.keywords,
+            featuredImageUrl: featuredImageUrl || undefined,
+            seoTitle: metaTitle,
+            seoDescription: metaDescription,
+            focusKeyword: article.keywords[0] || article.title,
+            useGutenberg: true,
+          });
+
+          console.log(`[Content Hub] Published to WordPress: ${wordpressPublishResult.link}`);
+
+          // Update article with WordPress info
+          await prisma.contentHubArticle.update({
+            where: { id: articleId },
+            data: {
+              status: 'published',
+              wordpressPostId: wordpressPublishResult.id,
+              wordpressUrl: wordpressPublishResult.link,
+              publishedAt: new Date(),
+            },
+          });
+
+          // Update saved content with published URL
+          if (savedContentId) {
+            await prisma.savedContent.update({
+              where: { id: savedContentId },
+              data: {
+                publishedUrl: wordpressPublishResult.link,
+                publishedAt: new Date(),
+              },
+            });
+          }
+        } else {
+          console.log('[Content Hub] No WordPress config found, skipping auto-publish');
+          // Set status to published even without WordPress publish
+          await prisma.contentHubArticle.update({
+            where: { id: articleId },
+            data: { status: 'published' },
+          });
+        }
+      } catch (error) {
+        console.error('[Content Hub] WordPress publish failed:', error);
+        // Set status to published even if WordPress publish fails
+        await prisma.contentHubArticle.update({
+          where: { id: articleId },
+          data: { status: 'published' },
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Article generated successfully',
@@ -186,8 +284,10 @@ export async function POST(req: NextRequest) {
         metaDescription,
         slug,
         featuredImage: featuredImageUrl,
-        status: autoPublish ? 'publishing' : 'published',
+        status: wordpressPublishResult ? 'published' : (autoPublish ? 'publishing' : 'published'),
         generationTime,
+        wordpressUrl: wordpressPublishResult?.link,
+        savedContentId,
       },
     });
   } catch (error: any) {
