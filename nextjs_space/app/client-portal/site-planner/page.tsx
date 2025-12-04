@@ -19,7 +19,7 @@ export default function SitePlannerPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="text-center">
-        <Loader2 className="w-16 h-16 border-4 border-[#FF9933] animate-spin mx-auto mb-4" />
+        <Loader2 className="w-16 h-16 animate-spin text-[#FF9933] mx-auto mb-4" />
         <p className="text-zinc-400">Doorverwijzen naar Content Hub...</p>
       </div>
     </div>
