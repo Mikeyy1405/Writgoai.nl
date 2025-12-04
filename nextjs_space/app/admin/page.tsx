@@ -16,6 +16,10 @@ import {
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
+const NOTES_PLACEHOLDER = `- Factuur sturen naar klant X
+- Content Hub bug fixen
+- Nieuwe feature bespreken`;
+
 interface Stats {
   totalClients: number;
   newClientsThisWeek: number;
@@ -380,7 +384,7 @@ export default function AdminDashboard() {
               <Textarea
                 value={notes}
                 onChange={handleNotesChange}
-                placeholder="- Factuur sturen naar klant X&#10;- Content Hub bug fixen&#10;- Nieuwe feature bespreken"
+                placeholder={NOTES_PLACEHOLDER}
                 className="min-h-[150px] bg-gray-950 border-gray-700 text-white resize-none"
                 maxLength={5000}
               />
