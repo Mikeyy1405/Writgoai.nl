@@ -18,7 +18,7 @@ export default function AlgemeneVoorwaardenPage() {
               Algemene Voorwaarden
             </h1>
             <p className="text-gray-400 mb-8">
-              Laatst bijgewerkt: 4 december 2024
+              Laatst bijgewerkt: 4 december 2025
             </p>
 
             <div className="prose prose-slate max-w-none text-gray-300 space-y-6">
@@ -31,7 +31,7 @@ export default function AlgemeneVoorwaardenPage() {
               </p>
               <ul className="list-disc pl-6 mb-4 space-y-2">
                 <li>
-                  <strong className="text-white">WritgoAI / Wij / Ons:</strong> Writgo Media, 
+                  <strong className="text-white">Writgo Media / Wij / Ons:</strong> Writgo Media, 
                   KVK 96200960, gevestigd te Langerakbaan 183-1287, 3544PE Utrecht
                 </li>
                 <li>
@@ -39,7 +39,7 @@ export default function AlgemeneVoorwaardenPage() {
                   rechtspersoon die gebruik maakt van de Dienst
                 </li>
                 <li>
-                  <strong className="text-white">Dienst:</strong> Het WritgoAI platform inclusief 
+                  <strong className="text-white">Dienst:</strong> Het Writgo Media platform inclusief 
                   alle functionaliteiten en services
                 </li>
                 <li>
@@ -61,7 +61,7 @@ export default function AlgemeneVoorwaardenPage() {
               </h2>
               <p className="mb-4">
                 2.1 Deze Algemene Voorwaarden zijn van toepassing op alle aanbiedingen, overeenkomsten 
-                en diensten van WritgoAI.
+                en diensten van Writgo Media.
               </p>
               <p className="mb-4">
                 2.2 Door gebruik te maken van de Dienst, gaat u akkoord met deze Algemene Voorwaarden. 
@@ -76,7 +76,7 @@ export default function AlgemeneVoorwaardenPage() {
                 3. Aanbod en totstandkoming overeenkomst
               </h2>
               <p className="mb-4">
-                3.1 Alle aanbiedingen op de website zijn vrijblijvend. WritgoAI behoudt zich het 
+                3.1 Alle aanbiedingen op de website zijn vrijblijvend. Writgo Media behoudt zich het 
                 recht voor om prijzen, functionaliteiten en voorwaarden te wijzigen.
               </p>
               <p className="mb-4">
@@ -84,7 +84,7 @@ export default function AlgemeneVoorwaardenPage() {
                 een abonnement afsluit.
               </p>
               <p className="mb-4">
-                3.3 WritgoAI behoudt zich het recht voor om aanmeldingen te weigeren zonder 
+                3.3 Writgo Media behoudt zich het recht voor om aanmeldingen te weigeren zonder 
                 opgave van redenen.
               </p>
 
@@ -92,7 +92,7 @@ export default function AlgemeneVoorwaardenPage() {
                 4. Beschrijving van de dienst
               </h2>
               <p className="mb-4">
-                WritgoAI is een AI-aangedreven content automatisering platform dat de volgende 
+                Writgo Media is een AI-aangedreven content automatisering platform dat de volgende 
                 diensten biedt:
               </p>
               <ul className="list-disc pl-6 mb-4 space-y-2">
@@ -136,9 +136,10 @@ export default function AlgemeneVoorwaardenPage() {
                 <p className="mb-3 text-white font-semibold">Beschikbare abonnementen:</p>
                 <ul className="space-y-2 text-gray-300">
                   <li>• <strong className="text-white">Gratis:</strong> Beperkte credits voor testen</li>
-                  <li>• <strong className="text-white">Starter:</strong> €24,99/maand (100 credits/maand)</li>
-                  <li>• <strong className="text-white">Pro:</strong> €99,99/maand (500 credits/maand)</li>
-                  <li>• <strong className="text-white">Business:</strong> €299,99/maand (2000 credits/maand)</li>
+                  <li>• <strong className="text-white">Starter:</strong> €29/maand (1.000 credits/maand, ~14 blogs)</li>
+                  <li>• <strong className="text-white">Professional:</strong> €79/maand (3.000 credits/maand, ~42 blogs)</li>
+                  <li>• <strong className="text-white">Enterprise:</strong> €199/maand (10.000 credits/maand, ~142 blogs)</li>
+                  <li>• <strong className="text-white">Managed Service:</strong> Vanaf €499/maand (complete content service)</li>
                 </ul>
               </div>
 
@@ -292,7 +293,7 @@ export default function AlgemeneVoorwaardenPage() {
                 11. Intellectueel eigendom
               </h2>
               <p className="mb-4">
-                11.1 <strong className="text-white">Ons eigendom:</strong> WritgoAI, het logo, 
+                11.1 <strong className="text-white">Ons eigendom:</strong> Writgo Media, het logo, 
                 alle software, code, design en functionaliteiten zijn en blijven ons intellectueel 
                 eigendom.
               </p>
@@ -314,7 +315,7 @@ export default function AlgemeneVoorwaardenPage() {
                 12.1 Beperking van aansprakelijkheid
               </h3>
               <p className="mb-4">
-                WritgoAI is niet aansprakelijk voor:
+                Writgo Media is niet aansprakelijk voor:
               </p>
               <ul className="list-disc pl-6 mb-4 space-y-2">
                 <li>Indirecte schade, gevolgschade of gederfde winst</li>
@@ -345,7 +346,7 @@ export default function AlgemeneVoorwaardenPage() {
                 13. Overmacht
               </h2>
               <p className="mb-4">
-                WritgoAI is niet aansprakelijk voor het niet nakomen van verplichtingen als gevolg 
+                Writgo Media is niet aansprakelijk voor het niet nakomen van verplichtingen als gevolg 
                 van overmacht, inclusief maar niet beperkt tot:
               </p>
               <ul className="list-disc pl-6 mb-4 space-y-2">
@@ -380,8 +381,8 @@ export default function AlgemeneVoorwaardenPage() {
               </h2>
               <p className="mb-4">
                 15.1 Klachten over de Dienst kunnen worden ingediend via{' '}
-                <a href="mailto:support@WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                  support@WritgoAI.nl
+                <a href="mailto:info@writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                  info@writgo.nl
                 </a>
               </p>
               <p className="mb-4">
@@ -418,7 +419,7 @@ export default function AlgemeneVoorwaardenPage() {
               </p>
               <p className="mb-4">
                 17.2 Geschillen worden bij uitsluiting voorgelegd aan de bevoegde rechter in het 
-                arrondissement waarin WritgoAI is gevestigd (Utrecht), tenzij de wet dwingend 
+                arrondissement waarin Writgo Media is gevestigd (Utrecht), tenzij de wet dwingend 
                 anders voorschrijft.
               </p>
 
@@ -430,11 +431,11 @@ export default function AlgemeneVoorwaardenPage() {
                 blijven de overige bepalingen volledig van kracht.
               </p>
               <p className="mb-4">
-                18.2 WritgoAI mag rechten en verplichtingen uit deze overeenkomst overdragen aan 
+                18.2 Writgo Media mag rechten en verplichtingen uit deze overeenkomst overdragen aan 
                 derden.
               </p>
               <p className="mb-4">
-                18.3 Deze voorwaarden vormen de volledige overeenkomst tussen u en WritgoAI.
+                18.3 Deze voorwaarden vormen de volledige overeenkomst tussen u en Writgo Media.
               </p>
 
               <h2 className="text-2xl font-semibold text-white mt-8 mb-4">
@@ -456,14 +457,14 @@ export default function AlgemeneVoorwaardenPage() {
                 </p>
                 <p className="mb-2">
                   <strong className="text-white">E-mail:</strong>{' '}
-                  <a href="mailto:support@WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                    support@WritgoAI.nl
+                  <a href="mailto:info@writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                    info@writgo.nl
                   </a>
                 </p>
                 <p>
                   <strong className="text-white">Website:</strong>{' '}
-                  <a href="https://WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                    https://WritgoAI.nl
+                  <a href="https://writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                    https://writgo.nl
                   </a>
                 </p>
               </div>

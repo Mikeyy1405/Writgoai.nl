@@ -13,7 +13,7 @@ export default function TermsPage() {
             Algemene Voorwaarden
           </h1>
           <p className="text-slate-600 mb-8">
-            Laatst bijgewerkt: 2 november 2025
+            Laatst bijgewerkt: 4 december 2024
           </p>
 
           <div className="prose prose-slate max-w-none">
@@ -21,7 +21,7 @@ export default function TermsPage() {
               1. Acceptatie van voorwaarden
             </h2>
             <p className="text-slate-700 mb-4">
-              Door gebruik te maken van WritgoAI ("de Dienst"), gaat u akkoord met deze Algemene Voorwaarden. 
+              Door gebruik te maken van Writgo Media ("de Dienst"), gaat u akkoord met deze Algemene Voorwaarden. 
               Als u niet akkoord gaat, mag u de Dienst niet gebruiken.
             </p>
 
@@ -29,7 +29,7 @@ export default function TermsPage() {
               2. Beschrijving van de dienst
             </h2>
             <p className="text-slate-700 mb-4">
-              WritgoAI is een AI-aangedreven content automatisering platform dat:
+              Writgo Media is een AI-aangedreven content automatisering platform dat:
             </p>
             <ul className="list-disc pl-6 mb-4 text-slate-700">
               <li>AI chat en content generatie biedt</li>
@@ -62,9 +62,10 @@ export default function TermsPage() {
               We bieden verschillende abonnementsplannen:
             </p>
             <ul className="list-disc pl-6 mb-4 text-slate-700">
-              <li><strong>Starter</strong> - €24.99/maand (100 credits)</li>
-              <li><strong>Pro</strong> - €99.99/maand (500 credits)</li>
-              <li><strong>Business</strong> - €299.99/maand (2000 credits)</li>
+              <li><strong>Starter</strong> - €29/maand (1.000 credits/maand, ~14 blogs)</li>
+              <li><strong>Professional</strong> - €79/maand (3.000 credits/maand, ~42 blogs)</li>
+              <li><strong>Enterprise</strong> - €199/maand (10.000 credits/maand, ~142 blogs)</li>
+              <li><strong>Managed Service</strong> - Vanaf €499/maand (complete content service)</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-slate-800 mt-6 mb-3">
@@ -136,7 +137,7 @@ export default function TermsPage() {
               <strong>Uw content:</strong> U behoudt alle rechten op uw input en gegenereerde content.
             </p>
             <p className="text-slate-700 mb-4">
-              <strong>Onze dienst:</strong> WritgoAI, logo's, en alle software zijn ons intellectueel eigendom.
+              <strong>Onze dienst:</strong> Writgo Media, logo's, en alle software zijn ons intellectueel eigendom.
             </p>
 
             <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
@@ -153,7 +154,7 @@ export default function TermsPage() {
               9. Aansprakelijkheid
             </h2>
             <p className="text-slate-700 mb-4">
-              WritgoAI is niet aansprakelijk voor:
+              Writgo Media is niet aansprakelijk voor:
             </p>
             <ul className="list-disc pl-6 mb-4 text-slate-700">
               <li>Indirecte of gevolgschade</li>
@@ -201,14 +202,14 @@ export default function TermsPage() {
             <div className="bg-slate-50 p-4 rounded-lg mb-4">
               <p className="text-slate-700 mb-2">
                 <strong>Email:</strong>{' '}
-                <a href="mailto:support@WritgoAI.nl" className="text-blue-600 hover:underline">
-                  support@WritgoAI.nl
+                <a href="mailto:info@writgo.nl" className="text-blue-600 hover:underline">
+                  info@writgo.nl
                 </a>
               </p>
               <p className="text-slate-700 mb-2">
                 <strong>Website:</strong>{' '}
-                <a href="https://WritgoAI.nl" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                  writgo.nl
+                <a href="https://writgo.nl" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  https://writgo.nl
                 </a>
               </p>
               <p className="text-slate-700">
