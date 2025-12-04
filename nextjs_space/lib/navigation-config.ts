@@ -88,7 +88,6 @@ export const getNavItems = (isAdmin: boolean): NavigationItem[] => {
 };
 
 // Admin check helper
-// Admin check helper
 export const isUserAdmin = (email?: string | null, role?: string | null): boolean => {
   return email === 'info@writgo.nl' || role === 'admin';
 };
