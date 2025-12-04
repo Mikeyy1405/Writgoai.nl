@@ -1418,11 +1418,52 @@ model BlogPost {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   language           Language  @default(NL)
+  
+  // SEO & Analytics fields
+  seoScore           Int?
+  internalLinks      String[]  @default([])
+  externalLinks      String[]  @default([])
+  wordCount          Int?
+  lastAnalyzed       DateTime?
+  searchConsoleData  Json?
+  
+  // Relations
+  versions           BlogVersion[]
 
   @@index([slug])
   @@index([status])
   @@index([publishedAt])
   @@index([category])
+}
+
+model BlogIdea {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  keywords      String[]
+  priority      String   @default("medium") // low, medium, high
+  status        String   @default("idea") // idea, planned, in_progress, written
+  assignedTo    String?
+  dueDate       DateTime?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([status])
+  @@index([priority])
+}
+
+model BlogVersion {
+  id            String   @id @default(cuid())
+  blogPostId    String
+  content       String
+  title         String
+  versionNumber Int
+  createdAt     DateTime @default(now())
+  createdBy     String?
+  blogPost      BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  
+  @@index([blogPostId])
 }
 
 model EmailDraft {
