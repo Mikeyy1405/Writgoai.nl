@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         data: {
           email: session.user.email,
           name: session.user.name || session.user.email,
-          userId: session.user.id || session.user.email,
+          password: '', // Empty password - user authenticated via NextAuth
         },
       });
     }
@@ -174,7 +174,7 @@ export async function GET(req: NextRequest) {
         data: {
           email: session.user.email,
           name: session.user.name || session.user.email,
-          userId: session.user.id || session.user.email,
+          password: '', // Empty password - user authenticated via NextAuth
           contentHubSites: {
             create: [],
           },
