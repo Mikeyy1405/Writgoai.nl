@@ -171,14 +171,12 @@ export function ModernSidebar() {
       `}>
         {/* Logo */}
         <div className="p-6 border-b border-gray-800">
-          <Link href="/client-portal" onClick={closeMobileMenu} className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center font-bold text-white text-xl">
-              W
-            </div>
-            <div>
-              <h1 className="text-white font-bold text-lg">WritGo AI</h1>
-              <p className="text-gray-400 text-xs uppercase tracking-wide">Client Portal</p>
-            </div>
+          <Link href="/client-portal" onClick={closeMobileMenu} className="flex flex-col gap-1">
+            <span className="text-2xl font-bold tracking-tight">
+              <span className="text-white">Writgo</span>
+              <span className="text-[#FF6B35]">Media</span>
+            </span>
+            <p className="text-gray-400 text-xs uppercase tracking-wide">Client Portal</p>
           </Link>
         </div>
 

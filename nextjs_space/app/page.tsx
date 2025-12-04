@@ -759,9 +759,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-1 md:col-span-2 text-center md:text-left">
-              <h3 className="text-2xl font-bold text-writgo-primary mb-2">
-                Writgo Media
-              </h3>
+              <Link href="/" className="inline-block mb-2">
+                <span className="text-2xl font-bold tracking-tight">
+                  <span className="text-white">Writgo</span>
+                  <span className="text-[#FF6B35]">Media</span>
+                </span>
+              </Link>
               <p className="text-text-muted mb-4 italic">
                 Content die scoort
               </p>
