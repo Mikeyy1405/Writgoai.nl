@@ -71,7 +71,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
     editorProps: {
       attributes: {
         class:
-          'prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none focus:outline-none min-h-[500px] p-4',
+          'prose prose-sm sm:prose lg:prose-lg xl:prose-xl prose-invert max-w-none focus:outline-none min-h-[500px] p-4 text-gray-200',
       },
     },
   });
@@ -102,15 +102,15 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border border-gray-700 rounded-lg overflow-hidden bg-gray-900">
       {/* Toolbar */}
-      <div className="flex flex-wrap gap-1 p-2 border-b bg-gray-50 dark:bg-zinc-800">
+      <div className="flex flex-wrap gap-1 p-2 border-b border-gray-700 bg-gray-800">
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={editor.isActive('bold') ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={editor.isActive('bold') ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Bold className="w-4 h-4" />
         </Button>
@@ -119,7 +119,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={editor.isActive('italic') ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={editor.isActive('italic') ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Italic className="w-4 h-4" />
         </Button>
@@ -128,12 +128,12 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={editor.isActive('underline') ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={editor.isActive('underline') ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <UnderlineIcon className="w-4 h-4" />
         </Button>
 
-        <div className="w-px bg-gray-300 dark:bg-zinc-600 mx-1" />
+        <div className="w-px bg-gray-600 mx-1" />
 
         <Button
           type="button"
@@ -141,7 +141,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           size="sm"
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           className={
-            editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 dark:bg-zinc-700' : ''
+            editor.isActive('heading', { level: 1 }) ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
           }
         >
           <Heading1 className="w-4 h-4" />
@@ -152,7 +152,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           size="sm"
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           className={
-            editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 dark:bg-zinc-700' : ''
+            editor.isActive('heading', { level: 2 }) ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
           }
         >
           <Heading2 className="w-4 h-4" />
@@ -163,20 +163,20 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           size="sm"
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           className={
-            editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 dark:bg-zinc-700' : ''
+            editor.isActive('heading', { level: 3 }) ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
           }
         >
           <Heading3 className="w-4 h-4" />
         </Button>
 
-        <div className="w-px bg-gray-300 dark:bg-zinc-600 mx-1" />
+        <div className="w-px bg-gray-600 mx-1" />
 
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive('bulletList') ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={editor.isActive('bulletList') ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <List className="w-4 h-4" />
         </Button>
@@ -185,12 +185,12 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={editor.isActive('orderedList') ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={editor.isActive('orderedList') ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <ListOrdered className="w-4 h-4" />
         </Button>
 
-        <div className="w-px bg-gray-300 dark:bg-zinc-600 mx-1" />
+        <div className="w-px bg-gray-600 mx-1" />
 
         <Button
           type="button"
@@ -198,7 +198,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           size="sm"
           onClick={() => editor.chain().focus().setTextAlign('left').run()}
           className={
-            editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200 dark:bg-zinc-700' : ''
+            editor.isActive({ textAlign: 'left' }) ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
           }
         >
           <AlignLeft className="w-4 h-4" />
@@ -209,7 +209,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           size="sm"
           onClick={() => editor.chain().focus().setTextAlign('center').run()}
           className={
-            editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200 dark:bg-zinc-700' : ''
+            editor.isActive({ textAlign: 'center' }) ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
           }
         >
           <AlignCenter className="w-4 h-4" />
@@ -220,20 +220,20 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           size="sm"
           onClick={() => editor.chain().focus().setTextAlign('right').run()}
           className={
-            editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200 dark:bg-zinc-700' : ''
+            editor.isActive({ textAlign: 'right' }) ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
           }
         >
           <AlignRight className="w-4 h-4" />
         </Button>
 
-        <div className="w-px bg-gray-300 dark:bg-zinc-600 mx-1" />
+        <div className="w-px bg-gray-600 mx-1" />
 
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={editor.isActive('blockquote') ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={editor.isActive('blockquote') ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Quote className="w-4 h-4" />
         </Button>
@@ -242,18 +242,19 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={editor.isActive('codeBlock') ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={editor.isActive('codeBlock') ? 'bg-orange-500 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Code className="w-4 h-4" />
         </Button>
 
-        <div className="w-px bg-gray-300 dark:bg-zinc-600 mx-1" />
+        <div className="w-px bg-gray-600 mx-1" />
 
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => setShowLinkInput(!showLinkInput)}
+          className="text-gray-300 hover:text-white hover:bg-gray-700"
         >
           <LinkIcon className="w-4 h-4" />
         </Button>
@@ -262,6 +263,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
           variant="ghost"
           size="sm"
           onClick={() => setShowImageInput(!showImageInput)}
+          className="text-gray-300 hover:text-white hover:bg-gray-700"
         >
           <ImageIcon className="w-4 h-4" />
         </Button>
@@ -269,11 +271,12 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
 
       {/* Link Input */}
       {showLinkInput && (
-        <div className="flex gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border-b">
+        <div className="flex gap-2 p-3 bg-gray-800 border-b border-gray-700">
           <Input
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             placeholder="https://example.com"
+            className="bg-gray-900 border-gray-700 text-white"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -281,7 +284,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
               }
             }}
           />
-          <Button type="button" onClick={addLink} size="sm">
+          <Button type="button" onClick={addLink} size="sm" className="bg-orange-500 hover:bg-orange-600 text-white">
             Toevoegen
           </Button>
           <Button
@@ -289,6 +292,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
             variant="ghost"
             onClick={() => setShowLinkInput(false)}
             size="sm"
+            className="text-gray-300 hover:text-white hover:bg-gray-700"
           >
             Annuleren
           </Button>
@@ -297,11 +301,12 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
 
       {/* Image Input */}
       {showImageInput && (
-        <div className="flex gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border-b">
+        <div className="flex gap-2 p-3 bg-gray-800 border-b border-gray-700">
           <Input
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://example.com/image.jpg"
+            className="bg-gray-900 border-gray-700 text-white"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -309,7 +314,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
               }
             }}
           />
-          <Button type="button" onClick={addImage} size="sm">
+          <Button type="button" onClick={addImage} size="sm" className="bg-orange-500 hover:bg-orange-600 text-white">
             Toevoegen
           </Button>
           <Button
@@ -317,6 +322,7 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
             variant="ghost"
             onClick={() => setShowImageInput(false)}
             size="sm"
+            className="text-gray-300 hover:text-white hover:bg-gray-700"
           >
             Annuleren
           </Button>
@@ -324,10 +330,10 @@ export function BlogEditor({ content, onChange, placeholder }: BlogEditorProps) 
       )}
 
       {/* Editor Content */}
-      <EditorContent editor={editor} className="bg-white dark:bg-zinc-900" />
+      <EditorContent editor={editor} className="bg-gray-900 text-white" />
 
       {/* Character Count */}
-      <div className="flex justify-between items-center p-2 border-t bg-gray-50 dark:bg-zinc-800 text-sm text-gray-500">
+      <div className="flex justify-between items-center p-2 border-t border-gray-700 bg-gray-800 text-sm text-gray-400">
         <span>
           {editor.storage.characterCount.words()} woorden
         </span>
