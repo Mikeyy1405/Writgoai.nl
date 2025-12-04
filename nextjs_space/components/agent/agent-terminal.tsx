@@ -76,6 +76,7 @@ export function AgentTerminal() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantContent = '';
+      let statusMessage = '';
 
       if (reader) {
         while (true) {
@@ -87,24 +88,52 @@ export function AgentTerminal() {
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
-              const data = JSON.parse(line.slice(6));
+              try {
+                const data = JSON.parse(line.slice(6));
 
-              if (data.type === 'content') {
-                assistantContent += data.content;
-                // Update assistant message in real-time
-                setMessages([
-                  ...newMessages,
-                  { role: 'assistant', content: assistantContent },
-                ]);
-              } else if (data.type === 'tool_calls') {
-                // Handle tool calls
-                setCurrentToolCalls(data.toolCalls);
-                // Execute tool calls
-                await executeTools(apiMessages, data.toolCalls);
-              } else if (data.type === 'done') {
-                break;
-              } else if (data.type === 'error') {
-                throw new Error(data.error);
+                if (data.type === 'status') {
+                  // Handle status updates
+                  statusMessage = data.message || '';
+                  // Optionally show status in UI (for now just log)
+                  console.log('Status:', data.message);
+                } else if (data.type === 'tool_start') {
+                  // Tool execution started
+                  const toolCall: ToolCall = {
+                    id: `tool_${Date.now()}`,
+                    name: data.tool,
+                    parameters: {},
+                    status: 'executing',
+                  };
+                  setCurrentToolCalls(prev => [...prev, toolCall]);
+                  console.log('Tool started:', data.tool, data.message);
+                } else if (data.type === 'tool_complete') {
+                  // Tool execution completed
+                  setCurrentToolCalls(prev => 
+                    prev.map(tc => 
+                      tc.name === data.tool
+                        ? { ...tc, status: 'completed' as const, result: { success: true, message: data.message } }
+                        : tc
+                    )
+                  );
+                  console.log('Tool completed:', data.tool, data.message);
+                } else if (data.type === 'complete') {
+                  // Final assistant response
+                  assistantContent = data.message || '';
+                  setMessages([
+                    ...newMessages,
+                    { role: 'assistant', content: assistantContent },
+                  ]);
+                } else if (data.type === 'done') {
+                  break;
+                } else if (data.type === 'error') {
+                  const errorMsg = data.details 
+                    ? `${data.message}\n\nDetails: ${data.details}`
+                    : data.message || 'Er is een onbekende fout opgetreden';
+                  throw new Error(errorMsg);
+                }
+              } catch (parseError: any) {
+                console.error('Failed to parse SSE data:', line, parseError);
+                // Continue processing other lines
               }
             }
           }
@@ -112,12 +141,17 @@ export function AgentTerminal() {
       }
     } catch (error: any) {
       console.error('Agent error:', error);
-      toast.error(error.message || 'Er is een fout opgetreden');
+      
+      // Show detailed error message
+      const errorMessage = error.message || 'Er is een onbekende fout opgetreden';
+      toast.error(errorMessage);
+      
+      // Add error message to chat
       setMessages([
         ...newMessages,
         {
           role: 'assistant',
-          content: 'Sorry, er is een fout opgetreden. Probeer het opnieuw.',
+          content: `❌ **Fout opgetreden**\n\n${errorMessage}\n\nProbeer het opnieuw of neem contact op met de beheerder als het probleem zich blijft voordoen.`,
         },
       ]);
     } finally {
