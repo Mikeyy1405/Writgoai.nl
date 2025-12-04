@@ -13,7 +13,7 @@ export default function TermsPage() {
             Algemene Voorwaarden
           </h1>
           <p className="text-slate-600 mb-8">
-            Laatst bijgewerkt: 4 december 2024
+            Laatst bijgewerkt: 4 december 2025
           </p>
 
           <div className="prose prose-slate max-w-none">
