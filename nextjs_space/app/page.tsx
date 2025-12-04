@@ -68,7 +68,7 @@ export default function HomePage() {
     {
       icon: <Video className="w-6 h-6" />,
       title: 'Video Generator',
-      description: 'Creëer AI-gegenereerde video\'s',
+      description: "Creëer AI-gegenereerde video's",
       credits: '120 credits',
     },
     {
