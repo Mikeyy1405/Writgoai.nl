@@ -1,6 +1,6 @@
 /**
  * AI Agent Chat API Route
- * Handles non-streaming chat with the AI brain and tool execution with SSE status updates
+ * Handles chat with non-streaming AI responses but streaming status updates via SSE
  */
 
 import { NextRequest, NextResponse } from 'next/server';
