@@ -59,21 +59,6 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadTopicalMap();
-  }, [siteId]);
-
-  useEffect(() => {
-    filterClusters();
-  }, [clusters, filter, searchQuery, selectedCluster]);
-
-  // Auto-sync when published filter is active
-  useEffect(() => {
-    if (filter === 'published' && siteId) {
-      syncExistingContent(true); // silent sync on initial load
-    }
-  }, [filter, siteId, syncExistingContent]);
-
   const loadTopicalMap = useCallback(async () => {
     try {
       setLoading(true);
@@ -98,7 +83,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     }
   }, [siteId]);
 
-  const filterClusters = () => {
+  const filterClusters = useCallback(() => {
     let filtered = clusters;
 
     // Filter by status
@@ -134,7 +119,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     }
 
     setFilteredClusters(filtered);
-  };
+  }, [clusters, filter, searchQuery, selectedCluster]);
 
   const syncExistingContent = useCallback(async (silent = false) => {
     if (syncing) return; // Prevent multiple simultaneous syncs
@@ -185,6 +170,22 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       setSyncing(false);
     }
   }, [syncing, siteId, loadTopicalMap]);
+
+  // useEffect hooks after function definitions
+  useEffect(() => {
+    loadTopicalMap();
+  }, [loadTopicalMap]);
+
+  useEffect(() => {
+    filterClusters();
+  }, [filterClusters]);
+
+  // Auto-sync when published filter is active
+  useEffect(() => {
+    if (filter === 'published' && siteId) {
+      syncExistingContent(true); // silent sync on initial load
+    }
+  }, [filter, siteId, syncExistingContent]);
 
   const handleGenerateMap = async () => {
     setGenerating(true);
