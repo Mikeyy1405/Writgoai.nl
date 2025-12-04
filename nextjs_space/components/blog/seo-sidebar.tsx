@@ -19,6 +19,7 @@ import {
 interface SEOData {
   title: string;
   content: string;
+  metaTitle?: string;
   metaDescription: string;
   focusKeyword: string;
   slug: string;
@@ -186,13 +187,13 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
             <Label className="flex items-center justify-between">
               <span>Meta Title</span>
               <span className="text-xs text-gray-500">
-                {data.metaDescription?.length || 0}/60
+                {(data.metaTitle || data.title)?.length || 0}/60
               </span>
             </Label>
             <Input
-              value={data.metaDescription}
-              onChange={(e) => onChange('metaDescription', e.target.value)}
-              placeholder="SEO vriendelijke titel"
+              value={data.metaTitle || data.title}
+              onChange={(e) => onChange('metaTitle', e.target.value)}
+              placeholder={data.title || "SEO vriendelijke titel"}
               maxLength={60}
             />
           </div>

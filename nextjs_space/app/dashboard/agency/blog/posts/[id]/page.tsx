@@ -333,6 +333,7 @@ export default function EditBlogPostPage() {
                 data={{
                   title: formData.title,
                   content: formData.content,
+                  metaTitle: formData.metaTitle,
                   metaDescription: formData.metaDescription,
                   focusKeyword: formData.focusKeyword,
                   slug: formData.slug,
