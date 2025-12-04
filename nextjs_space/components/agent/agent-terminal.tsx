@@ -76,7 +76,7 @@ export function AgentTerminal() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantContent = '';
-      let statusMessage = '';
+      const toolCallsMap = new Map<string, ToolCall>(); // Track tool calls by unique ID
 
       if (reader) {
         while (true) {
@@ -92,29 +92,33 @@ export function AgentTerminal() {
                 const data = JSON.parse(line.slice(6));
 
                 if (data.type === 'status') {
-                  // Handle status updates
-                  statusMessage = data.message || '';
-                  // Optionally show status in UI (for now just log)
+                  // Handle status updates - just log for now
                   console.log('Status:', data.message);
                 } else if (data.type === 'tool_start') {
-                  // Tool execution started
+                  // Tool execution started - create unique ID for this tool call
+                  const toolId = `${data.tool}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                   const toolCall: ToolCall = {
-                    id: `tool_${Date.now()}`,
+                    id: toolId,
                     name: data.tool,
                     parameters: {},
                     status: 'executing',
                   };
-                  setCurrentToolCalls(prev => [...prev, toolCall]);
+                  toolCallsMap.set(toolId, toolCall);
+                  setCurrentToolCalls(Array.from(toolCallsMap.values()));
                   console.log('Tool started:', data.tool, data.message);
                 } else if (data.type === 'tool_complete') {
-                  // Tool execution completed
-                  setCurrentToolCalls(prev => 
-                    prev.map(tc => 
-                      tc.name === data.tool
-                        ? { ...tc, status: 'completed' as const, result: { success: true, message: data.message } }
-                        : tc
-                    )
-                  );
+                  // Tool execution completed - find the most recent incomplete tool with this name
+                  const toolCalls = Array.from(toolCallsMap.values());
+                  const toolCall = toolCalls
+                    .filter(tc => tc.name === data.tool && tc.status === 'executing')
+                    .pop(); // Get the most recent one
+                  
+                  if (toolCall) {
+                    toolCall.status = 'completed';
+                    toolCall.result = { success: true, message: data.message };
+                    toolCallsMap.set(toolCall.id, toolCall);
+                    setCurrentToolCalls(Array.from(toolCallsMap.values()));
+                  }
                   console.log('Tool completed:', data.tool, data.message);
                 } else if (data.type === 'complete') {
                   // Final assistant response
@@ -135,7 +139,7 @@ export function AgentTerminal() {
                 }
               } catch (parseError: any) {
                 // Check if this is an error from the API (not a JSON parse error)
-                if (parseError.message && !parseError.message.includes('JSON')) {
+                if (!(parseError instanceof SyntaxError)) {
                   // Re-throw API errors
                   throw parseError;
                 }
