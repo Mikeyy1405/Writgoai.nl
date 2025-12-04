@@ -290,17 +290,26 @@ export async function* streamAgentChat(
         }
       }
 
-      // Check if stream is done
-      if (chunk.choices[0]?.finish_reason === 'tool_calls') {
+      // Check if stream is done with consistent safe access
+      if (chunk?.choices?.[0]?.finish_reason === 'tool_calls') {
         // Convert accumulated tool calls to ToolCall format
         const toolCalls: ToolCall[] = accumulatedToolCalls
           .filter(tc => tc.id && tc.function.name)
-          .map(tc => ({
-            id: tc.id,
-            name: tc.function.name,
-            parameters: JSON.parse(tc.function.arguments || '{}'),
-            status: 'pending' as const,
-          }));
+          .map(tc => {
+            let parameters = {};
+            try {
+              parameters = JSON.parse(tc.function.arguments || '{}');
+            } catch (e) {
+              console.error('Failed to parse accumulated tool arguments:', tc.function.arguments);
+              parameters = {};
+            }
+            return {
+              id: tc.id,
+              name: tc.function.name,
+              parameters,
+              status: 'pending' as const,
+            };
+          });
 
         yield toolCalls;
         return;
