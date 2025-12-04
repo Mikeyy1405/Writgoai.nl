@@ -141,14 +141,14 @@ export async function POST(req: NextRequest) {
                 // This is normal - it means we've reached the end of available pages
                 console.log(`[Content Hub] Reached end of pagination at page ${page}`);
                 hasMore = false;
-                break;
+                break; // Exit the loop, this is not an error
               }
             } catch (e) {
               // If we can't parse the error, fall through to generic error handling
             }
           }
           
-          // Log error for non-pagination errors
+          // Only log and throw errors if we didn't already handle pagination end above
           console.error(`[Content Hub] WordPress API error (${response.status}):`, errorText);
           
           // Specific error messages based on status code
