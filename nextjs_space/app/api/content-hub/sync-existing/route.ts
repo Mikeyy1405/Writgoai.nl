@@ -91,10 +91,17 @@ export async function POST(req: NextRequest) {
     let page = 1;
     let hasMore = true;
     let wordpressError = null;
+    let totalPages: number | null = null;
 
     // Try to fetch all published posts (limit to 20 pages = 2000 posts max to prevent excessive API calls)
     try {
       while (hasMore && page <= 20) {
+        // Validate page number against total pages if known (from previous response)
+        if (totalPages !== null && page > totalPages) {
+          console.log(`[Content Hub] Reached last page (${totalPages}), stopping pagination`);
+          hasMore = false;
+          break;
+        }
         // Try standard REST API endpoint first, fallback to alternative if 404
         const standardEndpoint = `${wpUrl}/wp-json/wp/v2/posts?per_page=100&page=${page}&status=publish`;
         let response = await fetch(
@@ -127,6 +134,20 @@ export async function POST(req: NextRequest) {
           const errorText = await response.text().catch(() => 'Onbekende fout');
           console.error(`[Content Hub] WordPress API error (${response.status}):`, errorText);
           
+          // Handle invalid page number error - this means we've reached the end
+          if (response.status === 400) {
+            try {
+              const errorData = JSON.parse(errorText);
+              if (errorData.code === 'rest_post_invalid_page_number') {
+                console.log(`[Content Hub] Reached end of pagination at page ${page}`);
+                hasMore = false;
+                break;
+              }
+            } catch (e) {
+              // If we can't parse the error, fall through to generic error handling
+            }
+          }
+          
           // Specific error messages based on status code
           if (response.status === 401 || response.status === 403) {
             throw new Error('WordPress authenticatie mislukt. Controleer je gebruikersnaam en app wachtwoord.');
@@ -137,6 +158,20 @@ export async function POST(req: NextRequest) {
           } else {
             throw new Error(`WordPress fout (${response.status}): ${errorText}`);
           }
+        }
+
+        // Extract total pages from response headers
+        const wpTotalPages = response.headers.get('X-WP-TotalPages');
+        if (wpTotalPages && totalPages === null) {
+          const parsed = parseInt(wpTotalPages, 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            totalPages = parsed;
+            console.log(`[Content Hub] WordPress reports ${totalPages} total pages available`);
+          } else {
+            console.warn(`[Content Hub] Invalid X-WP-TotalPages header value: ${wpTotalPages}`);
+          }
+        } else if (!wpTotalPages && totalPages === null) {
+          console.log('[Content Hub] X-WP-TotalPages header not found, will paginate until empty response');
         }
 
         const posts = await response.json();
