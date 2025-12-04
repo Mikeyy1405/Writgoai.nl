@@ -56,16 +56,13 @@ export function ClientPortalHeader() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/client-portal" className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#FF9933] to-[#FFAD33] rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div className="hidden sm:block">
-                <span className="text-xl font-bold">
+            <Link href="/client-portal" className="flex items-center">
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight">
                   <span className="text-white">Writgo</span>
                   <span className="text-[#FF6B35]">Media</span>
                 </span>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider -mt-1">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider -mt-1 hidden sm:block">
                   Omnipresence Content Platform
                 </p>
               </div>

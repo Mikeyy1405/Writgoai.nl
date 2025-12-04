@@ -419,7 +419,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h3 className="font-bold text-lg mb-4">WritgoAI</h3>
+              <h3 className="font-bold text-lg mb-4">
+                <span className="text-white">Writgo</span>
+                <span className="text-[#FF6B35]">Media</span>
+              </h3>
               <p className="text-gray-400 text-sm">
                 De #1 AI content platform voor professionals
               </p>
@@ -449,7 +452,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400 text-sm">
-            © 2025 WritgoAI. All rights reserved.
+            © 2025 Writgo Media. All rights reserved.
           </div>
         </div>
       </footer>
