@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -72,9 +72,9 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     if (filter === 'published' && siteId) {
       syncExistingContent(true); // silent sync on initial load
     }
-  }, [filter, siteId]);
+  }, [filter, siteId, syncExistingContent]);
 
-  const loadTopicalMap = async () => {
+  const loadTopicalMap = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/content-hub/generate-map?siteId=${siteId}`);
@@ -96,7 +96,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     } finally {
       setLoading(false);
     }
-  };
+  }, [siteId]);
 
   const filterClusters = () => {
     let filtered = clusters;
@@ -136,7 +136,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     setFilteredClusters(filtered);
   };
 
-  const syncExistingContent = async (silent = false) => {
+  const syncExistingContent = useCallback(async (silent = false) => {
     if (syncing) return; // Prevent multiple simultaneous syncs
     
     setSyncing(true);
@@ -184,7 +184,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     } finally {
       setSyncing(false);
     }
-  };
+  }, [syncing, siteId, loadTopicalMap]);
 
   const handleGenerateMap = async () => {
     setGenerating(true);

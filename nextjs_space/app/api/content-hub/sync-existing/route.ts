@@ -96,9 +96,9 @@ export async function POST(req: NextRequest) {
     try {
       while (hasMore && page <= 20) {
         // Try standard REST API endpoint first, fallback to alternative if 404
-        let apiEndpoint = `${wpUrl}/wp-json/wp/v2/posts?per_page=100&page=${page}&status=publish`;
+        const standardEndpoint = `${wpUrl}/wp-json/wp/v2/posts?per_page=100&page=${page}&status=publish`;
         let response = await fetch(
-          apiEndpoint,
+          standardEndpoint,
           {
             headers: {
               'Authorization': `Basic ${auth}`,
@@ -111,9 +111,9 @@ export async function POST(req: NextRequest) {
         // If 404, try alternative REST API endpoint format
         if (response.status === 404) {
           console.log('[Content Hub] Standard endpoint not found, trying alternative format...');
-          apiEndpoint = `${wpUrl}/?rest_route=/wp/v2/posts&per_page=100&page=${page}&status=publish`;
+          const alternativeEndpoint = `${wpUrl}/?rest_route=/wp/v2/posts&per_page=100&page=${page}&status=publish`;
           response = await fetch(
-            apiEndpoint,
+            alternativeEndpoint,
             {
               headers: {
                 'Authorization': `Basic ${auth}`,
