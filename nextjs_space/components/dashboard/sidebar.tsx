@@ -7,18 +7,10 @@ import { LucideIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './logo';
 import { isNavItemActive } from '@/lib/navigation-utils';
-
-interface NavItem {
-  label: string;
-  href?: string;
-  icon?: LucideIcon | null;
-  badge?: string;
-  adminOnly?: boolean;
-  isDivider?: boolean;
-}
+import { NavigationItem } from '@/lib/navigation-config';
 
 interface SidebarProps {
-  items: NavItem[];
+  items: NavigationItem[];
   isAdmin?: boolean;
 }
 
@@ -26,7 +18,12 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const visibleItems = items.filter(item => !item.adminOnly || isAdmin);
+  const visibleItems = items.filter(item => {
+    if ('isDivider' in item && item.isDivider) {
+      return !item.adminOnly || isAdmin;
+    }
+    return !item.adminOnly || isAdmin;
+  });
 
   return (
     <aside
@@ -78,7 +75,7 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {visibleItems.map((item, index) => {
           // Handle dividers
-          if (item.isDivider) {
+          if ('isDivider' in item && item.isDivider) {
             return (
               <div key={`divider-${index}`} className="my-4 pt-4">
                 <AnimatePresence mode="wait">
@@ -114,19 +111,16 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
             );
           }
 
-          if (!item.href) {
-            // Skip items without href
-            return null;
-          }
-
-          const Icon = item.icon as LucideIcon;
-          const active = isNavItemActive(item.href, pathname);
-          const isAdminItem = item.adminOnly;
+          // TypeScript now knows this is a NavItem, not a DividerItem
+          const navItem = item as { label: string; href: string; icon: LucideIcon; badge?: string; adminOnly?: boolean };
+          const Icon = navItem.icon;
+          const active = isNavItemActive(navItem.href, pathname);
+          const isAdminItem = navItem.adminOnly;
 
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={navItem.href}
+              href={navItem.href}
               className={`
                 group relative flex items-center gap-3 px-3 py-3 rounded-lg
                 transition-all duration-200
@@ -152,12 +146,12 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
                     transition={{ duration: 0.2 }}
                     className="font-medium text-sm truncate"
                   >
-                    {item.label}
+                    {navItem.label}
                   </motion.span>
                 )}
               </AnimatePresence>
 
-              {!isCollapsed && item.badge && (
+              {!isCollapsed && navItem.badge && (
                 <motion.span
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -167,7 +161,7 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
                       : 'bg-[#FF9933]/20 text-[#FF9933]'
                   }`}
                 >
-                  {item.badge}
+                  {navItem.badge}
                 </motion.span>
               )}
 

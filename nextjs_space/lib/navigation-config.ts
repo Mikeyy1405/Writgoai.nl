@@ -25,7 +25,6 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: string;
   adminOnly?: boolean;
-  isDivider?: false;
 }
 
 export interface DividerItem {

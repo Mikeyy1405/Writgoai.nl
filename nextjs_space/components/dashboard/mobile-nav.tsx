@@ -6,26 +6,23 @@ import { LucideIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './logo';
 import { isNavItemActive } from '@/lib/navigation-utils';
-
-interface NavItem {
-  label: string;
-  href?: string;
-  icon?: LucideIcon | null;
-  badge?: string;
-  adminOnly?: boolean;
-  isDivider?: boolean;
-}
+import { NavigationItem } from '@/lib/navigation-config';
 
 interface MobileNavProps {
   isOpen: boolean;
   onClose: () => void;
-  items: NavItem[];
+  items: NavigationItem[];
   isAdmin?: boolean;
 }
 
 export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNavProps) {
   const pathname = usePathname();
-  const visibleItems = items.filter(item => !item.adminOnly || isAdmin);
+  const visibleItems = items.filter(item => {
+    if ('isDivider' in item && item.isDivider) {
+      return !item.adminOnly || isAdmin;
+    }
+    return !item.adminOnly || isAdmin;
+  });
 
   return (
     <AnimatePresence>
@@ -64,7 +61,7 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
             <nav className="p-3 space-y-1">
               {visibleItems.map((item, index) => {
                 // Handle dividers
-                if (item.isDivider) {
+                if ('isDivider' in item && item.isDivider) {
                   return (
                     <div key={`divider-${index}`} className="my-4 pt-4">
                       <div className={`px-4 mb-2 ${item.adminOnly ? 'text-blue-400' : 'text-zinc-500'}`}>
@@ -84,24 +81,21 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
                   );
                 }
 
-                if (!item.href) {
-                  // Skip items without href
-                  return null;
-                }
-
-                const Icon = item.icon as LucideIcon;
-                const active = isNavItemActive(item.href, pathname);
-                const isAdminItem = item.adminOnly;
+                // TypeScript now knows this is a NavItem, not a DividerItem
+                const navItem = item as { label: string; href: string; icon: LucideIcon; badge?: string; adminOnly?: boolean };
+                const Icon = navItem.icon;
+                const active = isNavItemActive(navItem.href, pathname);
+                const isAdminItem = navItem.adminOnly;
 
                 return (
                   <motion.div
-                    key={item.href}
+                    key={navItem.href}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.2, delay: index * 0.05 }}
                   >
                     <Link
-                      href={item.href}
+                      href={navItem.href}
                       onClick={onClose}
                       className={`
                         group relative flex items-center gap-3 px-4 py-3 rounded-lg
@@ -118,15 +112,15 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
                       `}
                     >
                       {Icon && <Icon className={`w-5 h-5 shrink-0 ${active ? (isAdminItem ? 'text-blue-400' : 'text-[#FF9933]') : ''}`} />}
-                      <span className="font-medium text-sm">{item.label}</span>
+                      <span className="font-medium text-sm">{navItem.label}</span>
                       
-                      {item.badge && (
+                      {navItem.badge && (
                         <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           isAdminItem 
                             ? 'bg-blue-500/20 text-blue-400' 
                             : 'bg-[#FF9933]/20 text-[#FF9933]'
                         }`}>
-                          {item.badge}
+                          {navItem.badge}
                         </span>
                       )}
 
