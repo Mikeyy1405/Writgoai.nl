@@ -17,6 +17,7 @@ import {
   Play,
   Eye,
   BarChart3,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ClusterCard from './cluster-card';
@@ -54,6 +55,9 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadTopicalMap();
@@ -62,6 +66,13 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
   useEffect(() => {
     filterClusters();
   }, [clusters, filter, searchQuery, selectedCluster]);
+
+  // Auto-sync when published filter is active
+  useEffect(() => {
+    if (filter === 'published' && siteId) {
+      syncExistingContent(true); // silent sync on initial load
+    }
+  }, [filter, siteId]);
 
   const loadTopicalMap = async () => {
     try {
@@ -123,6 +134,56 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     }
 
     setFilteredClusters(filtered);
+  };
+
+  const syncExistingContent = async (silent = false) => {
+    if (syncing) return; // Prevent multiple simultaneous syncs
+    
+    setSyncing(true);
+    setSyncError(null);
+    setSyncMessage(null);
+    
+    if (!silent) {
+      toast.loading('Bestaande WordPress content synchroniseren...', { id: 'sync' });
+    }
+    
+    try {
+      const response = await fetch('/api/content-hub/sync-existing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteId }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Synchronisatie mislukt');
+      }
+      
+      // Handle success or warning
+      if (data.warning) {
+        setSyncMessage(data.message);
+        if (!silent) {
+          toast.warning(data.message, { id: 'sync' });
+        }
+      } else {
+        setSyncMessage(`${data.stats.synced} artikelen gesynchroniseerd`);
+        if (!silent) {
+          toast.success(data.message || 'Content gesynchroniseerd!', { id: 'sync' });
+        }
+      }
+      
+      // Reload the data to show synced content
+      await loadTopicalMap();
+    } catch (error: any) {
+      console.error('Sync failed:', error);
+      setSyncError(error.message);
+      if (!silent) {
+        toast.error(error.message || 'Kon WordPress content niet synchroniseren', { id: 'sync' });
+      }
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const handleGenerateMap = async () => {
@@ -258,6 +319,42 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
 
       {/* Articles List */}
       <div className="space-y-4">
+        {/* Sync Status - Only show for published filter */}
+        {filter === 'published' && (syncMessage || syncError) && (
+          <Card className={syncError ? 'border-red-300 bg-red-50' : 'border-blue-300 bg-blue-50'}>
+            <CardContent className="py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {syncError ? (
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                  )}
+                  <span className={`text-sm ${syncError ? 'text-red-700' : 'text-blue-700'}`}>
+                    {syncError || syncMessage}
+                  </span>
+                </div>
+                {syncError && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => syncExistingContent(false)}
+                    disabled={syncing}
+                    className="gap-2"
+                  >
+                    {syncing ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Probeer opnieuw
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Search & Filters */}
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -269,6 +366,23 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
               className="pl-10"
             />
           </div>
+          {/* Manual Sync Button - Only for published filter */}
+          {filter === 'published' && (
+            <Button 
+              variant="outline"
+              onClick={() => syncExistingContent(false)}
+              disabled={syncing}
+              className="gap-2"
+              title="Synchroniseer bestaande WordPress artikelen"
+            >
+              {syncing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Sync WordPress
+            </Button>
+          )}
         </div>
 
         {/* Cluster Header */}
@@ -298,8 +412,31 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
           {filteredClusters.length === 0 && (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">Geen artikelen gevonden</p>
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  {filter === 'published' ? 'Geen gepubliceerde artikelen' : 'Geen artikelen gevonden'}
+                </h3>
+                <p className="text-muted-foreground text-center max-w-md mb-4">
+                  {filter === 'published' 
+                    ? 'Er zijn nog geen artikelen gesynchroniseerd of gepubliceerd. Klik op "Sync WordPress" om bestaande artikelen te importeren.'
+                    : searchQuery 
+                      ? 'Geen artikelen komen overeen met je zoekopdracht.'
+                      : 'Geen artikelen beschikbaar in deze categorie.'}
+                </p>
+                {filter === 'published' && (
+                  <Button 
+                    onClick={() => syncExistingContent(false)}
+                    disabled={syncing}
+                    className="gap-2"
+                  >
+                    {syncing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Sync WordPress
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}
