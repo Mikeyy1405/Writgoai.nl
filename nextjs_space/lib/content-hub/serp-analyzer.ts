@@ -6,6 +6,26 @@
 import { sendChatCompletion } from '../aiml-chat-client';
 import { TEXT_MODELS } from '../aiml-api';
 
+// Timeout duration for SERP analysis operations
+const SERP_ANALYSIS_TIMEOUT_MS = 30000; // 30 seconds
+
+/**
+ * Helper function to wrap an async operation with a timeout
+ */
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string
+): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(timeoutMessage));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]);
+}
+
 export interface SERPResult {
   title: string;
   url: string;
@@ -68,28 +88,24 @@ Respond in JSON format:
   "suggestedLength": number
 }`;
 
-    // Race between API call and 30-second timeout
-    const apiCallPromise = sendChatCompletion({
-      model: TEXT_MODELS.FAST,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-      stream: false,
-    });
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('SERP analysis timeout after 30s'));
-      }, 30000); // 30 seconds
-    });
-
     try {
-      const response = await Promise.race([apiCallPromise, timeoutPromise]) as any;
+      // Apply timeout to SERP analysis API call
+      const response = await withTimeout(
+        sendChatCompletion({
+          model: TEXT_MODELS.FAST,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+          stream: false,
+        }),
+        SERP_ANALYSIS_TIMEOUT_MS,
+        'timeout'
+      );
 
       const content = (response as any).choices[0]?.message?.content || '{}';
       
@@ -155,28 +171,24 @@ Respond in JSON format:
   "insights": string[]
 }`;
 
-    // Race between API call and 30-second timeout
-    const apiCallPromise = sendChatCompletion({
-      model: TEXT_MODELS.FAST,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 1500,
-      stream: false,
-    });
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('Source gathering timeout after 30s'));
-      }, 30000); // 30 seconds
-    });
-
     try {
-      const response = await Promise.race([apiCallPromise, timeoutPromise]) as any;
+      // Apply timeout to source gathering API call
+      const response = await withTimeout(
+        sendChatCompletion({
+          model: TEXT_MODELS.FAST,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 1500,
+          stream: false,
+        }),
+        SERP_ANALYSIS_TIMEOUT_MS,
+        'timeout'
+      );
 
       const content = (response as any).choices[0]?.message?.content || '{}';
       
