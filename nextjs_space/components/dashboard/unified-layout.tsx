@@ -1,23 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { LucideIcon } from 'lucide-react';
 import { Sidebar } from './sidebar';
 import { DashboardHeader } from './header';
 import { MobileNav } from './mobile-nav';
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: LucideIcon | null;
-  badge?: string;
-  adminOnly?: boolean;
-  isDivider?: boolean;
-}
+import { NavigationItem } from '@/lib/navigation-config';
 
 interface UnifiedLayoutProps {
   children: React.ReactNode;
-  navItems: NavItem[];
+  navItems: NavigationItem[];
   isAdmin?: boolean;
   headerTitle?: string;
   headerDescription?: string;

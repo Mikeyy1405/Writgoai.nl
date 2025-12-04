@@ -7,18 +7,10 @@ import { LucideIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './logo';
 import { isNavItemActive } from '@/lib/navigation-utils';
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: LucideIcon | null;
-  badge?: string;
-  adminOnly?: boolean;
-  isDivider?: boolean;
-}
+import { NavigationItem, isNavItem } from '@/lib/navigation-config';
 
 interface SidebarProps {
-  items: NavItem[];
+  items: NavigationItem[];
   isAdmin?: boolean;
 }
 
@@ -78,14 +70,49 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {visibleItems.map((item, index) => {
           // Handle dividers
-          if (item.isDivider) {
+          if ('isDivider' in item && item.isDivider) {
             return (
-              <div key={`divider-${index}`} className="my-2 border-t border-zinc-800" />
+              <div key={`divider-${index}`} className="my-4 pt-4">
+                <AnimatePresence mode="wait">
+                  {!isCollapsed ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className={`px-3 mb-2 ${item.adminOnly ? 'text-blue-400' : 'text-zinc-500'}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          {item.label}
+                        </span>
+                        {item.adminOnly && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-bold">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 border-t border-zinc-800" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="border-t border-zinc-800"
+                    />
+                  )}
+                </AnimatePresence>
+              </div>
             );
           }
 
-          const Icon = item.icon as LucideIcon;
+          // TypeScript now knows this is a NavItem
+          if (!isNavItem(item)) return null;
+          
+          const Icon = item.icon;
           const active = isNavItemActive(item.href, pathname);
+          const isAdminItem = item.adminOnly;
+          const iconColor = active ? (isAdminItem ? 'text-blue-400' : 'text-[#FF9933]') : '';
 
           return (
             <Link
@@ -96,12 +123,16 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
                 transition-all duration-200
                 ${
                   active
-                    ? 'bg-gradient-to-r from-[#FF9933]/20 to-[#FFAD33]/20 text-[#FF9933] border border-[#FF9933]/30'
+                    ? isAdminItem
+                      ? 'bg-gradient-to-r from-blue-500/20 to-indigo-500/20 text-blue-400 border border-blue-500/30'
+                      : 'bg-gradient-to-r from-[#FF9933]/20 to-[#FFAD33]/20 text-[#FF9933] border border-[#FF9933]/30'
+                    : isAdminItem
+                    ? 'text-blue-300 hover:text-blue-100 hover:bg-blue-900/30'
                     : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
                 }
               `}
             >
-              <Icon className={`w-5 h-5 shrink-0 ${active ? 'text-[#FF9933]' : ''}`} />
+              {Icon && <Icon className={`w-5 h-5 shrink-0 ${iconColor}`} />}
               
               <AnimatePresence mode="wait">
                 {!isCollapsed && (
@@ -121,7 +152,11 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
                 <motion.span
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF9933]/20 text-[#FF9933]"
+                  className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isAdminItem 
+                      ? 'bg-blue-500/20 text-blue-400' 
+                      : 'bg-[#FF9933]/20 text-[#FF9933]'
+                  }`}
                 >
                   {item.badge}
                 </motion.span>
@@ -131,7 +166,9 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
               {active && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#FF9933] rounded-r-full"
+                  className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full ${
+                    isAdminItem ? 'bg-blue-400' : 'bg-[#FF9933]'
+                  }`}
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                 />
               )}

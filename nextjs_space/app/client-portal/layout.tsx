@@ -3,53 +3,9 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import {
-  LayoutDashboard,
-  FileText,
-  Video,
-  ShoppingBag,
-  Receipt,
-  Settings,
-  PenTool,
-  Search,
-  Map,
-  Image,
-  Wand2,
-  Library,
-  FolderKanban,
-  Send,
-  Plus,
-} from 'lucide-react';
 import { UnifiedLayout } from '@/components/dashboard/unified-layout';
 import WritgoAgentWidget from '@/components/writgo-agent-widget';
-
-const clientNavItems = [
-  {
-    label: 'Dashboard',
-    href: '/client-portal',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Content Maken',
-    href: '/client-portal/create',
-    icon: Plus,
-  },
-  {
-    label: 'Mijn Content',
-    href: '/client-portal/content-library',
-    icon: Library,
-  },
-  {
-    label: 'Publiceren',
-    href: '/client-portal/publish',
-    icon: Send,
-  },
-  {
-    label: 'Instellingen',
-    href: '/client-portal/account',
-    icon: Settings,
-  },
-];
+import { getNavItems, isUserAdmin } from '@/lib/navigation-config';
 
 export default function ClientPortalLayout({
   children,
@@ -64,13 +20,7 @@ export default function ClientPortalLayout({
       router.push('/client-login');
       return;
     }
-    
-    // Admin moet naar agency dashboard, niet client portal
-    if (status === 'authenticated' && session?.user?.email === 'info@writgo.nl') {
-      router.push('/dashboard/agency');
-      return;
-    }
-  }, [status, session, router]);
+  }, [status, router]);
 
   if (status === 'loading') {
     return (
@@ -88,12 +38,15 @@ export default function ClientPortalLayout({
   }
 
   // Check if user is admin
-  const isAdmin = session?.user?.email === 'info@writgo.nl';
+  const isAdmin = isUserAdmin(session?.user?.email, session?.user?.role);
+  
+  // Get navigation items based on admin status
+  const navItems = getNavItems(isAdmin);
 
   return (
     <>
       <UnifiedLayout
-        navItems={clientNavItems}
+        navItems={navItems}
         isAdmin={isAdmin}
         headerTitle="Client Portal"
         headerDescription="Jouw persoonlijke content dashboard"
