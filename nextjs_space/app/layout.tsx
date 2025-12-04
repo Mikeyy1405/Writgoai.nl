@@ -57,7 +57,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'nl_NL',
-    url: 'https://writgo.nl',
+    url: 'https://writgoai.nl',
     siteName: 'Writgo Media',
     title: 'Writgo Media - Omnipresence Content Platform | Complete Online Aanwezigheid',
     description: 'Bouw een complete online aanwezigheid met Writgo Media. Blogs, social media, video content en email marketing - alles in één platform. SEO geoptimaliseerd met GPT-5.1. Probeer gratis!',
@@ -89,7 +89,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://writgo.nl',
+    canonical: 'https://writgoai.nl',
     languages: {
       'nl': 'https://writgoai.nl',
       'en-US': 'https://writgoai.nl/en',
