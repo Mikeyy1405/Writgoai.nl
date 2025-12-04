@@ -18,6 +18,8 @@ const aimlClient = new OpenAI({
 
 // Default orchestrator model - Gemini 3 Pro Preview
 const ORCHESTRATOR_MODEL = 'google/gemini-3-pro-preview';
+// Fallback model when primary model fails
+const FALLBACK_MODEL = 'gpt-4o';
 
 export interface Message {
   role: 'system' | 'user' | 'assistant' | 'tool';
@@ -69,27 +71,60 @@ export async function processAgentChat(
   }
 
   try {
-    // Call AIML API with function calling
-    const response = await aimlClient.chat.completions.create({
-      model,
-      messages: messages as any,
-      tools: getAllToolsAsOpenAIFunctions(),
-      tool_choice: 'auto',
-      temperature,
-      max_tokens: maxTokens,
-    });
+    let response;
+    
+    // Try primary model first
+    try {
+      response = await aimlClient.chat.completions.create({
+        model,
+        messages: messages as any,
+        tools: getAllToolsAsOpenAIFunctions(),
+        tool_choice: 'auto',
+        temperature,
+        max_tokens: maxTokens,
+      });
+    } catch (primaryError: any) {
+      console.warn('Primary model failed, trying fallback:', primaryError.message);
+      
+      // Try fallback model
+      response = await aimlClient.chat.completions.create({
+        model: FALLBACK_MODEL,
+        messages: messages as any,
+        tools: getAllToolsAsOpenAIFunctions(),
+        tool_choice: 'auto',
+        temperature,
+        max_tokens: maxTokens,
+      });
+    }
 
-    const choice = response.choices[0];
+    // Safe response handling with null/undefined checks
+    const choice = response?.choices?.[0];
+    if (!choice || !choice.message) {
+      console.error('Invalid API response:', JSON.stringify(response, null, 2));
+      throw new Error('Geen geldige response van AI model. Probeer opnieuw.');
+    }
     const assistantMessage = choice.message;
 
     // Check if the model wants to call tools
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCalls: ToolCall[] = assistantMessage.tool_calls.map((tc: any) => ({
-        id: tc.id,
-        name: tc.function.name,
-        parameters: JSON.parse(tc.function.arguments),
-        status: 'pending' as const,
-      }));
+      // Safe tool_calls parsing with proper error handling
+      const toolCalls: ToolCall[] = assistantMessage.tool_calls
+        .filter((tc: any) => tc?.function?.name && tc?.function?.arguments)
+        .map((tc: any) => {
+          let parameters = {};
+          try {
+            parameters = JSON.parse(tc.function.arguments);
+          } catch (e) {
+            console.error('Failed to parse tool arguments:', tc.function.arguments);
+            parameters = {};
+          }
+          return {
+            id: tc.id || `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: tc.function.name,
+            parameters,
+            status: 'pending' as const,
+          };
+        });
 
       return {
         message: assistantMessage.content || 'Executing tools...',
@@ -183,21 +218,40 @@ export async function* streamAgentChat(
   }
 
   try {
-    const stream = await aimlClient.chat.completions.create({
-      model,
-      messages: messages as any,
-      tools: getAllToolsAsOpenAIFunctions(),
-      tool_choice: 'auto',
-      temperature,
-      max_tokens: maxTokens,
-      stream: true,
-    });
+    let stream;
+    
+    // Try primary model first
+    try {
+      stream = await aimlClient.chat.completions.create({
+        model,
+        messages: messages as any,
+        tools: getAllToolsAsOpenAIFunctions(),
+        tool_choice: 'auto',
+        temperature,
+        max_tokens: maxTokens,
+        stream: true,
+      });
+    } catch (primaryError: any) {
+      console.warn('Primary model streaming failed, trying fallback:', primaryError.message);
+      
+      // Try fallback model
+      stream = await aimlClient.chat.completions.create({
+        model: FALLBACK_MODEL,
+        messages: messages as any,
+        tools: getAllToolsAsOpenAIFunctions(),
+        tool_choice: 'auto',
+        temperature,
+        max_tokens: maxTokens,
+        stream: true,
+      });
+    }
 
     let accumulatedToolCalls: any[] = [];
     let currentContent = '';
 
     for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta;
+      // Safe delta access with null/undefined checks
+      const delta = chunk?.choices?.[0]?.delta;
 
       if (!delta) continue;
 
@@ -207,12 +261,15 @@ export async function* streamAgentChat(
         yield delta.content;
       }
 
-      // Handle tool calls
+      // Handle tool calls with safe accumulation
       if (delta.tool_calls) {
         for (const toolCall of delta.tool_calls) {
-          if (!accumulatedToolCalls[toolCall.index]) {
-            accumulatedToolCalls[toolCall.index] = {
-              id: toolCall.id || '',
+          // Use explicit index or find next available slot
+          const index = toolCall.index !== undefined ? toolCall.index : accumulatedToolCalls.length;
+          
+          if (!accumulatedToolCalls[index]) {
+            accumulatedToolCalls[index] = {
+              id: toolCall.id || `tool_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
               type: 'function',
               function: {
                 name: toolCall.function?.name || '',
@@ -221,30 +278,39 @@ export async function* streamAgentChat(
             };
           }
           if (toolCall.function?.arguments) {
-            accumulatedToolCalls[toolCall.index].function.arguments +=
+            accumulatedToolCalls[index].function.arguments +=
               toolCall.function.arguments;
           }
           if (toolCall.function?.name) {
-            accumulatedToolCalls[toolCall.index].function.name =
+            accumulatedToolCalls[index].function.name =
               toolCall.function.name;
           }
           if (toolCall.id) {
-            accumulatedToolCalls[toolCall.index].id = toolCall.id;
+            accumulatedToolCalls[index].id = toolCall.id;
           }
         }
       }
 
-      // Check if stream is done
-      if (chunk.choices[0]?.finish_reason === 'tool_calls') {
+      // Check if stream is done with consistent safe access
+      if (chunk?.choices?.[0]?.finish_reason === 'tool_calls') {
         // Convert accumulated tool calls to ToolCall format
         const toolCalls: ToolCall[] = accumulatedToolCalls
           .filter(tc => tc.id && tc.function.name)
-          .map(tc => ({
-            id: tc.id,
-            name: tc.function.name,
-            parameters: JSON.parse(tc.function.arguments || '{}'),
-            status: 'pending' as const,
-          }));
+          .map(tc => {
+            let parameters = {};
+            try {
+              parameters = JSON.parse(tc.function.arguments || '{}');
+            } catch (e) {
+              console.error('Failed to parse accumulated tool arguments:', tc.function.arguments);
+              parameters = {};
+            }
+            return {
+              id: tc.id,
+              name: tc.function.name,
+              parameters,
+              status: 'pending' as const,
+            };
+          });
 
         yield toolCalls;
         return;
