@@ -11,7 +11,7 @@ Allow: /blog
 Allow: /blog/*
 
 # Sitemap
-Sitemap: https://WritgoAI.nl/sitemap.xml
+Sitemap: https://writgo.nl/sitemap.xml
 
 # Disallow admin en client portals
 Disallow: /admin

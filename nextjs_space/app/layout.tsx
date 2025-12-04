@@ -10,31 +10,31 @@ import CookieBanner from '@/components/cookie-banner';
 // const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://writgoai.nl'),
+  metadataBase: new URL('https://writgo.nl'),
   title: {
-    default: 'WritgoAI - AI Schrijftool & Content Generator voor WordPress | Blog Generator AI',
-    template: '%s | WritgoAI - AI Content Platform'
+    default: 'Writgo Media - Omnipresence Content Platform | Complete Online Aanwezigheid',
+    template: '%s | Writgo Media - Content Platform'
   },
-  description: 'WritgoAI is dé AI schrijftool voor professionals. Genereer blogs, social media posts en WooCommerce product beschrijvingen in seconden. WordPress AI plugin met GPT-5.1, SEO optimalisatie en Originality.AI integratie. Probeer gratis!',
+  description: 'Writgo Media is jouw complete omnipresence partner. Genereer blogs, social media posts, video content en email marketing. SEO geoptimaliseerd met GPT-5.1, voor consistente zichtbaarheid op alle kanalen. Probeer gratis!',
   keywords: [
+    'omnipresence marketing',
+    'content marketing',
+    'social media content',
+    'video content creatie',
+    'email marketing',
     'AI schrijftool',
     'AI content generator',
     'blog generator AI',
-    'AI tekstschrijver',
     'WordPress AI plugin',
-    'social media planner',
     'SEO content tool',
-    'AI copywriter',
-    'automatische blog schrijver',
-    'WooCommerce product beschrijvingen',
-    'AI tekstgenerator Nederlands',
     'content automatisering',
+    'complete online aanwezigheid',
+    'multi-channel marketing',
     'GPT-5.1',
-    'blog schrijven AI',
-    'content marketing tool'
+    'content strategie'
   ],
-  authors: [{ name: 'Mike Schonewille', url: 'https://writgoai.nl' }],
-  creator: 'WritgoAI by Mike Schonewille',
+  authors: [{ name: 'Mike Schonewille', url: 'https://writgo.nl' }],
+  creator: 'Writgo Media by Mike Schonewille',
   publisher: 'Writgo Media',
   formatDetection: {
     email: false,
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'WritgoAI',
+    title: 'Writgo Media',
   },
   icons: {
     icon: [
@@ -57,25 +57,25 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'nl_NL',
-    url: 'https://writgoai.nl',
-    siteName: 'WritgoAI',
-    title: 'WritgoAI - AI Schrijftool & Content Generator voor WordPress',
-    description: 'Genereer professionele blogs, social media posts en WooCommerce producten met AI. WordPress plugin met GPT-5.1, SEO optimalisatie en Originality.AI. Automatiseer je content in seconden!',
+    url: 'https://writgo.nl',
+    siteName: 'Writgo Media',
+    title: 'Writgo Media - Omnipresence Content Platform | Complete Online Aanwezigheid',
+    description: 'Bouw een complete online aanwezigheid met Writgo Media. Blogs, social media, video content en email marketing - alles in één platform. SEO geoptimaliseerd met GPT-5.1. Probeer gratis!',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'WritgoAI - AI Content Generator Platform',
+        alt: 'Writgo Media - Omnipresence Content Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WritgoAI - AI Schrijftool & Content Generator',
-    description: 'Genereer professionele content met AI. WordPress plugin, GPT-5.1, SEO tools. Probeer gratis!',
+    title: 'Writgo Media - Omnipresence Content Platform',
+    description: 'Complete online aanwezigheid: blogs, social media, video's en email marketing. AI-powered, SEO geoptimaliseerd. Probeer gratis!',
     images: ['/og-image.png'],
-    creator: '@WritgoAI',
+    creator: '@WritgoMedia',
   },
   robots: {
     index: true,
@@ -89,7 +89,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://writgoai.nl',
+    canonical: 'https://writgo.nl',
   },
   verification: {
     google: 'p_boU5OFOBKAI5HGrq85ZU5MOXuddbZPLEU0wtDmAhI',

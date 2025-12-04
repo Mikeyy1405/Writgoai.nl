@@ -127,8 +127,8 @@ export default function PrivacyPage() {
               </ul>
               <p className="mb-4">
                 U kunt uw gegevens downloaden of verwijderen via uw account instellingen of door contact op te nemen met {' '}
-                <a href="mailto:support@WritgoAI.nl" className="text-orange-500 hover:text-orange-400 transition-colors">
-                  support@WritgoAI.nl
+                <a href="mailto:info@writgo.nl" className="text-orange-500 hover:text-orange-400 transition-colors">
+                  info@writgo.nl
                 </a>
               </p>
 
@@ -198,13 +198,13 @@ export default function PrivacyPage() {
                 </p>
                 <p className="mb-2">
                   <strong className="text-white">Email:</strong>{' '}
-                  <a href="mailto:support@WritgoAI.nl" className="text-orange-500 hover:text-orange-400 transition-colors">
-                    support@WritgoAI.nl
+                  <a href="mailto:info@writgo.nl" className="text-orange-500 hover:text-orange-400 transition-colors">
+                    info@writgo.nl
                   </a>
                 </p>
                 <p>
                   <strong className="text-white">Website:</strong>{' '}
-                  <a href="https://WritgoAI.nl" target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-400 transition-colors">
+                  <a href="https://writgo.nl" target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-400 transition-colors">
                     writgo.nl
                   </a>
                 </p>
