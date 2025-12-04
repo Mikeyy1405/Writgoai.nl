@@ -180,16 +180,8 @@ export async function POST(req: NextRequest) {
 
     // Save to Content Library
     console.log('[Content Hub] Saving to Content Library...');
-    // Initialize saveResult at function scope to ensure it's accessible in return
-    let saveResult = {
-      success: false,
-      saved: false,
-      duplicate: false,
-      contentId: undefined as string | undefined,
-      message: 'Not saved',
-    };
     
-    saveResult = await autoSaveToLibrary({
+    const saveResult = await autoSaveToLibrary({
       clientId: client.id,
       type: 'blog',
       title: article.title,
