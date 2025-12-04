@@ -16,6 +16,7 @@ import {
   Info,
   Upload,
   ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ArticleGenerator from './article-generator';
@@ -42,6 +43,7 @@ interface ArticleRowProps {
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const [showGenerator, setShowGenerator] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [rewriting, setRewriting] = useState(false);
 
   const getStatusIcon = () => {
     switch (article.status) {
@@ -63,17 +65,17 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const getStatusText = () => {
     switch (article.status) {
       case 'published':
-        return 'Published';
+        return 'Gepubliceerd';
       case 'pending':
-        return 'Pending';
+        return 'Wachtend';
       case 'writing':
-        return 'Writing...';
+        return 'Schrijven...';
       case 'researching':
-        return 'Researching...';
+        return 'Onderzoeken...';
       case 'publishing':
-        return 'Publishing...';
+        return 'Publiceren...';
       case 'failed':
-        return 'Failed';
+        return 'Mislukt';
       default:
         return article.status;
     }
@@ -109,16 +111,51 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to publish');
+        throw new Error('Publiceren mislukt');
       }
 
-      toast.success('Article published to WordPress!');
+      toast.success('Artikel gepubliceerd naar WordPress!');
       onUpdate?.();
     } catch (error) {
       console.error('Failed to publish:', error);
-      toast.error('Failed to publish article');
+      toast.error('Kon artikel niet publiceren');
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleRewrite = async () => {
+    if (!confirm('Weet je zeker dat je dit artikel wilt herschrijven? De huidige versie wordt behouden.')) {
+      return;
+    }
+    
+    setRewriting(true);
+    toast.loading('Artikel herschrijven...', { id: 'rewrite' });
+    
+    try {
+      const response = await fetch('/api/content-hub/rewrite-article', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articleId: article.id,
+          maintainUrl: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Herschrijven mislukt');
+      }
+
+      toast.success('Artikel succesvol herschreven!', { id: 'rewrite' });
+      onUpdate?.();
+    } catch (error: any) {
+      console.error('Failed to rewrite:', error);
+      toast.error(error.message || 'Kon artikel niet herschrijven', { id: 'rewrite' });
+    } finally {
+      setRewriting(false);
     }
   };
 
@@ -195,7 +232,7 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
                   className="gap-2"
                 >
                   <Play className="h-4 w-4" />
-                  Generate
+                  Genereer
                 </Button>
               )}
               
@@ -212,7 +249,7 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
                   ) : (
                     <Upload className="h-4 w-4" />
                   )}
-                  Publish
+                  Publiceer
                 </Button>
               )}
               
@@ -225,8 +262,25 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
                 >
                   <a href={article.wordpressUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />
-                    View
+                    Bekijk
                   </a>
+                </Button>
+              )}
+              
+              {(article.status === 'published' || article.status === 'pending') && (
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={handleRewrite}
+                  disabled={rewriting}
+                  className="gap-2"
+                  title="Herschrijf dit artikel"
+                >
+                  {rewriting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
                 </Button>
               )}
               

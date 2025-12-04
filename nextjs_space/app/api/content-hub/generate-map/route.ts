@@ -138,8 +138,22 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('[Content Hub] Map generation error:', error);
+    
+    // Provide better error messages in Dutch
+    let errorMessage = 'Kon topical map niet genereren';
+    
+    if (error.message.includes('timeout')) {
+      errorMessage = 'Generatie duurde te lang. Probeer het opnieuw met een kleiner aantal artikelen.';
+    } else if (error.message.includes('rate limit')) {
+      errorMessage = 'API limiet bereikt. Probeer het over een paar minuten opnieuw.';
+    } else if (error.message.includes('API key')) {
+      errorMessage = 'API configuratie probleem. Neem contact op met support.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Failed to generate topical map' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -243,7 +257,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error('[Content Hub] Failed to get map:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch topical map' },
+      { error: error.message || 'Kon topical map niet ophalen' },
       { status: 500 }
     );
   }
