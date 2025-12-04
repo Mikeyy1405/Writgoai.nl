@@ -8,8 +8,8 @@ import { MobileNav } from './mobile-nav';
 
 interface NavItem {
   label: string;
-  href: string;
-  icon: LucideIcon | null;
+  href?: string;
+  icon?: LucideIcon | null;
   badge?: string;
   adminOnly?: boolean;
   isDivider?: boolean;

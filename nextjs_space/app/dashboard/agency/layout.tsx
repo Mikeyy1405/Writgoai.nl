@@ -3,66 +3,12 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  ClipboardList,
-  MessageSquare,
-  Receipt,
-  Settings,
-  TrendingUp,
-  Bot,
-  FolderKanban,
-} from 'lucide-react';
 import { UnifiedLayout } from '@/components/dashboard/unified-layout';
+import { getNavItems, isUserAdmin } from '@/lib/navigation-config';
 
 interface AgencyLayoutProps {
   children: React.ReactNode;
 }
-
-const agencyNavItems = [
-  {
-    label: 'Dashboard',
-    href: '/dashboard/agency',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Klanten',
-    href: '/dashboard/agency/clients',
-    icon: Users,
-    adminOnly: true,
-  },
-  {
-    label: 'Blog',
-    href: '/dashboard/agency/blog',
-    icon: FileText,
-    adminOnly: true,
-  },
-  {
-    label: 'Content Hub',
-    href: '/dashboard/content-hub',
-    icon: FolderKanban,
-    adminOnly: true,
-  },
-  {
-    label: 'AI Agent',
-    href: '/dashboard/agent',
-    icon: Bot,
-    adminOnly: true,
-  },
-  {
-    label: 'Facturen',
-    href: '/dashboard/agency/invoices',
-    icon: Receipt,
-    adminOnly: true,
-  },
-  {
-    label: 'Instellingen',
-    href: '/dashboard/agency/settings',
-    icon: Settings,
-  },
-];
 
 export default function AgencyLayout({ children }: AgencyLayoutProps) {
   const { data: session, status } = useSession() || {};
@@ -82,10 +28,16 @@ export default function AgencyLayout({ children }: AgencyLayoutProps) {
     );
   }
 
+  // Check if user is admin
+  const isAdmin = isUserAdmin(session?.user?.email, session?.user?.role);
+  
+  // Get navigation items based on admin status - always show admin items in agency dashboard
+  const navItems = getNavItems(true);
+
   return (
     <UnifiedLayout
-      navItems={agencyNavItems}
-      isAdmin={true}
+      navItems={navItems}
+      isAdmin={isAdmin}
       headerTitle="Agency Dashboard"
       headerDescription="Beheer klanten, opdrachten en facturen"
     >
