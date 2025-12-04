@@ -73,7 +73,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Writgo Media - Omnipresence Content Platform',
-    description: 'Complete online aanwezigheid: blogs, social media, video's en email marketing. AI-powered, SEO geoptimaliseerd. Probeer gratis!',
+    description: 'Complete online aanwezigheid: blogs, social media, video en email marketing. AI-powered, SEO geoptimaliseerd. Probeer gratis!',
     images: ['/og-image.png'],
     creator: '@WritgoMedia',
   },
