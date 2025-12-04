@@ -132,21 +132,24 @@ export async function POST(req: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'Onbekende fout');
-          console.error(`[Content Hub] WordPress API error (${response.status}):`, errorText);
           
-          // Handle invalid page number error - this means we've reached the end
+          // Handle invalid page number error - this means we've reached the end of pagination
           if (response.status === 400) {
             try {
               const errorData = JSON.parse(errorText);
               if (errorData.code === 'rest_post_invalid_page_number') {
+                // This is normal - it means we've reached the end of available pages
                 console.log(`[Content Hub] Reached end of pagination at page ${page}`);
                 hasMore = false;
-                break;
+                break; // Exit the loop, this is not an error
               }
             } catch (e) {
               // If we can't parse the error, fall through to generic error handling
             }
           }
+          
+          // Only log and throw errors if we didn't already handle pagination end above
+          console.error(`[Content Hub] WordPress API error (${response.status}):`, errorText);
           
           // Specific error messages based on status code
           if (response.status === 401 || response.status === 403) {
@@ -160,17 +163,26 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Extract total pages from response headers
+        // Extract total pages from response headers (check on every response)
         const wpTotalPages = response.headers.get('X-WP-TotalPages');
-        if (wpTotalPages && totalPages === null) {
+        if (wpTotalPages) {
           const parsed = parseInt(wpTotalPages, 10);
-          if (!isNaN(parsed) && parsed > 0) {
-            totalPages = parsed;
-            console.log(`[Content Hub] WordPress reports ${totalPages} total pages available`);
+          if (!isNaN(parsed) && parsed >= 0) {
+            if (totalPages === null) {
+              totalPages = parsed;
+              console.log(`[Content Hub] WordPress reports ${totalPages} total pages available`);
+              
+              // If WordPress reports 0 pages, there are no posts
+              if (totalPages === 0) {
+                console.log('[Content Hub] No posts found in WordPress (0 pages)');
+                hasMore = false;
+                break;
+              }
+            }
           } else {
             console.warn(`[Content Hub] Invalid X-WP-TotalPages header value: ${wpTotalPages}`);
           }
-        } else if (!wpTotalPages && totalPages === null) {
+        } else if (totalPages === null) {
           console.log('[Content Hub] X-WP-TotalPages header not found, will paginate until empty response');
         }
 
