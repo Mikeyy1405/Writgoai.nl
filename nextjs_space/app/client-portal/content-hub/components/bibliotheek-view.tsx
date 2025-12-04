@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { stripHtmlTags } from '@/lib/validation';
 import { 
   FileText, 
   Loader2, 
@@ -281,7 +282,7 @@ export default function BibliotheekView({ siteId }: BibliotheekViewProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
-          content: updatedContent.replace(/<[^>]*>/g, ''), // Plain text
+          content: stripHtmlTags(updatedContent), // Plain text with safe HTML stripping
           contentHtml: updatedContent, // HTML versie
           metaDesc: seoMetadata?.metaDescription || selectedContent.metaDesc,
           keywords,

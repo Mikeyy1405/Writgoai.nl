@@ -161,3 +161,28 @@ export function sanitizeInput(input: string): string {
     .replace(/[<>]/g, '') // Remove < and > (basic XSS prevention)
     .substring(0, 50000); // Max length
 }
+
+/**
+ * Safely convert HTML to plain text for storage purposes
+ * This uses browser's native DOMParser for safe HTML parsing
+ * Note: This is client-side only and used for converting trusted content
+ * from the editor to plain text format, not for sanitizing untrusted input
+ */
+export function stripHtmlTags(html: string): string {
+  if (!html) return '';
+  
+  // For client-side, use native DOM parser which is safe
+  if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      return doc.body.textContent || '';
+    } catch (e) {
+      // Fallback if DOMParser fails
+      return html;
+    }
+  }
+  
+  // Server-side fallback: just return the HTML as-is since this function
+  // is only used client-side in the editor component
+  return html;
+}
