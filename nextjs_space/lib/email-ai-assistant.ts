@@ -119,7 +119,7 @@ Respond in JSON format:
             amount: -5,
             type: 'deduction',
             description: 'AI email analysis',
-            balance: totalCredits - 5,
+            balanceAfter: totalCredits - 5,
           },
         });
       }
@@ -249,7 +249,7 @@ Generate a well-structured, ${tone} reply that addresses the main points in the 
           amount: -10,
           type: 'deduction',
           description: 'AI email reply generation',
-          balance: totalCredits - 10,
+          balanceAfter: totalCredits - 10,
         },
       });
     }
@@ -403,7 +403,7 @@ export async function sendAutoReply(
             amount: -8,
             type: 'deduction',
             description: 'AI auto-reply',
-            balance: totalCredits - 8,
+            balanceAfter: totalCredits - 8,
           },
         });
       }

@@ -162,7 +162,7 @@ export async function sendMarketingCampaign({
           amount: -creditsNeeded,
           type: 'deduction',
           description: `Email marketing campaign: ${sentCount} emails sent`,
-          balance: totalCredits - creditsNeeded,
+          balanceAfter: totalCredits - creditsNeeded,
         },
       });
     }
