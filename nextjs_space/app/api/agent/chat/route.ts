@@ -12,6 +12,7 @@ import {
   Message,
   ToolCall,
 } from '@/lib/ai-brain';
+import { executeTool } from '@/lib/ai-brain/tool-executor';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -117,6 +118,23 @@ export async function POST(req: NextRequest) {
 
             // Check if AI wants to use tools
             if (response.toolCalls && response.toolCalls.length > 0) {
+              // Add assistant message with tool calls first
+              currentMessages = [
+                ...currentMessages,
+                {
+                  role: 'assistant',
+                  content: response.message || '',
+                  tool_calls: response.toolCalls.map(tc => ({
+                    id: tc.id,
+                    type: 'function',
+                    function: {
+                      name: tc.name,
+                      arguments: JSON.stringify(tc.parameters),
+                    },
+                  })),
+                },
+              ];
+
               // Execute each tool with status updates
               for (const toolCall of response.toolCalls) {
                 // Send tool start status
@@ -126,24 +144,23 @@ export async function POST(req: NextRequest) {
                   step: iteration
                 })));
 
-                // Execute the tool
-                const toolResponse = await executeToolCalls(currentMessages, [toolCall]);
+                // Execute the tool and get result
+                toolCall.status = 'executing';
+                try {
+                  const result = await executeTool(toolCall.name, toolCall.parameters);
+                  toolCall.result = result;
+                  toolCall.status = result.success ? 'completed' : 'failed';
+                } catch (error: any) {
+                  toolCall.result = {
+                    success: false,
+                    error: error.message,
+                  };
+                  toolCall.status = 'failed';
+                }
                 
-                // Update messages with tool result
+                // Add tool result to messages
                 currentMessages = [
                   ...currentMessages,
-                  {
-                    role: 'assistant',
-                    content: '',
-                    tool_calls: [{
-                      id: toolCall.id,
-                      type: 'function',
-                      function: {
-                        name: toolCall.name,
-                        arguments: JSON.stringify(toolCall.parameters),
-                      },
-                    }],
-                  },
                   {
                     role: 'tool',
                     tool_call_id: toolCall.id,
