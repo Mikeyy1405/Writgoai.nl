@@ -127,8 +127,8 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
   }, [clusters, filter, searchQuery, selectedCluster]);
 
   const syncExistingContent = useCallback(async (silent = false) => {
-    // Prevent multiple simultaneous syncs using both state and ref
-    if (syncing || isSyncingRef.current) return;
+    // Prevent multiple simultaneous syncs using ref (not state to avoid unnecessary re-renders)
+    if (isSyncingRef.current) return;
     
     // Check cooldown - minimum 30 seconds between syncs
     const SYNC_COOLDOWN_MS = 30000; // 30 seconds
@@ -196,7 +196,7 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       setSyncing(false);
       isSyncingRef.current = false;
     }
-  }, [syncing, siteId, loadTopicalMap]);
+  }, [siteId, loadTopicalMap]); // Removed 'syncing' from deps as we use ref for checking
 
   // useEffect hooks after function definitions
   useEffect(() => {
@@ -224,64 +224,9 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     // Mark as synced before calling to prevent race conditions
     hasSyncedForFilterRef.current.add(syncKey);
     
-    // Perform silent sync
-    const performSync = async () => {
-      // Check if already syncing
-      if (isSyncingRef.current) {
-        return;
-      }
-      
-      // Check cooldown
-      const SYNC_COOLDOWN_MS = 30000;
-      const lastSyncKey = `content-hub-last-sync-${siteId}`;
-      const lastSyncTime = localStorage.getItem(lastSyncKey);
-      
-      if (lastSyncTime) {
-        const timeSinceLastSync = Date.now() - parseInt(lastSyncTime, 10);
-        if (timeSinceLastSync < SYNC_COOLDOWN_MS) {
-          return; // Skip if in cooldown
-        }
-      }
-      
-      // Start sync
-      isSyncingRef.current = true;
-      setSyncing(true);
-      setSyncError(null);
-      setSyncMessage(null);
-      
-      try {
-        const response = await fetch('/api/content-hub/sync-existing', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ siteId }),
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Synchronisatie mislukt');
-        }
-        
-        localStorage.setItem(lastSyncKey, Date.now().toString());
-        
-        if (data.warning) {
-          setSyncMessage(data.message);
-        } else {
-          setSyncMessage(`${data.stats.synced} artikelen gesynchroniseerd`);
-        }
-        
-        await loadTopicalMap();
-      } catch (error: any) {
-        console.error('Sync failed:', error);
-        setSyncError(error.message);
-      } finally {
-        setSyncing(false);
-        isSyncingRef.current = false;
-      }
-    };
-    
-    performSync();
-  }, [filter, siteId, loadTopicalMap]);
+    // Use the existing syncExistingContent function (silent mode)
+    syncExistingContent(true);
+  }, [filter, siteId, syncExistingContent]);
 
   const handleGenerateMap = async () => {
     setGenerating(true);

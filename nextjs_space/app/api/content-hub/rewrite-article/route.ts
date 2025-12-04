@@ -120,7 +120,7 @@ Geef het herschreven artikel terug in JSON formaat:
         },
       ],
       temperature: 0.7,
-      maxTokens: 8000,
+      max_tokens: 8000, // Use snake_case as per API client
     });
 
     // Parse JSON response with robust error handling
