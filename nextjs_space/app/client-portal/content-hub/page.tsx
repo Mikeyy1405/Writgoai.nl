@@ -17,11 +17,13 @@ import {
   RefreshCw,
   Sparkles,
   Loader2,
+  Library,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import WebsiteConnector from './components/website-connector';
 import TopicalMapView from './components/topical-map-view';
 import AutopilotSettings from './components/autopilot-settings';
+import BibliotheekView from './components/bibliotheek-view';
 
 interface ContentHubSite {
   id: string;
@@ -300,10 +302,26 @@ export default function ContentHubPage() {
               {/* Content Tabs */}
               <Tabs defaultValue="all" className="w-full">
                 <TabsList>
-                  <TabsTrigger value="all">Alle Artikelen</TabsTrigger>
-                  <TabsTrigger value="pending">Te Schrijven</TabsTrigger>
-                  <TabsTrigger value="published">Gepubliceerd</TabsTrigger>
-                  <TabsTrigger value="autopilot">Autopilot</TabsTrigger>
+                  <TabsTrigger value="all">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Alle Artikelen
+                  </TabsTrigger>
+                  <TabsTrigger value="pending">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Te Schrijven
+                  </TabsTrigger>
+                  <TabsTrigger value="published">
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Gepubliceerd
+                  </TabsTrigger>
+                  <TabsTrigger value="library">
+                    <Library className="h-4 w-4 mr-2" />
+                    Bibliotheek
+                  </TabsTrigger>
+                  <TabsTrigger value="autopilot">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Autopilot
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="all" className="mt-6">
@@ -316,6 +334,10 @@ export default function ContentHubPage() {
 
                 <TabsContent value="published" className="mt-6">
                   <TopicalMapView siteId={selectedSite.id} filter="published" />
+                </TabsContent>
+
+                <TabsContent value="library" className="mt-6">
+                  <BibliotheekView siteId={selectedSite.id} />
                 </TabsContent>
 
                 <TabsContent value="autopilot" className="mt-6">
