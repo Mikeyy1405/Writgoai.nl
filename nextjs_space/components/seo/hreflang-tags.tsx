@@ -5,12 +5,19 @@
  * Supports: Dutch (nl), English US (en-US), German (de)
  */
 
+/**
+ * Props for the HreflangTags component
+ * @property {string} [path] - The URL path for which to generate hreflang tags.
+ *                              Should start with a forward slash (e.g., '/about', '/pricing').
+ *                              Defaults to empty string for the root path.
+ */
 interface HreflangTagsProps {
   path?: string;
 }
 
 export function HreflangTags({ path = '' }: HreflangTagsProps) {
-  const baseUrl = 'https://writgoai.nl';
+  // Use environment variable if available, fallback to production URL
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://writgoai.nl';
   
   return (
     <>
