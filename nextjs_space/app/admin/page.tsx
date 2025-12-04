@@ -1,81 +1,54 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Users, FileText, DollarSign, Activity, Search, 
-  Loader2, ArrowRight, TrendingUp, Clock, CheckCircle2,
-  UserCheck, CreditCard, LogOut, Home, Menu, X,
-  Package, MessageSquare, AlertCircle
+  Users, FileText, DollarSign, Activity, 
+  Loader2, ArrowRight, TrendingUp, Save,
+  UserPlus, Package, MessageSquare, AlertCircle,
+  Mail, StickyNote, CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
-
-interface Client {
-  id: string;
-  name: string;
-  email: string;
-  companyName?: string;
-  subscriptionStatus: string;
-  subscriptionPlan: string;
-  subscriptionCredits: number;
-  topUpCredits: number;
-  totalCreditsUsed: number;
-  isUnlimited: boolean;
-  createdAt: string;
-  _count: {
-    savedContent: number;
-    projects: number;
-  };
-}
-
-interface Order {
-  id: string;
-  title: string;
-  status: string;
-  category: string;
-  client: {
-    name: string;
-    email: string;
-  };
-  createdAt: string;
-}
+import { useToast } from '@/hooks/use-toast';
 
 interface Stats {
   totalClients: number;
+  newClientsThisWeek: number;
   activeClients: number;
+  totalContent: number;
+  contentThisMonth: number;
   credits: {
-    totalPurchased: number;
     totalUsed: number;
-    subscriptionCredits: number;
-    topUpCredits: number;
   };
-  subscriptions: Record<string, number>;
-  recentActivity: any[];
   revenue: {
     total: number;
-    credits: number;
+    thisMonth: number;
   };
-  monthlyRevenue: any[];
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    message: string;
+    timestamp: string;
+  }>;
 }
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'orders'>('overview');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [notesSaving, setNotesSaving] = useState(false);
+  const [notesLastSaved, setNotesLastSaved] = useState<Date | null>(null);
   const hasFetchedRef = useRef(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auth check and data fetching
   useEffect(() => {
@@ -95,8 +68,9 @@ export default function AdminDashboard() {
     if (!hasFetchedRef.current) {
       hasFetchedRef.current = true;
       fetchData();
+      fetchNotes();
     }
-  }, [status, session?.user?.email]);
+  }, [status, session?.user?.email, router]);
 
   const fetchData = async () => {
     try {
@@ -109,21 +83,23 @@ export default function AdminDashboard() {
         throw new Error('Failed to fetch stats');
       }
       const statsData = await statsRes.json();
-      setStats(statsData);
       
-      // Fetch clients
-      const clientsRes = await fetch('/api/superadmin/clients?limit=10');
-      if (clientsRes.ok) {
-        const clientsData = await clientsRes.json();
-        setClients(clientsData.clients || []);
-      }
-      
-      // Fetch orders
-      const ordersRes = await fetch('/api/admin/orders?status=all');
-      if (ordersRes.ok) {
-        const ordersData = await ordersRes.json();
-        setOrders(ordersData.orders?.slice(0, 10) || []);
-      }
+      // Transform stats to match our interface
+      setStats({
+        totalClients: statsData.totalClients || 0,
+        newClientsThisWeek: 0, // Will be calculated if available
+        activeClients: statsData.activeClients || 0,
+        totalContent: statsData.totalContentGenerated || 0,
+        contentThisMonth: 0, // Will be calculated if available
+        credits: {
+          totalUsed: statsData.credits?.totalUsed || 0,
+        },
+        revenue: {
+          total: statsData.revenue?.total || 0,
+          thisMonth: statsData.revenueThisMonth || 0,
+        },
+        recentActivity: statsData.recentActivity?.slice(0, 5) || [],
+      });
       
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -133,9 +109,80 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut({ redirect: false });
-    router.push('/');
+  const fetchNotes = async () => {
+    try {
+      const response = await fetch('/api/admin/notes');
+      if (response.ok) {
+        const data = await response.json();
+        setNotes(data.content || '');
+        if (data.updatedAt) {
+          setNotesLastSaved(new Date(data.updatedAt));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    }
+  };
+
+  const saveNotes = useCallback(async (content: string) => {
+    try {
+      setNotesSaving(true);
+      const response = await fetch('/api/admin/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotesLastSaved(new Date(data.updatedAt));
+        toast({
+          title: 'Opgeslagen',
+          description: 'Notities zijn succesvol opgeslagen',
+        });
+      }
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      toast({
+        title: 'Fout',
+        description: 'Notities konden niet worden opgeslagen',
+        variant: 'destructive',
+      });
+    } finally {
+      setNotesSaving(false);
+    }
+  }, [toast]);
+
+  // Auto-save notes after 5 seconds of inactivity
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    if (notes && notes.length > 0) {
+      autoSaveTimerRef.current = setTimeout(() => {
+        saveNotes(notes);
+      }, 5000);
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [notes, saveNotes]);
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    if (value.length <= 5000) {
+      setNotes(value);
+    }
+  };
+
+  const handleManualSave = () => {
+    saveNotes(notes);
   };
 
   // Loading state
@@ -171,426 +218,217 @@ export default function AdminDashboard() {
     );
   }
 
-  // Safe filter functions with null checks
-  const filteredClients = clients.filter(client =>
-    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
-  );
-
-  const filteredOrders = orders.filter(order =>
-    order.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.client?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
-    <div className="min-h-screen bg-gray-950">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800">
-        <div className="px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden text-gray-400 hover:text-white"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-              
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-white">Admin Dashboard</h1>
-                <p className="text-xs md:text-sm text-gray-400">WritGo Management</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Link href="/client-portal">
-                <Button variant="ghost" size="sm" className="hidden md:flex">
-                  <Home className="w-4 h-4 mr-2" />
-                  Portal
-                </Button>
-              </Link>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleSignOut}
-                className="text-red-400 hover:text-red-300"
-              >
-                <LogOut className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">Uitloggen</span>
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gray-950 p-4 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white">Admin Dashboard</h1>
+            <p className="text-gray-400 mt-1">WritGo Management Overzicht</p>
           </div>
+          <Link href="/client-portal">
+            <Button variant="outline" className="border-gray-700 hover:bg-gray-800">
+              Naar Portal
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
         </div>
-        
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-800 bg-gray-900 p-4">
-            <div className="flex flex-col gap-2">
-              <Button
-                variant={activeTab === 'overview' ? 'default' : 'ghost'}
-                className="justify-start"
-                onClick={() => {
-                  setActiveTab('overview');
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <Activity className="w-4 h-4 mr-2" />
-                Overzicht
-              </Button>
-              <Button
-                variant={activeTab === 'clients' ? 'default' : 'ghost'}
-                className="justify-start"
-                onClick={() => {
-                  setActiveTab('clients');
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Klanten
-              </Button>
-              <Button
-                variant={activeTab === 'orders' ? 'default' : 'ghost'}
-                className="justify-start"
-                onClick={() => {
-                  setActiveTab('orders');
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <Package className="w-4 h-4 mr-2" />
-                Opdrachten
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        {/* Desktop Tabs */}
-        <div className="hidden md:flex gap-2 px-6 pb-4">
-          <Button
-            variant={activeTab === 'overview' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('overview')}
-          >
-            <Activity className="w-4 h-4 mr-2" />
-            Overzicht
-          </Button>
-          <Button
-            variant={activeTab === 'clients' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('clients')}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Klanten ({clients.length})
-          </Button>
-          <Button
-            variant={activeTab === 'orders' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('orders')}
-          >
-            <Package className="w-4 h-4 mr-2" />
-            Opdrachten ({orders.length})
-          </Button>
-        </div>
-      </div>
 
-      <div className="p-4 md:p-6">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-gray-900 border-gray-800">
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Totaal Klanten</p>
-                      <p className="text-2xl md:text-3xl font-bold text-white">
-                        {stats?.totalClients ?? 0}
-                      </p>
-                    </div>
-                    <Users className="w-8 h-8 md:w-10 md:h-10 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-900 border-gray-800">
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Actieve Klanten</p>
-                      <p className="text-2xl md:text-3xl font-bold text-green-400">
-                        {stats?.activeClients ?? 0}
-                      </p>
-                    </div>
-                    <UserCheck className="w-8 h-8 md:w-10 md:h-10 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-900 border-gray-800">
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Credits Gebruikt</p>
-                      <p className="text-2xl md:text-3xl font-bold text-blue-400">
-                        {(stats?.credits?.totalUsed ?? 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <CreditCard className="w-8 h-8 md:w-10 md:h-10 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-900 border-gray-800">
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Totale Omzet</p>
-                      <p className="text-2xl md:text-3xl font-bold text-yellow-400">
-                        €{(stats?.revenue?.total ?? 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <DollarSign className="w-8 h-8 md:w-10 md:h-10 text-yellow-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Snelle Acties</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Link href="/admin/clients">
-                    <Button className="w-full justify-between bg-blue-600 hover:bg-blue-700">
-                      <span className="flex items-center">
-                        <Users className="w-4 h-4 mr-2" />
-                        Beheer Klanten
-                      </span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                  <Link href="/admin/orders">
-                    <Button className="w-full justify-between bg-blue-600 hover:bg-blue-700">
-                      <span className="flex items-center">
-                        <Package className="w-4 h-4 mr-2" />
-                        Beheer Opdrachten
-                      </span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Abonnementen</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {stats?.subscriptions && Object.keys(stats.subscriptions).length > 0 ? (
-                    Object.entries(stats.subscriptions).map(([plan, count]) => (
-                      <div key={plan} className="flex justify-between items-center">
-                        <span className="text-gray-400 capitalize">{plan}</span>
-                        <Badge className="bg-blue-500/20 text-blue-300">{count}</Badge>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">Geen abonnementen</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Recent Activity */}
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-white">Recente Activiteit</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {stats?.recentActivity && stats.recentActivity.length > 0 ? (
-                    stats.recentActivity.slice(0, 5).map((activity, index) => (
-                      <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-gray-950">
-                        <Activity className="w-4 h-4 text-blue-400" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">{activity?.clientName ?? 'Onbekend'}</p>
-                          <p className="text-xs text-gray-500 truncate">{activity?.clientEmail ?? ''}</p>
-                        </div>
-                        <span className="text-xs text-gray-400">
-                          {activity?.timestamp ? new Date(activity.timestamp).toLocaleDateString('nl-NL') : ''}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">Geen recente activiteit</p>
-                  )}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">👥 Klanten</p>
+                  <p className="text-3xl font-bold text-white mt-2">
+                    {stats?.totalClients ?? 0}
+                  </p>
+                  <p className="text-xs text-green-400 mt-1">
+                    +{stats?.newClientsThisWeek ?? 0} deze week
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Clients Tab */}
-        {activeTab === 'clients' && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <Input
-                  type="text"
-                  placeholder="Zoek klanten..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-900 border-gray-800"
-                />
+                <Users className="w-10 h-10 text-blue-500" />
               </div>
-              <Link href="/superadmin/clients">
-                <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
-                  Alle Klanten
-                  <ArrowRight className="w-4 h-4 ml-2" />
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">💰 Omzet</p>
+                  <p className="text-3xl font-bold text-white mt-2">
+                    €{(stats?.revenue?.total ?? 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-green-400 mt-1">
+                    +€{(stats?.revenue?.thisMonth ?? 0).toLocaleString()} maand
+                  </p>
+                </div>
+                <DollarSign className="w-10 h-10 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">📝 Content</p>
+                  <p className="text-3xl font-bold text-white mt-2">
+                    {stats?.totalContent ?? 0}
+                  </p>
+                  <p className="text-xs text-green-400 mt-1">
+                    +{stats?.contentThisMonth ?? 0} maand
+                  </p>
+                </div>
+                <FileText className="w-10 h-10 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">🎫 Credits</p>
+                  <p className="text-3xl font-bold text-white mt-2">
+                    {(stats?.credits?.totalUsed ?? 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">gebruikt</p>
+                </div>
+                <TrendingUp className="w-10 h-10 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions & Personal Notes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Quick Actions */}
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                ⚡ Snelle Acties
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Link href="/admin/clients">
+                <Button className="w-full justify-between bg-blue-600 hover:bg-blue-700">
+                  <span className="flex items-center">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    + Nieuwe Klant
+                  </span>
+                  <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              {filteredClients.map((client) => (
-                <Card key={client.id} className="bg-gray-900 border-gray-800 hover:border-blue-500/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                            <span className="text-blue-300 font-bold">
-                              {client.name.substring(0, 2).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-white truncate">{client.name}</h3>
-                            <p className="text-sm text-gray-400 truncate">{client.email}</p>
-                            {client.companyName && (
-                              <p className="text-xs text-gray-500 truncate">{client.companyName}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <div className="flex flex-col items-end">
-                          <Badge className={
-                            client.subscriptionStatus === 'active'
-                              ? 'bg-green-500/20 text-green-300'
-                              : 'bg-gray-500/20 text-gray-400'
-                          }>
-                            {client.subscriptionStatus}
-                          </Badge>
-                          <span className="text-xs text-gray-500 mt-1">
-                            {client.subscriptionPlan}
-                          </span>
-                        </div>
-                        
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-white">
-                            {client.isUnlimited ? '∞' : 
-                              (client.subscriptionCredits + client.topUpCredits).toLocaleString()
-                            }
-                          </p>
-                          <p className="text-xs text-gray-500">credits</p>
-                        </div>
-                        
-                        <Link href={`/superadmin/clients/${client.id}`}>
-                          <Button size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300">
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-4 mt-3 pt-3 border-t border-gray-800">
-                      <div className="text-center">
-                        <p className="text-xs text-gray-500">Content</p>
-                        <p className="text-sm font-bold text-white">{client._count.savedContent}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-gray-500">Projecten</p>
-                        <p className="text-sm font-bold text-white">{client._count.projects}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-gray-500">Gebruikt</p>
-                        <p className="text-sm font-bold text-white">
-                          {client.totalCreditsUsed.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Orders Tab */}
-        {activeTab === 'orders' && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <Input
-                  type="text"
-                  placeholder="Zoek opdrachten..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-900 border-gray-800"
-                />
-              </div>
-              <Link href="/admin/orders">
-                <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
-                  Alle Opdrachten
-                  <ArrowRight className="w-4 h-4 ml-2" />
+              <Link href="/admin/assignments">
+                <Button className="w-full justify-between bg-blue-600 hover:bg-blue-700">
+                  <span className="flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    + Nieuwe Opdracht
+                  </span>
+                  <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-            </div>
+              <Link href="/admin/emails">
+                <Button className="w-full justify-between bg-blue-600 hover:bg-blue-700">
+                  <span className="flex items-center">
+                    <Mail className="w-4 h-4 mr-2" />
+                    📧 Berichten
+                  </span>
+                  <Badge className="bg-orange-500 text-white">3</Badge>
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
 
-            <div className="grid grid-cols-1 gap-4">
-              {filteredOrders.map((order) => (
-                <Card key={order.id} className="bg-gray-900 border-gray-800 hover:border-blue-500/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-white truncate">{order.title}</h3>
-                        <p className="text-sm text-gray-400 truncate">{order.client.name}</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <Badge className="bg-blue-500/20 text-blue-300 text-xs">
-                            {order.category}
-                          </Badge>
-                          <Badge className={
-                            order.status === 'done'
-                              ? 'bg-green-500/20 text-green-300'
-                              : order.status === 'open'
-                              ? 'bg-blue-500/20 text-blue-300'
-                              : 'bg-yellow-500/20 text-yellow-300'
-                          }>
-                            {order.status}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">
-                          {new Date(order.createdAt).toLocaleDateString('nl-NL')}
-                        </span>
-                        <Link href="/admin/orders">
-                          <Button size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300">
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </div>
+          {/* Personal Notes */}
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <StickyNote className="w-5 h-5" />
+                  📝 Mijn Notities
+                </CardTitle>
+                <Button 
+                  size="sm" 
+                  onClick={handleManualSave}
+                  disabled={notesSaving}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {notesSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-1" />
+                      Opslaan
+                    </>
+                  )}
+                </Button>
+              </div>
+              {notesLastSaved && (
+                <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Laatst opgeslagen: {notesLastSaved.toLocaleTimeString('nl-NL')}
+                </p>
+              )}
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={notes}
+                onChange={handleNotesChange}
+                placeholder="- Factuur sturen naar klant X&#10;- Content Hub bug fixen&#10;- Nieuwe feature bespreken"
+                className="min-h-[150px] bg-gray-950 border-gray-700 text-white resize-none"
+                maxLength={5000}
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                {notes.length} / 5000 karakters
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Activity */}
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              🕐 Recente Activiteit
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats?.recentActivity && stats.recentActivity.length > 0 ? (
+                stats.recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-gray-950 hover:bg-gray-800 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <Activity className="w-4 h-4 text-blue-400" />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white">
+                        {activity.type === 'new_client' && '• Nieuwe klant: '}
+                        {activity.type === 'order_completed' && '• Opdracht voltooid: '}
+                        {activity.type === 'payment_received' && '• Betaling ontvangen: '}
+                        <span className="font-semibold">{activity.message}</span>
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {activity.timestamp ? new Date(activity.timestamp).toLocaleString('nl-NL') : ''}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <MessageSquare className="w-12 h-12 text-gray-700 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Geen recente activiteit</p>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
