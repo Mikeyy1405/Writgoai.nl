@@ -55,9 +55,39 @@ export default function HomePage() {
   const aiTools = [
     {
       icon: <FileText className="w-6 h-6" />,
-      title: 'Blog Generator',
-      description: 'Complete artikelen in minuten',
+      title: 'Blog & Artikelen',
+      description: 'SEO content die rankt',
       credits: '70 credits',
+    },
+    {
+      icon: <Share2 className="w-6 h-6" />,
+      title: 'Social Media',
+      description: 'Posts voor alle platforms',
+      credits: '20 credits',
+    },
+    {
+      icon: <Video className="w-6 h-6" />,
+      title: 'Video Content',
+      description: "YouTube, Reels, TikTok",
+      credits: '120 credits',
+    },
+    {
+      icon: <MessageSquare className="w-6 h-6" />,
+      title: 'Email Marketing',
+      description: 'Nieuwsbrieven & sequences',
+      credits: '30 credits',
+    },
+    {
+      icon: <Target className="w-6 h-6" />,
+      title: 'Strategie',
+      description: 'Complete content planning',
+      credits: '40 credits',
+    },
+    {
+      icon: <BarChart className="w-6 h-6" />,
+      title: 'Analytics',
+      description: 'Meet je groei',
+      credits: '30 credits',
     },
     {
       icon: <Search className="w-6 h-6" />,
@@ -66,52 +96,22 @@ export default function HomePage() {
       credits: '40 credits',
     },
     {
-      icon: <Video className="w-6 h-6" />,
-      title: 'Video Creator',
-      description: "Professionele video's maken",
-      credits: '120 credits',
-    },
-    {
-      icon: <Share2 className="w-6 h-6" />,
-      title: 'Social Media Studio',
-      description: 'Posts voor elk platform',
-      credits: '20 credits',
-    },
-    {
       icon: <ShoppingBag className="w-6 h-6" />,
-      title: 'Product Reviews',
-      description: 'Overtuigende reviews schrijven',
+      title: 'Product Content',
+      description: 'Reviews & beschrijvingen',
       credits: '70 credits',
     },
     {
       icon: <Bot className="w-6 h-6" />,
-      title: 'Content Assistent',
+      title: 'AI Assistent',
       description: '24/7 hulp bij je content',
       credits: '1-5 credits',
     },
     {
-      icon: <Calendar className="w-6 h-6" />,
-      title: 'Content Planner',
-      description: 'Plan weken vooruit',
-      credits: '40 credits',
-    },
-    {
-      icon: <Target className="w-6 h-6" />,
-      title: 'Link Building',
-      description: 'Versterk je autoriteit',
-      credits: '50 credits',
-    },
-    {
       icon: <Newspaper className="w-6 h-6" />,
-      title: 'Nieuws & Artikelen',
+      title: 'Nieuws Artikelen',
       description: 'Actuele content creëren',
       credits: '60 credits',
-    },
-    {
-      icon: <BarChart className="w-6 h-6" />,
-      title: 'Analytics',
-      description: 'Meet je resultaten',
-      credits: '30 credits',
     },
     {
       icon: <Layout className="w-6 h-6" />,
@@ -216,9 +216,9 @@ export default function HomePage() {
   ];
 
   const stats = [
-    { value: '100K+', label: 'Artikelen gepubliceerd' },
+    { value: '100K+', label: 'Content pieces gepubliceerd' },
     { value: '500+', label: 'Tevreden klanten' },
-    { value: '10x', label: 'Sneller dan zelf schrijven' },
+    { value: '10x', label: 'Sneller dan zelf maken' },
     { value: '#1', label: 'Rankings behaald' },
   ];
 
@@ -227,21 +227,21 @@ export default function HomePage() {
       name: 'Sarah van der Berg',
       role: 'Online Marketing Manager',
       avatar: 'S',
-      text: 'Van 0 naar 10.000 bezoekers per maand',
+      text: 'Van onbekend naar overal zichtbaar - leads komen nu via alle kanalen',
       rating: 5,
     },
     {
       name: 'Mark Jansen',
       role: 'E-commerce Ondernemer',
       avatar: 'M',
-      text: '50% meer leads door betere content',
+      text: 'Eindelijk consistent aanwezig op social media én Google',
       rating: 5,
     },
     {
       name: 'Lisa Bakker',
       role: 'Startup Founder',
       avatar: 'L',
-      text: 'Eindelijk tijd voor mijn core business',
+      text: 'Complete omnipresence zonder dat ik er zelf tijd in hoef te steken',
       rating: 5,
     },
   ];
@@ -272,14 +272,14 @@ export default function HomePage() {
               WRITGO MEDIA
               <br />
               <span className="text-writgo-primary">
-                Content die scoort
+                Omnipresence voor jouw merk
               </span>
             </h1>
 
             {/* Subheading */}
             <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto animate-fade-in">
-              Professionele blogs en artikelen die ranken in Google.
-              Zelf maken met onze tools, of door ons team laten regelen.
+              Wees overal zichtbaar: blogs, social media, video's en meer.
+              Bouw een onvergetelijke online aanwezigheid die converteert.
             </p>
 
             {/* CTA Buttons */}
@@ -515,8 +515,8 @@ export default function HomePage() {
                   <Calendar className="w-6 h-6 text-writgo-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">Maandelijks contentplan</h4>
-                  <p className="text-sm text-text-muted">Strategische planning afgestemd op jouw doelgroep</p>
+                  <h4 className="font-semibold text-pearl-white mb-1">Complete strategie</h4>
+                  <p className="text-sm text-text-muted">Omnipresence planning voor alle kanalen</p>
                 </div>
               </div>
               <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
@@ -524,17 +524,35 @@ export default function HomePage() {
                   <FileText className="w-6 h-6 text-writgo-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">X blogs per maand</h4>
-                  <p className="text-sm text-text-muted">Professionele artikelen, volledig SEO-geoptimaliseerd</p>
+                  <h4 className="font-semibold text-pearl-white mb-1">Wekelijkse blogs</h4>
+                  <p className="text-sm text-text-muted">SEO-geoptimaliseerde artikelen die ranken</p>
                 </div>
               </div>
               <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
                 <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
-                  <Globe className="w-6 h-6 text-writgo-primary" />
+                  <Share2 className="w-6 h-6 text-writgo-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">WordPress publicatie</h4>
-                  <p className="text-sm text-text-muted">Automatisch gepubliceerd op jouw website</p>
+                  <h4 className="font-semibold text-pearl-white mb-1">Dagelijkse social posts</h4>
+                  <p className="text-sm text-text-muted">Consistent aanwezig op alle platforms</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
+                <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
+                  <Video className="w-6 h-6 text-writgo-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-pearl-white mb-1">Maandelijkse video's</h4>
+                  <p className="text-sm text-text-muted">Video content voor YouTube en social</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
+                <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
+                  <MessageSquare className="w-6 h-6 text-writgo-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-pearl-white mb-1">Email sequences</h4>
+                  <p className="text-sm text-text-muted">Nieuwsbrieven die converteren</p>
                 </div>
               </div>
               <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
@@ -542,8 +560,8 @@ export default function HomePage() {
                   <BarChart className="w-6 h-6 text-writgo-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">Rapportages</h4>
-                  <p className="text-sm text-text-muted">Maandelijkse performance rapportages</p>
+                  <h4 className="font-semibold text-pearl-white mb-1">Content kalender</h4>
+                  <p className="text-sm text-text-muted">Overzicht van al je geplande content</p>
                 </div>
               </div>
             </div>
@@ -562,27 +580,27 @@ export default function HomePage() {
               <ul className="space-y-3 mb-8 text-left max-w-md mx-auto">
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Persoonlijke content strateeg</span>
+                  <span>Complete omnipresence strategie</span>
                 </li>
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Maandelijks contentplan</span>
+                  <span>Wekelijkse blogs (4-8 per maand)</span>
                 </li>
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>4-8 artikelen per maand</span>
+                  <span>Dagelijkse social media posts</span>
                 </li>
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>SEO-optimalisatie inclusief</span>
+                  <span>Maandelijkse video content</span>
                 </li>
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>WordPress publicatie</span>
+                  <span>Email marketing sequences</span>
                 </li>
                 <li className="flex items-center gap-3 text-text-muted">
                   <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Maandelijkse rapportage & call</span>
+                  <span>Content kalender & rapportages</span>
                 </li>
               </ul>
               <Link href="/contact">

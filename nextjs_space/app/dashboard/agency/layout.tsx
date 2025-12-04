@@ -34,61 +34,28 @@ const agencyNavItems = [
     adminOnly: true,
   },
   {
-    label: 'Opdrachten',
-    href: '/dashboard/agency/assignments',
-    icon: ClipboardList,
-  },
-  {
-    label: 'Verzoeken',
-    href: '/dashboard/agency/requests',
-    icon: MessageSquare,
+    label: 'Content Hub',
+    href: '/dashboard/content-hub',
+    icon: FolderKanban,
     adminOnly: true,
-  },
-  {
-    label: 'Facturen',
-    href: '/dashboard/agency/invoices',
-    icon: FileText,
-    adminOnly: true,
-  },
-  // Analytics page doesn't exist yet - commented out to prevent 404 errors
-  // {
-  //   label: 'Analytics',
-  //   href: '/dashboard/agency/analytics',
-  //   icon: TrendingUp,
-  //   adminOnly: true,
-  // },
-  {
-    label: 'divider',
-    href: '',
-    icon: null,
-    isDivider: true,
   },
   {
     label: 'AI Agent',
     href: '/dashboard/agent',
     icon: Bot,
     adminOnly: true,
-    badge: 'NEW',
   },
   {
-    label: 'Content Hub',
-    href: '/dashboard/content-hub',
-    icon: FolderKanban,
+    label: 'Facturen',
+    href: '/dashboard/agency/invoices',
+    icon: Receipt,
     adminOnly: true,
-    badge: 'NEW',
   },
   {
-    label: 'divider',
-    href: '',
-    icon: null,
-    isDivider: true,
+    label: 'Instellingen',
+    href: '/dashboard/agency/settings',
+    icon: Settings,
   },
-  // Settings page doesn't exist yet - commented out to prevent 404 errors
-  // {
-  //   label: 'Instellingen',
-  //   href: '/dashboard/agency/settings',
-  //   icon: Settings,
-  // },
 ];
 
 export default function AgencyLayout({ children }: AgencyLayoutProps) {

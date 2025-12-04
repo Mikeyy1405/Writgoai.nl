@@ -16,7 +16,7 @@ import {
 
 // Create transporter with SMTP configuration
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'writgoai.nl',
+  host: process.env.SMTP_HOST || 'writgo.nl',
   port: parseInt(process.env.SMTP_PORT || '587'),
   secure: process.env.SMTP_SECURE === 'true', // true for 465, false for 587
   auth: {
@@ -45,9 +45,9 @@ export interface WelcomeEmailOptions {
 
 export async function sendWelcomeEmail({ to, name, email }: WelcomeEmailOptions) {
   const mailOptions = {
-    from: `"WritgoAI" <${process.env.SMTP_USER}>`,
+    from: `"Writgo Media" <${process.env.SMTP_USER}>`,
     to,
-    subject: '🎉 Welkom bij WritgoAI!',
+    subject: '🎉 Welkom bij Writgo Media!',
     html: `
       <!DOCTYPE html>
       <html>
@@ -65,7 +65,7 @@ export async function sendWelcomeEmail({ to, name, email }: WelcomeEmailOptions)
                   <tr>
                     <td style="padding: 40px 40px 20px 40px; background: linear-gradient(135deg, #1e3a8a 0%, #f97316 100%); border-radius: 8px 8px 0 0;">
                       <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
-                        Welkom bij WritgoAI! 🚀
+                        Welkom bij Writgo Media! 🚀
                       </h1>
                     </td>
                   </tr>
@@ -78,7 +78,7 @@ export async function sendWelcomeEmail({ to, name, email }: WelcomeEmailOptions)
                       </p>
                       
                       <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;">
-                        Wat leuk dat je je hebt aangemeld bij WritgoAI! Je account is succesvol aangemaakt en je kunt nu aan de slag.
+                        Wat leuk dat je je hebt aangemeld bij Writgo Media! Je account is succesvol aangemaakt en je kunt nu aan de slag.
                       </p>
                       
                       <div style="background-color: #fef3c7; border-left: 4px solid #f97316; padding: 16px; margin: 24px 0; border-radius: 4px;">
@@ -105,7 +105,7 @@ export async function sendWelcomeEmail({ to, name, email }: WelcomeEmailOptions)
                       </ol>
                       
                       <div style="text-align: center; margin: 32px 0;">
-                        <a href="https://writgoai.abacusai.app/client" 
+                        <a href="https://writgo.nl/client-portal" 
                            style="display: inline-block; background-color: #f97316; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: bold;">
                           Ga naar je Dashboard
                         </a>
@@ -121,8 +121,8 @@ export async function sendWelcomeEmail({ to, name, email }: WelcomeEmailOptions)
                   <tr>
                     <td style="padding: 24px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
                       <p style="margin: 0; color: #6b7280; font-size: 12px; line-height: 1.6; text-align: center;">
-                        Je ontvangt deze e-mail omdat je je hebt aangemeld bij WritgoAI.<br>
-                        © 2025 WritgoAI - Automatiseer je content creatie
+                        Je ontvangt deze e-mail omdat je je hebt aangemeld bij Writgo Media.<br>
+                        © 2025 Writgo Media - Complete online aanwezigheid
                       </p>
                     </td>
                   </tr>
@@ -135,11 +135,11 @@ export async function sendWelcomeEmail({ to, name, email }: WelcomeEmailOptions)
       </html>
     `,
     text: `
-Welkom bij WritgoAI!
+Welkom bij Writgo Media!
 
 Hoi ${name},
 
-Wat leuk dat je je hebt aangemeld bij WritgoAI! Je account is succesvol aangemaakt en je kunt nu aan de slag.
+Wat leuk dat je je hebt aangemeld bij Writgo Media! Je account is succesvol aangemaakt en je kunt nu aan de slag.
 
 🎁 Je gratis cadeau:
 • 1 gratis artikel
@@ -153,11 +153,11 @@ Zo ga je verder:
 3. Gebruik je gratis credits om te testen
 4. Kies een abonnement dat bij je past
 
-Ga naar je dashboard: https://writgoai.abacusai.app/client
+Ga naar je dashboard: https://writgo.nl/client-portal
 
 Heb je vragen? Reageer gewoon op deze e-mail, dan helpen we je graag verder!
 
-© 2025 WritgoAI - Automatiseer je content creatie
+© 2025 Writgo Media - Complete online aanwezigheid
     `,
   };
 
@@ -173,9 +173,9 @@ Heb je vragen? Reageer gewoon op deze e-mail, dan helpen we je graag verder!
 
 export async function sendTestEmail(to: string) {
   const mailOptions = {
-    from: `"WritgoAI" <${process.env.SMTP_USER}>`,
+    from: `"Writgo Media" <${process.env.SMTP_USER}>`,
     to,
-    subject: '✅ Test Email van WritgoAI',
+    subject: '✅ Test Email van Writgo Media',
     html: `
       <!DOCTYPE html>
       <html>
@@ -204,7 +204,7 @@ export async function sendTestEmail(to: string) {
                       </p>
                       
                       <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;">
-                        Het email systeem van WritgoAI werkt perfect! Deze test email bevestigt dat alle welkomstmails en notificaties succesvol worden verzonden.
+                        Het email systeem van Writgo Media werkt perfect! Deze test email bevestigt dat alle welkomstmails en notificaties succesvol worden verzonden.
                       </p>
                       
                       <div style="background-color: #dcfce7; border-left: 4px solid #22c55e; padding: 16px; margin: 24px 0; border-radius: 4px;">
@@ -242,7 +242,7 @@ export async function sendTestEmail(to: string) {
 
 Gefeliciteerd!
 
-Het email systeem van WritgoAI werkt perfect! Deze test email bevestigt dat alle welkomstmails en notificaties succesvol worden verzonden.
+Het email systeem van Writgo Media werkt perfect! Deze test email bevestigt dat alle welkomstmails en notificaties succesvol worden verzonden.
 
 ✓ SMTP configuratie: OK
 ✓ Email verzending: OK
@@ -251,7 +251,7 @@ Het email systeem van WritgoAI werkt perfect! Deze test email bevestigt dat alle
 
 Test verzonden op: ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
 
-© 2025 WritgoAI - Automatiseer je content creatie
+© 2025 Writgo Media - Complete online aanwezigheid
     `,
   };
 

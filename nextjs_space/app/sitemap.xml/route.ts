@@ -29,7 +29,7 @@ export async function GET() {
   
   <!-- Homepage -->
   <url>
-    <loc>https://WritgoAI.nl</loc>
+    <loc>https://writgo.nl</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -37,7 +37,7 @@ export async function GET() {
 
   <!-- Blog Overzicht -->
   <url>
-    <loc>https://WritgoAI.nl/blog</loc>
+    <loc>https://writgo.nl/blog</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -45,7 +45,7 @@ export async function GET() {
 
   <!-- Inloggen -->
   <url>
-    <loc>https://WritgoAI.nl/inloggen</loc>
+    <loc>https://writgo.nl/inloggen</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -55,7 +55,7 @@ export async function GET() {
 ${posts
   .map(
     (post) => `  <url>
-    <loc>https://WritgoAI.nl/${post.slug}</loc>
+    <loc>https://writgo.nl/${post.slug}</loc>
     <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

@@ -24,41 +24,25 @@ import { UnifiedLayout } from '@/components/dashboard/unified-layout';
 import WritgoAgentWidget from '@/components/writgo-agent-widget';
 
 const clientNavItems = [
-  // Shared items
   {
     label: 'Dashboard',
     href: '/client-portal',
     icon: LayoutDashboard,
   },
   {
-    label: 'Artikelen',
-    href: '/client-portal/blog-generator',
-    icon: FileText,
+    label: 'Content Maken',
+    href: '/client-portal/create',
+    icon: Plus,
   },
   {
-    label: 'Video Reels',
-    href: '/client-portal/video-generator',
-    icon: Video,
-  },
-  {
-    label: 'Opdrachten',
-    href: '/client-portal/opdrachten',
-    icon: FolderKanban,
-  },
-  {
-    label: 'Verzoeken',
-    href: '/client-portal/verzoeken',
-    icon: Send,
-  },
-  {
-    label: 'Facturen',
-    href: '/client-portal/facturen',
-    icon: Receipt,
-  },
-  {
-    label: 'Content Library',
+    label: 'Mijn Content',
     href: '/client-portal/content-library',
     icon: Library,
+  },
+  {
+    label: 'Publiceren',
+    href: '/client-portal/publish',
+    icon: Send,
   },
   {
     label: 'Instellingen',
