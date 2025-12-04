@@ -2578,3 +2578,13 @@ model EmailAutoReply {
   @@index([recipientEmail])
   @@index([sentAt])
 }
+
+model AdminDashboardNote {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  content   String   @db.Text
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+}
