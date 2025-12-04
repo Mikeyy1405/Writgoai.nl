@@ -69,6 +69,14 @@ const config: Config = {
           DEFAULT: 'hsl(var(--writgo-orange))',
           light: 'hsl(var(--writgo-orange-light))',
         },
+        // 2026 Design Color Palette
+        'electric-violet': '#8B5CF6',
+        'neon-cyan': '#06B6D4',
+        'deep-space': '#0A0A0F',
+        'midnight': '#18181B',
+        'slate': '#3F3F46',
+        'pearl-white': '#FAFAFA',
+        'soft-lavender': '#A78BFA',
       },
       keyframes: {
         'accordion-down': {
