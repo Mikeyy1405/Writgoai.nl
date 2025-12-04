@@ -120,7 +120,7 @@ export default function InstallPrompt() {
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-              Installeer WritgoAI
+              Installeer Writgo Media
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
               Voor de beste ervaring, installeer de app op je iPhone:
@@ -151,7 +151,7 @@ export default function InstallPrompt() {
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            Installeer WritgoAI
+            Installeer Writgo Media
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Voeg toe aan je startscherm voor snelle toegang

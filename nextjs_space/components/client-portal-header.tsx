@@ -57,13 +57,16 @@ export function ClientPortalHeader() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/client-portal" className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <div className="w-9 h-9 bg-gradient-to-br from-[#FF9933] to-[#FFAD33] rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/20">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div className="hidden sm:block">
-                <span className="text-xl font-bold text-white">WritGo</span>
+                <span className="text-xl font-bold">
+                  <span className="text-white">Writgo</span>
+                  <span className="text-[#FF6B35]">Media</span>
+                </span>
                 <p className="text-[10px] text-gray-400 uppercase tracking-wider -mt-1">
-                  AI Content Platform
+                  Omnipresence Content Platform
                 </p>
               </div>
             </Link>

@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'WritgoAI',
+    title: 'Writgo Media',
   },
   icons: {
     icon: [

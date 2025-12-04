@@ -19,8 +19,9 @@ export function Logo({ size = 'md', showText = true }: { size?: 'sm' | 'md' | 'l
         <span className={`text-white font-bold ${textSizeClasses[size]}`}>W</span>
       </div>
       {showText && (
-        <span className={`text-white font-semibold ${textSizeClasses[size]}`}>
-          WritGo AI
+        <span className={`font-semibold ${textSizeClasses[size]}`}>
+          <span className="text-white">Writgo</span>
+          <span className="text-[#FF6B35]">Media</span>
         </span>
       )}
     </div>
