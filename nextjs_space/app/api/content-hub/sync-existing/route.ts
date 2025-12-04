@@ -90,33 +90,86 @@ export async function POST(req: NextRequest) {
     let allPosts: any[] = [];
     let page = 1;
     let hasMore = true;
+    let wordpressError = null;
 
-    // Fetch all published posts (limit to 20 pages = 2000 posts max to prevent excessive API calls)
-    while (hasMore && page <= 20) {
-      const response = await fetch(
-        `${wpUrl}/wp-json/wp/v2/posts?per_page=100&page=${page}&status=publish`,
-        {
-          headers: {
-            'Authorization': `Basic ${auth}`,
-          },
+    // Try to fetch all published posts (limit to 20 pages = 2000 posts max to prevent excessive API calls)
+    try {
+      while (hasMore && page <= 20) {
+        const response = await fetch(
+          `${wpUrl}/wp-json/wp/v2/posts?per_page=100&page=${page}&status=publish`,
+          {
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+            // Add timeout to prevent hanging
+            signal: AbortSignal.timeout(15000), // 15 second timeout
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Onbekende fout');
+          console.error(`[Content Hub] WordPress API error (${response.status}):`, errorText);
+          
+          // Specific error messages based on status code
+          if (response.status === 401 || response.status === 403) {
+            throw new Error('WordPress authenticatie mislukt. Controleer je gebruikersnaam en app wachtwoord.');
+          } else if (response.status === 404) {
+            throw new Error('WordPress REST API niet gevonden. Is de site bereikbaar?');
+          } else if (response.status >= 500) {
+            throw new Error('WordPress server fout. Probeer het later opnieuw.');
+          } else {
+            throw new Error(`WordPress fout (${response.status}): ${errorText}`);
+          }
         }
-      );
 
-      if (!response.ok) {
-        throw new Error('Kon WordPress posts niet ophalen');
+        const posts = await response.json();
+        
+        if (posts.length === 0) {
+          hasMore = false;
+        } else {
+          allPosts = allPosts.concat(posts);
+          page++;
+        }
       }
 
-      const posts = await response.json();
+      console.log(`[Content Hub] Found ${allPosts.length} existing WordPress posts`);
+    } catch (error: any) {
+      console.error('[Content Hub] WordPress fetch error:', error);
+      wordpressError = error.message || 'Kon geen verbinding maken met WordPress';
       
-      if (posts.length === 0) {
-        hasMore = false;
-      } else {
-        allPosts = allPosts.concat(posts);
-        page++;
-      }
-    }
+      // Check if we have existing articles in the database
+      const existingArticles = await prisma.contentHubArticle.count({
+        where: {
+          siteId: site.id,
+          status: 'published',
+        },
+      });
 
-    console.log(`[Content Hub] Found ${allPosts.length} existing WordPress posts`);
+      // If WordPress is unreachable but we have existing data, return a partial success
+      if (existingArticles > 0) {
+        return NextResponse.json({
+          success: true,
+          warning: true,
+          message: `WordPress niet bereikbaar, maar ${existingArticles} artikelen zijn al gesynchroniseerd`,
+          error: wordpressError,
+          stats: {
+            total: existingArticles,
+            synced: 0,
+            skipped: existingArticles,
+            cached: true,
+          },
+        });
+      }
+      
+      // If no cached data exists, return error
+      return NextResponse.json(
+        { 
+          error: wordpressError,
+          details: 'WordPress niet bereikbaar en geen gesynchroniseerde artikelen in database',
+        },
+        { status: 503 } // Service Unavailable instead of 500
+      );
+    }
 
     // Create ContentHubArticles for posts that don't exist yet
     let syncedCount = 0;

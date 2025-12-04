@@ -66,7 +66,7 @@ export default function ContentHubPage() {
       }
     } catch (error: any) {
       console.error('Failed to load sites:', error);
-      toast.error('Failed to load connected websites');
+      toast.error('Kon verbonden websites niet laden');
     } finally {
       setLoading(false);
     }
@@ -146,7 +146,7 @@ export default function ContentHubPage() {
             Content Hub
           </h1>
           <p className="text-muted-foreground mt-1">
-            Unified content workflow - from research to publishing
+            Geïntegreerde content workflow - van onderzoek tot publicatie
           </p>
         </div>
         <Button onClick={() => setShowConnector(true)} className="gap-2">
@@ -209,7 +209,7 @@ export default function ContentHubPage() {
                       <div>
                         <CardTitle>{selectedSite.wordpressUrl}</CardTitle>
                         <CardDescription>
-                          {selectedSite.niche || 'General Content'}
+                          {selectedSite.niche || 'Algemene Content'}
                         </CardDescription>
                       </div>
                     </div>

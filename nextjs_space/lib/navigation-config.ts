@@ -61,20 +61,8 @@ export const baseNavItems: NavigationItem[] = [
   // Dashboard
   { label: 'Dashboard', href: '/client-portal', icon: LayoutDashboard },
   
-  // SUITE 1: Website Content Suite
-  {
-    isSuite: true,
-    label: 'Website Content Suite',
-    icon: Globe,
-    items: [
-      { label: 'Suite Overzicht', href: '/client/website', icon: LayoutDashboard },
-      { label: 'Blog Generator', href: '/client-portal/blog-generator', icon: PenTool },
-      { label: 'SEO & Zoekwoorden', href: '/client-portal/zoekwoord-onderzoek', icon: Search },
-      { label: 'Topical Mapping', href: '/client-portal/site-planner', icon: Map },
-      { label: 'WordPress Sites', href: '/dashboard/content-hub', icon: Globe },
-      { label: 'Autopilot Mode', href: '/client-portal/blog-generator?mode=autopilot', icon: Zap, badge: 'Auto' },
-    ],
-  },
+  // Content Hub - Simplified single entry point
+  { label: 'Content Hub', href: '/client-portal/content-hub', icon: Globe },
   
   // SUITE 2: Social Media Suite
   {
