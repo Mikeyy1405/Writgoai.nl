@@ -34,6 +34,12 @@ const agencyNavItems = [
     adminOnly: true,
   },
   {
+    label: 'Blog',
+    href: '/dashboard/agency/blog',
+    icon: FileText,
+    adminOnly: true,
+  },
+  {
     label: 'Content Hub',
     href: '/dashboard/content-hub',
     icon: FolderKanban,
