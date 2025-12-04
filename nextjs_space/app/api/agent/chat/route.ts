@@ -1,6 +1,6 @@
 /**
  * AI Agent Chat API Route
- * Handles chat with non-streaming AI responses but streaming status updates via SSE
+ * Handles chat with the AI brain and tool execution with status updates
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,9 +16,7 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/**
- * Helper function to get status message for tool execution
- */
+// Helper function to get tool status message
 function getToolStatusMessage(toolName: string, args?: any): string {
   switch(toolName) {
     case 'web_search':
@@ -37,32 +35,20 @@ function getToolStatusMessage(toolName: string, args?: any): string {
       return `📝 Bestand schrijven...`;
     case 'bash_command':
       return `💻 Command uitvoeren...`;
+    case 'analyze_content':
+      return `📊 Content analyseren...`;
+    case 'keyword_research':
+      return `🔑 Keyword onderzoek...`;
     default:
       return `⚙️ ${toolName} uitvoeren...`;
   }
 }
 
-/**
- * Helper function to send SSE status updates
- */
-function sendStatusUpdate(
-  controller: ReadableStreamDefaultController,
-  encoder: TextEncoder,
-  status: {
-    type: 'status' | 'tool_start' | 'tool_complete' | 'error' | 'complete';
-    message: string;
-    tool?: string;
-    step?: number;
-    progress?: number;
-  }
-) {
-  controller.enqueue(encoder.encode(`data: ${JSON.stringify(status)}\n\n`));
+// Helper to create SSE update
+function createStatusUpdate(type: string, data: any): string {
+  return `data: ${JSON.stringify({ type, ...data })}\n\n`;
 }
 
-/**
- * POST /api/agent/chat
- * Process agent chat messages with SSE status updates (non-streaming AI response)
- */
 export async function POST(req: NextRequest) {
   try {
     // Check authentication
@@ -84,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { messages, useSSE = false } = body;
+    const { messages, toolCalls, stream = true } = body;
 
     // Validate request
     if (!messages || !Array.isArray(messages)) {
@@ -94,144 +80,126 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Handle with SSE status updates
-    if (useSSE) {
-      const encoder = new TextEncoder();
-      
-      const readableStream = new ReadableStream({
-        async start(controller) {
-          try {
-            // Initial status
-            sendStatusUpdate(controller, encoder, {
-              type: 'status',
-              message: '🤖 AI Agent wordt geactiveerd...'
-            });
+    // If toolCalls are provided, execute them and continue
+    if (toolCalls && Array.isArray(toolCalls)) {
+      const response = await executeToolCalls(messages, toolCalls);
+      return NextResponse.json(response);
+    }
 
-            let currentMessages = [...messages];
-            let step = 0;
-            let maxIterations = 10; // Prevent infinite loops
+    // Always use SSE for status updates (but NOT streaming AI response)
+    const encoder = new TextEncoder();
+    
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Send initial status
+          controller.enqueue(encoder.encode(createStatusUpdate('status', {
+            message: '🤖 AI Agent wordt geactiveerd...',
+            step: 0
+          })));
 
-            while (maxIterations > 0) {
-              maxIterations--;
-              step++;
+          let currentMessages = [...messages];
+          let iteration = 0;
+          const maxIterations = 10;
+          const toolExecutionLog: Array<{tool: string; args: any}> = [];
 
-              // Send thinking status
-              sendStatusUpdate(controller, encoder, {
-                type: 'status',
-                message: '🤖 AI denkt na...',
-                step
-              });
+          while (iteration < maxIterations) {
+            iteration++;
+            
+            // Send thinking status
+            controller.enqueue(encoder.encode(createStatusUpdate('status', {
+              message: '🧠 AI denkt na...',
+              step: iteration
+            })));
 
-              // Process agent chat (non-streaming)
-              const response = await processAgentChat(currentMessages);
+            // Call AI (non-streaming)
+            const response = await processAgentChat(currentMessages);
 
-              // Check if there are tool calls to execute
-              if (response.toolCalls && response.toolCalls.length > 0) {
-                // Send status for each tool
-                for (const toolCall of response.toolCalls) {
-                  sendStatusUpdate(controller, encoder, {
-                    type: 'tool_start',
-                    message: getToolStatusMessage(toolCall.name, toolCall.parameters),
-                    tool: toolCall.name,
-                    step
-                  });
-                }
+            // Check if AI wants to use tools
+            if (response.toolCalls && response.toolCalls.length > 0) {
+              // Execute each tool with status updates
+              for (const toolCall of response.toolCalls) {
+                // Send tool start status
+                controller.enqueue(encoder.encode(createStatusUpdate('tool_start', {
+                  tool: toolCall.name,
+                  message: getToolStatusMessage(toolCall.name, toolCall.parameters),
+                  step: iteration
+                })));
 
-                // Execute tool calls
-                const executedResponse = await executeToolCalls(currentMessages, response.toolCalls);
-
-                // Send completion status for each tool
-                for (const toolCall of response.toolCalls) {
-                  sendStatusUpdate(controller, encoder, {
-                    type: 'tool_complete',
-                    message: `✅ ${toolCall.name} voltooid`,
-                    tool: toolCall.name,
-                    step
-                  });
-                }
-
-                // Update messages with tool results
+                // Execute the tool
+                const toolResponse = await executeToolCalls(currentMessages, [toolCall]);
+                
+                // Update messages with tool result
                 currentMessages = [
                   ...currentMessages,
                   {
-                    role: 'assistant' as const,
-                    content: response.message || '',
-                    tool_calls: response.toolCalls.map(tc => ({
-                      id: tc.id,
+                    role: 'assistant',
+                    content: '',
+                    tool_calls: [{
+                      id: toolCall.id,
                       type: 'function',
                       function: {
-                        name: tc.name,
-                        arguments: JSON.stringify(tc.parameters),
+                        name: toolCall.name,
+                        arguments: JSON.stringify(toolCall.parameters),
                       },
-                    })),
+                    }],
                   },
-                  ...response.toolCalls.map(tc => ({
-                    role: 'tool' as const,
-                    tool_call_id: tc.id,
-                    name: tc.name,
-                    content: JSON.stringify(tc.result),
-                  })),
+                  {
+                    role: 'tool',
+                    tool_call_id: toolCall.id,
+                    content: JSON.stringify(toolCall.result || {}),
+                  },
                 ];
 
-                // Continue if AI wants to make more calls
-                if (!executedResponse.done) {
-                  continue;
-                }
+                toolExecutionLog.push({ tool: toolCall.name, args: toolCall.parameters });
 
-                // Send final response
-                sendStatusUpdate(controller, encoder, {
-                  type: 'complete',
-                  message: executedResponse.message
-                });
-                break;
-              } else {
-                // No tool calls, send final response
-                sendStatusUpdate(controller, encoder, {
-                  type: 'complete',
-                  message: response.message
-                });
-                break;
+                // Send tool complete status
+                controller.enqueue(encoder.encode(createStatusUpdate('tool_complete', {
+                  tool: toolCall.name,
+                  message: `✅ ${toolCall.name} voltooid`,
+                  step: iteration
+                })));
               }
+
+              // Continue loop to process tool results
+              continue;
             }
 
-            if (maxIterations === 0) {
-              sendStatusUpdate(controller, encoder, {
-                type: 'error',
-                message: 'Te veel iteraties, proces gestopt.'
-              });
+            // No more tool calls - send final response
+            if (response.message) {
+              controller.enqueue(encoder.encode(createStatusUpdate('complete', {
+                message: response.message,
+                toolsUsed: toolExecutionLog,
+                iterations: iteration
+              })));
             }
 
-            controller.close();
-          } catch (error: any) {
-            console.error('Agent chat error:', error);
-            sendStatusUpdate(controller, encoder, {
-              type: 'error',
-              message: 'Er ging iets mis. Probeer het opnieuw.'
-            });
-            controller.close();
+            break;
           }
-        },
-      });
 
-      return new Response(readableStream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      });
-    }
+          // Send done signal
+          controller.enqueue(encoder.encode(createStatusUpdate('done', {})));
+          controller.close();
 
-    // Simple non-SSE response
-    const response = await processAgentChat(messages);
-    
-    // If there are tool calls, execute them automatically
-    if (response.toolCalls && response.toolCalls.length > 0) {
-      const finalResponse = await executeToolCalls(messages, response.toolCalls);
-      return NextResponse.json(finalResponse);
-    }
-    
-    return NextResponse.json(response);
+        } catch (error: any) {
+          console.error('Agent chat error:', error);
+          controller.enqueue(encoder.encode(createStatusUpdate('error', {
+            message: 'Er ging iets mis. Probeer het opnieuw.',
+            details: error.message
+          })));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+
   } catch (error: any) {
     console.error('Agent chat error:', error);
     return NextResponse.json(
