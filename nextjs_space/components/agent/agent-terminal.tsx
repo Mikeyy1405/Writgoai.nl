@@ -129,11 +129,18 @@ export function AgentTerminal() {
                   const errorMsg = data.details 
                     ? `${data.message}\n\nDetails: ${data.details}`
                     : data.message || 'Er is een onbekende fout opgetreden';
+                  // Set error and break from loop
+                  reader.cancel();
                   throw new Error(errorMsg);
                 }
               } catch (parseError: any) {
+                // Check if this is an error from the API (not a JSON parse error)
+                if (parseError.message && !parseError.message.includes('JSON')) {
+                  // Re-throw API errors
+                  throw parseError;
+                }
                 console.error('Failed to parse SSE data:', line, parseError);
-                // Continue processing other lines
+                // Continue processing other lines for JSON parse errors
               }
             }
           }
