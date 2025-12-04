@@ -209,7 +209,7 @@ export default function TermsPage() {
               <p className="text-slate-700 mb-2">
                 <strong>Website:</strong>{' '}
                 <a href="https://writgo.nl" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                  https://writgo.nl
+                  writgo.nl
                 </a>
               </p>
               <p className="text-slate-700">

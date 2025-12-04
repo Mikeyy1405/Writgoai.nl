@@ -84,12 +84,12 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>WritGo AI</h1>
+          <h1>Writgo Media</h1>
           <p>Nieuwe Factuur</p>
         </div>
         <div class="content">
           <p>Beste ${clientName},</p>
-          <p>Hierbij ontvangt u factuur <strong>${invoiceNumber}</strong> van WritGo AI.</p>
+          <p>Hierbij ontvangt u factuur <strong>${invoiceNumber}</strong> van Writgo Media.</p>
           
           <div class="invoice-details">
             <h3>Factuurdetails</h3>
@@ -103,11 +103,11 @@ export const emailTemplates = {
             <a href="${paymentUrl}" class="button">Betaal Factuur</a>
           </center>
           
-          <p>Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+          <p>Met vriendelijke groet,<br><strong>Team Writgo Media</strong></p>
         </div>
         <div class="footer">
-          <p>WritGo AI - Uw AI Content Partner</p>
-          <p>info@writgo.nl | www.writgoai.nl</p>
+          <p>Writgo Media - Uw AI Content Partner</p>
+          <p>info@writgo.nl | www.writgo.nl</p>
         </div>
       </div>
     </body>
@@ -132,7 +132,7 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>WritGo AI</h1>
+          <h1>Writgo Media</h1>
           <p>Betaling Ontvangen</p>
         </div>
         <div class="content">
@@ -149,11 +149,11 @@ export const emailTemplates = {
           
           <p>Uw factuur is nu volledig voldaan. U ontvangt binnenkort een PDF-factuur ter bevestiging.</p>
           
-          <p>Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+          <p>Met vriendelijke groet,<br><strong>Team Writgo Media</strong></p>
         </div>
         <div class="footer">
-          <p>WritGo AI - Uw AI Content Partner</p>
-          <p>info@writgo.nl | www.writgoai.nl</p>
+          <p>Writgo Media - Uw AI Content Partner</p>
+          <p>info@writgo.nl | www.writgo.nl</p>
         </div>
       </div>
     </body>
@@ -179,7 +179,7 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>WritGo AI</h1>
+          <h1>Writgo Media</h1>
           <p>Betalingsherinnering</p>
         </div>
         <div class="content">
@@ -207,11 +207,11 @@ export const emailTemplates = {
           
           <p>Indien u vragen heeft over deze factuur, neem dan gerust contact met ons op.</p>
           
-          <p>Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+          <p>Met vriendelijke groet,<br><strong>Team Writgo Media</strong></p>
         </div>
         <div class="footer">
-          <p>WritGo AI - Uw AI Content Partner</p>
-          <p>info@writgo.nl | www.writgoai.nl</p>
+          <p>Writgo Media - Uw AI Content Partner</p>
+          <p>info@writgo.nl | www.writgo.nl</p>
         </div>
       </div>
     </body>
@@ -236,12 +236,12 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>WritGo AI</h1>
+          <h1>Writgo Media</h1>
           <p>Nieuwe Opdracht</p>
         </div>
         <div class="content">
           <p>Beste ${clientName},</p>
-          <p>Er is een nieuwe opdracht voor u aangemaakt in het WritGo AI portal.</p>
+          <p>Er is een nieuwe opdracht voor u aangemaakt in het Writgo Media portal.</p>
           
           <div class="assignment-details">
             <h3>Opdrachtdetails</h3>
@@ -252,14 +252,14 @@ export const emailTemplates = {
           
           <p>U kunt de volledige details en voortgang bekijken in uw portal:</p>
           <center>
-            <a href="https://writgoai.nl/client-portal/opdrachten" class="button">Bekijk Opdrachten</a>
+            <a href="https://writgo.nl/client-portal/opdrachten" class="button">Bekijk Opdrachten</a>
           </center>
           
-          <p>Met vriendelijke groet,<br><strong>Team WritGo AI</strong></p>
+          <p>Met vriendelijke groet,<br><strong>Team Writgo Media</strong></p>
         </div>
         <div class="footer">
-          <p>WritGo AI - Uw AI Content Partner</p>
-          <p>info@writgo.nl | www.writgoai.nl</p>
+          <p>Writgo Media - Uw AI Content Partner</p>
+          <p>info@writgo.nl | www.writgo.nl</p>
         </div>
       </div>
     </body>
@@ -283,7 +283,7 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-          <h1>WritGo AI</h1>
+          <h1>Writgo Media</h1>
           <p>Nieuw Klantverzoek</p>
         </div>
         <div class="content">
@@ -297,10 +297,10 @@ export const emailTemplates = {
           
           <p>Log in op het agency portal om dit verzoek te bekijken en te verwerken.</p>
           
-          <p>Met vriendelijke groet,<br><strong>WritGo AI Systeem</strong></p>
+          <p>Met vriendelijke groet,<br><strong>Writgo Media Systeem</strong></p>
         </div>
         <div class="footer">
-          <p>WritGo AI - Agency Portal</p>
+          <p>Writgo Media - Agency Portal</p>
         </div>
       </div>
     </body>

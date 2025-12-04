@@ -1,8 +1,8 @@
 
 {
-  "name": "Writgo Media - AI Content Automatisering",
-  "short_name": "Writgo Media",
-  "description": "Automatiseer je content creatie met AI. Blogs, social media posts en meer.",
+  "name": "Writgo Media - Omnipresence Content Platform",
+  "short_name": "Writgo",
+  "description": "Complete online aanwezigheid: blogs, social media, video's en meer.",
   "version": "3.2.0",
   "start_url": "/client-portal",
   "display": "standalone",

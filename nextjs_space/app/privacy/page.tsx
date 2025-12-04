@@ -206,6 +206,7 @@ export default function PrivacyPage() {
                   <strong className="text-white">Website:</strong>{' '}
                   <a href="https://writgo.nl" target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-400 transition-colors">
                     https://writgo.nl
+                
                   </a>
                 </p>
               </div>
