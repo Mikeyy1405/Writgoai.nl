@@ -370,8 +370,9 @@ export async function sendAutoReply(
       },
     });
 
-    // Deduct additional 8 credits for auto-reply (total would be 18 with analysis)
-    // But we'll make it 8 total since analysis already happened
+    // Deduct 8 credits for auto-reply (separate from the 10 credits already used for AI reply generation)
+    // Note: This does NOT include the 5 credits for email analysis which happens separately
+    // Total cost for auto-reply with new email: 5 (analysis) + 8 (auto-reply) = 13 credits
     const client = await prisma.client.findUnique({
       where: { id: clientId },
       select: {

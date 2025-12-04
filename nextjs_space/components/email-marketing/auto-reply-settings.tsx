@@ -56,8 +56,19 @@ export function AutoReplySettings() {
 
   const toggleConfig = async (configId: string, isActive: boolean) => {
     try {
-      toast.info('Toggle functionality not yet implemented');
-      // In a full implementation, you'd make a PATCH request here
+      // TODO: Implement PATCH endpoint for updating auto-reply config
+      const response = await fetch(`/api/admin/email-marketing/auto-reply/${configId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive }),
+      });
+
+      if (response.ok) {
+        toast.success(`Auto-reply ${isActive ? 'enabled' : 'disabled'}`);
+        fetchConfigs();
+      } else {
+        toast.error('Failed to update config');
+      }
     } catch (error) {
       console.error('Error toggling config:', error);
       toast.error('Failed to update config');

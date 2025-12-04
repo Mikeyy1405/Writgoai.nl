@@ -91,8 +91,10 @@ export async function sendMarketingCampaign({
             .replace(/\{\{lastName\}\}/g, subscriber.lastName || '')
             .replace(/\{\{email\}\}/g, subscriber.email);
 
-          // Add unsubscribe link
-          const unsubscribeUrl = `${process.env.NEXTAUTH_URL}/unsubscribe?list=${listId}&email=${subscriber.email}`;
+          // Add unsubscribe link (TODO: Use hashed token instead of email in URL for security)
+          // For production, create a unique token and store it with the subscriber
+          const unsubscribeToken = Buffer.from(`${listId}:${subscriber.email}:${Date.now()}`).toString('base64');
+          const unsubscribeUrl = `${process.env.NEXTAUTH_URL}/api/unsubscribe/${unsubscribeToken}`;
           personalizedContent += `
             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center;">
               <p>Don't want to receive these emails? <a href="${unsubscribeUrl}" style="color: #3b82f6;">Unsubscribe</a></p>

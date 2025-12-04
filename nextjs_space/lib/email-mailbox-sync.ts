@@ -41,18 +41,16 @@ export async function syncMailbox(mailboxId: string): Promise<{
       }
     }
 
-    // Here you would:
-    // 1. Connect to IMAP server
+    // TODO: IMPLEMENT ACTUAL IMAP/SMTP SYNC BEFORE PRODUCTION
+    // This is a placeholder. Production implementation should:
+    // 1. Connect to IMAP server using imap-simple or nodemailer
     // 2. Fetch new emails since lastSyncAt
-    // 3. Parse email content
-    // 4. Store in database
-    // 5. Optionally trigger AI analysis
-
-    // This is a placeholder for the actual IMAP implementation
-    // In production, you'd use libraries like 'imap-simple' or 'nodemailer'
+    // 3. Parse email content with mailparser
+    // 4. Store emails in InboxEmail table
+    // 5. Trigger AI analysis for new emails
     
-    // For now, we'll simulate with a mock implementation
-    console.log(`[Mailbox Sync] Syncing mailbox ${mailbox.email}...`);
+    console.warn('⚠️  WARNING: IMAP sync not implemented. This is a placeholder.');
+    console.log(`[Mailbox Sync] Would sync mailbox ${mailbox.email}...`);
 
     // Update last sync time
     await prisma.mailboxConnection.update({
@@ -231,20 +229,25 @@ export async function syncAllMailboxes(): Promise<void> {
 }
 
 /**
- * Encrypt password for storage (simplified version)
- * In production, use a proper encryption library like crypto
+ * Encrypt password for storage
+ * WARNING: This is a basic implementation. In production, use:
+ * - Node.js crypto module with AES-256-GCM
+ * - AWS KMS or similar key management service
+ * - Or store passwords in a secure vault like HashiCorp Vault
  */
 export function encryptPassword(password: string): string {
-  // This is a placeholder - use proper encryption in production
-  // Consider using @aws-sdk/client-kms or similar
+  // TODO: Implement proper encryption before production
+  // For now, using base64 encoding (NOT SECURE - FOR DEVELOPMENT ONLY)
+  console.warn('⚠️  WARNING: Using insecure password storage. Implement proper encryption before production!');
   return Buffer.from(password).toString('base64');
 }
 
 /**
  * Decrypt password from storage
+ * WARNING: This matches the basic encryption above
  */
 export function decryptPassword(encrypted: string): string {
-  // This is a placeholder - use proper decryption in production
+  // TODO: Implement proper decryption before production
   return Buffer.from(encrypted, 'base64').toString('utf-8');
 }
 
