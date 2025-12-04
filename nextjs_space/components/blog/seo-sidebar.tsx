@@ -246,7 +246,7 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
               className="mt-2 bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
             />
             <p className="text-xs text-gray-500 mt-1">
-              URL: /{data.slug || 'your-slug'}
+              URL: /blog/{data.slug || 'your-slug'}
             </p>
           </div>
         </div>
