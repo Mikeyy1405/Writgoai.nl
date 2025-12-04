@@ -17,8 +17,8 @@ export interface RouterOptions {
 const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; budget?: string }> = {
   // Orchestration & Complex Tasks
   orchestrate: {
-    primary: 'claude-opus-4-5-20250514',
-    fallback: 'gpt-5-2025-08-07',
+    primary: 'google/gemini-3-pro-preview',
+    fallback: 'gpt-4o',
   },
   
   // Long-form Content
@@ -189,7 +189,7 @@ export function selectBestModel(options: RouterOptions): AIModel {
   const taskMapping = TASK_MODEL_MAPPING[task];
   if (!taskMapping) {
     // Fallback to default high-quality model
-    return getModelById('claude-sonnet-4-5-20250514') || ALL_MODELS[0];
+    return getModelById('google/gemini-3-pro-preview') || ALL_MODELS[0];
   }
 
   // Select model based on priority

@@ -263,6 +263,27 @@ export const CHAT_MODELS: AIModel[] = [
 
   // Google Gemini Models
   {
+    id: 'google/gemini-3-pro-preview',
+    name: 'Gemini 3 Pro Preview',
+    provider: 'Google',
+    category: 'chat',
+    description: 'Nieuwste Gemini 3 Pro Preview - veelzijdig, snel en intelligent',
+    strengths: ['Enorm context (1M tokens)', 'Multimodaal (text, code, audio, images)', 'Function calling', 'Excellent voor agentic workflows'],
+    weaknesses: ['Preview versie', 'Mogelijk instabiel'],
+    contextWindow: 1000000,
+    maxOutput: 8192,
+    costPer1kInput: 3.5,
+    costPer1kOutput: 14.0,
+    speed: 'medium',
+    quality: 5,
+    bestFor: ['orchestrate', 'blog_long', 'research', 'analyze', 'code_generate'],
+    languages: ['nl', 'en', 'de', 'fr', 'es', 'ja', 'ko', 'zh'],
+    multimodal: true,
+    streaming: true,
+    reasoning: true,
+    releaseDate: '2025-12-01'
+  },
+  {
     id: 'gemini-3-pro',
     name: 'Gemini 3 Pro',
     provider: 'Google',
