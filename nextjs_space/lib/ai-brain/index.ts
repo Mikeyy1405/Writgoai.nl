@@ -16,8 +16,8 @@ const aimlClient = new OpenAI({
   baseURL: AIML_API_BASE,
 });
 
-// Default orchestrator model - Claude Opus 4.5
-const ORCHESTRATOR_MODEL = 'claude-opus-4-5-20250514';
+// Default orchestrator model - Claude Sonnet 4.5
+const ORCHESTRATOR_MODEL = 'claude-sonnet-4-5-20250514';
 
 export interface Message {
   role: 'system' | 'user' | 'assistant' | 'tool';
