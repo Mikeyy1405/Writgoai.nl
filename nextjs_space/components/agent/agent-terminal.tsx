@@ -76,6 +76,7 @@ export function AgentTerminal() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantContent = '';
+      const toolCallsMap = new Map<string, ToolCall>(); // Track tool calls by unique ID
 
       if (reader) {
         while (true) {
@@ -87,24 +88,63 @@ export function AgentTerminal() {
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
-              const data = JSON.parse(line.slice(6));
+              try {
+                const data = JSON.parse(line.slice(6));
 
-              if (data.type === 'content') {
-                assistantContent += data.content;
-                // Update assistant message in real-time
-                setMessages([
-                  ...newMessages,
-                  { role: 'assistant', content: assistantContent },
-                ]);
-              } else if (data.type === 'tool_calls') {
-                // Handle tool calls
-                setCurrentToolCalls(data.toolCalls);
-                // Execute tool calls
-                await executeTools(apiMessages, data.toolCalls);
-              } else if (data.type === 'done') {
-                break;
-              } else if (data.type === 'error') {
-                throw new Error(data.error);
+                if (data.type === 'status') {
+                  // Handle status updates - just log for now
+                  console.log('Status:', data.message);
+                } else if (data.type === 'tool_start') {
+                  // Tool execution started - create unique ID for this tool call
+                  const toolId = `${data.tool}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                  const toolCall: ToolCall = {
+                    id: toolId,
+                    name: data.tool,
+                    parameters: {},
+                    status: 'executing',
+                  };
+                  toolCallsMap.set(toolId, toolCall);
+                  setCurrentToolCalls(Array.from(toolCallsMap.values()));
+                  console.log('Tool started:', data.tool, data.message);
+                } else if (data.type === 'tool_complete') {
+                  // Tool execution completed - find the most recent incomplete tool with this name
+                  const toolCalls = Array.from(toolCallsMap.values());
+                  const toolCall = toolCalls
+                    .filter(tc => tc.name === data.tool && tc.status === 'executing')
+                    .pop(); // Get the most recent one
+                  
+                  if (toolCall) {
+                    toolCall.status = 'completed';
+                    toolCall.result = { success: true, message: data.message };
+                    toolCallsMap.set(toolCall.id, toolCall);
+                    setCurrentToolCalls(Array.from(toolCallsMap.values()));
+                  }
+                  console.log('Tool completed:', data.tool, data.message);
+                } else if (data.type === 'complete') {
+                  // Final assistant response
+                  assistantContent = data.message || '';
+                  setMessages([
+                    ...newMessages,
+                    { role: 'assistant', content: assistantContent },
+                  ]);
+                } else if (data.type === 'done') {
+                  break;
+                } else if (data.type === 'error') {
+                  const errorMsg = data.details 
+                    ? `${data.message}\n\nDetails: ${data.details}`
+                    : data.message || 'Er is een onbekende fout opgetreden';
+                  // Set error and break from loop
+                  reader.cancel();
+                  throw new Error(errorMsg);
+                }
+              } catch (parseError: any) {
+                // Check if this is an error from the API (not a JSON parse error)
+                if (!(parseError instanceof SyntaxError)) {
+                  // Re-throw API errors
+                  throw parseError;
+                }
+                console.error('Failed to parse SSE data:', line, parseError);
+                // Continue processing other lines for JSON parse errors
               }
             }
           }
@@ -112,12 +152,17 @@ export function AgentTerminal() {
       }
     } catch (error: any) {
       console.error('Agent error:', error);
-      toast.error(error.message || 'Er is een fout opgetreden');
+      
+      // Show detailed error message
+      const errorMessage = error.message || 'Er is een onbekende fout opgetreden';
+      toast.error(errorMessage);
+      
+      // Add error message to chat
       setMessages([
         ...newMessages,
         {
           role: 'assistant',
-          content: 'Sorry, er is een fout opgetreden. Probeer het opnieuw.',
+          content: `❌ **Fout opgetreden**\n\n${errorMessage}\n\nProbeer het opnieuw of neem contact op met de beheerder als het probleem zich blijft voordoen.`,
         },
       ]);
     } finally {

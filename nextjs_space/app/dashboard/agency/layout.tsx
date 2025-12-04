@@ -50,12 +50,13 @@ const agencyNavItems = [
     icon: FileText,
     adminOnly: true,
   },
-  {
-    label: 'Analytics',
-    href: '/dashboard/agency/analytics',
-    icon: TrendingUp,
-    adminOnly: true,
-  },
+  // Analytics page doesn't exist yet - commented out to prevent 404 errors
+  // {
+  //   label: 'Analytics',
+  //   href: '/dashboard/agency/analytics',
+  //   icon: TrendingUp,
+  //   adminOnly: true,
+  // },
   {
     label: 'divider',
     href: '',
@@ -82,11 +83,12 @@ const agencyNavItems = [
     icon: null,
     isDivider: true,
   },
-  {
-    label: 'Instellingen',
-    href: '/dashboard/agency/settings',
-    icon: Settings,
-  },
+  // Settings page doesn't exist yet - commented out to prevent 404 errors
+  // {
+  //   label: 'Instellingen',
+  //   href: '/dashboard/agency/settings',
+  //   icon: Settings,
+  // },
 ];
 
 export default function AgencyLayout({ children }: AgencyLayoutProps) {
