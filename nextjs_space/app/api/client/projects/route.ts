@@ -16,6 +16,57 @@ export async function GET() {
       return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
     }
 
+    // Check if user is an admin
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    });
+
+    const isAdmin = user?.role === 'admin';
+
+    // If admin, return all projects
+    if (isAdmin) {
+      const allProjects = await prisma.project.findMany({
+        include: {
+          _count: {
+            select: {
+              savedContent: true,
+              knowledgeBase: true
+            }
+          },
+          client: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: [
+          { isPrimary: 'desc' },
+          { createdAt: 'desc' }
+        ]
+      });
+
+      const transformedProjects = allProjects.map((project: any) => ({
+        ...project,
+        knowledgeBaseCount: project._count?.knowledgeBase || 0,
+        savedContentCount: project._count?.savedContent || 0,
+        clientName: project.client?.name,
+        clientEmail: project.client?.email,
+        isOwner: false,
+        isCollaborator: false,
+        _count: undefined,
+        client: undefined
+      }));
+
+      return NextResponse.json({
+        projects: transformedProjects,
+        ownedCount: 0,
+        collaboratorCount: 0,
+        isAdmin: true,
+      });
+    }
+
+    // For regular clients, continue with existing logic
     const client = await prisma.client.findUnique({
       where: { email: session.user.email },
       include: {
@@ -89,6 +140,7 @@ export async function GET() {
       projects: allProjects,
       ownedCount: ownedProjects.length,
       collaboratorCount: collabProjects.length,
+      isAdmin: false,
     });
 
   } catch (error: any) {
