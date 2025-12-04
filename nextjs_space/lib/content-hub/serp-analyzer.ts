@@ -8,6 +8,7 @@ import { TEXT_MODELS } from '../aiml-api';
 
 // Timeout duration for SERP analysis operations
 const SERP_ANALYSIS_TIMEOUT_MS = 30000; // 30 seconds
+const TIMEOUT_ERROR_MESSAGE = 'SERP_ANALYSIS_TIMEOUT';
 
 /**
  * Helper function to wrap an async operation with a timeout
@@ -24,6 +25,13 @@ async function withTimeout<T>(
   });
 
   return Promise.race([promise, timeoutPromise]);
+}
+
+/**
+ * Check if an error is a timeout error
+ */
+function isTimeoutError(error: any): boolean {
+  return error?.message === TIMEOUT_ERROR_MESSAGE;
 }
 
 export interface SERPResult {
@@ -104,7 +112,7 @@ Respond in JSON format:
           stream: false,
         }),
         SERP_ANALYSIS_TIMEOUT_MS,
-        'timeout'
+        TIMEOUT_ERROR_MESSAGE
       );
 
       const content = (response as any).choices[0]?.message?.content || '{}';
@@ -130,8 +138,8 @@ Respond in JSON format:
       };
     } catch (apiError: any) {
       // Check if it was a timeout
-      if (apiError.message && apiError.message.includes('timeout')) {
-        console.warn('[SERP Analyzer] API call timed out, using default values');
+      if (isTimeoutError(apiError)) {
+        console.warn(`[SERP Analyzer] API call timed out after ${SERP_ANALYSIS_TIMEOUT_MS / 1000}s, using default values`);
         return defaultAnalysis;
       }
       
@@ -187,7 +195,7 @@ Respond in JSON format:
           stream: false,
         }),
         SERP_ANALYSIS_TIMEOUT_MS,
-        'timeout'
+        TIMEOUT_ERROR_MESSAGE
       );
 
       const content = (response as any).choices[0]?.message?.content || '{}';
@@ -205,8 +213,8 @@ Respond in JSON format:
 
       return result;
     } catch (apiError: any) {
-      if (apiError.message && apiError.message.includes('timeout')) {
-        console.warn('[SERP Analyzer] Source gathering timed out');
+      if (isTimeoutError(apiError)) {
+        console.warn(`[SERP Analyzer] Source gathering timed out after ${SERP_ANALYSIS_TIMEOUT_MS / 1000}s`);
         return defaultResult;
       }
       
