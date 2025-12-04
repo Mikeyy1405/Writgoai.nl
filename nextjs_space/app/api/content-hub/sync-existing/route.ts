@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     // Try to fetch all published posts (limit to 20 pages = 2000 posts max to prevent excessive API calls)
     try {
       while (hasMore && page <= 20) {
-        // Validate page number against total pages if known
+        // Validate page number against total pages if known (from previous response)
         if (totalPages !== null && page > totalPages) {
           console.log(`[Content Hub] Reached last page (${totalPages}), stopping pagination`);
           hasMore = false;
@@ -163,8 +163,11 @@ export async function POST(req: NextRequest) {
         // Extract total pages from response headers
         const wpTotalPages = response.headers.get('X-WP-TotalPages');
         if (wpTotalPages && totalPages === null) {
-          totalPages = parseInt(wpTotalPages, 10);
-          console.log(`[Content Hub] WordPress reports ${totalPages} total pages available`);
+          const parsed = parseInt(wpTotalPages, 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            totalPages = parsed;
+            console.log(`[Content Hub] WordPress reports ${totalPages} total pages available`);
+          }
         }
 
         const posts = await response.json();
