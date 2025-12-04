@@ -46,6 +46,9 @@ export async function GET(request: NextRequest) {
       prisma.blogPost.count({ where }),
     ]);
 
+    console.log(`[Public API] Found ${total} published blog posts in database`);
+    console.log(`[Public API] Returning ${posts.length} posts for page ${page}`);
+
     return NextResponse.json({
       posts,
       pagination: {
