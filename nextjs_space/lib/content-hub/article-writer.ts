@@ -38,6 +38,7 @@ export async function writeArticle(
 ): Promise<ArticleResult> {
   try {
     console.log(`[Article Writer] Writing article: ${options.title}`);
+    console.log(`[Article Writer] Using Claude 4.5 Sonnet for content generation`);
     
     const { title, keywords, targetWordCount, tone = 'professional', language = 'nl' } = options;
     
@@ -88,7 +89,7 @@ Respond in JSON format:
 }`;
 
     const response = await sendChatCompletion({
-      model: TEXT_MODELS.REASONING,
+      model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for content writing
       messages: [
         {
           role: 'system',
@@ -130,7 +131,19 @@ Respond in JSON format:
     };
   } catch (error: any) {
     console.error('[Article Writer] Error:', error);
-    throw new Error(`Article writing failed: ${error.message}`);
+    
+    // Create user-friendly Dutch error message
+    let userMessage = 'Het schrijven van het artikel is mislukt';
+    
+    if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+      userMessage = 'Het artikel schrijven duurde te lang. Probeer een kortere tekst of minder features.';
+    } else if (error.message.includes('API') || error.message.includes('model')) {
+      userMessage = 'De AI service is tijdelijk niet beschikbaar. Probeer het later opnieuw.';
+    } else if (error.message.includes('parse') || error.message.includes('JSON')) {
+      userMessage = 'De AI response kon niet worden verwerkt. Probeer het opnieuw.';
+    }
+    
+    throw new Error(userMessage);
   }
 }
 
@@ -185,9 +198,9 @@ Requirements:
 
 Write the full article:`;
 
-    // Stream the article content
+    // Stream the article content using Claude 4.5 Sonnet
     const stream = await sendStreamingChatCompletion({
-      model: TEXT_MODELS.REASONING,
+      model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for content writing
       messages: [
         {
           role: 'system',
@@ -212,7 +225,17 @@ Write the full article:`;
     yield { type: 'status', content: 'Article completed!' };
   } catch (error: any) {
     console.error('[Article Writer] Streaming error:', error);
-    throw new Error(`Article streaming failed: ${error.message}`);
+    
+    // Create user-friendly Dutch error message
+    let userMessage = 'Het streamen van het artikel is mislukt';
+    
+    if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+      userMessage = 'Het artikel schrijven duurde te lang. Probeer een kortere tekst.';
+    } else if (error.message.includes('API')) {
+      userMessage = 'De AI service is tijdelijk niet beschikbaar. Probeer het later opnieuw.';
+    }
+    
+    throw new Error(userMessage);
   }
 }
 
@@ -248,8 +271,10 @@ Respond in JSON format:
     const result = JSON.parse(jsonMatch[1] || content);
     
     return result.faqs || [];
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Article Writer] FAQ generation error:', error);
+    console.log('[Article Writer] Doorgaan zonder FAQ sectie');
+    // Return empty array - FAQ is optional, don't block article generation
     return [];
   }
 }

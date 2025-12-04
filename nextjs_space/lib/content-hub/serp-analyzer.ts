@@ -6,6 +6,34 @@
 import { sendChatCompletion } from '../aiml-chat-client';
 import { TEXT_MODELS } from '../aiml-api';
 
+// Timeout duration for SERP analysis operations
+const SERP_ANALYSIS_TIMEOUT_MS = 30000; // 30 seconds
+const TIMEOUT_ERROR_MESSAGE = 'SERP_ANALYSIS_TIMEOUT';
+
+/**
+ * Helper function to wrap an async operation with a timeout
+ */
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string
+): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(timeoutMessage));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]);
+}
+
+/**
+ * Check if an error is a timeout error
+ */
+function isTimeoutError(error: any): boolean {
+  return error?.message === TIMEOUT_ERROR_MESSAGE;
+}
+
 export interface SERPResult {
   title: string;
   url: string;
@@ -32,6 +60,18 @@ export async function analyzeSERP(
   keyword: string,
   language: string = 'nl'
 ): Promise<SERPAnalysis> {
+  // Default fallback values
+  const defaultAnalysis: SERPAnalysis = {
+    keyword,
+    topResults: [],
+    averageWordCount: 2000,
+    commonHeadings: ['Introductie', 'Voordelen', 'Nadelen', 'Tips', 'Conclusie'],
+    topicsCovered: [keyword],
+    questionsFound: [`Wat is ${keyword}?`, `Waarom is ${keyword} belangrijk?`],
+    contentGaps: [],
+    suggestedLength: 2400,
+  };
+
   try {
     console.log(`[SERP Analyzer] Analyzing keyword: ${keyword}`);
     
@@ -56,50 +96,61 @@ Respond in JSON format:
   "suggestedLength": number
 }`;
 
-    const response = await sendChatCompletion({
-      model: TEXT_MODELS.FAST,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-      stream: false,
-    });
-
-    const content = (response as any).choices[0]?.message?.content || '{}';
-    
-    // Parse JSON from response
-    let analysis;
     try {
-      // Try to extract JSON from markdown code blocks
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
-                       content.match(/```\n([\s\S]*?)\n```/) ||
-                       [null, content];
-      analysis = JSON.parse(jsonMatch[1] || content);
-    } catch (e) {
-      console.error('[SERP Analyzer] Failed to parse JSON:', e);
-      // Fallback to default values
-      analysis = {
-        averageWordCount: 2000,
-        commonHeadings: [],
-        topicsCovered: [],
-        questionsFound: [],
-        contentGaps: [],
-        suggestedLength: 2400,
-      };
-    }
+      // Apply timeout to SERP analysis API call
+      const response = await withTimeout(
+        sendChatCompletion({
+          model: TEXT_MODELS.FAST,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+          stream: false,
+        }),
+        SERP_ANALYSIS_TIMEOUT_MS,
+        TIMEOUT_ERROR_MESSAGE
+      );
 
-    return {
-      keyword,
-      topResults: [],
-      ...analysis,
-    };
+      const content = (response as any).choices[0]?.message?.content || '{}';
+      
+      // Parse JSON from response
+      let analysis;
+      try {
+        // Try to extract JSON from markdown code blocks
+        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
+                         content.match(/```\n([\s\S]*?)\n```/) ||
+                         [null, content];
+        analysis = JSON.parse(jsonMatch[1] || content);
+      } catch (e) {
+        console.error('[SERP Analyzer] Failed to parse JSON:', e);
+        // Fallback to default values
+        analysis = defaultAnalysis;
+      }
+
+      return {
+        keyword,
+        topResults: [],
+        ...analysis,
+      };
+    } catch (apiError: any) {
+      // Check if it was a timeout
+      if (isTimeoutError(apiError)) {
+        console.warn(`[SERP Analyzer] API call timed out after ${SERP_ANALYSIS_TIMEOUT_MS / 1000}s, using default values`);
+        return defaultAnalysis;
+      }
+      
+      throw apiError;
+    }
   } catch (error: any) {
     console.error('[SERP Analyzer] Error:', error);
-    throw new Error(`SERP analysis failed: ${error.message}`);
+    console.log('[SERP Analyzer] Fallback naar standaard waarden');
+    
+    // Return defaults instead of throwing - don't let SERP analysis block content generation
+    return defaultAnalysis;
   }
 }
 
@@ -110,6 +161,9 @@ export async function gatherSources(
   topic: string,
   language: string = 'nl'
 ): Promise<{ sources: string[]; insights: string[] }> {
+  // Default fallback
+  const defaultResult = { sources: [], insights: [] };
+  
   try {
     console.log(`[SERP Analyzer] Gathering sources for: ${topic}`);
     
@@ -125,34 +179,50 @@ Respond in JSON format:
   "insights": string[]
 }`;
 
-    const response = await sendChatCompletion({
-      model: TEXT_MODELS.FAST,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 1500,
-      stream: false,
-    });
-
-    const content = (response as any).choices[0]?.message?.content || '{}';
-    
-    let result;
     try {
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
-                       content.match(/```\n([\s\S]*?)\n```/) ||
-                       [null, content];
-      result = JSON.parse(jsonMatch[1] || content);
-    } catch (e) {
-      result = { sources: [], insights: [] };
-    }
+      // Apply timeout to source gathering API call
+      const response = await withTimeout(
+        sendChatCompletion({
+          model: TEXT_MODELS.FAST,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 1500,
+          stream: false,
+        }),
+        SERP_ANALYSIS_TIMEOUT_MS,
+        TIMEOUT_ERROR_MESSAGE
+      );
 
-    return result;
+      const content = (response as any).choices[0]?.message?.content || '{}';
+      
+      let result;
+      try {
+        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
+                         content.match(/```\n([\s\S]*?)\n```/) ||
+                         [null, content];
+        result = JSON.parse(jsonMatch[1] || content);
+      } catch (e) {
+        console.warn('[SERP Analyzer] Failed to parse sources JSON, using defaults');
+        result = defaultResult;
+      }
+
+      return result;
+    } catch (apiError: any) {
+      if (isTimeoutError(apiError)) {
+        console.warn(`[SERP Analyzer] Source gathering timed out after ${SERP_ANALYSIS_TIMEOUT_MS / 1000}s`);
+        return defaultResult;
+      }
+      
+      throw apiError;
+    }
   } catch (error: any) {
     console.error('[SERP Analyzer] Error gathering sources:', error);
-    return { sources: [], insights: [] };
+    console.log('[SERP Analyzer] Doorgaan zonder bronnen');
+    return defaultResult;
   }
 }
