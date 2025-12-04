@@ -90,36 +90,36 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  /* 2026 Design Glassmorphism */
-  .glass-violet {
+  /* Dark Mode Glassmorphism */
+  .glass-dark {
     background: rgba(24, 24, 27, 0.8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(39, 39, 42, 0.5);
   }
 
-  .glass-violet:hover {
-    border-color: rgba(139, 92, 246, 0.4);
+  .glass-dark:hover {
+    border-color: rgba(255, 107, 0, 0.3);
   }
 
   /* Gradient glow effects */
-  .glow-violet {
-    box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+  .glow-orange {
+    box-shadow: 0 0 40px rgba(255, 107, 0, 0.3);
   }
 
-  .glow-cyan {
-    box-shadow: 0 0 40px rgba(6, 182, 212, 0.3);
+  .glow-blue {
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
   }
 
-  /* Gradient buttons */
-  .btn-gradient-violet-cyan {
-    background: linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%);
+  /* Gradient buttons - Primary Orange */
+  .btn-gradient-orange {
+    background: linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%);
     transition: all 0.3s ease;
   }
 
-  .btn-gradient-violet-cyan:hover {
+  .btn-gradient-orange:hover {
     transform: scale(1.02);
-    box-shadow: 0 0 50px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
   }
 }
 

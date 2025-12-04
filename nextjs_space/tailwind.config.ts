@@ -69,14 +69,15 @@ const config: Config = {
           DEFAULT: 'hsl(var(--writgo-orange))',
           light: 'hsl(var(--writgo-orange-light))',
         },
-        // 2026 Design Color Palette
-        'electric-violet': '#8B5CF6',
-        'neon-cyan': '#06B6D4',
-        'deep-space': '#0A0A0F',
-        'midnight': '#18181B',
-        'slate': '#3F3F46',
-        'pearl-white': '#FAFAFA',
-        'soft-lavender': '#A78BFA',
+        // 2024 Orange/Blue Dark Mode Color Palette
+        'writgo-primary': '#FF6B00',      // Primary Orange
+        'writgo-secondary': '#3B82F6',    // Secondary Blue
+        'deep-space': '#0A0A0F',          // Background
+        'surface': '#18181B',              // Cards, sections
+        'border-dark': '#27272A',          // Borders, dividers
+        'pearl-white': '#FFFFFF',          // Main text (white)
+        'text-muted': '#A1A1AA',           // Muted text, labels
+        'accent-light': '#FFEDD5',         // Soft orange for subtle highlights
       },
       keyframes: {
         'accordion-down': {
