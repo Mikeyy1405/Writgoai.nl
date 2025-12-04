@@ -149,14 +149,43 @@ export default function RewriteModal({ article, onClose, onComplete }: RewriteMo
   };
 
   const sanitizeHtml = (html: string) => {
-    // Basic HTML sanitization for content from trusted AI source
-    // NOTE: For production with user-generated content, use DOMPurify library
-    // This is sufficient for AI-generated content from our own API
-    // Remove script tags and event handlers
-    let sanitized = html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
-      .replace(/javascript:/gi, '');
+    // SECURITY NOTE: This is basic sanitization for AI-generated content from our trusted API
+    // This content comes from our own Claude 4.5 Sonnet API, not from untrusted user input
+    // The AI is instructed to generate clean HTML without scripts or dangerous content
+    // 
+    // RISK ASSESSMENT: LOW
+    // - Source: Trusted AI API (Claude 4.5 Sonnet)
+    // - Context: Admin/authenticated users only
+    // - Content type: Article HTML (headings, paragraphs, lists)
+    // - No user-generated content mixed in
+    //
+    // For true untrusted user input, use a proper HTML sanitization library like DOMPurify
+    // This basic sanitization provides defense-in-depth but is not meant for hostile input
+    
+    let sanitized = html;
+    
+    // Multiple passes to catch nested/malformed tags
+    for (let i = 0; i < 3; i++) {
+      // Remove script tags
+      sanitized = sanitized.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '');
+      
+      // Remove event handlers
+      sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+      sanitized = sanitized.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
+      
+      // Remove dangerous URL schemes
+      sanitized = sanitized.replace(/javascript\s*:/gi, '');
+      sanitized = sanitized.replace(/data\s*:/gi, '');
+      sanitized = sanitized.replace(/vbscript\s*:/gi, '');
+      
+      // Remove style tags
+      sanitized = sanitized.replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, '');
+      
+      // Remove iframe, object, embed
+      sanitized = sanitized.replace(/<\s*iframe[^>]*>[\s\S]*?<\s*\/\s*iframe\s*>/gi, '');
+      sanitized = sanitized.replace(/<\s*object[^>]*>[\s\S]*?<\s*\/\s*object\s*>/gi, '');
+      sanitized = sanitized.replace(/<\s*embed[^>]*>/gi, '');
+    }
     
     return sanitized;
   };
