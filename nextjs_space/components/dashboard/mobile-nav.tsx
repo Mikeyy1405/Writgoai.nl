@@ -6,7 +6,7 @@ import { LucideIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './logo';
 import { isNavItemActive } from '@/lib/navigation-utils';
-import { NavigationItem } from '@/lib/navigation-config';
+import { NavigationItem, isNavItem } from '@/lib/navigation-config';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -17,12 +17,7 @@ interface MobileNavProps {
 
 export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNavProps) {
   const pathname = usePathname();
-  const visibleItems = items.filter(item => {
-    if ('isDivider' in item && item.isDivider) {
-      return !item.adminOnly || isAdmin;
-    }
-    return !item.adminOnly || isAdmin;
-  });
+  const visibleItems = items.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <AnimatePresence>
@@ -81,12 +76,9 @@ export function MobileNav({ isOpen, onClose, items, isAdmin = false }: MobileNav
                   );
                 }
 
-                // After isDivider check, TypeScript knows this is a NavItem
-                // But we need to explicitly help TypeScript understand this
-                if (!('icon' in item) || !('href' in item)) {
-                  return null;
-                }
-
+                // TypeScript now knows this is a NavItem
+                if (!isNavItem(item)) return null;
+                
                 const Icon = item.icon;
                 const active = isNavItemActive(item.href, pathname);
                 const isAdminItem = item.adminOnly;

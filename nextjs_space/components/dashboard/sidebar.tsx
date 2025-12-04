@@ -7,7 +7,7 @@ import { LucideIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './logo';
 import { isNavItemActive } from '@/lib/navigation-utils';
-import { NavigationItem } from '@/lib/navigation-config';
+import { NavigationItem, isNavItem } from '@/lib/navigation-config';
 
 interface SidebarProps {
   items: NavigationItem[];
@@ -18,12 +18,7 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const visibleItems = items.filter(item => {
-    if ('isDivider' in item && item.isDivider) {
-      return !item.adminOnly || isAdmin;
-    }
-    return !item.adminOnly || isAdmin;
-  });
+  const visibleItems = items.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <aside
@@ -111,12 +106,9 @@ export function Sidebar({ items, isAdmin = false }: SidebarProps) {
             );
           }
 
-          // After isDivider check, TypeScript knows this is a NavItem
-          // But we need to explicitly help TypeScript understand this
-          if (!('icon' in item) || !('href' in item)) {
-            return null;
-          }
-
+          // TypeScript now knows this is a NavItem
+          if (!isNavItem(item)) return null;
+          
           const Icon = item.icon;
           const active = isNavItemActive(item.href, pathname);
           const isAdminItem = item.adminOnly;
