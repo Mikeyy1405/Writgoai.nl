@@ -241,9 +241,9 @@ export const InvoicePDFDocument = ({ invoice }: { invoice: InvoiceData }) => (
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.logo}>WritGo AI</Text>
+          <Text style={styles.logo}>Writgo Media</Text>
           <Text style={styles.companyInfo}>info@writgo.nl</Text>
-          <Text style={styles.companyInfo}>www.writgoai.nl</Text>
+          <Text style={styles.companyInfo}>www.writgo.nl</Text>
           <Text style={styles.companyInfo}>KVK: [KVK nummer]</Text>
           <Text style={styles.companyInfo}>BTW: [BTW nummer]</Text>
         </View>
@@ -355,7 +355,7 @@ export const InvoicePDFDocument = ({ invoice }: { invoice: InvoiceData }) => (
 
       {/* Footer */}
       <Text style={styles.footer}>
-        WritGo AI - Uw AI Content Partner | info@writgo.nl | www.writgoai.nl
+        Writgo Media - Complete Online Aanwezigheid | info@writgo.nl | www.writgo.nl
         {"\n"}Bedankt voor uw vertrouwen!
       </Text>
     </Page>

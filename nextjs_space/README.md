@@ -1,10 +1,10 @@
-# WritGo AI - Content & SEO Platform
+# Writgo Media - Omnipresence Content Platform
 
-🚀 **Live op: [writgoai.nl](https://writgoai.nl)**
+🚀 **Live op: [writgo.nl](https://writgo.nl)**
 
 ## 📋 Overzicht
 
-WritGo AI is een volledig AI-powered content en SEO platform met geavanceerde functies voor:
+Writgo Media is een volledig AI-powered omnipresence content platform met geavanceerde functies voor:
 - 🤖 AI Content Generatie (blogs, artikelen, producten)
 - 📊 SEO Planning & Optimalisatie
 - 🎥 Video Generatie
@@ -60,7 +60,7 @@ DATABASE_URL=postgresql://user:password@host:port/database
 
 # NextAuth
 NEXTAUTH_SECRET=your-secret-here
-NEXTAUTH_URL=https://writgoai.nl
+NEXTAUTH_URL=https://writgo.nl
 
 # Stripe
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
@@ -177,12 +177,12 @@ lib/pdf-invoice-generator.tsx  # PDF templates
 ## 🌐 Deployment
 
 ### Productie URL:
-**[writgoai.nl](https://writgoai.nl)**
+**[writgo.nl](https://writgo.nl)**
 
 ### Webhook Configuratie:
 
 1. Ga naar [Stripe Dashboard](https://dashboard.stripe.com/webhooks)
-2. Voeg endpoint toe: `https://writgoai.nl/api/webhooks/stripe`
+2. Voeg endpoint toe: `https://writgo.nl/api/webhooks/stripe`
 3. Selecteer events:
    - `checkout.session.completed`
    - `invoice.paid`

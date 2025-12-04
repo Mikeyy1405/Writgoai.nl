@@ -123,7 +123,7 @@ export async function sendPasswordResetEmail({ to, name, resetLink }: PasswordRe
         </div>
         <div class="footer">
           <p><strong>WritgoAI</strong> - Automatiseer je content creatie</p>
-          <p>info@writgoai.nl | www.writgoai.nl</p>
+          <p>info@writgo.nl | www.writgo.nl</p>
           <p style="margin-top: 16px; font-size: 12px;">
             Deze email is verstuurd omdat er een wachtwoordherstel is aangevraagd voor dit emailadres.
           </p>
@@ -153,7 +153,7 @@ Team WritgoAI
 
 ---
 WritgoAI - Automatiseer je content creatie
-info@writgoai.nl | www.writgoai.nl
+info@writgo.nl | www.writgo.nl
   `;
 
   return sendEmail(to, subject, html, text);
