@@ -63,18 +63,8 @@ export async function POST(req: NextRequest) {
     // Store the old WordPress URL if we need to maintain it
     const oldWordpressUrl = article.wordpressUrl;
 
-    // Update article status to indicate it's being rewritten
-    await prisma.contentHubArticle.update({
-      where: { id: articleId },
-      data: {
-        status: 'writing',
-      },
-    });
-
-    // Note: In a real implementation, you would trigger the article generation process here
-    // For now, we'll just reset the article to pending state with the old URL maintained
-    
     // Reset article to be regenerated, but keep the WordPress URL if maintainUrl is true
+    // The article will need to be regenerated using the article generator component
     await prisma.contentHubArticle.update({
       where: { id: articleId },
       data: {
@@ -83,7 +73,12 @@ export async function POST(req: NextRequest) {
         metaTitle: null,
         metaDescription: null,
         researchData: null,
-        // Maintain WordPress URL if requested
+        featuredImage: null,
+        images: [],
+        internalLinks: null,
+        faqSection: null,
+        schemaMarkup: null,
+        // Maintain WordPress URL if requested so it can be updated in place
         wordpressUrl: maintainUrl ? oldWordpressUrl : null,
       },
     });

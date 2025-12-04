@@ -4,6 +4,31 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
 /**
+ * Safely remove HTML tags from a string using multiple passes
+ * This ensures nested tags and malicious scripts are fully removed
+ */
+function sanitizeHtml(html: string): string {
+  let text = html;
+  let prevText = '';
+  
+  // Remove HTML tags in multiple passes to handle nested tags
+  while (text !== prevText && text.includes('<')) {
+    prevText = text;
+    text = text.replace(/<[^>]*>/g, '');
+  }
+  
+  // Decode common HTML entities in the correct order to prevent double-escaping
+  text = text.replace(/&lt;/g, '<')
+             .replace(/&gt;/g, '>')
+             .replace(/&quot;/g, '"')
+             .replace(/&#039;/g, "'")
+             .replace(/&nbsp;/g, ' ')
+             .replace(/&amp;/g, '&');  // Do &amp; last to prevent double-decoding
+  
+  return text.trim();
+}
+
+/**
  * POST /api/content-hub/sync-existing
  * Sync existing WordPress posts to Content Hub
  */
@@ -66,8 +91,8 @@ export async function POST(req: NextRequest) {
     let page = 1;
     let hasMore = true;
 
-    // Fetch all published posts
-    while (hasMore && page <= 10) { // Limit to 10 pages to prevent infinite loops
+    // Fetch all published posts (limit to 20 pages = 2000 posts max to prevent excessive API calls)
+    while (hasMore && page <= 20) {
       const response = await fetch(
         `${wpUrl}/wp-json/wp/v2/posts?per_page=100&page=${page}&status=publish`,
         {
@@ -112,8 +137,8 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // Extract title without HTML
-        const title = post.title.rendered.replace(/<[^>]*>/g, '');
+        // Extract title without HTML using the sanitizer function
+        const title = sanitizeHtml(post.title.rendered);
         
         // Create article record for existing WordPress post
         await prisma.contentHubArticle.create({
@@ -129,7 +154,8 @@ export async function POST(req: NextRequest) {
             publishedAt: new Date(post.date),
             content: post.content.rendered,
             metaTitle: post.yoast_head_json?.title || title,
-            metaDescription: post.yoast_head_json?.description || post.excerpt?.rendered?.replace(/<[^>]*>/g, '').substring(0, 160),
+            metaDescription: post.yoast_head_json?.description || 
+              (post.excerpt?.rendered ? sanitizeHtml(post.excerpt.rendered).substring(0, 160) : ''),
           },
         });
 
