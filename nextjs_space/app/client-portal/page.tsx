@@ -25,6 +25,7 @@ import {
   FolderKanban,
   Send,
   Receipt,
+  Video,
 } from 'lucide-react';
 import { StatsCard } from '@/components/dashboard/stats-card';
 
@@ -242,6 +243,18 @@ export default function ClientDashboard() {
                 <p className="text-white font-medium group-hover:text-emerald-400 transition-colors text-sm">Blog Generator</p>
                 <p className="text-zinc-500 text-xs">AI blogs schrijven</p>
               </div>
+            </Link>
+            
+            <Link 
+              href="/client-portal/video-generator" 
+              className="flex items-center gap-3 p-4 bg-zinc-800/30 hover:bg-emerald-500/10 border border-zinc-700/50 hover:border-emerald-500/30 rounded-xl transition-all group relative"
+            >
+              <Video className="w-5 h-5 text-emerald-400" />
+              <div>
+                <p className="text-white font-medium group-hover:text-emerald-400 transition-colors text-sm">Video Generator</p>
+                <p className="text-zinc-500 text-xs">AI video's maken</p>
+              </div>
+              <span className="absolute top-2 right-2 px-1.5 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-bold rounded">Pro</span>
             </Link>
             
             <Link 
