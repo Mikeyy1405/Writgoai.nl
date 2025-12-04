@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, List, Send, Inbox, Settings, BarChart3, Mailbox, Zap } from 'lucide-react';
+import { Mail, List, Send, Inbox, Settings, BarChart3, Mailbox, Zap, LayoutDashboard } from 'lucide-react';
 import { EmailListsManager } from '@/components/email-marketing/email-lists-manager';
 import { CampaignsManager } from '@/components/email-marketing/campaigns-manager';
 import { EmailInboxView } from '@/components/email-marketing/email-inbox-view';
@@ -208,6 +208,3 @@ export default function EmailMarketingSuitePage() {
     </div>
   );
 }
-
-// Import missing component
-import { LayoutDashboard } from 'lucide-react';

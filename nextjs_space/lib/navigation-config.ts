@@ -97,7 +97,6 @@ export const baseNavItems: NavigationItem[] = [
     icon: Mail,
     items: [
       { label: 'Suite Overzicht', href: '/client/email', icon: LayoutDashboard },
-      { label: 'Email Generator', href: '/client/email?tab=campaigns', icon: Send },
       { label: 'Campagnes', href: '/client/email?tab=campaigns', icon: Send },
       { label: 'Email Lijsten', href: '/client/email?tab=lists', icon: List },
       { label: 'AI Inbox', href: '/client/email?tab=inbox', icon: Inbox },
