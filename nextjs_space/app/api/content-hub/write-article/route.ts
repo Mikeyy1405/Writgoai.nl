@@ -186,12 +186,12 @@ export async function POST(req: NextRequest) {
         type: 'blog',
         title: article.title,
         content: articleResult.content,
-        contentHtml: articleResult.content,
+        contentHtml: articleResult.content, // Both content and contentHtml use same value as per codebase pattern
         metaDesc: metaDescription,
         thumbnailUrl: featuredImageUrl || undefined,
         keywords: article.keywords,
         tags: article.keywords,
-        language: 'NL',
+        language: 'NL', // Consistent with 'nl' language used in SERP analysis and sources
       });
 
       if (saveResult.success && saveResult.contentId) {
@@ -256,8 +256,9 @@ export async function POST(req: NextRequest) {
             });
           }
         } else {
-          console.log('[Content Hub] No WordPress config found, skipping auto-publish');
-          // Set status to published even without WordPress publish
+          console.log('[Content Hub] No WordPress config found for auto-publish');
+          console.log('[Content Hub] Article ready but not published to WordPress');
+          // Set status to published (content is generated, WordPress config is missing)
           await prisma.contentHubArticle.update({
             where: { id: articleId },
             data: { status: 'published' },
