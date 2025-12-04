@@ -2278,6 +2278,9 @@ model ContentHubArticle {
   wordpressUrl      String?
   publishedAt       DateTime?
   
+  // Content Library Link
+  contentId         String?  // Link to SavedContent
+  
   // Stats
   wordCount         Int?
   generationTime    Int?     // seconds

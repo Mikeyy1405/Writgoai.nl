@@ -7,6 +7,8 @@ import { analyzeSERP, gatherSources } from '@/lib/content-hub/serp-analyzer';
 import { generateFeaturedImage } from '@/lib/content-hub/image-generator';
 import { findLinkOpportunities } from '@/lib/content-hub/internal-linker';
 import { generateMetaTitle, generateMetaDescription, generateSlug, generateArticleSchema, generateYoastMeta } from '@/lib/content-hub/seo-optimizer';
+import { autoSaveToLibrary } from '@/lib/content-library-helper';
+import { publishToWordPress, getWordPressConfig } from '@/lib/wordpress-publisher';
 
 /**
  * POST /api/content-hub/write-article
@@ -157,10 +159,11 @@ export async function POST(req: NextRequest) {
     // Save article
     const generationTime = Math.floor((Date.now() - startTime) / 1000);
     
+    // First update with generated content
     await prisma.contentHubArticle.update({
       where: { id: articleId },
       data: {
-        status: autoPublish ? 'publishing' : 'published',
+        status: 'published',
         content: articleResult.content,
         metaTitle,
         metaDescription,
@@ -175,9 +178,102 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Content Hub] Article completed in ${generationTime}s`);
 
+    // Save to Content Library
+    console.log('[Content Hub] Saving to Content Library...');
+    const saveResult = await autoSaveToLibrary({
+      clientId: client.id,
+      type: 'blog',
+      title: article.title,
+      content: articleResult.content,
+      contentHtml: articleResult.content,
+      category: 'blog',
+      tags: article.keywords,
+      description: articleResult.excerpt,
+      keywords: article.keywords,
+      metaDesc: metaDescription,
+      slug,
+      thumbnailUrl: featuredImageUrl || undefined,
+    });
+
+    // Link contentId back to ContentHubArticle
+    if (saveResult.success && saveResult.contentId) {
+      await prisma.contentHubArticle.update({
+        where: { id: articleId },
+        data: { contentId: saveResult.contentId },
+      });
+      console.log(`[Content Hub] Content saved to library with ID: ${saveResult.contentId}`);
+    }
+
+    // Auto-publish to WordPress if enabled
+    let wordpressUrl: string | null = null;
+    let wordpressPostId: number | null = null;
+
+    if (autoPublish) {
+      try {
+        console.log('[Content Hub] Auto-publishing to WordPress...');
+        
+        // Get WordPress config for the site
+        const wpConfig = await getWordPressConfig({
+          clientEmail: session.user.email,
+        });
+
+        if (wpConfig && wpConfig.siteUrl && wpConfig.username && wpConfig.applicationPassword) {
+          const publishResult = await publishToWordPress(
+            wpConfig,
+            {
+              title: article.title,
+              content: articleResult.content,
+              excerpt: articleResult.excerpt,
+              status: 'publish',
+              tags: article.keywords,
+              featuredImageUrl: featuredImageUrl || undefined,
+              seoTitle: metaTitle,
+              seoDescription: metaDescription,
+              focusKeyword: article.keywords[0] || article.title,
+              useGutenberg: true,
+            }
+          );
+
+          wordpressUrl = publishResult.link;
+          wordpressPostId = publishResult.id;
+
+          // Update ContentHubArticle with WordPress info
+          await prisma.contentHubArticle.update({
+            where: { id: articleId },
+            data: {
+              wordpressPostId,
+              wordpressUrl,
+              publishedAt: new Date(),
+            },
+          });
+
+          // Update SavedContent with WordPress info
+          if (saveResult.contentId) {
+            await prisma.savedContent.update({
+              where: { id: saveResult.contentId },
+              data: {
+                publishedUrl: wordpressUrl,
+                publishedAt: new Date(),
+              },
+            });
+          }
+
+          console.log(`[Content Hub] Published to WordPress: ${wordpressUrl}`);
+        } else {
+          console.log('[Content Hub] WordPress credentials not configured, skipping auto-publish');
+        }
+      } catch (wpError: any) {
+        console.error('[Content Hub] WordPress publish error:', wpError);
+        console.log('[Content Hub] Content is saved in library, but WordPress publish failed');
+        // Don't throw - content is already saved
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Article generated successfully',
+      message: autoPublish && wordpressUrl 
+        ? 'Article generated and published to WordPress'
+        : 'Article generated successfully',
       article: {
         id: article.id,
         title: article.title,
@@ -186,8 +282,11 @@ export async function POST(req: NextRequest) {
         metaDescription,
         slug,
         featuredImage: featuredImageUrl,
-        status: autoPublish ? 'publishing' : 'published',
+        status: 'published',
         generationTime,
+        contentId: saveResult.contentId || null,
+        wordpressUrl,
+        wordpressPostId,
       },
     });
   } catch (error: any) {
