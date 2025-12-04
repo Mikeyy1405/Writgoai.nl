@@ -167,7 +167,11 @@ export async function POST(req: NextRequest) {
           if (!isNaN(parsed) && parsed > 0) {
             totalPages = parsed;
             console.log(`[Content Hub] WordPress reports ${totalPages} total pages available`);
+          } else {
+            console.warn(`[Content Hub] Invalid X-WP-TotalPages header value: ${wpTotalPages}`);
           }
+        } else if (!wpTotalPages && totalPages === null) {
+          console.log('[Content Hub] X-WP-TotalPages header not found, will paginate until empty response');
         }
 
         const posts = await response.json();
