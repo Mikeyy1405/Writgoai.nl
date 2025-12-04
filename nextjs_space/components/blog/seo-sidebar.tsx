@@ -76,9 +76,9 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-green-500';
+    if (score >= 60) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
   const getScoreBadge = (score: number) => {
@@ -91,14 +91,14 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
   return (
     <div className="space-y-6">
       {/* SEO Score */}
-      <Card className="p-6">
+      <Card className="p-6 bg-gray-800/50 border-gray-700">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
+          <h3 className="font-semibold flex items-center gap-2 text-white">
+            <TrendingUp className="w-5 h-5 text-orange-500" />
             SEO Score
           </h3>
           {analyzing && (
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#FF9933] border-t-transparent" />
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent" />
           )}
         </div>
 
@@ -117,27 +117,27 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
 
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Woorden:</span>
-                <span className="font-medium">{analysis.wordCount}</span>
+                <span className="text-gray-400">Woorden:</span>
+                <span className="font-medium text-white">{analysis.wordCount}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Leestijd:</span>
-                <span className="font-medium">{analysis.readingTimeMinutes} min</span>
+                <span className="text-gray-400">Leestijd:</span>
+                <span className="font-medium text-white">{analysis.readingTimeMinutes} min</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Interne links:</span>
-                <span className="font-medium">{analysis.internalLinks.length}</span>
+                <span className="text-gray-400">Interne links:</span>
+                <span className="font-medium text-white">{analysis.internalLinks.length}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Externe links:</span>
-                <span className="font-medium">{analysis.externalLinks.length}</span>
+                <span className="text-gray-400">Externe links:</span>
+                <span className="font-medium text-white">{analysis.externalLinks.length}</span>
               </div>
             </div>
           </>
         )}
 
         {!analysis && !analyzing && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+          <p className="text-sm text-gray-400 text-center py-4">
             Voer titel en content in voor SEO analyse
           </p>
         )}
@@ -145,16 +145,16 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
 
       {/* SEO Issues */}
       {analysis && analysis.issues.length > 0 && (
-        <Card className="p-6">
-          <h3 className="font-semibold flex items-center gap-2 mb-4">
-            <AlertCircle className="w-5 h-5 text-red-600" />
+        <Card className="p-6 bg-gray-800/50 border-gray-700">
+          <h3 className="font-semibold flex items-center gap-2 mb-4 text-white">
+            <AlertCircle className="w-5 h-5 text-red-500" />
             Te Verbeteren
           </h3>
           <ul className="space-y-2">
             {analysis.issues.map((issue, index) => (
               <li key={index} className="flex gap-2 text-sm">
-                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700 dark:text-gray-300">{issue}</span>
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                <span className="text-gray-300">{issue}</span>
               </li>
             ))}
           </ul>
@@ -163,16 +163,16 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
 
       {/* SEO Suggestions */}
       {analysis && analysis.suggestions.length > 0 && (
-        <Card className="p-6">
-          <h3 className="font-semibold flex items-center gap-2 mb-4">
-            <Info className="w-5 h-5 text-blue-600" />
+        <Card className="p-6 bg-gray-800/50 border-gray-700">
+          <h3 className="font-semibold flex items-center gap-2 mb-4 text-white">
+            <Info className="w-5 h-5 text-blue-500" />
             Suggesties
           </h3>
           <ul className="space-y-2">
             {analysis.suggestions.map((suggestion, index) => (
               <li key={index} className="flex gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700 dark:text-gray-300">{suggestion}</span>
+                <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                <span className="text-gray-300">{suggestion}</span>
               </li>
             ))}
           </ul>
@@ -180,11 +180,11 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
       )}
 
       {/* Meta Fields */}
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">SEO Meta Data</h3>
+      <Card className="p-6 bg-gray-800/50 border-gray-700">
+        <h3 className="font-semibold mb-4 text-white">SEO Meta Data</h3>
         <div className="space-y-4">
           <div>
-            <Label className="flex items-center justify-between">
+            <Label className="flex items-center justify-between text-gray-300">
               <span>Meta Title</span>
               <span className="text-xs text-gray-500">
                 {(data.metaTitle || data.title)?.length || 0}/60
@@ -195,11 +195,12 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
               onChange={(e) => onChange('metaTitle', e.target.value)}
               placeholder={data.title || "SEO vriendelijke titel"}
               maxLength={60}
+              className="mt-2 bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
             />
           </div>
 
           <div>
-            <Label className="flex items-center justify-between">
+            <Label className="flex items-center justify-between text-gray-300">
               <span>Meta Description</span>
               <span className="text-xs text-gray-500">
                 {data.metaDescription?.length || 0}/160
@@ -211,24 +212,26 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
               placeholder="Korte beschrijving voor zoekmachines"
               rows={3}
               maxLength={160}
+              className="mt-2 bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
             />
           </div>
 
           <div>
-            <Label className="flex items-center gap-2">
-              <Hash className="w-4 h-4" />
+            <Label className="flex items-center gap-2 text-gray-300">
+              <Hash className="w-4 h-4 text-orange-500" />
               Focus Keyword
             </Label>
             <Input
               value={data.focusKeyword}
               onChange={(e) => onChange('focusKeyword', e.target.value)}
               placeholder="Primair zoekwoord"
+              className="mt-2 bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
             />
           </div>
 
           <div>
-            <Label className="flex items-center gap-2">
-              <LinkIcon className="w-4 h-4" />
+            <Label className="flex items-center gap-2 text-gray-300">
+              <LinkIcon className="w-4 h-4 text-orange-500" />
               Slug
             </Label>
             <Input
@@ -240,9 +243,10 @@ export function SEOSidebar({ data, onChange }: SEOSidebarProps) {
                 )
               }
               placeholder="url-vriendelijke-slug"
+              className="mt-2 bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
             />
             <p className="text-xs text-gray-500 mt-1">
-              URL: /blog/{data.slug || 'your-slug'}
+              URL: /{data.slug || 'your-slug'}
             </p>
           </div>
         </div>
