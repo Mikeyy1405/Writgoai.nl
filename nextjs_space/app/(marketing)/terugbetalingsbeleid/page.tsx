@@ -19,7 +19,7 @@ export default function TerugbetalingsbeleidPage() {
               Terugbetalingsbeleid
             </h1>
             <p className="text-gray-400 mb-8">
-              Laatst bijgewerkt: 4 december 2024
+              Laatst bijgewerkt: 4 december 2025
             </p>
 
             {/* Warning Banner */}
@@ -31,7 +31,7 @@ export default function TerugbetalingsbeleidPage() {
                     GEEN TERUGBETALINGEN
                   </h2>
                   <p className="text-red-300 leading-relaxed">
-                    WritgoAI biedt <strong className="text-white">GEEN terugbetalingen</strong> aan 
+                    Writgo Media biedt <strong className="text-white">GEEN terugbetalingen</strong> aan 
                     voor abonnementen, aangekochte credits of diensten. Lees dit beleid zorgvuldig 
                     door voordat u een aankoop doet.
                   </p>
@@ -45,7 +45,7 @@ export default function TerugbetalingsbeleidPage() {
                 1. Algemeen terugbetalingsbeleid
               </h2>
               <p className="mb-4">
-                WritgoAI hanteert een <strong className="text-white">strikt geen-terugbetalingsbeleid</strong> voor 
+                Writgo Media hanteert een <strong className="text-white">strikt geen-terugbetalingsbeleid</strong> voor 
                 alle diensten en producten. Dit beleid is van toepassing op:
               </p>
               <ul className="list-disc pl-6 mb-4 space-y-2">
@@ -63,7 +63,7 @@ export default function TerugbetalingsbeleidPage() {
                 2.1 Digitale diensten - Directe levering
               </h3>
               <p className="mb-4">
-                WritgoAI levert digitale diensten die onmiddellijk toegankelijk en bruikbaar zijn 
+                Writgo Media levert digitale diensten die onmiddellijk toegankelijk en bruikbaar zijn 
                 na aankoop. Zodra u:
               </p>
               <ul className="list-disc pl-6 mb-4 space-y-2">
@@ -399,8 +399,8 @@ export default function TerugbetalingsbeleidPage() {
                     </p>
                     <p className="mb-2">
                       <strong className="text-white">E-mail:</strong>{' '}
-                      <a href="mailto:support@WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                        support@WritgoAI.nl
+                      <a href="mailto:info@writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                        info@writgo.nl
                       </a>
                     </p>
                     <p className="mb-2">
@@ -408,8 +408,8 @@ export default function TerugbetalingsbeleidPage() {
                     </p>
                     <p>
                       <strong className="text-white">Website:</strong>{' '}
-                      <a href="https://WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                        https://WritgoAI.nl
+                      <a href="https://writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                        https://writgo.nl
                       </a>
                     </p>
                   </div>

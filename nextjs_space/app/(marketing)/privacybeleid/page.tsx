@@ -18,7 +18,7 @@ export default function PrivacybeleidPage() {
               Privacybeleid (AVG/GDPR)
             </h1>
             <p className="text-gray-400 mb-8">
-              Laatst bijgewerkt: 4 december 2024
+              Laatst bijgewerkt: 4 december 2025
             </p>
 
             <div className="prose prose-slate max-w-none text-gray-300 space-y-6">
@@ -45,14 +45,14 @@ export default function PrivacybeleidPage() {
                 </p>
                 <p className="mb-2">
                   <strong className="text-white">Email:</strong>{' '}
-                  <a href="mailto:support@WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                    support@WritgoAI.nl
+                  <a href="mailto:info@writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                    info@writgo.nl
                   </a>
                 </p>
                 <p>
                   <strong className="text-white">Website:</strong>{' '}
-                  <a href="https://WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                    https://WritgoAI.nl
+                  <a href="https://writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                    https://writgo.nl
                   </a>
                 </p>
               </div>
@@ -266,8 +266,8 @@ export default function PrivacybeleidPage() {
 
               <p className="my-6">
                 Om deze rechten uit te oefenen, kunt u contact met ons opnemen via{' '}
-                <a href="mailto:support@WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                  support@WritgoAI.nl
+                <a href="mailto:info@writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                  info@writgo.nl
                 </a>. Wij zullen uw verzoek binnen 1 maand behandelen.
               </p>
 
@@ -398,8 +398,8 @@ export default function PrivacybeleidPage() {
               <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-6 mb-4">
                 <p className="mb-2">
                   <strong className="text-white">E-mail:</strong>{' '}
-                  <a href="mailto:support@WritgoAI.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
-                    support@WritgoAI.nl
+                  <a href="mailto:info@writgo.nl" className="text-blue-400 hover:text-blue-300 transition-colors">
+                    info@writgo.nl
                   </a>
                 </p>
                 <p className="mb-2">

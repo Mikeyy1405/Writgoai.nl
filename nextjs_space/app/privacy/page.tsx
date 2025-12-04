@@ -18,7 +18,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="text-gray-400 mb-8">
-              Laatst bijgewerkt: 10 november 2025
+              Laatst bijgewerkt: 4 december 2025
             </p>
 
             <div className="prose prose-slate max-w-none text-gray-300 space-y-6">
@@ -205,7 +205,8 @@ export default function PrivacyPage() {
                 <p>
                   <strong className="text-white">Website:</strong>{' '}
                   <a href="https://writgo.nl" target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-400 transition-colors">
-                    writgo.nl
+                    https://writgo.nl
+                
                   </a>
                 </p>
               </div>

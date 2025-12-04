@@ -13,7 +13,7 @@ export default function TermsPage() {
             Algemene Voorwaarden
           </h1>
           <p className="text-slate-600 mb-8">
-            Laatst bijgewerkt: 2 november 2025
+            Laatst bijgewerkt: 4 december 2025
           </p>
 
           <div className="prose prose-slate max-w-none">
@@ -21,7 +21,7 @@ export default function TermsPage() {
               1. Acceptatie van voorwaarden
             </h2>
             <p className="text-slate-700 mb-4">
-              Door gebruik te maken van WritgoAI ("de Dienst"), gaat u akkoord met deze Algemene Voorwaarden. 
+              Door gebruik te maken van Writgo Media ("de Dienst"), gaat u akkoord met deze Algemene Voorwaarden. 
               Als u niet akkoord gaat, mag u de Dienst niet gebruiken.
             </p>
 
@@ -62,9 +62,10 @@ export default function TermsPage() {
               We bieden verschillende abonnementsplannen:
             </p>
             <ul className="list-disc pl-6 mb-4 text-slate-700">
-              <li><strong>Starter</strong> - €24.99/maand (100 credits)</li>
-              <li><strong>Pro</strong> - €99.99/maand (500 credits)</li>
-              <li><strong>Business</strong> - €299.99/maand (2000 credits)</li>
+              <li><strong>Starter</strong> - €29/maand (1.000 credits/maand, ~14 blogs)</li>
+              <li><strong>Professional</strong> - €79/maand (3.000 credits/maand, ~42 blogs)</li>
+              <li><strong>Enterprise</strong> - €199/maand (10.000 credits/maand, ~142 blogs)</li>
+              <li><strong>Managed Service</strong> - Vanaf €499/maand (complete content service)</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-slate-800 mt-6 mb-3">
