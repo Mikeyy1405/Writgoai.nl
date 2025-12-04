@@ -95,8 +95,10 @@ export async function POST(req: NextRequest) {
     // Try to fetch all published posts (limit to 20 pages = 2000 posts max to prevent excessive API calls)
     try {
       while (hasMore && page <= 20) {
-        const response = await fetch(
-          `${wpUrl}/wp-json/wp/v2/posts?per_page=100&page=${page}&status=publish`,
+        // Try standard REST API endpoint first, fallback to alternative if 404
+        const standardEndpoint = `${wpUrl}/wp-json/wp/v2/posts?per_page=100&page=${page}&status=publish`;
+        let response = await fetch(
+          standardEndpoint,
           {
             headers: {
               'Authorization': `Basic ${auth}`,
@@ -105,6 +107,21 @@ export async function POST(req: NextRequest) {
             signal: AbortSignal.timeout(15000), // 15 second timeout
           }
         );
+
+        // If 404, try alternative REST API endpoint format
+        if (response.status === 404) {
+          console.log('[Content Hub] Standard endpoint not found, trying alternative format...');
+          const alternativeEndpoint = `${wpUrl}/?rest_route=/wp/v2/posts&per_page=100&page=${page}&status=publish`;
+          response = await fetch(
+            alternativeEndpoint,
+            {
+              headers: {
+                'Authorization': `Basic ${auth}`,
+              },
+              signal: AbortSignal.timeout(15000),
+            }
+          );
+        }
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'Onbekende fout');
