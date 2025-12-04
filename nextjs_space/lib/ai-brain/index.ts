@@ -119,7 +119,7 @@ export async function processAgentChat(
             parameters = {};
           }
           return {
-            id: tc.id || `tool_${Date.now()}`,
+            id: tc.id || `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             name: tc.function.name,
             parameters,
             status: 'pending' as const,
@@ -264,11 +264,12 @@ export async function* streamAgentChat(
       // Handle tool calls with safe accumulation
       if (delta.tool_calls) {
         for (const toolCall of delta.tool_calls) {
-          const index = toolCall.index ?? 0;
+          // Use explicit index or find next available slot
+          const index = toolCall.index !== undefined ? toolCall.index : accumulatedToolCalls.length;
           
           if (!accumulatedToolCalls[index]) {
             accumulatedToolCalls[index] = {
-              id: toolCall.id || `tool_${Date.now()}_${index}`,
+              id: toolCall.id || `tool_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
               type: 'function',
               function: {
                 name: toolCall.function?.name || '',
