@@ -66,19 +66,8 @@ export const baseNavItems: NavigationItem[] = [
   // Content Hub - Simplified single entry point
   { label: 'Content Hub', href: '/client-portal/content-hub', icon: Globe },
   
-  // SUITE 2: Social Media Suite
-  {
-    isSuite: true,
-    label: 'Social Media Suite',
-    icon: Share2,
-    items: [
-      { label: 'Suite Overzicht', href: '/client/social', icon: LayoutDashboard },
-      { label: 'Post Generator', href: '/client-portal/social-media', icon: Share2 },
-      { label: 'Content Planner', href: '/client-portal/content-library', icon: Calendar },
-      { label: 'Platform Koppelingen', href: '/client-portal/social-media?tab=connections', icon: Link },
-      { label: 'Autopilot Mode', href: '/client-portal/social-media?mode=autopilot', icon: Zap, badge: 'Auto' },
-    ],
-  },
+  // Social Media Suite - Single unified page
+  { label: 'Social Media Suite', href: '/client-portal/social-media-suite', icon: Share2 },
   
   // SUITE 3: Email Marketing Suite
   {
