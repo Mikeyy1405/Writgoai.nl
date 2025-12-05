@@ -11,6 +11,9 @@ import type { SERPAnalysis } from './serp-analyzer';
 const TOKEN_MULTIPLIER = 3; // Multiplier for target word count to max tokens
 const MAX_TOKENS_LIMIT = 16000; // Maximum tokens to prevent exceeding model limits
 const JSON_STRUCTURE_BUFFER = 500; // Buffer tokens to ensure JSON structure can be completed
+const MIN_CONTENT_LENGTH = 200; // Minimum content length in characters to consider valid
+const RETRY_TOKEN_MULTIPLIER = 2.5; // Reduced multiplier for retry attempts
+const RETRY_MAX_TOKENS = 12000; // Maximum tokens for retry attempts
 
 export interface ArticleWriteOptions {
   title: string;
@@ -37,121 +40,178 @@ export interface ArticleResult {
 
 /**
  * Clean AI response by removing markdown code blocks
- * Handles various formats: ```json\n...\n``` or ```\n...\n``` or ```json ... ```
+ * Uses multiple strategies to extract valid JSON from various response formats
  */
 function cleanJsonResponse(content: string): string {
   let cleaned = content.trim();
   
-  // Remove markdown code blocks with regex - handles various formats
-  // Matches ```json...``` or ```...``` with optional whitespace and newlines
-  cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+  // Strategy 1: Extract from markdown code blocks (most common)
+  const codeBlockPatterns = [
+    /```json\s*\n?([\s\S]*?)\n?\s*```/i,
+    /```\s*\n?([\s\S]*?)\n?\s*```/,
+    /`{3,}json\s*\n?([\s\S]*?)\n?\s*`{3,}/i,
+  ];
   
-  // Remove any leading text before the first opening brace
-  cleaned = cleaned.replace(/^[^{]*/, '');
+  for (const pattern of codeBlockPatterns) {
+    const match = cleaned.match(pattern);
+    if (match && match[1]) {
+      cleaned = match[1].trim();
+      break;
+    }
+  }
   
-  // Try to extract JSON object if still wrapped in other content
-  // Use greedy match to get the outermost JSON object
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    cleaned = jsonMatch[0];
+  // Strategy 2: Remove leading/trailing backticks
+  cleaned = cleaned.replace(/^`+/, '').replace(/`+$/, '').trim();
+  
+  // Strategy 3: Find first { and last } - extract JSON object
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
   }
   
   return cleaned;
 }
 
 /**
- * Create fallback article response when parsing fails
+ * Count words in HTML content
  */
-function createFallbackResponse(title: string, keywords: string[]): any {
-  return {
-    content: `<p>Er is een fout opgetreden bij het genereren van dit artikel. Probeer het opnieuw.</p>`,
-    metaTitle: title.substring(0, 60),
-    metaDescription: `Lees meer over ${keywords[0] || title}`.substring(0, 160),
-    excerpt: `Artikel over ${title}`,
-    suggestedImages: [],
-  };
+function countWords(html: string): number {
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(word => word.length > 0)
+    .length;
+}
+
+/**
+ * Build system prompt for article generation
+ */
+function buildSystemPrompt(language: string): string {
+  return `You are an expert SEO content writer creating articles in ${language.toUpperCase()}.
+
+CRITICAL OUTPUT RULES:
+1. Return ONLY a valid JSON object - NO markdown, NO code blocks, NO backticks
+2. Start your response with { and end with }
+3. Escape all special characters in strings properly (\\n for newlines, \\" for quotes)
+4. The content field contains HTML - escape it properly for JSON
+5. Keep response compact - no unnecessary whitespace
+
+REQUIRED JSON STRUCTURE:
+{
+  "content": "<p>HTML article content here...</p>",
+  "metaTitle": "SEO title max 60 chars",
+  "metaDescription": "Meta description max 160 chars",
+  "excerpt": "Short summary",
+  "suggestedImages": ["image description 1", "image description 2"]
+}`;
+}
+
+/**
+ * Parse article response with multiple fallback strategies
+ */
+function parseArticleResponse(rawContent: string, title: string, keywords: string[]): any {
+  // Clean the response
+  let cleaned = cleanJsonResponse(rawContent);
+  
+  // Try direct parse
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.log('[Article Writer] Direct parse failed, trying repair...');
+  }
+  
+  // Try to repair
+  try {
+    const repaired = repairIncompleteJson(cleaned);
+    return JSON.parse(repaired);
+  } catch (e) {
+    console.log('[Article Writer] Repair failed, trying aggressive extraction...');
+  }
+  
+  // Aggressive extraction - search for content field
+  // This regex matches: "content":"..." followed by either "," or "}"
+  // Capturing group 1 contains the actual content value
+  const contentMatch = rawContent.match(/"content"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"|\"\s*\})/);
+  if (contentMatch && contentMatch[1]) {
+    const extractedContent = contentMatch[1]
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\');
+    
+    if (extractedContent.length > MIN_CONTENT_LENGTH) {
+      console.log('[Article Writer] Extracted content field directly');
+      return {
+        content: extractedContent,
+        metaTitle: title.substring(0, 60),
+        metaDescription: `Lees meer over ${keywords[0] || title}`.substring(0, 160),
+        // Create safe text-only excerpt by removing all HTML tags
+        // Note: This is for display only, not for sanitizing user input
+        excerpt: extractedContent.substring(0, 300).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+        suggestedImages: [],
+      };
+    }
+  }
+  
+  // Everything failed
+  throw new Error('Could not parse article content from AI response');
 }
 
 /**
  * Attempt to repair incomplete JSON by closing unclosed structures
- * Handles truncated responses from AI models
+ * ONLY adds closing brackets - NEVER removes content
  */
 function repairIncompleteJson(content: string): string {
   let repaired = content.trim();
   
-  // Count opening and closing braces/brackets/quotes
+  // Count brackets (outside strings)
   let openBraces = 0;
   let openBrackets = 0;
   let inString = false;
-  let lastChar = '';
-  let stringChar = '';
+  let escapeNext = false;
   
   for (let i = 0; i < repaired.length; i++) {
     const char = repaired[i];
-    const prevChar = i > 0 ? repaired[i - 1] : '';
     
-    // Track string state (handle escaped quotes properly)
-    // A quote is escaped if preceded by odd number of backslashes
-    if (char === '"' || char === "'") {
-      // Count consecutive backslashes before this character
-      let backslashCount = 0;
-      for (let j = i - 1; j >= 0 && repaired[j] === '\\'; j--) {
-        backslashCount++;
-      }
-      
-      // Quote is escaped only if preceded by odd number of backslashes
-      const isEscaped = backslashCount % 2 === 1;
-      
-      if (!isEscaped) {
-        if (!inString) {
-          inString = true;
-          stringChar = char;
-        } else if (char === stringChar) {
-          inString = false;
-          stringChar = '';
-        }
-      }
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
     }
     
-    // Count braces and brackets when not in string
+    if (char === '\\') {
+      escapeNext = true;
+      continue;
+    }
+    
+    if (char === '"' && !inString) {
+      inString = true;
+    } else if (char === '"' && inString) {
+      inString = false;
+    }
+    
     if (!inString) {
       if (char === '{') openBraces++;
-      if (char === '}') openBraces--;
-      if (char === '[') openBrackets++;
-      if (char === ']') openBrackets--;
+      else if (char === '}') openBraces--;
+      else if (char === '[') openBrackets++;
+      else if (char === ']') openBrackets--;
     }
-    
-    lastChar = char;
   }
   
-  // If we're in an unclosed string, close it
+  // If we're in a string, close it
   if (inString) {
-    repaired += stringChar;
-    
-    // After closing the string, check if we should remove the incomplete field
-    // Look for pattern: ..., "fieldName": "value"}
-    // If the closed string appears to be at the end and follows a comma,
-    // it's likely an incomplete field that was truncated
-    const trimmed = repaired.trim();
-    if (trimmed.endsWith(stringChar + '}') || trimmed.endsWith(stringChar)) {
-      // Find the last comma before this field
-      const beforeClosing = trimmed.substring(0, trimmed.lastIndexOf(stringChar));
-      const lastCommaIndex = beforeClosing.lastIndexOf(',');
-      
-      // Only remove if there's content before the comma (not the first field)
-      if (lastCommaIndex > 0 && beforeClosing.substring(0, lastCommaIndex).includes(':')) {
-        repaired = repaired.substring(0, lastCommaIndex).trim();
-      }
-    }
+    repaired += '"';
   }
   
-  // Close any unclosed arrays
+  // Close arrays
   while (openBrackets > 0) {
     repaired += ']';
     openBrackets--;
   }
   
-  // Close any unclosed objects
+  // Close objects
   while (openBraces > 0) {
     repaired += '}';
     openBraces--;
@@ -163,26 +223,35 @@ function repairIncompleteJson(content: string): string {
 /**
  * Generate a complete article with SEO optimization
  * Implements comprehensive SEO masterprompt with E-E-A-T optimization
+ * Includes retry logic for JSON parsing failures
  */
 export async function writeArticle(
   options: ArticleWriteOptions
 ): Promise<ArticleResult> {
-  try {
-    console.log(`[Article Writer] Writing article: ${options.title}`);
-    console.log(`[Article Writer] Using Claude 4.5 Sonnet for content generation`);
-    
-    const { title, keywords, targetWordCount, tone = 'professional', language = 'nl' } = options;
-    
-    // Build comprehensive context from SERP analysis
-    let serpContext = '';
-    let lsiKeywords: string[] = [];
-    let paaQuestions: string[] = [];
-    
-    if (options.serpAnalysis) {
-      lsiKeywords = options.serpAnalysis.lsiKeywords || [];
-      paaQuestions = options.serpAnalysis.paaQuestions || [];
+  const MAX_RETRIES = 3;
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(`[Article Writer] Attempt ${attempt}/${MAX_RETRIES}: ${options.title}`);
       
-      serpContext = `
+      const { title, keywords, targetWordCount, tone = 'professional', language = 'nl' } = options;
+      
+      // Adjust max_tokens based on attempt (smaller on retry = more chance of complete JSON)
+      const adjustedMaxTokens = attempt === 1 
+        ? Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER)
+        : Math.min(targetWordCount * RETRY_TOKEN_MULTIPLIER, RETRY_MAX_TOKENS);
+      
+      // Build comprehensive context from SERP analysis
+      let serpContext = '';
+      let lsiKeywords: string[] = [];
+      let paaQuestions: string[] = [];
+      
+      if (options.serpAnalysis) {
+        lsiKeywords = options.serpAnalysis.lsiKeywords || [];
+        paaQuestions = options.serpAnalysis.paaQuestions || [];
+        
+        serpContext = `
 ═══════════════════════════════════════════════════════
 📊 SERP ANALYSE RESULTATEN
 ═══════════════════════════════════════════════════════
@@ -206,10 +275,10 @@ ${paaQuestions.slice(0, 8).map(q => `   • ${q}`).join('\n')}
 💡 Content Gaps (kansen om beter te zijn):
 ${(options.serpAnalysis.contentGaps || []).map(g => `   • ${g}`).join('\n')}
 `;
-    }
+      }
 
-    // Create comprehensive SEO masterprompt
-    const prompt = `Je bent een expert SEO content writer die artikelen schrijft die HOOG ranken in Google.
+      // Create comprehensive SEO masterprompt
+      const prompt = `Je bent een expert SEO content writer die artikelen schrijft die HOOG ranken in Google.
 
 ═══════════════════════════════════════════════════════
 🎯 ARTIKEL OPDRACHT
@@ -313,83 +382,50 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
   "suggestedImages": ["Image description 1", "Image description 2"]
 }`;
 
-    const response = await sendChatCompletion({
-      model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for best content quality
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert SEO content writer who creates engaging, well-researched articles in ${language.toUpperCase()}. 
+      const response = await sendChatCompletion({
+        model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for best content quality
+        messages: [
+          { role: 'system', content: buildSystemPrompt(language) },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.7,
+        max_tokens: adjustedMaxTokens,
+        stream: false,
+      });
 
-CRITICAL: Your response must be ONLY a valid JSON object. 
-- Do NOT wrap the JSON in markdown code blocks (no \`\`\`json or \`\`\`)
-- Do NOT include any text before or after the JSON
-- Start your response with { and end with }
-- Ensure all strings are properly escaped
-- Keep the response within token limits by being concise in content while maintaining quality`,
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER),
-      stream: false,
-    });
-
-    const rawContent = (response as any).choices[0]?.message?.content || '{}';
-    
-    // Parse JSON response - handle markdown code blocks and incomplete responses
-    let result;
-    
-    // Clean the JSON once before attempting to parse
-    const cleanedContent = cleanJsonResponse(rawContent);
-    console.log('[Article Writer] Cleaned JSON length:', cleanedContent.length);
-    
-    // Try parsing with progressive repair attempts
-    try {
-      result = JSON.parse(cleanedContent);
-    } catch (firstParseError) {
-      // Try to repair incomplete JSON
-      console.log('[Article Writer] First parse failed, attempting repair...');
-      try {
-        const repairedContent = repairIncompleteJson(cleanedContent);
-        result = JSON.parse(repairedContent);
-        console.log('[Article Writer] JSON repair successful');
-      } catch (repairError) {
-        console.error('[Article Writer] JSON repair failed:', repairError);
-        console.error('[Article Writer] Raw content preview:', rawContent.substring(0, 1000));
-        result = createFallbackResponse(title, keywords);
-        console.log('[Article Writer] Using fallback response');
+      const rawContent = (response as any).choices[0]?.message?.content || '';
+      
+      if (!rawContent || rawContent.length < 100) {
+        throw new Error('Empty or too short response from AI');
+      }
+      
+      // Parse with multiple strategies
+      const result = parseArticleResponse(rawContent, title, keywords);
+      
+      if (!result.content || result.content.length < MIN_CONTENT_LENGTH) {
+        throw new Error('Parsed content too short');
+      }
+      
+      // Calculate word count
+      const wordCount = countWords(result.content);
+      
+      console.log(`[Article Writer] Success! Generated ${wordCount} words`);
+      
+      return { ...result, wordCount };
+      
+    } catch (error: any) {
+      lastError = error;
+      console.error(`[Article Writer] Attempt ${attempt} failed:`, error.message);
+      
+      if (attempt < MAX_RETRIES) {
+        console.log(`[Article Writer] Retrying in 2 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
-
-    // Count words in content
-    const wordCount = result.content
-      .replace(/<[^>]*>/g, ' ')
-      .split(/\s+/)
-      .filter((word: string) => word.length > 0).length;
-
-    return {
-      ...result,
-      wordCount,
-    };
-  } catch (error: any) {
-    console.error('[Article Writer] Error:', error);
-    
-    // Create user-friendly Dutch error message
-    let userMessage = 'Het schrijven van het artikel is mislukt';
-    
-    if (error.message.includes('timeout') || error.message.includes('Timeout')) {
-      userMessage = 'Het artikel schrijven duurde te lang. Probeer een kortere tekst of minder features.';
-    } else if (error.message.includes('API') || error.message.includes('model')) {
-      userMessage = 'De AI service is tijdelijk niet beschikbaar. Probeer het later opnieuw.';
-    } else if (error.message.includes('parse') || error.message.includes('JSON')) {
-      userMessage = 'De AI response kon niet worden verwerkt. Probeer het opnieuw.';
-    }
-    
-    throw new Error(userMessage);
   }
+  
+  // All retries failed - throw error, NO fallback with 14 words!
+  throw new Error(lastError?.message || 'Article generation failed after multiple attempts');
 }
 
 /**
@@ -553,21 +589,8 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
     const stream = await sendStreamingChatCompletion({
       model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for best content quality
       messages: [
-        {
-          role: 'system',
-          content: `You are an expert SEO content writer who creates engaging, well-researched articles in ${language.toUpperCase()}. 
-
-CRITICAL: Your response must be ONLY a valid JSON object. 
-- Do NOT wrap the JSON in markdown code blocks (no \`\`\`json or \`\`\`)
-- Do NOT include any text before or after the JSON
-- Start your response with { and end with }
-- Ensure all strings are properly escaped
-- Keep the response within token limits by being concise in content while maintaining quality`,
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
+        { role: 'system', content: buildSystemPrompt(language) },
+        { role: 'user', content: prompt },
       ],
       temperature: 0.7,
       max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER),
@@ -587,35 +610,11 @@ CRITICAL: Your response must be ONLY a valid JSON object.
     // Parse the complete response
     yield { type: 'status', content: 'Processing article...' };
     
-    let result;
+    // Parse with multiple strategies
+    const result = parseArticleResponse(fullResponse, title, keywords);
     
-    // Clean the JSON once before attempting to parse
-    const cleanedContent = cleanJsonResponse(fullResponse);
-    console.log('[Article Writer Stream] Cleaned JSON length:', cleanedContent.length);
-    
-    // Try parsing with progressive repair attempts
-    try {
-      result = JSON.parse(cleanedContent);
-    } catch (firstParseError) {
-      // Try to repair incomplete JSON
-      console.log('[Article Writer Stream] First parse failed, attempting repair...');
-      try {
-        const repairedContent = repairIncompleteJson(cleanedContent);
-        result = JSON.parse(repairedContent);
-        console.log('[Article Writer Stream] JSON repair successful');
-      } catch (repairError) {
-        console.error('[Article Writer Stream] JSON repair failed:', repairError);
-        console.error('[Article Writer Stream] Raw content preview:', fullResponse.substring(0, 1000));
-        result = createFallbackResponse(title, keywords);
-        console.log('[Article Writer Stream] Using fallback response');
-      }
-    }
-
     // Count words in content
-    const wordCount = result.content
-      .replace(/<[^>]*>/g, ' ')
-      .split(/\s+/)
-      .filter((word: string) => word.length > 0).length;
+    const wordCount = countWords(result.content);
 
     // Yield final result
     yield { 
@@ -675,20 +674,8 @@ Answers should be concise, informative, and start directly with the answer (no "
     const response = await sendChatCompletion({
       model: TEXT_MODELS.CLAUDE_45,
       messages: [
-        {
-          role: 'system',
-          content: `You are an expert at creating helpful FAQ sections in ${language.toUpperCase()}. 
-
-CRITICAL: Your response must be ONLY a valid JSON object. 
-- Do NOT wrap the JSON in markdown code blocks (no \`\`\`json or \`\`\`)
-- Do NOT include any text before or after the JSON
-- Start your response with { and end with }
-- Ensure all strings are properly escaped`,
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
+        { role: 'system', content: buildSystemPrompt(language) },
+        { role: 'user', content: prompt },
       ],
       temperature: 0.7,
       max_tokens: 2000,
