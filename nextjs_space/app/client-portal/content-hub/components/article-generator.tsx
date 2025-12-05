@@ -113,39 +113,15 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
     setGenerating(true);
     setProgress(0);
 
-    // Progress simulation constants
-    const RESEARCH_INTERVAL_MS = 500;
-    const RESEARCH_INCREMENT = 2;
-    const RESEARCH_MAX = 20;
-    const CONTENT_INTERVAL_MS = 800;
-    const CONTENT_INCREMENT = 1;
-    const CONTENT_MAX = 50;
-    const SEO_INTERVAL_MS = 400;
-    const SEO_INCREMENT = 2;
-    const SEO_MAX = 80;
-    const VISUAL_FEEDBACK_DELAY_MS = 2000;
-
     const startTime = Date.now();
-    let phaseStartTime = startTime;
-
-    // Track all intervals for cleanup
-    let researchInterval: NodeJS.Timeout | null = null;
-    let contentInterval: NodeJS.Timeout | null = null;
-    let seoInterval: NodeJS.Timeout | null = null;
+    const phaseStartTimes: { [key: number]: number } = {};
+    
+    // Reset SSE parse error counter
+    if (typeof window !== 'undefined') {
+      (window as any).__sseParseErrors = 0;
+    }
 
     try {
-      // Phase 1: SERP Analysis
-      updatePhase(0, { 
-        status: 'in-progress', 
-        message: 'Top 10 Google resultaten analyseren voor ' + article.keywords[0] + '...' 
-      });
-      setProgress(5);
-
-      // Simulate progress updates during research phase
-      researchInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + RESEARCH_INCREMENT, RESEARCH_MAX));
-      }, RESEARCH_INTERVAL_MS);
-
       const response = await fetch('/api/content-hub/write-article', {
         method: 'POST',
         headers: {
@@ -156,125 +132,127 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
           generateImages,
           includeFAQ,
           autoPublish,
+          streamUpdates: true, // Enable SSE streaming
         }),
         signal: controller.signal,
       });
-
-      if (researchInterval) {
-        clearInterval(researchInterval);
-        researchInterval = null;
-      }
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to generate article');
       }
 
-      // Wait for the response data
-      const data = await response.json();
+      // Handle SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-      // Phase 1 completed
-      const phase1Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
-      updatePhase(0, { 
-        status: 'completed', 
-        message: '✅ SERP analyse voltooid',
-        duration: phase1Duration,
-        metrics: {
-          wordCount: data.article?.wordCount ? Math.floor(data.article.wordCount * 0.8) : 1200, // Estimated target
-        }
-      });
-      setProgress(25);
-
-      // Phase 2: Content Generation
-      phaseStartTime = Date.now();
-      updatePhase(1, { 
-        status: 'in-progress', 
-        message: 'SEO-geoptimaliseerde content schrijven met E-E-A-T...'
-      });
-      
-      // Simulate progress during content generation
-      contentInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + CONTENT_INCREMENT, CONTENT_MAX));
-      }, CONTENT_INTERVAL_MS);
-
-      const phase2Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
-      updatePhase(1, { 
-        status: 'completed',
-        message: `✅ ${data.article?.wordCount || '~1400'} woorden gegenereerd`,
-        duration: phase2Duration,
-        metrics: {
-          wordCount: data.article?.wordCount,
-          lsiKeywords: 18, // Estimated LSI keywords integrated
-          paaQuestions: 6, // Estimated FAQ questions
-        }
-      });
-      setProgress(60);
-
-      // Phase 3: SEO & Images
-      phaseStartTime = Date.now();
-      updatePhase(2, { 
-        status: 'in-progress',
-        message: generateImages ? 'Meta data optimaliseren en afbeeldingen genereren...' : 'SEO metadata optimaliseren...'
-      });
-      
-      // Simulate progress
-      seoInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + SEO_INCREMENT, SEO_MAX));
-      }, SEO_INTERVAL_MS);
-      
-      await new Promise(resolve => setTimeout(resolve, VISUAL_FEEDBACK_DELAY_MS)); // Give time for visual feedback
-      
-      if (seoInterval) {
-        clearInterval(seoInterval);
-        seoInterval = null;
+      if (!reader) {
+        throw new Error('Kan geen real-time updates ontvangen. Probeer het opnieuw.');
       }
 
-      const phase3Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
-      updatePhase(2, { 
-        status: 'completed',
-        message: '✅ SEO & afbeeldingen geoptimaliseerd',
-        duration: phase3Duration,
-        metrics: {
-          images: data.article?.imageCount || (generateImages ? 1 : 0),
-          lsiKeywords: data.article?.lsiKeywords,
-          paaQuestions: data.article?.paaQuestions,
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
         }
-      });
-      setProgress(85);
+        
+        if (done) break;
 
-      // Phase 4: Publishing
-      phaseStartTime = Date.now();
-      if (autoPublish && data.article?.wordpressUrl) {
-        updatePhase(3, { 
-          status: 'in-progress',
-          message: 'Publiceren naar WordPress...'
-        });
-        setProgress(90);
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const phase4Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
-        updatePhase(3, { 
-          status: 'completed',
-          message: '✅ Gepubliceerd naar WordPress',
-          duration: phase4Duration
-        });
-      } else {
-        updatePhase(3, { 
-          status: 'completed',
-          message: '✅ Content opgeslagen in bibliotheek',
-          duration: 1
-        });
+        // Process complete SSE messages
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              // Map backend steps to frontend phases
+              let phaseIndex = -1;
+              if (data.step === 'serp-analysis') {
+                phaseIndex = 0;
+              } else if (data.step === 'content-generation') {
+                phaseIndex = 1;
+              } else if (data.step === 'seo-optimization') {
+                phaseIndex = 2;
+              } else if (data.step === 'saving' || data.step === 'publishing') {
+                phaseIndex = 3;
+              }
+
+              // Update progress
+              if (data.progress !== undefined) {
+                setProgress(data.progress);
+              }
+
+              // Update phase
+              if (phaseIndex !== -1) {
+                if (data.status === 'in-progress') {
+                  phaseStartTimes[phaseIndex] = Date.now();
+                  updatePhase(phaseIndex, {
+                    status: 'in-progress',
+                    message: data.message || phases[phaseIndex].message,
+                  });
+                } else if (data.status === 'completed') {
+                  const duration = phaseStartTimes[phaseIndex] 
+                    ? Math.floor((Date.now() - phaseStartTimes[phaseIndex]) / 1000)
+                    : undefined;
+                  
+                  updatePhase(phaseIndex, {
+                    status: 'completed',
+                    message: data.message || '✅ Voltooid',
+                    duration,
+                    metrics: data.metrics,
+                  });
+                } else if (data.status === 'failed') {
+                  const duration = phaseStartTimes[phaseIndex]
+                    ? Math.floor((Date.now() - phaseStartTimes[phaseIndex]) / 1000)
+                    : undefined;
+                  
+                  updatePhase(phaseIndex, {
+                    status: 'failed',
+                    message: data.message || data.error || 'Fout opgetreden',
+                    duration,
+                  });
+                }
+              }
+
+              // Handle completion
+              if (data.step === 'complete') {
+                if (data.status === 'success') {
+                  setProgress(100);
+                  const totalDuration = Math.floor((Date.now() - startTime) / 1000);
+                  toast.success(`Artikel succesvol gegenereerd in ${totalDuration}s!`);
+                  
+                  setTimeout(() => {
+                    onComplete();
+                  }, 1500);
+                } else if (data.status === 'error') {
+                  throw new Error(data.error || 'Het voltooien van het artikel is mislukt');
+                }
+                break;
+              }
+
+              // Handle error
+              if (data.step === 'error') {
+                throw new Error(data.error || data.message || 'Het genereren van het artikel is mislukt');
+              }
+            } catch (parseError) {
+              console.error('Error parsing SSE data:', parseError);
+              // Only show toast if this happens repeatedly (more than 3 times)
+              if (typeof window !== 'undefined') {
+                const w = window as any;
+                if (!w.__sseParseErrors) w.__sseParseErrors = 0;
+                w.__sseParseErrors++;
+                if (w.__sseParseErrors > 3) {
+                  toast.error('Fout bij ontvangen van updates. Controleer de browser console.');
+                }
+              }
+            }
+          }
+        }
       }
-      
-      setProgress(100);
-
-      const totalDuration = Math.floor((Date.now() - startTime) / 1000);
-      toast.success(`Article generated successfully in ${totalDuration}s!`);
-      
-      setTimeout(() => {
-        onComplete();
-      }, 1500);
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('Request was cancelled');
@@ -287,19 +265,17 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       // Mark current phase as failed
       const currentPhaseIndex = phases.findIndex(p => p.status === 'in-progress');
       if (currentPhaseIndex !== -1) {
-        const phaseDuration = Math.floor((Date.now() - phaseStartTime) / 1000);
+        const duration = phaseStartTimes[currentPhaseIndex]
+          ? Math.floor((Date.now() - phaseStartTimes[currentPhaseIndex]) / 1000)
+          : undefined;
+        
         updatePhase(currentPhaseIndex, { 
           status: 'failed', 
-          message: error.message || 'An error occurred',
-          duration: phaseDuration
+          message: error.message || 'Er is een fout opgetreden',
+          duration,
         });
       }
     } finally {
-      // Clean up all intervals to prevent memory leaks
-      if (researchInterval) clearInterval(researchInterval);
-      if (contentInterval) clearInterval(contentInterval);
-      if (seoInterval) clearInterval(seoInterval);
-      
       setAbortController(null);
       setGenerating(false);
     }
