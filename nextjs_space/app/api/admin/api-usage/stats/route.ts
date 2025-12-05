@@ -166,8 +166,8 @@ export async function GET(req: NextRequest) {
         })),
         byClient: usageByClient.map(c => ({
           clientId: c.clientId,
-          clientName: c.clientId ? clientMap.get(c.clientId)?.name || 'Unknown' : 'Unknown',
-          clientEmail: c.clientId ? clientMap.get(c.clientId)?.email || '' : '',
+          clientName: c.clientId ? (clientMap.get(c.clientId) as any)?.name || 'Unknown' : 'Unknown',
+          clientEmail: c.clientId ? (clientMap.get(c.clientId) as any)?.email || '' : '',
           requests: c._count,
           tokens: c._sum.totalTokens || 0,
           cost: c._sum.totalCost || 0,
