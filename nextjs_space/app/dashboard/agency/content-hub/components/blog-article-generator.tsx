@@ -78,6 +78,7 @@ export default function BlogArticleGenerator({ onClose, onComplete }: BlogArticl
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
         },
         body: JSON.stringify({
           title,
