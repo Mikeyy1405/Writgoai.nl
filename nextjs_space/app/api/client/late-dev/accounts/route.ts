@@ -245,20 +245,8 @@ export async function DELETE(req: NextRequest) {
       data: { isActive: false },
     });
 
-    // Optionally disconnect from Late.dev API (if needed)
-    if (account.lateDevProfileId) {
-      try {
-        await fetch(`${LATE_DEV_API_URL}/accounts/${account.lateDevProfileId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${LATE_DEV_API_KEY}`,
-          },
-        });
-      } catch (error) {
-        console.error('[Late.dev] Failed to disconnect account:', error);
-        // Continue even if API call fails
-      }
-    }
+    // Note: We don't disconnect from Late.dev API directly
+    // The account remains connected in Late.dev but is marked inactive in our database
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
