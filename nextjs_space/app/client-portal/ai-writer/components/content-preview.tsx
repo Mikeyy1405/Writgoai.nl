@@ -9,6 +9,7 @@ import { Copy, Download, Check, FileText, Code, AlignLeft, Save, Loader2 } from 
 import { toast } from 'sonner';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { stripMarkdownCodeBlocks, htmlToPlainText } from '@/lib/content-utils';
 
 interface ContentPreviewProps {
   content: string;
@@ -52,24 +53,9 @@ export default function ContentPreview({
     toast.success(`${filename} gedownload`);
   };
 
-  // Strip markdown code blocks like ```html from content
-  const stripMarkdownCodeBlocks = (text: string): string => {
-    // Remove markdown code block markers (both opening and closing)
-    // Handles: ```html, ```javascript, ``` etc.
-    return text.replace(/```[\w]*\n?([\s\S]*?)```/g, '$1').replace(/```[\w]*\n?/g, '').trim();
-  };
-
-  // Strip HTML tags for plain text version (safe since content is AI-generated, not user input)
-  const getPlainText = (html: string) => {
-    // Use DOMParser for safer HTML parsing
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    return doc.body.textContent || '';
-  };
-
   // Clean content for preview (strip markdown code blocks)
   const cleanedContent = stripMarkdownCodeBlocks(content);
-  const plainText = getPlainText(cleanedContent);
+  const plainText = htmlToPlainText(cleanedContent);
 
   if (!content) {
     return (

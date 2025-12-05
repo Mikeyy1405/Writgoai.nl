@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, PenLine } from 'lucide-react';
 import { toast } from 'sonner';
+import { stripMarkdownCodeBlocks, htmlToPlainText } from '@/lib/content-utils';
 import ConfigPanel, { AIWriterConfig } from './components/config-panel';
 import ContentPreview from './components/content-preview';
 import AIChat from './components/ai-chat';
@@ -100,20 +101,21 @@ export default function AIWriterPage() {
 
     try {
       // Strip markdown code blocks from content before saving
-      const cleanedContent = generatedContent
-        .replace(/```[\w]*\n?([\s\S]*?)```/g, '$1')
-        .replace(/```[\w]*\n?/g, '')
-        .trim();
+      const cleanedContent = stripMarkdownCodeBlocks(generatedContent);
       
       // Extract plain text using DOMParser for safer HTML parsing
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(cleanedContent, 'text/html');
-      const plainText = doc.body.textContent || '';
+      const plainText = htmlToPlainText(cleanedContent);
       
       // Prepare secondary keywords safely
       const secondaryKeywords = config.secondaryKeywords 
         ? config.secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean)
         : [];
+      
+      // Prepare keywords array, ensuring no empty strings or null values
+      const allKeywords = [
+        config.keywords?.trim(),
+        ...secondaryKeywords
+      ].filter(k => k && k.length > 0);
       
       // Prepare the data for saving
       const saveData = {
@@ -122,7 +124,7 @@ export default function AIWriterPage() {
         content: plainText, // Plain text
         contentHtml: cleanedContent, // HTML version
         metaDesc: metaDescription,
-        keywords: [config.keywords, ...secondaryKeywords].filter(Boolean),
+        keywords: allKeywords,
         projectId: config.projectId || undefined,
         wordCount: contentStats.wordCount,
       };
