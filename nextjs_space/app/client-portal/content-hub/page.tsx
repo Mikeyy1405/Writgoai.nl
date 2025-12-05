@@ -24,6 +24,7 @@ import WebsiteConnector from './components/website-connector';
 import TopicalMapView from './components/topical-map-view';
 import AutopilotSettings from './components/autopilot-settings';
 import BibliotheekView from './components/bibliotheek-view';
+import WordPressPostsList from './components/wordpress-posts-list';
 
 interface ContentHubSite {
   id: string;
@@ -337,6 +338,10 @@ export default function ContentHubPage() {
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     Gepubliceerd
                   </TabsTrigger>
+                  <TabsTrigger value="wordpress">
+                    <Globe className="h-4 w-4 mr-2" />
+                    WordPress Posts
+                  </TabsTrigger>
                   <TabsTrigger value="library">
                     <Library className="h-4 w-4 mr-2" />
                     Bibliotheek
@@ -357,6 +362,10 @@ export default function ContentHubPage() {
 
                 <TabsContent value="published" className="mt-6">
                   <TopicalMapView siteId={selectedSite.id} filter="published" />
+                </TabsContent>
+
+                <TabsContent value="wordpress" className="mt-6">
+                  <WordPressPostsList siteId={selectedSite.id} />
                 </TabsContent>
 
                 <TabsContent value="library" className="mt-6">
