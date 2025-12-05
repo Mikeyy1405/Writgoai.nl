@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db';
 import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
 import { deductCredits } from '@/lib/credits';
 import { getClientToneOfVoice } from '@/lib/tone-of-voice-helper';
-import { searchBolcomProduct } from '@/lib/bolcom-api';
+import { searchBolcomProducts } from '@/lib/bolcom-api';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -152,21 +152,23 @@ export async function POST(request: NextRequest) {
         ) {
           try {
             const searchQuery = `${topic} ${keywords}`.trim();
-            const bolcomResult = await searchBolcomProduct(
+            const bolcomResult = await searchBolcomProducts(
               searchQuery,
               {
                 clientId: project.bolcomClientId,
                 clientSecret: project.bolcomClientSecret,
                 affiliateId: project.bolcomAffiliateId || undefined,
               },
-              bolProductsCount
+              {
+                resultsPerPage: bolProductsCount,
+              }
             );
 
-            if (bolcomResult && bolcomResult.products) {
-              bolProducts = bolcomResult.products.slice(0, bolProductsCount).map((p) => ({
+            if (bolcomResult && bolcomResult.results) {
+              bolProducts = bolcomResult.results.slice(0, bolProductsCount).map((p) => ({
                 name: p.title,
                 url: p.url,
-                price: p.price?.toFixed(2) || 'N/A',
+                price: p.offer?.price?.toFixed(2) || 'N/A',
               }));
             }
           } catch (error) {

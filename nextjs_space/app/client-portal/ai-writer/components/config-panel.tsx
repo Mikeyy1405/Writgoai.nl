@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 import ProjectSelector, { Project } from '@/components/project-selector';
+
+interface ExtendedProject extends Project {
+  bolcomEnabled?: boolean;
+}
 
 interface ConfigPanelProps {
   config: AIWriterConfig;
@@ -67,11 +71,37 @@ export default function ConfigPanel({
   onGenerate,
   isGenerating,
 }: ConfigPanelProps) {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedProject, setSelectedProject] = useState<ExtendedProject | null>(null);
+  const [loadingProjectDetails, setLoadingProjectDetails] = useState(false);
 
-  const handleProjectChange = (project: Project | null) => {
-    setSelectedProject(project);
-    onChange({ ...config, projectId: project?.id || null });
+  const handleProjectChange = async (projectId: string | null, project: Project | null) => {
+    if (!projectId || !project) {
+      setSelectedProject(null);
+      onChange({ ...config, projectId: null });
+      return;
+    }
+
+    // Fetch full project details including bolcomEnabled
+    setLoadingProjectDetails(true);
+    try {
+      const response = await fetch(`/api/client/projects/${projectId}`);
+      if (response.ok) {
+        const fullProject = await response.json();
+        setSelectedProject({
+          ...project,
+          bolcomEnabled: fullProject.bolcomEnabled || false,
+        });
+      } else {
+        setSelectedProject({ ...project, bolcomEnabled: false });
+      }
+    } catch (error) {
+      console.error('Error fetching project details:', error);
+      setSelectedProject({ ...project, bolcomEnabled: false });
+    } finally {
+      setLoadingProjectDetails(false);
+    }
+
+    onChange({ ...config, projectId });
   };
 
   const updateConfig = (updates: Partial<AIWriterConfig>) => {
@@ -297,8 +327,9 @@ export default function ConfigPanel({
           <div className="space-y-2">
             <Label>Project (optioneel)</Label>
             <ProjectSelector
-              selectedProject={selectedProject}
-              onSelectProject={handleProjectChange}
+              value={config.projectId}
+              onChange={handleProjectChange}
+              autoSelectPrimary={false}
             />
           </div>
 
