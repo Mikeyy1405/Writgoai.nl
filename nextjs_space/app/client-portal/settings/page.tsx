@@ -15,11 +15,20 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
+interface Project {
+  id: string;
+  name: string;
+  websiteUrl: string;
+  wordpressUrl?: string | null;
+  bolcomEnabled?: boolean;
+  tradeTrackerEnabled?: boolean;
+}
+
 export default function ClientPortalSettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('account');
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
