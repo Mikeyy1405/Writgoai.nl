@@ -81,6 +81,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       });
     } catch (error) {
       console.error('Failed to reset article status:', error);
+      toast.warning('Generatie gestopt, maar status kon niet worden gereset');
     }
   };
 

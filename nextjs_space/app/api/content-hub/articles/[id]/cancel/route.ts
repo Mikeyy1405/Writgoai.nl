@@ -33,11 +33,13 @@ export async function POST(
       return NextResponse.json({ error: 'Artikel niet gevonden' }, { status: 404 });
     }
 
-    // Reset artikel status naar pending
-    await prisma.contentHubArticle.update({
-      where: { id: params.id },
-      data: { status: 'pending' },
-    });
+    // Only reset if article is in a generation state (prevent race conditions)
+    if (['researching', 'writing', 'publishing'].includes(article.status)) {
+      await prisma.contentHubArticle.update({
+        where: { id: params.id },
+        data: { status: 'pending' },
+      });
+    }
 
     return NextResponse.json({ success: true, message: 'Generatie geannuleerd' });
   } catch (error: any) {
