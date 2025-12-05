@@ -115,6 +115,11 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
 
     const startTime = Date.now();
     const phaseStartTimes: { [key: number]: number } = {};
+    
+    // Reset SSE parse error counter
+    if (typeof window !== 'undefined') {
+      (window as any).__sseParseErrors = 0;
+    }
 
     try {
       const response = await fetch('/api/content-hub/write-article', {
@@ -143,7 +148,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       let buffer = '';
 
       if (!reader) {
-        throw new Error('Response body is not readable');
+        throw new Error('Kan geen real-time updates ontvangen. Probeer het opnieuw.');
       }
 
       while (true) {
@@ -224,17 +229,26 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
                     onComplete();
                   }, 1500);
                 } else if (data.status === 'error') {
-                  throw new Error(data.error || 'Er is een fout opgetreden');
+                  throw new Error(data.error || 'Het voltooien van het artikel is mislukt');
                 }
                 break;
               }
 
               // Handle error
               if (data.step === 'error') {
-                throw new Error(data.error || data.message || 'Er is een fout opgetreden');
+                throw new Error(data.error || data.message || 'Het genereren van het artikel is mislukt');
               }
             } catch (parseError) {
               console.error('Error parsing SSE data:', parseError);
+              // Only show toast if this happens repeatedly (more than 3 times)
+              if (typeof window !== 'undefined') {
+                const w = window as any;
+                if (!w.__sseParseErrors) w.__sseParseErrors = 0;
+                w.__sseParseErrors++;
+                if (w.__sseParseErrors > 3) {
+                  toast.error('Fout bij ontvangen van updates. Controleer de browser console.');
+                }
+              }
             }
           }
         }

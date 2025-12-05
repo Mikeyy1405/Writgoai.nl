@@ -148,7 +148,22 @@ async function handleStreamingGeneration(
   const writer = stream.writable.getWriter();
   const encoder = new TextEncoder();
 
-  const sendUpdate = async (data: any) => {
+  interface SSEUpdate {
+    step: string;
+    status: 'in-progress' | 'completed' | 'failed' | 'success';
+    progress?: number;
+    message?: string;
+    error?: string;
+    metrics?: {
+      wordCount?: number;
+      lsiKeywords?: number;
+      paaQuestions?: number;
+      images?: number;
+    };
+    result?: any;
+  }
+
+  const sendUpdate = async (data: SSEUpdate) => {
     try {
       await writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
     } catch (error) {
@@ -697,7 +712,7 @@ async function handleStreamingGeneration(
             data: { status: 'failed' },
           });
         } catch (e) {
-          console.error('Failed to update article status:', e);
+          console.error('[Content Hub] Secondary failure: Failed to update article status during error handling:', e);
         }
       }
 
@@ -705,7 +720,7 @@ async function handleStreamingGeneration(
         step: 'error',
         status: 'failed',
         error: error.message || 'Failed to generate article',
-        message: error.message || 'Er is een fout opgetreden',
+        message: error.message || 'Het genereren van het artikel is mislukt',
       });
     } finally {
       await writer.close();
