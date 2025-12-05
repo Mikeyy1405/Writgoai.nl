@@ -10,6 +10,7 @@ import type { SERPAnalysis } from './serp-analyzer';
 // Constants for article generation
 const TOKEN_MULTIPLIER = 3; // Multiplier for target word count to max tokens
 const MAX_TOKENS_LIMIT = 16000; // Maximum tokens to prevent exceeding model limits
+const JSON_STRUCTURE_BUFFER = 500; // Buffer tokens to ensure JSON structure can be completed
 
 export interface ArticleWriteOptions {
   title: string;
@@ -41,20 +42,122 @@ export interface ArticleResult {
 function cleanJsonResponse(content: string): string {
   let cleaned = content.trim();
   
-  // Remove markdown code blocks (various formats)
-  cleaned = cleaned
-    .replace(/^```json\s*/i, '')  // Remove opening ```json
-    .replace(/^```\s*/i, '')       // Remove opening ```
-    .replace(/\s*```$/i, '')       // Remove closing ```
-    .trim();
+  // Remove markdown code blocks with regex - handles various formats
+  // Matches ```json...``` or ```...``` with optional whitespace and newlines
+  cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+  
+  // Remove any leading text before the first opening brace
+  cleaned = cleaned.replace(/^[^{]*/, '');
   
   // Try to extract JSON object if still wrapped in other content
+  // Use greedy match to get the outermost JSON object
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     cleaned = jsonMatch[0];
   }
   
   return cleaned;
+}
+
+/**
+ * Create fallback article response when parsing fails
+ */
+function createFallbackResponse(title: string, keywords: string[]): any {
+  return {
+    content: `<p>Er is een fout opgetreden bij het genereren van dit artikel. Probeer het opnieuw.</p>`,
+    metaTitle: title.substring(0, 60),
+    metaDescription: `Lees meer over ${keywords[0] || title}`.substring(0, 160),
+    excerpt: `Artikel over ${title}`,
+    suggestedImages: [],
+  };
+}
+
+/**
+ * Attempt to repair incomplete JSON by closing unclosed structures
+ * Handles truncated responses from AI models
+ */
+function repairIncompleteJson(content: string): string {
+  let repaired = content.trim();
+  
+  // Count opening and closing braces/brackets/quotes
+  let openBraces = 0;
+  let openBrackets = 0;
+  let inString = false;
+  let lastChar = '';
+  let stringChar = '';
+  
+  for (let i = 0; i < repaired.length; i++) {
+    const char = repaired[i];
+    const prevChar = i > 0 ? repaired[i - 1] : '';
+    
+    // Track string state (handle escaped quotes properly)
+    // A quote is escaped if preceded by odd number of backslashes
+    if (char === '"' || char === "'") {
+      // Count consecutive backslashes before this character
+      let backslashCount = 0;
+      for (let j = i - 1; j >= 0 && repaired[j] === '\\'; j--) {
+        backslashCount++;
+      }
+      
+      // Quote is escaped only if preceded by odd number of backslashes
+      const isEscaped = backslashCount % 2 === 1;
+      
+      if (!isEscaped) {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+          stringChar = '';
+        }
+      }
+    }
+    
+    // Count braces and brackets when not in string
+    if (!inString) {
+      if (char === '{') openBraces++;
+      if (char === '}') openBraces--;
+      if (char === '[') openBrackets++;
+      if (char === ']') openBrackets--;
+    }
+    
+    lastChar = char;
+  }
+  
+  // If we're in an unclosed string, close it
+  if (inString) {
+    repaired += stringChar;
+    
+    // After closing the string, check if we should remove the incomplete field
+    // Look for pattern: ..., "fieldName": "value"}
+    // If the closed string appears to be at the end and follows a comma,
+    // it's likely an incomplete field that was truncated
+    const trimmed = repaired.trim();
+    if (trimmed.endsWith(stringChar + '}') || trimmed.endsWith(stringChar)) {
+      // Find the last comma before this field
+      const beforeClosing = trimmed.substring(0, trimmed.lastIndexOf(stringChar));
+      const lastCommaIndex = beforeClosing.lastIndexOf(',');
+      
+      // Only remove if there's content before the comma (not the first field)
+      if (lastCommaIndex > 0 && beforeClosing.substring(0, lastCommaIndex).includes(':')) {
+        repaired = repaired.substring(0, lastCommaIndex).trim();
+      }
+    }
+  }
+  
+  // Close any unclosed arrays
+  while (openBrackets > 0) {
+    repaired += ']';
+    openBrackets--;
+  }
+  
+  // Close any unclosed objects
+  while (openBraces > 0) {
+    repaired += '}';
+    openBraces--;
+  }
+  
+  return repaired;
 }
 
 /**
@@ -215,7 +318,14 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
       messages: [
         {
           role: 'system',
-          content: `You are an expert SEO content writer who creates engaging, well-researched articles in ${language.toUpperCase()}. Always respond with valid JSON only, never wrap in markdown code blocks.`,
+          content: `You are an expert SEO content writer who creates engaging, well-researched articles in ${language.toUpperCase()}. 
+
+CRITICAL: Your response must be ONLY a valid JSON object. 
+- Do NOT wrap the JSON in markdown code blocks (no \`\`\`json or \`\`\`)
+- Do NOT include any text before or after the JSON
+- Start your response with { and end with }
+- Ensure all strings are properly escaped
+- Keep the response within token limits by being concise in content while maintaining quality`,
         },
         {
           role: 'user',
@@ -223,22 +333,35 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
         },
       ],
       temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT), // Increased for longer articles
+      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER),
       stream: false,
     });
 
     const rawContent = (response as any).choices[0]?.message?.content || '{}';
     
-    // Parse JSON response - handle markdown code blocks
+    // Parse JSON response - handle markdown code blocks and incomplete responses
     let result;
+    
+    // Clean the JSON once before attempting to parse
+    const cleanedContent = cleanJsonResponse(rawContent);
+    console.log('[Article Writer] Cleaned JSON length:', cleanedContent.length);
+    
+    // Try parsing with progressive repair attempts
     try {
-      const cleanedContent = cleanJsonResponse(rawContent);
-      console.log('[Article Writer] Cleaned JSON length:', cleanedContent.length);
       result = JSON.parse(cleanedContent);
-    } catch (e) {
-      console.error('[Article Writer] Failed to parse JSON:', e);
-      console.error('[Article Writer] Raw content preview:', rawContent.substring(0, 500));
-      throw new Error('Failed to parse article generation response');
+    } catch (firstParseError) {
+      // Try to repair incomplete JSON
+      console.log('[Article Writer] First parse failed, attempting repair...');
+      try {
+        const repairedContent = repairIncompleteJson(cleanedContent);
+        result = JSON.parse(repairedContent);
+        console.log('[Article Writer] JSON repair successful');
+      } catch (repairError) {
+        console.error('[Article Writer] JSON repair failed:', repairError);
+        console.error('[Article Writer] Raw content preview:', rawContent.substring(0, 1000));
+        result = createFallbackResponse(title, keywords);
+        console.log('[Article Writer] Using fallback response');
+      }
     }
 
     // Count words in content
@@ -432,7 +555,14 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
       messages: [
         {
           role: 'system',
-          content: `You are an expert SEO content writer who creates engaging, well-researched articles in ${language.toUpperCase()}. Always respond with valid JSON only, never wrap in markdown code blocks.`,
+          content: `You are an expert SEO content writer who creates engaging, well-researched articles in ${language.toUpperCase()}. 
+
+CRITICAL: Your response must be ONLY a valid JSON object. 
+- Do NOT wrap the JSON in markdown code blocks (no \`\`\`json or \`\`\`)
+- Do NOT include any text before or after the JSON
+- Start your response with { and end with }
+- Ensure all strings are properly escaped
+- Keep the response within token limits by being concise in content while maintaining quality`,
         },
         {
           role: 'user',
@@ -440,7 +570,7 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
         },
       ],
       temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT),
+      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER),
       stream: true,
     });
 
@@ -458,14 +588,27 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
     yield { type: 'status', content: 'Processing article...' };
     
     let result;
+    
+    // Clean the JSON once before attempting to parse
+    const cleanedContent = cleanJsonResponse(fullResponse);
+    console.log('[Article Writer Stream] Cleaned JSON length:', cleanedContent.length);
+    
+    // Try parsing with progressive repair attempts
     try {
-      const cleanedContent = cleanJsonResponse(fullResponse);
-      console.log('[Article Writer Stream] Cleaned JSON length:', cleanedContent.length);
       result = JSON.parse(cleanedContent);
-    } catch (e) {
-      console.error('[Article Writer Stream] Failed to parse JSON:', e);
-      console.error('[Article Writer Stream] Raw content preview:', fullResponse.substring(0, 500));
-      throw new Error('Failed to parse article generation response');
+    } catch (firstParseError) {
+      // Try to repair incomplete JSON
+      console.log('[Article Writer Stream] First parse failed, attempting repair...');
+      try {
+        const repairedContent = repairIncompleteJson(cleanedContent);
+        result = JSON.parse(repairedContent);
+        console.log('[Article Writer Stream] JSON repair successful');
+      } catch (repairError) {
+        console.error('[Article Writer Stream] JSON repair failed:', repairError);
+        console.error('[Article Writer Stream] Raw content preview:', fullResponse.substring(0, 1000));
+        result = createFallbackResponse(title, keywords);
+        console.log('[Article Writer Stream] Using fallback response');
+      }
     }
 
     // Count words in content
@@ -534,7 +677,13 @@ Answers should be concise, informative, and start directly with the answer (no "
       messages: [
         {
           role: 'system',
-          content: `You are an expert at creating helpful FAQ sections in ${language.toUpperCase()}. Always respond with valid JSON only, never wrap in markdown code blocks.`,
+          content: `You are an expert at creating helpful FAQ sections in ${language.toUpperCase()}. 
+
+CRITICAL: Your response must be ONLY a valid JSON object. 
+- Do NOT wrap the JSON in markdown code blocks (no \`\`\`json or \`\`\`)
+- Do NOT include any text before or after the JSON
+- Start your response with { and end with }
+- Ensure all strings are properly escaped`,
         },
         {
           role: 'user',
@@ -548,22 +697,34 @@ Answers should be concise, informative, and start directly with the answer (no "
 
     const rawContent = (response as any).choices[0]?.message?.content || '{}';
     
-    // Parse JSON response
+    // Parse JSON response with repair logic
     let result;
+    
+    // Clean the JSON once before attempting to parse
+    const cleanedContent = cleanJsonResponse(rawContent);
+    
+    // Try parsing with progressive repair attempts
     try {
-      const cleanedContent = cleanJsonResponse(rawContent);
       result = JSON.parse(cleanedContent);
-    } catch (e) {
-      console.error('[Article Writer] Failed to parse FAQ JSON:', e);
-      console.error('[Article Writer] Raw content preview:', rawContent.substring(0, 500));
-      
-      // Return default FAQ if parsing fails
-      return [
-        {
-          question: `Wat is ${title}?`,
-          answer: `${title} is een belangrijk onderwerp dat verschillende aspecten behandelt. Voor meer informatie, lees het volledige artikel hierboven.`,
-        },
-      ];
+    } catch (firstParseError) {
+      // Try to repair incomplete JSON
+      console.log('[Article Writer] FAQ first parse failed, attempting repair...');
+      try {
+        const repairedContent = repairIncompleteJson(cleanedContent);
+        result = JSON.parse(repairedContent);
+        console.log('[Article Writer] FAQ JSON repair successful');
+      } catch (repairError) {
+        console.error('[Article Writer] FAQ JSON repair failed:', repairError);
+        console.error('[Article Writer] FAQ raw content preview:', rawContent.substring(0, 500));
+        
+        // Return default FAQ if parsing fails
+        return [
+          {
+            question: `Wat is ${title}?`,
+            answer: `${title} is een belangrijk onderwerp dat verschillende aspecten behandelt. Voor meer informatie, lees het volledige artikel hierboven.`,
+          },
+        ];
+      }
     }
 
     return result.faqs || [];
