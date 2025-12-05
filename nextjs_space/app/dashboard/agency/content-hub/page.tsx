@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Globe, 
   Plus, 
@@ -19,8 +26,10 @@ import {
   Sparkles,
   Loader2,
   AlertCircle,
+  FolderKanban,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import BlogPostsManagement from './components/blog-posts-management';
 import BlogArticleGenerator from './components/blog-article-generator';
 
@@ -33,6 +42,14 @@ interface BlogStats {
   avgWordCount: number;
 }
 
+interface AdminProject {
+  id: string;
+  name: string;
+  websiteUrl: string | null;
+  wordpressUrl: string | null;
+  blogPostCount: number;
+}
+
 export default function AgencyContentHubPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -41,6 +58,8 @@ export default function AgencyContentHubPage() {
   const [publishing, setPublishing] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
+  const [projects, setProjects] = useState<AdminProject[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   useEffect(() => {
     // Check if user is admin - using role-based check only for consistency
@@ -51,11 +70,24 @@ export default function AgencyContentHubPage() {
         router.push('/dashboard/agency');
         return;
       }
+      loadProjects();
       loadStats();
     } else if (status === 'unauthenticated') {
       router.push('/inloggen');
     }
   }, [status, session, router]);
+
+  const loadProjects = async () => {
+    try {
+      const response = await fetch('/api/admin/projects');
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(data.projects || []);
+      }
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -170,6 +202,57 @@ export default function AgencyContentHubPage() {
           </Button>
         </div>
       </div>
+
+      {/* Project Selector */}
+      {projects.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-800">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <FolderKanban className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                <span>Project selecteren:</span>
+              </div>
+              <div className="flex-1 max-w-md">
+                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecteer een project (of gebruik standaard Writgo.nl)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        <span>Writgo.nl (standaard)</span>
+                      </div>
+                    </SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        <div className="flex items-center gap-2">
+                          <FolderKanban className="h-4 w-4" />
+                          <span>{project.name}</span>
+                          {project.wordpressUrl && (
+                            <Badge variant="outline" className="ml-2 text-xs">WP</Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Link href="/dashboard/agency/projects">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Settings className="h-4 w-4" />
+                  Beheer Projecten
+                </Button>
+              </Link>
+            </div>
+            {selectedProjectId && (
+              <p className="text-xs text-muted-foreground mt-2 ml-7">
+                💡 Content wordt gegenereerd voor het geselecteerde project en kan automatisch naar WordPress worden gepubliceerd
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Overview */}
       {stats && (
