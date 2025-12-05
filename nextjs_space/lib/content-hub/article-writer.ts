@@ -7,6 +7,10 @@ import { sendChatCompletion, sendStreamingChatCompletion } from '../aiml-chat-cl
 import { TEXT_MODELS } from '../aiml-api';
 import type { SERPAnalysis } from './serp-analyzer';
 
+// Constants for article generation
+const TOKEN_MULTIPLIER = 3; // Multiplier for target word count to max tokens
+const MAX_TOKENS_LIMIT = 16000; // Maximum tokens to prevent exceeding model limits
+
 export interface ArticleWriteOptions {
   title: string;
   keywords: string[];
@@ -55,6 +59,7 @@ function cleanJsonResponse(content: string): string {
 
 /**
  * Generate a complete article with SEO optimization
+ * Implements comprehensive SEO masterprompt with E-E-A-T optimization
  */
 export async function writeArticle(
   options: ArticleWriteOptions
@@ -65,41 +70,135 @@ export async function writeArticle(
     
     const { title, keywords, targetWordCount, tone = 'professional', language = 'nl' } = options;
     
-    // Build context from SERP analysis if available
-    let contextInfo = '';
+    // Build comprehensive context from SERP analysis
+    let serpContext = '';
+    let lsiKeywords: string[] = [];
+    let paaQuestions: string[] = [];
+    
     if (options.serpAnalysis) {
-      contextInfo = `
-SERP Analysis Context:
-- Average competitor word count: ${options.serpAnalysis.averageWordCount}
-- Common topics: ${options.serpAnalysis.topicsCovered.join(', ')}
-- Questions to address: ${options.serpAnalysis.questionsFound.join(', ')}
-- Content gaps to fill: ${options.serpAnalysis.contentGaps.join(', ')}
+      lsiKeywords = options.serpAnalysis.lsiKeywords || [];
+      paaQuestions = options.serpAnalysis.paaQuestions || [];
+      
+      serpContext = `
+═══════════════════════════════════════════════════════
+📊 SERP ANALYSE RESULTATEN
+═══════════════════════════════════════════════════════
+
+📈 Target Woordenaantal: ${targetWordCount} woorden (gebaseerd op top 10 concurrentie analyse)
+   - Concurrenten gemiddeld: ${options.serpAnalysis.averageWordCount} woorden
+   - Jouw target: +20% = ${targetWordCount} woorden
+
+🎯 Top H2/H3 Headings van Concurrenten:
+${options.serpAnalysis.commonHeadings.map(h => `   • ${h}`).join('\n')}
+
+📝 Topics die Concurrenten Behandelen:
+${options.serpAnalysis.topicsCovered.map(t => `   • ${t}`).join('\n')}
+
+🔍 LSI Keywords (integreer NATUURLIJK):
+${lsiKeywords.slice(0, 20).map(k => `   • ${k}`).join('\n')}
+
+❓ People Also Ask Vragen (voor FAQ sectie):
+${paaQuestions.slice(0, 8).map(q => `   • ${q}`).join('\n')}
+
+💡 Content Gaps (kansen om beter te zijn):
+${options.serpAnalysis.contentGaps.map(g => `   • ${g}`).join('\n')}
 `;
     }
 
-    // Create comprehensive prompt
-    const prompt = `Write a comprehensive, SEO-optimized article in ${language.toUpperCase()}.
+    // Create comprehensive SEO masterprompt
+    const prompt = `Je bent een expert SEO content writer die artikelen schrijft die HOOG ranken in Google.
 
-Title: ${title}
-Target Keywords: ${keywords.join(', ')}
-Target Word Count: ${targetWordCount} words
-Tone: ${tone}
+═══════════════════════════════════════════════════════
+🎯 ARTIKEL OPDRACHT
+═══════════════════════════════════════════════════════
 
-${contextInfo}
+TITEL (H1): ${title}
+FOCUS KEYWORD: ${keywords[0] || title}
+EXTRA KEYWORDS: ${keywords.slice(1).join(', ')}
+TARGET: ${targetWordCount} woorden
+TAAL: ${language.toUpperCase()}
+TOON: ${tone}
 
-Requirements:
-1. Write engaging, high-quality content that provides real value
-2. Use the target keywords naturally throughout the text
-3. Include relevant subheadings (H2, H3)
-4. Add practical examples and actionable advice
-5. Ensure proper SEO structure
-${options.includeFAQ ? '6. Include an FAQ section at the end with 5-8 common questions' : ''}
-${options.includeYouTube ? '7. Suggest relevant YouTube video topics to embed' : ''}
+${serpContext}
 
-${options.internalLinks && options.internalLinks.length > 0 ? `
-Internal Links to Include:
-${options.internalLinks.map(link => `- ${link.anchorText}: ${link.url}`).join('\n')}
-` : ''}
+═══════════════════════════════════════════════════════
+📋 SEO CONTENT MASTERPROMPT - VOLG DEZE WORKFLOW EXACT
+═══════════════════════════════════════════════════════
+
+⚠️ KRITIEKE REGEL: De H1 titel "${title}" mag NIET herhaald worden in de body content!
+
+STAP 1: INTRO (100-150 woorden)
+✅ Begin met een hook (vraag, statistiek, of pijnpunt)
+✅ Benoem het probleem dat de lezer heeft
+✅ Geef een voorproefje van de oplossing
+✅ Gebruik focus keyword in eerste 100 woorden
+❌ NIET: H1 titel herhalen als eerste zin of kop!
+✅ Start direct met tekst (geen H2 in intro)
+
+STAP 2: E-E-A-T OPTIMALISATIE (in elke sectie!)
+Integreer deze elementen natuurlijk door het artikel:
+• **Experience**: "In onze testen...", "Uit ervaring blijkt...", praktijkvoorbeelden
+• **Expertise**: Technische details, insider tips, diepgaande uitleg
+• **Authoritativeness**: Recente studies (2024-2025), statistieken, bronvermelding
+• **Trustworthiness**: Feiten, balanced perspectief, actuele informatie
+
+STAP 3: CONTENT STRUCTUUR
+Gebruik deze H2/H3 structuur (gebaseerd op SERP analyse):
+
+${options.serpAnalysis?.commonHeadings.slice(0, 6).map((heading, idx) => `
+<h2>${heading}</h2>
+<p>[150-250 woorden met:]
+- Beantwoord een PAA vraag relevant voor deze sectie
+- Integreer 2-3 LSI keywords natuurlijk
+- Voeg E-E-A-T element toe (ervaring/expertise)
+- Voeg praktisch voorbeeld of tip toe
+${options.internalLinks && options.internalLinks[idx] ? `- Voeg interne link toe: <a href="${options.internalLinks[idx].url}">${options.internalLinks[idx].anchorText}</a>` : ''}
+</p>
+
+${idx < 3 ? `<h3>[Relevante subsectie]</h3>
+<p>[100-150 woorden met concrete informatie]</p>` : ''}
+`).join('\n') || ''}
+
+STAP 4: LSI KEYWORDS INTEGRATIE
+Verwerk deze LSI keywords NATUURLIJK door de tekst (1-2% keyword density):
+${lsiKeywords.slice(0, 20).map(k => `• ${k}`).join('\n')}
+
+⚠️ Integreer keywords organisch - geen keyword stuffing!
+
+STAP 5: FAQ SECTIE (VERPLICHT)
+<h2>Veelgestelde Vragen</h2>
+
+${paaQuestions.slice(0, 6).map(q => `
+<h3>${q}</h3>
+<p>[40-60 woorden, geoptimaliseerd voor featured snippet. Begin direct met het antwoord.]</p>
+`).join('\n')}
+
+STAP 6: CONCLUSIE (100-150 woorden)
+<h2>Conclusie</h2>
+<p>[Samenvatting met:]
+- Herhaal hoofdpunten in 3-5 bullet points
+- Gebruik focus keyword nog een keer
+- Eindig met CTA (call-to-action)
+- Benadruk de waarde voor de lezer
+</p>
+
+═══════════════════════════════════════════════════════
+✅ TECHNISCHE SEO CHECKLIST (VERIFIEER)
+═══════════════════════════════════════════════════════
+
+✅ Focus keyword in: H1, eerste 100 woorden, minimaal 1 H2, conclusie
+✅ Keyword density: 1-2% (niet te veel!)
+✅ 15-20 LSI keywords verspreid door tekst
+${options.internalLinks ? '✅ 4-6 interne links met natuurlijke ankerteksten' : ''}
+✅ Korte zinnen (max 20 woorden gemiddeld)
+✅ Korte alinea's (3-4 regels)
+✅ Minimaal ${Math.max(targetWordCount - 200, 1000)} woorden
+✅ H1 NIET herhaald in body
+✅ FAQ sectie met ${paaQuestions.length} PAA vragen
+
+═══════════════════════════════════════════════════════
+📤 OUTPUT FORMAT
+═══════════════════════════════════════════════════════
 
 IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response must be a valid JSON object:
 {
@@ -112,7 +211,7 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
 }`;
 
     const response = await sendChatCompletion({
-      model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for content writing
+      model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for best content quality
       messages: [
         {
           role: 'system',
@@ -124,7 +223,7 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
         },
       ],
       temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * 2, 8000),
+      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT), // Increased for longer articles
       stream: false,
     });
 
