@@ -203,8 +203,8 @@ export default function PlanningTab() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {calendarPosts
-                .reduce((acc, post) => {
+              {Object.entries(
+                calendarPosts.reduce((acc, post) => {
                   const dateKey = post.date;
                   if (!acc[dateKey]) {
                     acc[dateKey] = [];
@@ -212,7 +212,7 @@ export default function PlanningTab() {
                   acc[dateKey].push(post);
                   return acc;
                 }, {} as Record<string, CalendarPost[]>)
-                .map(([date, posts]) => (
+              ).map(([date, posts]) => (
                   <div key={date} className="border rounded-lg p-4">
                     <h3 className="font-semibold mb-3">
                       <Calendar className="h-4 w-4 inline mr-2" />
