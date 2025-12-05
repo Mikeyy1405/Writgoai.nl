@@ -52,6 +52,10 @@ interface ArticleRowProps {
   onUpdate?: () => void;
 }
 
+// Constants for SSE parsing
+const MAX_PARSE_ERRORS = 3; // Maximum parse errors before showing toast
+const SSE_DATA_PREFIX_LENGTH = 6; // Length of 'data: ' prefix in SSE messages
+
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const [showGenerator, setShowGenerator] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -208,7 +212,6 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
 
     const startTime = Date.now();
     const phaseStartTimes: { [key: number]: number } = {};
-    const MAX_PARSE_ERRORS = 3; // Maximum parse errors before showing toast
     let parseErrorCount = 0; // Track parse errors locally
 
     try {
@@ -257,7 +260,10 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(line.slice(6));
+              const data = JSON.parse(line.slice(SSE_DATA_PREFIX_LENGTH));
+              
+              // Reset error count on successful parse
+              parseErrorCount = 0;
               
               // Map backend steps to frontend phases
               let phaseIndex = -1;
