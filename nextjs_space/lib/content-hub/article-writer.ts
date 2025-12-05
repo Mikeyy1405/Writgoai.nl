@@ -59,6 +59,19 @@ function cleanJsonResponse(content: string): string {
 }
 
 /**
+ * Create fallback article response when parsing fails
+ */
+function createFallbackResponse(title: string, keywords: string[]): any {
+  return {
+    content: `<p>Er is een fout opgetreden bij het genereren van dit artikel. Probeer het opnieuw.</p>`,
+    metaTitle: title.substring(0, 60),
+    metaDescription: `Lees meer over ${keywords[0] || title}`.substring(0, 160),
+    excerpt: `Artikel over ${title}`,
+    suggestedImages: [],
+  };
+}
+
+/**
  * Attempt to repair incomplete JSON by closing unclosed structures
  * Handles truncated responses from AI models
  */
@@ -76,14 +89,26 @@ function repairIncompleteJson(content: string): string {
     const char = repaired[i];
     const prevChar = i > 0 ? repaired[i - 1] : '';
     
-    // Track string state (ignore escaped quotes)
-    if ((char === '"' || char === "'") && prevChar !== '\\') {
-      if (!inString) {
-        inString = true;
-        stringChar = char;
-      } else if (char === stringChar) {
-        inString = false;
-        stringChar = '';
+    // Track string state (handle escaped quotes properly)
+    // A quote is escaped if preceded by odd number of backslashes
+    if (char === '"' || char === "'") {
+      // Count consecutive backslashes before this character
+      let backslashCount = 0;
+      for (let j = i - 1; j >= 0 && repaired[j] === '\\'; j--) {
+        backslashCount++;
+      }
+      
+      // Quote is escaped only if preceded by odd number of backslashes
+      const isEscaped = backslashCount % 2 === 1;
+      
+      if (!isEscaped) {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+          stringChar = '';
+        }
       }
     }
     
@@ -101,15 +126,16 @@ function repairIncompleteJson(content: string): string {
   // If we're in an unclosed string, close it
   if (inString) {
     repaired += stringChar;
-  }
-  
-  // Remove any trailing incomplete value after the last complete field
-  // This handles cases like: {"field": "value", "incomplete": "trun
-  if (repaired.trim().match(/,\s*"[^"]*":\s*"[^"]*$/)) {
-    // Find the last complete field
-    const lastCommaIndex = repaired.lastIndexOf(',');
-    if (lastCommaIndex > 0) {
-      repaired = repaired.substring(0, lastCommaIndex);
+    
+    // After closing the string, we may have an incomplete field
+    // Remove trailing comma and incomplete field if present
+    // This handles: {"field": "value", "incomplete": "truncated"
+    const lastCommaMatch = repaired.match(/,\s*"[^"]*"\s*:\s*"[^"]*"\s*$/);
+    if (lastCommaMatch) {
+      const lastCommaIndex = repaired.lastIndexOf(',');
+      if (lastCommaIndex > 0) {
+        repaired = repaired.substring(0, lastCommaIndex);
+      }
     }
   }
   
@@ -333,15 +359,7 @@ CRITICAL: Your response must be ONLY a valid JSON object.
         console.error(`[Article Writer] Parse attempt ${parseAttempts} failed:`, e);
         if (parseAttempts >= maxParseAttempts) {
           console.error('[Article Writer] Raw content preview:', rawContent.substring(0, 1000));
-          
-          // Create fallback response
-          result = {
-            content: `<p>Er is een fout opgetreden bij het genereren van dit artikel. Probeer het opnieuw.</p>`,
-            metaTitle: title.substring(0, 60),
-            metaDescription: `Lees meer over ${keywords[0] || title}`.substring(0, 160),
-            excerpt: `Artikel over ${title}`,
-            suggestedImages: [],
-          };
+          result = createFallbackResponse(title, keywords);
           console.log('[Article Writer] Using fallback response');
         }
       }
@@ -595,15 +613,7 @@ CRITICAL: Your response must be ONLY a valid JSON object.
         console.error(`[Article Writer Stream] Parse attempt ${parseAttempts} failed:`, e);
         if (parseAttempts >= maxParseAttempts) {
           console.error('[Article Writer Stream] Raw content preview:', fullResponse.substring(0, 1000));
-          
-          // Create fallback response
-          result = {
-            content: `<p>Er is een fout opgetreden bij het genereren van dit artikel. Probeer het opnieuw.</p>`,
-            metaTitle: title.substring(0, 60),
-            metaDescription: `Lees meer over ${keywords[0] || title}`.substring(0, 160),
-            excerpt: `Artikel over ${title}`,
-            suggestedImages: [],
-          };
+          result = createFallbackResponse(title, keywords);
           console.log('[Article Writer Stream] Using fallback response');
         }
       }
