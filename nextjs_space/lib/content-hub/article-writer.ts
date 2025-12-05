@@ -10,6 +10,7 @@ import type { SERPAnalysis } from './serp-analyzer';
 // Constants for article generation
 const TOKEN_MULTIPLIER = 3; // Multiplier for target word count to max tokens
 const MAX_TOKENS_LIMIT = 16000; // Maximum tokens to prevent exceeding model limits
+const JSON_STRUCTURE_BUFFER = 500; // Buffer tokens to ensure JSON structure can be completed
 
 export interface ArticleWriteOptions {
   title: string;
@@ -127,14 +128,19 @@ function repairIncompleteJson(content: string): string {
   if (inString) {
     repaired += stringChar;
     
-    // After closing the string, we may have an incomplete field
-    // Remove trailing comma and incomplete field if present
-    // This handles: {"field": "value", "incomplete": "truncated"
-    const lastCommaMatch = repaired.match(/,\s*"[^"]*"\s*:\s*"[^"]*"\s*$/);
-    if (lastCommaMatch) {
-      const lastCommaIndex = repaired.lastIndexOf(',');
-      if (lastCommaIndex > 0) {
-        repaired = repaired.substring(0, lastCommaIndex);
+    // After closing the string, check if we should remove the incomplete field
+    // Look for pattern: ..., "fieldName": "value"}
+    // If the closed string appears to be at the end and follows a comma,
+    // it's likely an incomplete field that was truncated
+    const trimmed = repaired.trim();
+    if (trimmed.endsWith(stringChar + '}') || trimmed.endsWith(stringChar)) {
+      // Find the last comma before this field
+      const beforeClosing = trimmed.substring(0, trimmed.lastIndexOf(stringChar));
+      const lastCommaIndex = beforeClosing.lastIndexOf(',');
+      
+      // Only remove if there's content before the comma (not the first field)
+      if (lastCommaIndex > 0 && beforeClosing.substring(0, lastCommaIndex).includes(':')) {
+        repaired = repaired.substring(0, lastCommaIndex).trim();
       }
     }
   }
@@ -327,7 +333,7 @@ CRITICAL: Your response must be ONLY a valid JSON object.
         },
       ],
       temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - 500), // Leave buffer for JSON structure
+      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER),
       stream: false,
     });
 
@@ -335,33 +341,26 @@ CRITICAL: Your response must be ONLY a valid JSON object.
     
     // Parse JSON response - handle markdown code blocks and incomplete responses
     let result;
-    let parseAttempts = 0;
-    const maxParseAttempts = 3;
-
-    while (parseAttempts < maxParseAttempts) {
-      parseAttempts++;
+    
+    // Clean the JSON once before attempting to parse
+    const cleanedContent = cleanJsonResponse(rawContent);
+    console.log('[Article Writer] Cleaned JSON length:', cleanedContent.length);
+    
+    // Try parsing with progressive repair attempts
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (firstParseError) {
+      // Try to repair incomplete JSON
+      console.log('[Article Writer] First parse failed, attempting repair...');
       try {
-        let cleanedContent = cleanJsonResponse(rawContent);
-        console.log('[Article Writer] Cleaned JSON length:', cleanedContent.length);
-        
-        try {
-          result = JSON.parse(cleanedContent);
-          break; // Success
-        } catch (firstParseError) {
-          // Try to repair incomplete JSON
-          console.log('[Article Writer] First parse failed, attempting repair...');
-          const repairedContent = repairIncompleteJson(cleanedContent);
-          result = JSON.parse(repairedContent);
-          console.log('[Article Writer] JSON repair successful');
-          break;
-        }
-      } catch (e) {
-        console.error(`[Article Writer] Parse attempt ${parseAttempts} failed:`, e);
-        if (parseAttempts >= maxParseAttempts) {
-          console.error('[Article Writer] Raw content preview:', rawContent.substring(0, 1000));
-          result = createFallbackResponse(title, keywords);
-          console.log('[Article Writer] Using fallback response');
-        }
+        const repairedContent = repairIncompleteJson(cleanedContent);
+        result = JSON.parse(repairedContent);
+        console.log('[Article Writer] JSON repair successful');
+      } catch (repairError) {
+        console.error('[Article Writer] JSON repair failed:', repairError);
+        console.error('[Article Writer] Raw content preview:', rawContent.substring(0, 1000));
+        result = createFallbackResponse(title, keywords);
+        console.log('[Article Writer] Using fallback response');
       }
     }
 
@@ -571,7 +570,7 @@ CRITICAL: Your response must be ONLY a valid JSON object.
         },
       ],
       temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - 500), // Leave buffer for JSON structure
+      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER),
       stream: true,
     });
 
@@ -589,33 +588,26 @@ CRITICAL: Your response must be ONLY a valid JSON object.
     yield { type: 'status', content: 'Processing article...' };
     
     let result;
-    let parseAttempts = 0;
-    const maxParseAttempts = 3;
-
-    while (parseAttempts < maxParseAttempts) {
-      parseAttempts++;
+    
+    // Clean the JSON once before attempting to parse
+    const cleanedContent = cleanJsonResponse(fullResponse);
+    console.log('[Article Writer Stream] Cleaned JSON length:', cleanedContent.length);
+    
+    // Try parsing with progressive repair attempts
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (firstParseError) {
+      // Try to repair incomplete JSON
+      console.log('[Article Writer Stream] First parse failed, attempting repair...');
       try {
-        let cleanedContent = cleanJsonResponse(fullResponse);
-        console.log('[Article Writer Stream] Cleaned JSON length:', cleanedContent.length);
-        
-        try {
-          result = JSON.parse(cleanedContent);
-          break; // Success
-        } catch (firstParseError) {
-          // Try to repair incomplete JSON
-          console.log('[Article Writer Stream] First parse failed, attempting repair...');
-          const repairedContent = repairIncompleteJson(cleanedContent);
-          result = JSON.parse(repairedContent);
-          console.log('[Article Writer Stream] JSON repair successful');
-          break;
-        }
-      } catch (e) {
-        console.error(`[Article Writer Stream] Parse attempt ${parseAttempts} failed:`, e);
-        if (parseAttempts >= maxParseAttempts) {
-          console.error('[Article Writer Stream] Raw content preview:', fullResponse.substring(0, 1000));
-          result = createFallbackResponse(title, keywords);
-          console.log('[Article Writer Stream] Using fallback response');
-        }
+        const repairedContent = repairIncompleteJson(cleanedContent);
+        result = JSON.parse(repairedContent);
+        console.log('[Article Writer Stream] JSON repair successful');
+      } catch (repairError) {
+        console.error('[Article Writer Stream] JSON repair failed:', repairError);
+        console.error('[Article Writer Stream] Raw content preview:', fullResponse.substring(0, 1000));
+        result = createFallbackResponse(title, keywords);
+        console.log('[Article Writer Stream] Using fallback response');
       }
     }
 
@@ -705,40 +697,33 @@ CRITICAL: Your response must be ONLY a valid JSON object.
 
     const rawContent = (response as any).choices[0]?.message?.content || '{}';
     
-    // Parse JSON response with retry and repair logic
+    // Parse JSON response with repair logic
     let result;
-    let parseAttempts = 0;
-    const maxParseAttempts = 3;
-
-    while (parseAttempts < maxParseAttempts) {
-      parseAttempts++;
+    
+    // Clean the JSON once before attempting to parse
+    const cleanedContent = cleanJsonResponse(rawContent);
+    
+    // Try parsing with progressive repair attempts
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (firstParseError) {
+      // Try to repair incomplete JSON
+      console.log('[Article Writer] FAQ first parse failed, attempting repair...');
       try {
-        let cleanedContent = cleanJsonResponse(rawContent);
+        const repairedContent = repairIncompleteJson(cleanedContent);
+        result = JSON.parse(repairedContent);
+        console.log('[Article Writer] FAQ JSON repair successful');
+      } catch (repairError) {
+        console.error('[Article Writer] FAQ JSON repair failed:', repairError);
+        console.error('[Article Writer] FAQ raw content preview:', rawContent.substring(0, 500));
         
-        try {
-          result = JSON.parse(cleanedContent);
-          break; // Success
-        } catch (firstParseError) {
-          // Try to repair incomplete JSON
-          console.log('[Article Writer] FAQ first parse failed, attempting repair...');
-          const repairedContent = repairIncompleteJson(cleanedContent);
-          result = JSON.parse(repairedContent);
-          console.log('[Article Writer] FAQ JSON repair successful');
-          break;
-        }
-      } catch (e) {
-        console.error(`[Article Writer] FAQ parse attempt ${parseAttempts} failed:`, e);
-        if (parseAttempts >= maxParseAttempts) {
-          console.error('[Article Writer] FAQ raw content preview:', rawContent.substring(0, 500));
-          
-          // Return default FAQ if parsing fails
-          return [
-            {
-              question: `Wat is ${title}?`,
-              answer: `${title} is een belangrijk onderwerp dat verschillende aspecten behandelt. Voor meer informatie, lees het volledige artikel hierboven.`,
-            },
-          ];
-        }
+        // Return default FAQ if parsing fails
+        return [
+          {
+            question: `Wat is ${title}?`,
+            answer: `${title} is een belangrijk onderwerp dat verschillende aspecten behandelt. Voor meer informatie, lees het volledige artikel hierboven.`,
+          },
+        ];
       }
     }
 
