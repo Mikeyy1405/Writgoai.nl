@@ -396,8 +396,10 @@ export async function callWithModel(
   const modelMap: Record<string, string> = {
     'gpt-4': AVAILABLE_MODELS.GPT_4O,
     'gpt-4-turbo': AVAILABLE_MODELS.GPT_4_TURBO,
-    'claude-3-opus': AVAILABLE_MODELS.CLAUDE_35_OPUS,
-    'claude-3-sonnet': AVAILABLE_MODELS.CLAUDE_35_SONNET,
+    'claude-3-opus': AVAILABLE_MODELS.CLAUDE_45_OPUS,
+    'claude-3-sonnet': AVAILABLE_MODELS.CLAUDE_45_SONNET,
+    'claude-4-opus': AVAILABLE_MODELS.CLAUDE_45_OPUS,
+    'claude-4-sonnet': AVAILABLE_MODELS.CLAUDE_45_SONNET,
     'gemini-pro': AVAILABLE_MODELS.GEMINI_25_PRO,
     'llama-3-70b': AVAILABLE_MODELS.LLAMA_31_70B,
     'mistral-large': AVAILABLE_MODELS.MISTRAL_LARGE,
@@ -412,11 +414,11 @@ export async function callWithModel(
   if (actualModel.includes('gpt') || actualModel.includes('openai')) {
     fallbacks.push(AVAILABLE_MODELS.GPT_4O_MINI, AVAILABLE_MODELS.GPT_4_TURBO);
   } else if (actualModel.includes('claude')) {
-    fallbacks.push(AVAILABLE_MODELS.CLAUDE_35_SONNET, AVAILABLE_MODELS.CLAUDE_35_HAIKU);
+    fallbacks.push(AVAILABLE_MODELS.CLAUDE_45_SONNET, AVAILABLE_MODELS.CLAUDE_35_HAIKU);
   } else if (actualModel.includes('gemini')) {
     fallbacks.push(AVAILABLE_MODELS.GEMINI_25_FLASH, AVAILABLE_MODELS.GEMINI_15_PRO);
   } else {
-    fallbacks.push(AVAILABLE_MODELS.GPT_4O_MINI, AVAILABLE_MODELS.CLAUDE_35_SONNET);
+    fallbacks.push(AVAILABLE_MODELS.GPT_4O_MINI, AVAILABLE_MODELS.CLAUDE_45_SONNET);
   }
   
   // Try primary model
