@@ -28,6 +28,7 @@ import EditArticleModal from './edit-article-modal';
 import DeleteConfirmationModal from './delete-confirmation-modal';
 import { isInProgress } from '@/lib/content-hub/article-utils';
 import InlineGenerationStatus from './inline-generation-status';
+import { GenerationPhase } from '@/lib/content-hub/generation-types';
 
 interface Article {
   id: string;
@@ -49,19 +50,6 @@ interface Article {
 interface ArticleRowProps {
   article: Article;
   onUpdate?: () => void;
-}
-
-interface GenerationPhase {
-  name: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'failed';
-  message?: string;
-  duration?: number;
-  metrics?: {
-    wordCount?: number;
-    lsiKeywords?: number;
-    paaQuestions?: number;
-    images?: number;
-  };
 }
 
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
@@ -220,11 +208,7 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
 
     const startTime = Date.now();
     const phaseStartTimes: { [key: number]: number } = {};
-    
-    // Reset SSE parse error counter
-    if (typeof window !== 'undefined') {
-      (window as any).__sseParseErrors = 0;
-    }
+    let sseParseErrors = 0; // Track parse errors locally
 
     try {
       const response = await fetch('/api/content-hub/write-article', {
@@ -347,13 +331,9 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
             } catch (parseError) {
               console.error('Error parsing SSE data:', parseError);
               // Only show toast if this happens repeatedly (more than 3 times)
-              if (typeof window !== 'undefined') {
-                const w = window as any;
-                if (!w.__sseParseErrors) w.__sseParseErrors = 0;
-                w.__sseParseErrors++;
-                if (w.__sseParseErrors > 3) {
-                  toast.error('Fout bij ontvangen van updates. Controleer de browser console.');
-                }
+              sseParseErrors++;
+              if (sseParseErrors > 3) {
+                toast.error('Fout bij ontvangen van updates. Controleer de browser console.');
               }
             }
           }

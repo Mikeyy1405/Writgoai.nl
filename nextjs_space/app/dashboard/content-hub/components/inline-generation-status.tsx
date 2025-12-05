@@ -10,13 +10,7 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
-
-interface GenerationPhase {
-  name: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'failed';
-  message?: string;
-  duration?: number;
-}
+import { GenerationPhase } from '@/lib/content-hub/generation-types';
 
 interface InlineGenerationStatusProps {
   progress: number;

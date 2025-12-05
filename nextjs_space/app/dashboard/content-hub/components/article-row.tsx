@@ -21,6 +21,7 @@ import {
 import { toast } from 'sonner';
 import ArticleGenerator from './article-generator';
 import InlineGenerationStatus from './inline-generation-status';
+import { GenerationPhase } from '@/lib/content-hub/generation-types';
 
 interface Article {
   id: string;
@@ -39,13 +40,6 @@ interface Article {
 interface ArticleRowProps {
   article: Article;
   onUpdate?: () => void;
-}
-
-interface GenerationPhase {
-  name: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'failed';
-  message?: string;
-  duration?: number;
 }
 
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
