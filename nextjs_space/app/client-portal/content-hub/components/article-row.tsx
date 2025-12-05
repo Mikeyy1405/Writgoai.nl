@@ -208,7 +208,8 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
 
     const startTime = Date.now();
     const phaseStartTimes: { [key: number]: number } = {};
-    let sseParseErrors = 0; // Track parse errors locally
+    const MAX_PARSE_ERRORS = 3; // Maximum parse errors before showing toast
+    let parseErrorCount = 0; // Track parse errors locally
 
     try {
       const response = await fetch('/api/content-hub/write-article', {
@@ -330,9 +331,9 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
               }
             } catch (parseError) {
               console.error('Error parsing SSE data:', parseError);
-              // Only show toast if this happens repeatedly (more than 3 times)
-              sseParseErrors++;
-              if (sseParseErrors > 3) {
+              // Only show toast if this happens repeatedly
+              parseErrorCount++;
+              if (parseErrorCount > MAX_PARSE_ERRORS) {
                 toast.error('Fout bij ontvangen van updates. Controleer de browser console.');
               }
             }
