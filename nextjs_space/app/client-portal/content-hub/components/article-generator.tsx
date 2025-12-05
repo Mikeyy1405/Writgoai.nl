@@ -196,11 +196,6 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       contentInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + CONTENT_INCREMENT, CONTENT_MAX));
       }, CONTENT_INTERVAL_MS);
-      
-      if (contentInterval) {
-        clearInterval(contentInterval);
-        contentInterval = null;
-      }
 
       const phase2Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
       updatePhase(1, { 
