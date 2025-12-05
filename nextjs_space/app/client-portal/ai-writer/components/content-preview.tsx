@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Download, Check, FileText, Code, AlignLeft } from 'lucide-react';
+import { Copy, Download, Check, FileText, Code, AlignLeft, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { stripMarkdownCodeBlocks, htmlToPlainText } from '@/lib/content-utils';
 
 interface ContentPreviewProps {
   content: string;
@@ -16,6 +17,8 @@ interface ContentPreviewProps {
   wordCount?: number;
   internalLinksAdded?: number;
   bolProductsAdded?: number;
+  onSave?: () => void;
+  isSaving?: boolean;
 }
 
 export default function ContentPreview({
@@ -24,6 +27,8 @@ export default function ContentPreview({
   wordCount,
   internalLinksAdded,
   bolProductsAdded,
+  onSave,
+  isSaving = false,
 }: ContentPreviewProps) {
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('preview');
@@ -48,15 +53,9 @@ export default function ContentPreview({
     toast.success(`${filename} gedownload`);
   };
 
-  // Strip HTML tags for plain text version (safe since content is AI-generated, not user input)
-  const getPlainText = (html: string) => {
-    // Use DOMParser for safer HTML parsing
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    return doc.body.textContent || '';
-  };
-
-  const plainText = getPlainText(content);
+  // Clean content for preview (strip markdown code blocks)
+  const cleanedContent = stripMarkdownCodeBlocks(content);
+  const plainText = htmlToPlainText(cleanedContent);
 
   if (!content) {
     return (
@@ -74,22 +73,44 @@ export default function ContentPreview({
 
   return (
     <div className="space-y-4">
-      {/* Stats */}
-      <div className="flex gap-2 flex-wrap">
-        {wordCount && (
-          <Badge variant="outline" className="bg-zinc-800 border-zinc-700">
-            {wordCount} woorden
-          </Badge>
-        )}
-        {internalLinksAdded !== undefined && internalLinksAdded > 0 && (
-          <Badge variant="outline" className="bg-zinc-800 border-zinc-700">
-            {internalLinksAdded} interne links
-          </Badge>
-        )}
-        {bolProductsAdded !== undefined && bolProductsAdded > 0 && (
-          <Badge variant="outline" className="bg-zinc-800 border-zinc-700">
-            {bolProductsAdded} affiliate producten
-          </Badge>
+      {/* Stats and Save Button */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex gap-2 flex-wrap">
+          {wordCount && (
+            <Badge variant="outline" className="bg-zinc-800 border-zinc-700">
+              {wordCount} woorden
+            </Badge>
+          )}
+          {internalLinksAdded !== undefined && internalLinksAdded > 0 && (
+            <Badge variant="outline" className="bg-zinc-800 border-zinc-700">
+              {internalLinksAdded} interne links
+            </Badge>
+          )}
+          {bolProductsAdded !== undefined && bolProductsAdded > 0 && (
+            <Badge variant="outline" className="bg-zinc-800 border-zinc-700">
+              {bolProductsAdded} affiliate producten
+            </Badge>
+          )}
+        </div>
+        
+        {onSave && (
+          <Button
+            onClick={onSave}
+            disabled={isSaving}
+            className="bg-gradient-to-r from-[#FF9933] to-orange-600 hover:from-[#FF9933]/90 hover:to-orange-600/90"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Opslaan...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Opslaan naar Bibliotheek
+              </>
+            )}
+          </Button>
         )}
       </div>
 
@@ -134,7 +155,7 @@ export default function ContentPreview({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleCopy(content, 'Content')}
+                    onClick={() => handleCopy(cleanedContent, 'Content')}
                     className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
                   >
                     {copiedTab === 'preview' ? (
@@ -155,7 +176,7 @@ export default function ContentPreview({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleCopy(content, 'HTML')}
+                      onClick={() => handleCopy(cleanedContent, 'HTML')}
                       className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
                     >
                       {copiedTab === 'html' ? (
@@ -173,7 +194,7 @@ export default function ContentPreview({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownload(content, 'content.html')}
+                      onClick={() => handleDownload(cleanedContent, 'content.html')}
                       className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
                     >
                       <Download className="h-4 w-4 mr-2" />
@@ -233,7 +254,7 @@ export default function ContentPreview({
                   For production, consider adding DOMPurify for extra safety. */}
               <div
                 className="prose prose-invert max-w-none prose-headings:text-zinc-100 prose-p:text-zinc-300 prose-a:text-[#FF9933] prose-strong:text-zinc-200 prose-ul:text-zinc-300 prose-ol:text-zinc-300"
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: cleanedContent }}
               />
             </TabsContent>
 
@@ -251,7 +272,7 @@ export default function ContentPreview({
                     overflow: 'auto',
                   }}
                 >
-                  {content}
+                  {cleanedContent}
                 </SyntaxHighlighter>
               </div>
             </TabsContent>

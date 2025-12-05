@@ -2,16 +2,20 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, PenLine } from 'lucide-react';
 import { toast } from 'sonner';
+import { stripMarkdownCodeBlocks, htmlToPlainText } from '@/lib/content-utils';
 import ConfigPanel, { AIWriterConfig } from './components/config-panel';
 import ContentPreview from './components/content-preview';
 import AIChat from './components/ai-chat';
 
 export default function AIWriterPage() {
   const { data: session } = useSession() || {};
+  const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const [contentStats, setContentStats] = useState({
@@ -84,6 +88,80 @@ export default function AIWriterPage() {
     }
   };
 
+  const handleSave = async () => {
+    if (!generatedContent) {
+      toast.error('Geen content om op te slaan');
+      return;
+    }
+
+    setIsSaving(true);
+    
+    // Show progress toast
+    const loadingToast = toast.loading('Content wordt opgeslagen...');
+
+    try {
+      // Strip markdown code blocks from content before saving
+      const cleanedContent = stripMarkdownCodeBlocks(generatedContent);
+      
+      // Extract plain text using DOMParser for safer HTML parsing
+      const plainText = htmlToPlainText(cleanedContent);
+      
+      // Prepare secondary keywords safely
+      const secondaryKeywords = config.secondaryKeywords 
+        ? config.secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean)
+        : [];
+      
+      // Prepare keywords array, ensuring no empty strings or null values
+      const allKeywords = [
+        config.keywords?.trim(),
+        ...secondaryKeywords
+      ].filter(k => k && k.length > 0);
+      
+      // Prepare the data for saving
+      const saveData = {
+        type: config.contentType,
+        title: config.topic,
+        content: plainText, // Plain text
+        contentHtml: cleanedContent, // HTML version
+        metaDesc: metaDescription,
+        keywords: allKeywords,
+        projectId: config.projectId || undefined,
+        wordCount: contentStats.wordCount,
+      };
+
+      const response = await fetch('/api/client/content-library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saveData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save content');
+      }
+
+      const data = await response.json();
+      const savedItem = data.content;
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
+      // Show success message and redirect
+      toast.success('Content opgeslagen! Je wordt doorgestuurd naar de editor...', {
+        duration: 2000,
+      });
+
+      // Redirect to editor immediately after success toast is shown
+      router.push(`/client-portal/content-library/${savedItem.id}/edit`);
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast.dismiss(loadingToast);
+      toast.error(error.message || 'Fout bij opslaan van content');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black p-6">
       <div className="max-w-[1800px] mx-auto">
@@ -122,6 +200,8 @@ export default function AIWriterPage() {
               wordCount={contentStats.wordCount}
               internalLinksAdded={contentStats.internalLinksAdded}
               bolProductsAdded={contentStats.bolProductsAdded}
+              onSave={handleSave}
+              isSaving={isSaving}
             />
           </div>
 
