@@ -91,6 +91,18 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
     setGenerating(true);
     setProgress(0);
 
+    // Progress simulation constants
+    const RESEARCH_INTERVAL_MS = 500;
+    const RESEARCH_INCREMENT = 2;
+    const RESEARCH_MAX = 20;
+    const CONTENT_INTERVAL_MS = 800;
+    const CONTENT_INCREMENT = 1;
+    const CONTENT_MAX = 50;
+    const SEO_INTERVAL_MS = 400;
+    const SEO_INCREMENT = 2;
+    const SEO_MAX = 80;
+    const VISUAL_FEEDBACK_DELAY_MS = 2000;
+
     const startTime = Date.now();
     let phaseStartTime = startTime;
 
@@ -101,8 +113,8 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
 
       // Simulate progress updates during research phase
       const researchInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 2, 20));
-      }, 500);
+        setProgress(prev => Math.min(prev + RESEARCH_INCREMENT, RESEARCH_MAX));
+      }, RESEARCH_INTERVAL_MS);
 
       const response = await fetch('/api/content-hub/write-article', {
         method: 'POST',
@@ -143,8 +155,8 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       
       // Simulate progress during content generation
       const contentInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 1, 50));
-      }, 800);
+        setProgress(prev => Math.min(prev + CONTENT_INCREMENT, CONTENT_MAX));
+      }, CONTENT_INTERVAL_MS);
 
       // Wait for the response data
       const data = await response.json();
@@ -167,10 +179,10 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       
       // Simulate progress
       const seoInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 2, 80));
-      }, 400);
+        setProgress(prev => Math.min(prev + SEO_INCREMENT, SEO_MAX));
+      }, SEO_INTERVAL_MS);
       
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Give time for visual feedback
+      await new Promise(resolve => setTimeout(resolve, VISUAL_FEEDBACK_DELAY_MS)); // Give time for visual feedback
       clearInterval(seoInterval);
 
       const phase3Duration = Math.floor((Date.now() - phaseStartTime) / 1000);

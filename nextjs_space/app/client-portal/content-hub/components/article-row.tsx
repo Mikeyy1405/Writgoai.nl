@@ -48,6 +48,9 @@ interface ArticleRowProps {
   onUpdate?: () => void;
 }
 
+// Statuses where article operations are in progress
+const IN_PROGRESS_STATUSES = ['researching', 'writing', 'publishing'];
+
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const [showGenerator, setShowGenerator] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -305,7 +308,7 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
               )}
 
               {/* Delete button - available for all statuses except in-progress */}
-              {!['researching', 'writing', 'publishing'].includes(article.status) && (
+              {!IN_PROGRESS_STATUSES.includes(article.status) && (
                 <Button 
                   size="sm" 
                   variant="ghost"

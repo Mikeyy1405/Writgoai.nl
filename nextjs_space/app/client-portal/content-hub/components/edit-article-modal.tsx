@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, X, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { getValidKeywords } from '@/lib/content-hub/article-utils';
 
 interface EditArticleModalProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ export default function EditArticleModal({
         },
         body: JSON.stringify({
           title: title.trim(),
-          keywords: keywords.filter(k => k.trim().length > 0),
+          keywords: getValidKeywords(keywords),
         }),
       });
 

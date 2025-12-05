@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { getValidKeywords, validateArticleTitle, validateKeywords } from '@/lib/content-hub/article-utils';
 
 /**
  * PATCH /api/content-hub/articles/[id]
@@ -29,18 +30,14 @@ export async function PATCH(
     const { title, keywords } = body;
 
     // Validate inputs
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Valid title is required' },
-        { status: 400 }
-      );
+    const titleError = validateArticleTitle(title);
+    if (titleError) {
+      return NextResponse.json({ error: titleError }, { status: 400 });
     }
 
-    if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one keyword is required' },
-        { status: 400 }
-      );
+    const keywordsError = validateKeywords(keywords);
+    if (keywordsError) {
+      return NextResponse.json({ error: keywordsError }, { status: 400 });
     }
 
     // Get article to verify ownership and status
@@ -68,7 +65,7 @@ export async function PATCH(
       where: { id: params.id },
       data: {
         title: title.trim(),
-        keywords: keywords.filter((k: string) => k && k.trim().length > 0),
+        keywords: getValidKeywords(keywords),
         updatedAt: new Date(),
       },
     });
