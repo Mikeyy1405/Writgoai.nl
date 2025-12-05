@@ -85,14 +85,14 @@ export async function writeArticle(
 ═══════════════════════════════════════════════════════
 
 📈 Target Woordenaantal: ${targetWordCount} woorden (gebaseerd op top 10 concurrentie analyse)
-   - Concurrenten gemiddeld: ${options.serpAnalysis.averageWordCount} woorden
+   - Concurrenten gemiddeld: ${options.serpAnalysis.averageWordCount || 1500} woorden
    - Jouw target: +20% = ${targetWordCount} woorden
 
 🎯 Top H2/H3 Headings van Concurrenten:
-${options.serpAnalysis.commonHeadings.map(h => `   • ${h}`).join('\n')}
+${(options.serpAnalysis.commonHeadings || []).map(h => `   • ${h}`).join('\n')}
 
 📝 Topics die Concurrenten Behandelen:
-${options.serpAnalysis.topicsCovered.map(t => `   • ${t}`).join('\n')}
+${(options.serpAnalysis.topicsCovered || []).map(t => `   • ${t}`).join('\n')}
 
 🔍 LSI Keywords (integreer NATUURLIJK):
 ${lsiKeywords.slice(0, 20).map(k => `   • ${k}`).join('\n')}
@@ -101,7 +101,7 @@ ${lsiKeywords.slice(0, 20).map(k => `   • ${k}`).join('\n')}
 ${paaQuestions.slice(0, 8).map(q => `   • ${q}`).join('\n')}
 
 💡 Content Gaps (kansen om beter te zijn):
-${options.serpAnalysis.contentGaps.map(g => `   • ${g}`).join('\n')}
+${(options.serpAnalysis.contentGaps || []).map(g => `   • ${g}`).join('\n')}
 `;
     }
 
@@ -299,14 +299,14 @@ export async function* writeArticleStream(
 ═══════════════════════════════════════════════════════
 
 📈 Target Woordenaantal: ${targetWordCount} woorden (gebaseerd op top 10 concurrentie analyse)
-   - Concurrenten gemiddeld: ${options.serpAnalysis.averageWordCount} woorden
+   - Concurrenten gemiddeld: ${options.serpAnalysis.averageWordCount || 1500} woorden
    - Jouw target: +20% = ${targetWordCount} woorden
 
 🎯 Top H2/H3 Headings van Concurrenten:
-${options.serpAnalysis.commonHeadings.map(h => `   • ${h}`).join('\n')}
+${(options.serpAnalysis.commonHeadings || []).map(h => `   • ${h}`).join('\n')}
 
 📝 Topics die Concurrenten Behandelen:
-${options.serpAnalysis.topicsCovered.map(t => `   • ${t}`).join('\n')}
+${(options.serpAnalysis.topicsCovered || []).map(t => `   • ${t}`).join('\n')}
 
 🔍 LSI Keywords (integreer NATUURLIJK):
 ${lsiKeywords.slice(0, 20).map(k => `   • ${k}`).join('\n')}
@@ -315,7 +315,7 @@ ${lsiKeywords.slice(0, 20).map(k => `   • ${k}`).join('\n')}
 ${paaQuestions.slice(0, 8).map(q => `   • ${q}`).join('\n')}
 
 💡 Content Gaps (kansen om beter te zijn):
-${options.serpAnalysis.contentGaps.map(g => `   • ${g}`).join('\n')}
+${(options.serpAnalysis.contentGaps || []).map(g => `   • ${g}`).join('\n')}
 `;
     }
 
