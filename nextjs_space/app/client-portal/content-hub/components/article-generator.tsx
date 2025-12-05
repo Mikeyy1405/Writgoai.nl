@@ -51,6 +51,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
   const [generateImages, setGenerateImages] = useState(true);
   const [includeFAQ, setIncludeFAQ] = useState(true);
   const [autoPublish, setAutoPublish] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const updatePhase = (index: number, updates: Partial<GenerationPhase>) => {
     setPhases(prev => prev.map((phase, i) => 
@@ -58,7 +59,34 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
     ));
   };
 
+  const handleCancel = async () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    
+    setGenerating(false);
+    setProgress(0);
+    setPhases(prev => prev.map(phase => ({ 
+      ...phase, 
+      status: phase.status === 'in-progress' ? 'pending' : phase.status 
+    })));
+    
+    toast.info('Generatie geannuleerd');
+    
+    // Reset artikel status in database
+    try {
+      await fetch(`/api/content-hub/articles/${article.id}/cancel`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Failed to reset article status:', error);
+    }
+  };
+
   const handleGenerate = async () => {
+    const controller = new AbortController();
+    setAbortController(controller);
     setGenerating(true);
     setProgress(0);
 
@@ -78,6 +106,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
           includeFAQ,
           autoPublish,
         }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -99,6 +128,11 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         onComplete();
       }, 1000);
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Request was cancelled');
+        return;
+      }
+      
       console.error('Generation error:', error);
       toast.error(error.message || 'Failed to generate article');
       
@@ -108,6 +142,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         updatePhase(currentPhaseIndex, { status: 'failed', message: error.message });
       }
     } finally {
+      setAbortController(null);
       setGenerating(false);
     }
   };
@@ -273,10 +308,10 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         <CardFooter className="flex justify-end gap-2">
           <Button 
             variant="outline" 
-            onClick={onClose}
-            disabled={generating}
+            onClick={generating ? handleCancel : onClose}
+            disabled={false}
           >
-            {progress === 100 ? 'Close' : 'Cancel'}
+            {progress === 100 ? 'Sluiten' : generating ? 'Annuleren' : 'Annuleren'}
           </Button>
           {progress === 0 && (
             <Button 
@@ -287,12 +322,12 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
               {generating ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
+                  Genereren...
                 </>
               ) : (
                 <>
                   <PenTool className="h-4 w-4" />
-                  Start Generation
+                  Start Generatie
                 </>
               )}
             </Button>
