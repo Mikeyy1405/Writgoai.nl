@@ -3,13 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-
-const LATE_DEV_API_KEY = process.env.LATE_DEV_API_KEY;
-const LATE_DEV_API_URL = 'https://getlate.dev/api/v1';
+import { getLateDevAccountsByProfile, createLateDevProfile } from '@/lib/late-dev-api';
 
 /**
  * Get connected accounts for a project
  * GET /api/client/late-dev/accounts?projectId=xxx
+ * Automatically creates a Late.dev profile if one doesn't exist
  */
 export async function GET(req: NextRequest) {
   try {
@@ -39,10 +38,44 @@ export async function GET(req: NextRequest) {
         id: projectId,
         clientId: client.id,
       },
+      include: {
+        socialMediaConfig: true,
+      },
     });
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Ensure we have a Late.dev profile for this project (auto-create if needed)
+    let profileId = project.socialMediaConfig?.lateDevProfileId;
+    
+    if (!profileId) {
+      console.log('[Late.dev Accounts] No profile found, creating one...');
+      const profileResult = await createLateDevProfile(project.name, project.id);
+      
+      if (!profileResult) {
+        return NextResponse.json(
+          { error: 'Failed to create Late.dev profile' },
+          { status: 500 }
+        );
+      }
+
+      profileId = profileResult.profileId;
+
+      // Save profile ID in database
+      await prisma.socialMediaConfig.upsert({
+        where: { projectId },
+        create: {
+          projectId,
+          lateDevProfileId: profileResult.profileId,
+          lateDevProfileName: profileResult.name,
+        },
+        update: {
+          lateDevProfileId: profileResult.profileId,
+          lateDevProfileName: profileResult.name,
+        },
+      });
     }
 
     // Get stored accounts from our database
@@ -57,29 +90,18 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Also fetch latest data from Late.dev API to sync
+    // Fetch latest data from Late.dev API for this specific profile
     let lateDevAccounts: any[] = [];
     try {
-      const response = await fetch(`${LATE_DEV_API_URL}/accounts`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${LATE_DEV_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        lateDevAccounts = data.accounts || data || [];
-      }
+      lateDevAccounts = await getLateDevAccountsByProfile(profileId);
     } catch (error) {
-      console.error('[Late.dev] Failed to fetch accounts:', error);
+      console.error('[Late.dev] Failed to fetch accounts from API:', error);
     }
 
     // Merge stored accounts with latest data from Late.dev
     const accounts = storedAccounts.map(account => {
       const lateDevAccount = lateDevAccounts.find(
-        (a: any) => a.id === account.lateDevProfileId
+        (a: any) => a._id === account.lateDevProfileId
       );
 
       return {
