@@ -283,12 +283,12 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
               }
 
               // Update phase
-              if (phaseIndex !== -1) {
+              if (phaseIndex !== -1 && phaseIndex < phases.length) {
                 if (data.status === 'in-progress') {
                   phaseStartTimes[phaseIndex] = Date.now();
                   updatePhase(phaseIndex, {
                     status: 'in-progress',
-                    message: data.message || phases[phaseIndex].message,
+                    message: data.message || phases[phaseIndex]?.message,
                   });
                 } else if (data.status === 'completed') {
                   const duration = phaseStartTimes[phaseIndex] 
