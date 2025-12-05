@@ -31,6 +31,7 @@ import {
   Link,
   DollarSign,
   Package,
+  Sparkles,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -65,6 +66,9 @@ export const baseNavItems: NavigationItem[] = [
   
   // Content Hub - Simplified single entry point
   { label: 'Content Hub', href: '/client-portal/content-hub', icon: Globe },
+  
+  // AI Writer Studio - NEW
+  { label: 'AI Writer', href: '/client-portal/ai-writer', icon: Sparkles },
   
   // Social Media Suite - Single unified page
   { label: 'Social Media Suite', href: '/client-portal/social-media-suite', icon: Share2 },
