@@ -54,8 +54,9 @@ export default function ContentPreview({
 
   // Strip markdown code blocks like ```html from content
   const stripMarkdownCodeBlocks = (text: string): string => {
-    // Remove markdown code block markers like ```html, ```javascript, etc.
-    return text.replace(/```[\w]*\n?/g, '').trim();
+    // Remove markdown code block markers (both opening and closing)
+    // Handles: ```html, ```javascript, ``` etc.
+    return text.replace(/```[\w]*\n?([\s\S]*?)```/g, '$1').replace(/```[\w]*\n?/g, '').trim();
   };
 
   // Strip HTML tags for plain text version (safe since content is AI-generated, not user input)

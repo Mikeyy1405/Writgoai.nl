@@ -100,16 +100,29 @@ export default function AIWriterPage() {
 
     try {
       // Strip markdown code blocks from content before saving
-      const cleanedContent = generatedContent.replace(/```[\w]*\n?/g, '').trim();
+      const cleanedContent = generatedContent
+        .replace(/```[\w]*\n?([\s\S]*?)```/g, '$1')
+        .replace(/```[\w]*\n?/g, '')
+        .trim();
+      
+      // Extract plain text using DOMParser for safer HTML parsing
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(cleanedContent, 'text/html');
+      const plainText = doc.body.textContent || '';
+      
+      // Prepare secondary keywords safely
+      const secondaryKeywords = config.secondaryKeywords 
+        ? config.secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean)
+        : [];
       
       // Prepare the data for saving
       const saveData = {
         type: config.contentType,
         title: config.topic,
-        content: cleanedContent.replace(/<[^>]*>/g, ''), // Plain text
+        content: plainText, // Plain text
         contentHtml: cleanedContent, // HTML version
         metaDesc: metaDescription,
-        keywords: [config.keywords, ...config.secondaryKeywords.split(',').map(k => k.trim())].filter(Boolean),
+        keywords: [config.keywords, ...secondaryKeywords].filter(Boolean),
         projectId: config.projectId || undefined,
         wordCount: contentStats.wordCount,
       };
@@ -131,13 +144,13 @@ export default function AIWriterPage() {
       // Dismiss loading toast
       toast.dismiss(loadingToast);
       
-      // Show success message
-      toast.success('Content opgeslagen! Je wordt doorgestuurd naar de editor...');
+      // Show success message and redirect
+      toast.success('Content opgeslagen! Je wordt doorgestuurd naar de editor...', {
+        duration: 2000,
+      });
 
-      // Redirect to editor after a short delay
-      setTimeout(() => {
-        router.push(`/client-portal/content-library/${savedItem.id}/edit`);
-      }, 1000);
+      // Redirect to editor immediately after success toast is shown
+      router.push(`/client-portal/content-library/${savedItem.id}/edit`);
     } catch (error: any) {
       console.error('Save error:', error);
       toast.dismiss(loadingToast);
