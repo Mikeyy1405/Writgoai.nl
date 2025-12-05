@@ -39,36 +39,25 @@ export interface ArticleResult {
 }
 
 /**
- * Clean AI response by removing markdown code blocks
- * Uses multiple strategies to extract valid JSON from various response formats
+ * Clean HTML response by removing markdown artifacts
  */
-function cleanJsonResponse(content: string): string {
+function cleanHtmlResponse(content: string): string {
   let cleaned = content.trim();
   
-  // Strategy 1: Extract from markdown code blocks (most common)
-  const codeBlockPatterns = [
-    /```json\s*\n?([\s\S]*?)\n?\s*```/i,
-    /```\s*\n?([\s\S]*?)\n?\s*```/,
-    /`{3,}json\s*\n?([\s\S]*?)\n?\s*`{3,}/i,
-  ];
+  // Remove markdown code blocks
+  cleaned = cleaned
+    .replace(/^```html?\s*\n?/gi, '')
+    .replace(/\n?```\s*$/gi, '')
+    .replace(/^```\s*\n?/gi, '')
+    .trim();
   
-  for (const pattern of codeBlockPatterns) {
-    const match = cleaned.match(pattern);
-    if (match && match[1]) {
-      cleaned = match[1].trim();
-      break;
+  // Find first HTML tag if there's preamble text
+  if (!cleaned.startsWith('<')) {
+    const firstTag = cleaned.match(/<[a-z]/i);
+    if (firstTag && firstTag.index !== undefined) {
+      console.log(`[Article Writer] Stripping ${firstTag.index} chars of preamble`);
+      cleaned = cleaned.substring(firstTag.index);
     }
-  }
-  
-  // Strategy 2: Remove leading/trailing backticks
-  cleaned = cleaned.replace(/^`+/, '').replace(/`+$/, '').trim();
-  
-  // Strategy 3: Find first { and last } - extract JSON object
-  const firstBrace = cleaned.indexOf('{');
-  const lastBrace = cleaned.lastIndexOf('}');
-  
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
   }
   
   return cleaned;
@@ -88,170 +77,82 @@ function countWords(html: string): number {
 }
 
 /**
- * Build system prompt for article generation
+ * Build system prompt for article generation (pure HTML output)
  */
 function buildSystemPrompt(language: string): string {
-  return `You are an expert SEO content writer creating articles in ${language.toUpperCase()}.
+  return `Je bent een expert SEO content writer die in het ${language.toUpperCase()} schrijft.
 
-CRITICAL OUTPUT RULES:
-1. Return ONLY a valid JSON object - NO markdown, NO code blocks, NO backticks
-2. Start your response with { and end with }
-3. Escape all special characters in strings properly (\\n for newlines, \\" for quotes)
-4. The content field contains HTML - escape it properly for JSON
-5. Keep response compact - no unnecessary whitespace
+KRITISCH - OUTPUT REGELS:
+1. Retourneer ALLEEN pure HTML content
+2. GEEN JSON wrapper
+3. GEEN markdown code blocks  
+4. GEEN \`\`\` backticks
+5. Begin direct met <p> en eindig met </p>
 
-REQUIRED JSON STRUCTURE:
-{
-  "content": "<p>HTML article content here...</p>",
-  "metaTitle": "SEO title max 60 chars",
-  "metaDescription": "Meta description max 160 chars",
-  "excerpt": "Short summary",
-  "suggestedImages": ["image description 1", "image description 2"]
-}`;
+HTML FORMAT:
+- Gebruik alleen deze tags: <p>, <h2>, <h3>, <ul>, <ol>, <li>, <a>, <strong>, <em>
+- Begin altijd met een <p> tag
+- Gebruik H2 voor hoofdsecties
+- Gebruik H3 voor subsecties
+- Eindig altijd met </p>`;
 }
 
 /**
- * Parse article response with multiple fallback strategies
+ * Generate meta title from article title
  */
-function parseArticleResponse(rawContent: string, title: string, keywords: string[]): any {
-  // Clean the response
-  let cleaned = cleanJsonResponse(rawContent);
-  
-  // Try direct parse
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    console.log('[Article Writer] Direct parse failed, trying repair...');
+function generateMetaTitle(title: string, keywords: string[]): string {
+  let metaTitle = title;
+  if (metaTitle.length > 60) {
+    metaTitle = metaTitle.substring(0, 57) + '...';
   }
-  
-  // Try to repair
-  try {
-    const repaired = repairIncompleteJson(cleaned);
-    return JSON.parse(repaired);
-  } catch (e) {
-    console.log('[Article Writer] Repair failed, trying aggressive extraction...');
-  }
-  
-  // Aggressive extraction - search for content field
-  // This regex matches: "content":"..." followed by either "," or "}"
-  // Capturing group 1 contains the actual content value
-  const contentMatch = rawContent.match(/"content"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"|\"\s*\})/);
-  if (contentMatch && contentMatch[1]) {
-    const extractedContent = contentMatch[1]
-      .replace(/\\n/g, '\n')
-      .replace(/\\"/g, '"')
-      .replace(/\\\\/g, '\\');
-    
-    if (extractedContent.length > MIN_CONTENT_LENGTH) {
-      console.log('[Article Writer] Extracted content field directly');
-      return {
-        content: extractedContent,
-        metaTitle: title.substring(0, 60),
-        metaDescription: `Lees meer over ${keywords[0] || title}`.substring(0, 160),
-        // Create safe text-only excerpt by removing all HTML tags
-        // Note: This is for display only, not for sanitizing user input
-        excerpt: extractedContent.substring(0, 300).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
-        suggestedImages: [],
-      };
-    }
-  }
-  
-  // Everything failed
-  throw new Error('Could not parse article content from AI response');
+  return metaTitle;
 }
 
 /**
- * Attempt to repair incomplete JSON by closing unclosed structures
- * ONLY adds closing brackets - NEVER removes content
+ * Generate meta description from HTML content
  */
-function repairIncompleteJson(content: string): string {
-  let repaired = content.trim();
-  
-  // Count brackets (outside strings)
-  let openBraces = 0;
-  let openBrackets = 0;
-  let inString = false;
-  let escapeNext = false;
-  
-  for (let i = 0; i < repaired.length; i++) {
-    const char = repaired[i];
-    
-    if (escapeNext) {
-      escapeNext = false;
-      continue;
-    }
-    
-    if (char === '\\') {
-      escapeNext = true;
-      continue;
-    }
-    
-    if (char === '"' && !inString) {
-      inString = true;
-    } else if (char === '"' && inString) {
-      inString = false;
-    }
-    
-    if (!inString) {
-      if (char === '{') openBraces++;
-      else if (char === '}') openBraces--;
-      else if (char === '[') openBrackets++;
-      else if (char === ']') openBrackets--;
-    }
+function generateMetaDescription(html: string, keywords: string[]): string {
+  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (text.length > 160) {
+    return text.substring(0, 157) + '...';
   }
-  
-  // If we're in a string, close it
-  if (inString) {
-    repaired += '"';
-  }
-  
-  // Close arrays
-  while (openBrackets > 0) {
-    repaired += ']';
-    openBrackets--;
-  }
-  
-  // Close objects
-  while (openBraces > 0) {
-    repaired += '}';
-    openBraces--;
-  }
-  
-  return repaired;
+  return text;
 }
+
+/**
+ * Generate excerpt from HTML content
+ */
+function generateExcerpt(html: string): string {
+  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (text.length > 300) {
+    return text.substring(0, 297) + '...';
+  }
+  return text;
+}
+
+
 
 /**
  * Generate a complete article with SEO optimization
- * Implements comprehensive SEO masterprompt with E-E-A-T optimization
- * Includes retry logic for JSON parsing failures
+ * Now returns pure HTML instead of JSON to avoid truncation issues
  */
 export async function writeArticle(
   options: ArticleWriteOptions
 ): Promise<ArticleResult> {
-  const MAX_RETRIES = 3;
-  let lastError: Error | null = null;
+  const { title, keywords, targetWordCount, tone = 'professional', language = 'nl' } = options;
   
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      console.log(`[Article Writer] Attempt ${attempt}/${MAX_RETRIES}: ${options.title}`);
-      
-      const { title, keywords, targetWordCount, tone = 'professional', language = 'nl' } = options;
-      
-      // Adjust max_tokens based on attempt (smaller on retry = more chance of complete JSON)
-      const adjustedMaxTokens = attempt === 1 
-        ? Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER)
-        : Math.min(targetWordCount * RETRY_TOKEN_MULTIPLIER, RETRY_MAX_TOKENS);
-      
-      // Build comprehensive context from SERP analysis
-      let serpContext = '';
-      let lsiKeywords: string[] = [];
-      let paaQuestions: string[] = [];
-      
-      if (options.serpAnalysis) {
-        lsiKeywords = options.serpAnalysis.lsiKeywords || [];
-        paaQuestions = options.serpAnalysis.paaQuestions || [];
-        
-        serpContext = `
+  console.log(`[Article Writer] Writing article: ${title}`);
+  
+  // Build comprehensive context from SERP analysis
+  let serpContext = '';
+  let lsiKeywords: string[] = [];
+  let paaQuestions: string[] = [];
+  
+  if (options.serpAnalysis) {
+    lsiKeywords = options.serpAnalysis.lsiKeywords || [];
+    paaQuestions = options.serpAnalysis.paaQuestions || [];
+    
+    serpContext = `
 ═══════════════════════════════════════════════════════
 📊 SERP ANALYSE RESULTATEN
 ═══════════════════════════════════════════════════════
@@ -275,10 +176,9 @@ ${paaQuestions.slice(0, 8).map(q => `   • ${q}`).join('\n')}
 💡 Content Gaps (kansen om beter te zijn):
 ${(options.serpAnalysis.contentGaps || []).map(g => `   • ${g}`).join('\n')}
 `;
-      }
+  }
 
-      // Create comprehensive SEO masterprompt
-      const prompt = `Je bent een expert SEO content writer die artikelen schrijft die HOOG ranken in Google.
+  const userPrompt = `Schrijf een uitgebreid SEO-geoptimaliseerd artikel over: "${title}"
 
 ═══════════════════════════════════════════════════════
 🎯 ARTIKEL OPDRACHT
@@ -368,64 +268,54 @@ ${options.internalLinks ? '✅ 4-6 interne links met natuurlijke ankerteksten' :
 ✅ H1 NIET herhaald in body
 ✅ FAQ sectie met ${paaQuestions.length} PAA vragen
 
-═══════════════════════════════════════════════════════
-📤 OUTPUT FORMAT
-═══════════════════════════════════════════════════════
+Schrijf nu het complete artikel in HTML formaat:`;
 
-IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response must be a valid JSON object:
-{
-  "content": "Full article content in HTML",
-  "metaTitle": "SEO-optimized meta title (max 60 chars)",
-  "metaDescription": "SEO-optimized meta description (max 160 chars)",
-  "excerpt": "Short excerpt (150 words)",
-  ${options.includeFAQ ? '"faqSection": [{"question": "...", "answer": "..."}], ' : ''}
-  "suggestedImages": ["Image description 1", "Image description 2"]
-}`;
+  try {
+    const response = await sendChatCompletion({
+      model: TEXT_MODELS.CLAUDE_45,
+      messages: [
+        { role: 'system', content: buildSystemPrompt(language) },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 12000, // Verhoogde limiet voor lange artikelen
+      stream: false,
+    });
 
-      const response = await sendChatCompletion({
-        model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for best content quality
-        messages: [
-          { role: 'system', content: buildSystemPrompt(language) },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.7,
-        max_tokens: adjustedMaxTokens,
-        stream: false,
-      });
-
-      const rawContent = (response as any).choices[0]?.message?.content || '';
-      
-      if (!rawContent || rawContent.length < 100) {
-        throw new Error('Empty or too short response from AI');
-      }
-      
-      // Parse with multiple strategies
-      const result = parseArticleResponse(rawContent, title, keywords);
-      
-      if (!result.content || result.content.length < MIN_CONTENT_LENGTH) {
-        throw new Error('Parsed content too short');
-      }
-      
-      // Calculate word count
-      const wordCount = countWords(result.content);
-      
-      console.log(`[Article Writer] Success! Generated ${wordCount} words`);
-      
-      return { ...result, wordCount };
-      
-    } catch (error: any) {
-      lastError = error;
-      console.error(`[Article Writer] Attempt ${attempt} failed:`, error.message);
-      
-      if (attempt < MAX_RETRIES) {
-        console.log(`[Article Writer] Retrying in 2 seconds...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
+    let html = (response as any).choices[0]?.message?.content || '';
+    
+    if (!html || html.length < 100) {
+      throw new Error('Empty response from AI');
     }
+
+    console.log(`[Article Writer] Received ${html.length} characters`);
+
+    // Clean up any markdown artifacts
+    html = cleanHtmlResponse(html);
+
+    // Validate we have actual HTML
+    if (!html.includes('<p>') && !html.includes('<h')) {
+      throw new Error('Response does not contain valid HTML');
+    }
+
+    // Count words
+    const wordCount = countWords(html);
+
+    console.log(`[Article Writer] Success! Generated ${wordCount} words`);
+
+    return {
+      content: html,
+      metaTitle: generateMetaTitle(title, keywords),
+      metaDescription: generateMetaDescription(html, keywords),
+      excerpt: generateExcerpt(html),
+      suggestedImages: [],
+      wordCount,
+    };
+
+  } catch (error: any) {
+    console.error('[Article Writer] Error:', error.message);
+    throw error; // Don't use fallback - let caller handle retry
   }
-  
-  // All retries failed - throw error, NO fallback with 14 words!
-  throw new Error(lastError?.message || 'Article generation failed after multiple attempts');
 }
 
 /**
@@ -571,19 +461,7 @@ ${options.internalLinks ? '✅ 4-6 interne links met natuurlijke ankerteksten' :
 ✅ H1 NIET herhaald in body
 ✅ FAQ sectie met ${paaQuestions.length} PAA vragen
 
-═══════════════════════════════════════════════════════
-📤 OUTPUT FORMAT
-═══════════════════════════════════════════════════════
-
-IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response must be a valid JSON object:
-{
-  "content": "Full article content in HTML",
-  "metaTitle": "SEO-optimized meta title (max 60 chars)",
-  "metaDescription": "SEO-optimized meta description (max 160 chars)",
-  "excerpt": "Short excerpt (150 words)",
-  ${options.includeFAQ ? '"faqSection": [{"question": "...", "answer": "..."}], ' : ''}
-  "suggestedImages": ["Image description 1", "Image description 2"]
-}`;
+Schrijf nu het complete artikel in HTML formaat:`;
 
     // Stream response from AIML API
     const stream = await sendStreamingChatCompletion({
@@ -593,7 +471,7 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
         { role: 'user', content: prompt },
       ],
       temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER),
+      max_tokens: 12000, // Verhoogde limiet voor lange artikelen
       stream: true,
     });
 
@@ -610,17 +488,26 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
     // Parse the complete response
     yield { type: 'status', content: 'Processing article...' };
     
-    // Parse with multiple strategies
-    const result = parseArticleResponse(fullResponse, title, keywords);
+    // Clean HTML response
+    let html = cleanHtmlResponse(fullResponse);
+    
+    // Validate we have actual HTML
+    if (!html.includes('<p>') && !html.includes('<h')) {
+      throw new Error('Response does not contain valid HTML');
+    }
     
     // Count words in content
-    const wordCount = countWords(result.content);
+    const wordCount = countWords(html);
 
     // Yield final result
     yield { 
       type: 'complete', 
       content: JSON.stringify({
-        ...result,
+        content: html,
+        metaTitle: generateMetaTitle(title, keywords),
+        metaDescription: generateMetaDescription(html, keywords),
+        excerpt: generateExcerpt(html),
+        suggestedImages: [],
         wordCount,
       })
     };
@@ -642,6 +529,29 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
     yield { type: 'error', content: userMessage };
     throw new Error(userMessage);
   }
+}
+
+/**
+ * Clean simple JSON responses (for FAQ generation)
+ */
+function cleanSimpleJsonResponse(content: string): string {
+  let cleaned = content.trim();
+  
+  // Remove markdown code blocks
+  cleaned = cleaned
+    .replace(/^```json?\s*\n?/gi, '')
+    .replace(/\n?```\s*$/gi, '')
+    .trim();
+  
+  // Find first { and last } - extract JSON object
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+  
+  return cleaned;
 }
 
 /**
@@ -674,7 +584,7 @@ Answers should be concise, informative, and start directly with the answer (no "
     const response = await sendChatCompletion({
       model: TEXT_MODELS.CLAUDE_45,
       messages: [
-        { role: 'system', content: buildSystemPrompt(language) },
+        { role: 'system', content: `You are an expert FAQ generator. Return ONLY valid JSON with no markdown code blocks.` },
         { role: 'user', content: prompt },
       ],
       temperature: 0.7,
@@ -684,37 +594,24 @@ Answers should be concise, informative, and start directly with the answer (no "
 
     const rawContent = (response as any).choices[0]?.message?.content || '{}';
     
-    // Parse JSON response with repair logic
-    let result;
+    // Clean and parse JSON response
+    const cleanedContent = cleanSimpleJsonResponse(rawContent);
     
-    // Clean the JSON once before attempting to parse
-    const cleanedContent = cleanJsonResponse(rawContent);
-    
-    // Try parsing with progressive repair attempts
     try {
-      result = JSON.parse(cleanedContent);
-    } catch (firstParseError) {
-      // Try to repair incomplete JSON
-      console.log('[Article Writer] FAQ first parse failed, attempting repair...');
-      try {
-        const repairedContent = repairIncompleteJson(cleanedContent);
-        result = JSON.parse(repairedContent);
-        console.log('[Article Writer] FAQ JSON repair successful');
-      } catch (repairError) {
-        console.error('[Article Writer] FAQ JSON repair failed:', repairError);
-        console.error('[Article Writer] FAQ raw content preview:', rawContent.substring(0, 500));
-        
-        // Return default FAQ if parsing fails
-        return [
-          {
-            question: `Wat is ${title}?`,
-            answer: `${title} is een belangrijk onderwerp dat verschillende aspecten behandelt. Voor meer informatie, lees het volledige artikel hierboven.`,
-          },
-        ];
-      }
+      const result = JSON.parse(cleanedContent);
+      return result.faqs || [];
+    } catch (parseError) {
+      console.error('[Article Writer] FAQ JSON parsing failed:', parseError);
+      console.error('[Article Writer] FAQ raw content preview:', rawContent.substring(0, 500));
+      
+      // Return default FAQ if parsing fails
+      return [
+        {
+          question: `Wat is ${title}?`,
+          answer: `${title} is een belangrijk onderwerp dat verschillende aspecten behandelt. Voor meer informatie, lees het volledige artikel hierboven.`,
+        },
+      ];
     }
-
-    return result.faqs || [];
   } catch (error: any) {
     console.error('[Article Writer] FAQ generation error:', error);
     
