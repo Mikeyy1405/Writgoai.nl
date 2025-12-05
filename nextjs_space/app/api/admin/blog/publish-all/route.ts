@@ -29,14 +29,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Define the condition for posts that need publishing
+    const needsPublishingCondition = {
+      OR: [
+        { status: { not: 'published' } },
+        { publishedAt: null },
+      ],
+    };
+
     // Get all posts that need to be published
     const postsToPublish = await prisma.blogPost.findMany({
-      where: {
-        OR: [
-          { status: { not: 'published' } },
-          { publishedAt: null },
-        ],
-      },
+      where: needsPublishingCondition,
       select: {
         id: true,
         title: true,
@@ -49,12 +52,7 @@ export async function POST(req: NextRequest) {
 
     // Update all posts
     const publishedCount = await prisma.blogPost.updateMany({
-      where: {
-        OR: [
-          { status: { not: 'published' } },
-          { publishedAt: null },
-        ],
-      },
+      where: needsPublishingCondition,
       data: {
         status: 'published',
         publishedAt: new Date(),

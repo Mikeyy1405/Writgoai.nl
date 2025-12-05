@@ -116,11 +116,16 @@ export default function BlogArticleGenerator({ onClose, onComplete }: BlogArticl
               const data = JSON.parse(line.slice(6));
               
               if (data.phase) {
-                // Update current phase
-                const phaseIndex = phases.findIndex(p => p.name === data.phase);
-                if (phaseIndex !== -1) {
-                  updatePhase(phaseIndex, { status: 'in-progress', message: data.message });
-                }
+                // Update current phase - use callback to avoid stale closure
+                setPhases(currentPhases => {
+                  const phaseIndex = currentPhases.findIndex(p => p.name === data.phase);
+                  if (phaseIndex !== -1) {
+                    return currentPhases.map((phase, i) => 
+                      i === phaseIndex ? { ...phase, status: 'in-progress' as const, message: data.message } : phase
+                    );
+                  }
+                  return currentPhases;
+                });
               }
 
               if (data.progress) {
@@ -128,15 +133,23 @@ export default function BlogArticleGenerator({ onClose, onComplete }: BlogArticl
               }
 
               if (data.phaseComplete) {
-                const phaseIndex = phases.findIndex(p => p.name === data.phaseComplete);
-                if (phaseIndex !== -1) {
-                  updatePhase(phaseIndex, { status: 'completed' });
-                }
+                // Update completed phase - use callback to avoid stale closure
+                setPhases(currentPhases => {
+                  const phaseIndex = currentPhases.findIndex(p => p.name === data.phaseComplete);
+                  if (phaseIndex !== -1) {
+                    return currentPhases.map((phase, i) => 
+                      i === phaseIndex ? { ...phase, status: 'completed' as const } : phase
+                    );
+                  }
+                  return currentPhases;
+                });
               }
 
               if (data.complete) {
-                // All phases complete
-                phases.forEach((_, i) => updatePhase(i, { status: 'completed' }));
+                // All phases complete - use callback to avoid stale closure
+                setPhases(currentPhases => 
+                  currentPhases.map(phase => ({ ...phase, status: 'completed' as const }))
+                );
                 setProgress(100);
                 toast.success('Artikel succesvol gegenereerd!');
                 setTimeout(() => {

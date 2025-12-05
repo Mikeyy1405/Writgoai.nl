@@ -134,12 +134,31 @@ BELANGRIJK:
             const titleMatch = content.match(/<h1[^>]*>(.*?)<\/h1>/i);
             const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '') : articleTitle;
 
-            const slug = title
+            let slug = title
               .toLowerCase()
               .normalize('NFD')
               .replace(/[\u0300-\u036f]/g, '')
               .replace(/[^a-z0-9]+/g, '-')
               .replace(/^-+|-+$/g, '');
+
+            // Check for existing slug and add suffix if needed
+            const existingPost = await prisma.blogPost.findFirst({
+              where: {
+                slug: {
+                  startsWith: slug,
+                },
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+            });
+
+            if (existingPost) {
+              // Extract number from existing slug if present
+              const match = existingPost.slug.match(/-(\d+)$/);
+              const nextNumber = match ? parseInt(match[1]) + 1 : 2;
+              slug = `${slug}-${nextNumber}`;
+            }
 
             const paragraphs = content.match(/<p>(.*?)<\/p>/gi) || [];
             const excerpt = paragraphs
@@ -167,7 +186,7 @@ BELANGRIJK:
             const post = await prisma.blogPost.create({
               data: {
                 title,
-                slug: `${slug}-${Date.now()}`, // Add timestamp to ensure uniqueness
+                slug,
                 excerpt,
                 content,
                 category: category || 'AI & Content Marketing',

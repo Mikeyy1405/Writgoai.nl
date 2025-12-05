@@ -43,9 +43,9 @@ export default function AgencyContentHubPage() {
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
 
   useEffect(() => {
-    // Check if user is admin
+    // Check if user is admin - using role-based check only for consistency
     if (status === 'authenticated') {
-      const isAdmin = session?.user?.email === 'info@writgo.nl' || session?.user?.role === 'admin';
+      const isAdmin = session?.user?.role === 'admin';
       if (!isAdmin) {
         toast.error('Alleen admins hebben toegang tot deze pagina');
         router.push('/dashboard/agency');
