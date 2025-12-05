@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ArticleGenerator from './article-generator';
-import InlineGenerationStatus from './inline-generation-status';
+import InlineGenerationStatus from '@/components/content-hub/inline-generation-status';
 import { GenerationPhase } from '@/lib/content-hub/generation-types';
 
 interface Article {
@@ -144,11 +144,11 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
     setGenerating(true);
     setProgress(0);
 
-    try {
-      // Phase 1: Research
-      updatePhase(0, { status: 'in-progress', message: 'Analyzing SERP...' });
-      setProgress(10);
+    const startTime = Date.now();
+    const phaseStartTimes: { [key: number]: number } = {};
+    let sseParseErrors = 0; // Track parse errors locally
 
+    try {
       const response = await fetch('/api/content-hub/write-article', {
         method: 'POST',
         headers: {
@@ -159,29 +159,124 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
           generateImages: true,
           includeFAQ: true,
           autoPublish: false,
+          streamUpdates: true, // Enable SSE streaming
         }),
         signal: controller.signal,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate article');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate article');
       }
 
-      const data = await response.json();
+      // Handle SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-      // Mark all phases as completed
-      setPhases(prev => prev.map(phase => ({ 
-        ...phase, 
-        status: 'completed' 
-      })));
-      setProgress(100);
+      if (!reader) {
+        throw new Error('Cannot receive real-time updates. Please try again.');
+      }
 
-      toast.success('Article generated successfully!');
-      
-      setTimeout(() => {
-        onUpdate?.();
-        setGenerating(false);
-      }, 1000);
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
+        }
+        
+        if (done) break;
+
+        // Process complete SSE messages
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              // Map backend steps to frontend phases
+              let phaseIndex = -1;
+              if (data.step === 'serp-analysis') {
+                phaseIndex = 0;
+              } else if (data.step === 'content-generation') {
+                phaseIndex = 1;
+              } else if (data.step === 'seo-optimization') {
+                phaseIndex = 2;
+              } else if (data.step === 'saving' || data.step === 'publishing') {
+                phaseIndex = 3;
+              }
+
+              // Update progress
+              if (data.progress !== undefined) {
+                setProgress(data.progress);
+              }
+
+              // Update phase
+              if (phaseIndex !== -1) {
+                if (data.status === 'in-progress') {
+                  phaseStartTimes[phaseIndex] = Date.now();
+                  updatePhase(phaseIndex, {
+                    status: 'in-progress',
+                    message: data.message || phases[phaseIndex].message,
+                  });
+                } else if (data.status === 'completed') {
+                  const duration = phaseStartTimes[phaseIndex] 
+                    ? Math.floor((Date.now() - phaseStartTimes[phaseIndex]) / 1000)
+                    : undefined;
+                  
+                  updatePhase(phaseIndex, {
+                    status: 'completed',
+                    message: data.message || '✅ Completed',
+                    duration,
+                    metrics: data.metrics,
+                  });
+                } else if (data.status === 'failed') {
+                  const duration = phaseStartTimes[phaseIndex]
+                    ? Math.floor((Date.now() - phaseStartTimes[phaseIndex]) / 1000)
+                    : undefined;
+                  
+                  updatePhase(phaseIndex, {
+                    status: 'failed',
+                    message: data.message || data.error || 'Error occurred',
+                    duration,
+                  });
+                }
+              }
+
+              // Handle completion
+              if (data.step === 'complete') {
+                if (data.status === 'success') {
+                  setProgress(100);
+                  const totalDuration = Math.floor((Date.now() - startTime) / 1000);
+                  toast.success(`Article generated successfully in ${totalDuration}s!`);
+                  
+                  setTimeout(() => {
+                    onUpdate?.();
+                    setGenerating(false);
+                  }, 1500);
+                } else if (data.status === 'error') {
+                  throw new Error(data.error || 'Article completion failed');
+                }
+                break;
+              }
+
+              // Handle error
+              if (data.step === 'error') {
+                throw new Error(data.error || data.message || 'Article generation failed');
+              }
+            } catch (parseError) {
+              console.error('Error parsing SSE data:', parseError);
+              // Only show toast if this happens repeatedly (more than 3 times)
+              sseParseErrors++;
+              if (sseParseErrors > 3) {
+                toast.error('Error receiving updates. Check browser console.');
+              }
+            }
+          }
+        }
+      }
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('Request was cancelled');
@@ -194,7 +289,15 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
       // Mark current phase as failed
       const currentPhaseIndex = phases.findIndex(p => p.status === 'in-progress');
       if (currentPhaseIndex !== -1) {
-        updatePhase(currentPhaseIndex, { status: 'failed', message: error.message });
+        const duration = phaseStartTimes[currentPhaseIndex]
+          ? Math.floor((Date.now() - phaseStartTimes[currentPhaseIndex]) / 1000)
+          : undefined;
+        
+        updatePhase(currentPhaseIndex, { 
+          status: 'failed', 
+          message: error.message || 'An error occurred',
+          duration,
+        });
       }
     } finally {
       setAbortController(null);

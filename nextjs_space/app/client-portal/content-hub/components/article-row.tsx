@@ -27,7 +27,7 @@ import RewriteModal from './rewrite-modal';
 import EditArticleModal from './edit-article-modal';
 import DeleteConfirmationModal from './delete-confirmation-modal';
 import { isInProgress } from '@/lib/content-hub/article-utils';
-import InlineGenerationStatus from './inline-generation-status';
+import InlineGenerationStatus from '@/components/content-hub/inline-generation-status';
 import { GenerationPhase } from '@/lib/content-hub/generation-types';
 
 interface Article {

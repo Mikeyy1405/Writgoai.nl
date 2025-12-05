@@ -78,7 +78,7 @@ export default function InlineGenerationStatus({
       <div className="flex flex-wrap gap-2">
         {phases.map((phase, index) => (
           <div 
-            key={index}
+            key={phase.name}
             className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs ${
               phase.status === 'in-progress' ? 'bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700' :
               phase.status === 'completed' ? 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700' :
