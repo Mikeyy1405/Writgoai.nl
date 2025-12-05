@@ -74,7 +74,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
     
     toast.info('Generatie geannuleerd');
     
-    // Reset artikel status in database
+    // Reset article status in database
     try {
       await fetch(`/api/content-hub/articles/${article.id}/cancel`, {
         method: 'POST',
