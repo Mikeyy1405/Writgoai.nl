@@ -7,6 +7,14 @@
 import { generateSmartImage } from '../smart-image-generator';
 import { searchFreeStockImages, type StockImageResult } from '../free-stock-images';
 
+// SEO constants for image optimization
+const SEO_ALT_TEXT_MAX_WORDS = 15;
+const SEO_ALT_TEXT_MAX_CHARS = 125;
+const SEO_ALT_TEXT_MAX_CHARS_TRUNCATE = 122;
+const SEO_FILENAME_MAX_LENGTH = 50;
+const DEFAULT_IMAGE_EXTENSION = '.jpg';
+const DEFAULT_IMAGES_PER_ARTICLE = 7;
+
 export interface ImageGenerationOptions {
   prompt: string;
   model?: 'flux-pro' | 'flux-dev' | 'flux-schnell';
@@ -172,14 +180,14 @@ export function generateAltText(
     altText = `${description} - ${keyword}`;
   }
   
-  // Ensure alt text is between 10-15 words and max 125 characters
+  // Ensure alt text is between 10-15 words and max 125 characters (SEO best practice)
   const words = altText.split(/\s+/);
-  if (words.length > 15) {
-    altText = words.slice(0, 15).join(' ');
+  if (words.length > SEO_ALT_TEXT_MAX_WORDS) {
+    altText = words.slice(0, SEO_ALT_TEXT_MAX_WORDS).join(' ');
   }
   
-  if (altText.length > 125) {
-    altText = altText.substring(0, 122) + '...';
+  if (altText.length > SEO_ALT_TEXT_MAX_CHARS) {
+    altText = altText.substring(0, SEO_ALT_TEXT_MAX_CHARS_TRUNCATE) + '...';
   }
   
   return altText;
@@ -199,7 +207,7 @@ export function generateSEOFilename(
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
-    .substring(0, 50);
+    .substring(0, SEO_FILENAME_MAX_LENGTH);
   
   const cleanKeyword = keyword
     .toLowerCase()
@@ -207,7 +215,7 @@ export function generateSEOFilename(
     .replace(/\s+/g, '-');
   
   // Format: keyword-description-01.jpg
-  return `${cleanKeyword}-${cleanDescription}-${String(index + 1).padStart(2, '0')}.jpg`;
+  return `${cleanKeyword}-${cleanDescription}-${String(index + 1).padStart(2, '0')}${DEFAULT_IMAGE_EXTENSION}`;
 }
 
 /**
@@ -269,7 +277,7 @@ export async function generateArticleImagesWithAltText(
   articleTitle: string,
   articleContent: string,
   keywords: string[],
-  targetImageCount: number = 7
+  targetImageCount: number = DEFAULT_IMAGES_PER_ARTICLE
 ): Promise<GeneratedImage[]> {
   console.log(`[Image Generator] Generating ${targetImageCount} images for article...`);
   

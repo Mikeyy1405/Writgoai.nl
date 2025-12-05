@@ -10,6 +10,11 @@ import { generateMetaTitle, generateMetaDescription, generateSlug, generateArtic
 import { autoSaveToLibrary } from '@/lib/content-library-helper';
 import { publishToWordPress, getWordPressConfig } from '@/lib/wordpress-publisher';
 
+// Constants for article generation
+const MIN_WORD_COUNT = 1000; // Minimum recommended word count
+const MIN_TARGET_WORD_COUNT = 1200; // Minimum target word count for generation
+const TARGET_IMAGE_COUNT = 7; // Target number of images per article
+
 /**
  * POST /api/content-hub/write-article
  * Generate a complete article with all SEO elements
@@ -141,8 +146,8 @@ export async function POST(req: NextRequest) {
 
     let articleResult;
     try {
-      // Ensure minimum word count of 1200
-      const targetWordCount = Math.max(serpAnalysis.suggestedLength || 1400, 1200);
+      // Ensure minimum word count
+      const targetWordCount = Math.max(serpAnalysis.suggestedLength || 1400, MIN_TARGET_WORD_COUNT);
       
       console.log(`[Content Hub] Starting content generation - Target: ${targetWordCount} words`);
       
@@ -159,8 +164,8 @@ export async function POST(req: NextRequest) {
       console.log(`[Content Hub] Content generated successfully: ${articleResult.wordCount} words`);
       
       // Validate word count meets minimum requirement
-      if (articleResult.wordCount < 1000) {
-        console.warn(`[Content Hub] Warning: Article is only ${articleResult.wordCount} words (minimum 1000 recommended)`);
+      if (articleResult.wordCount < MIN_WORD_COUNT) {
+        console.warn(`[Content Hub] Warning: Article is only ${articleResult.wordCount} words (minimum ${MIN_WORD_COUNT} recommended)`);
       }
       
     } catch (writeError: any) {
@@ -243,7 +248,7 @@ export async function POST(req: NextRequest) {
           article.title,
           articleResult.content,
           article.keywords,
-          7 // Target 7 images total
+          TARGET_IMAGE_COUNT
         );
         
         console.log(`[Content Hub] Generated ${articleImages.length} article images (featured + ${articleImages.length - 1} additional)`);

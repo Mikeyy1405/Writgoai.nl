@@ -4,12 +4,14 @@
  * Uses real web search via AIML API for accurate SERP data
  */
 
-import { webSearch, sendChatCompletion } from '../aiml-chat-client';
-import { TEXT_MODELS } from '../aiml-api';
+import { sendChatCompletion } from '../aiml-chat-client';
+import { TEXT_MODELS, webSearch } from '../aiml-api';
 
-// Timeout duration for SERP analysis operations
+// Constants for SERP analysis
 const SERP_ANALYSIS_TIMEOUT_MS = 45000; // 45 seconds (increased for web search)
 const TIMEOUT_ERROR_MESSAGE = 'SERP_ANALYSIS_TIMEOUT';
+const MIN_SUGGESTED_LENGTH = 1000; // Minimum word count for articles
+const MAX_SUGGESTED_LENGTH = 2000; // Maximum word count for articles
 
 /**
  * Helper function to wrap an async operation with a timeout
@@ -118,7 +120,7 @@ Maak een uitgebreide SERP analyse voor dit keyword. Analyseer de top 10 Google r
 4. **LSI Keywords** (Latent Semantic Indexing - 15-20 gerelateerde zoekwoorden en variaties)
 5. **People Also Ask vragen** (6-8 vragen die mensen stellen)
 6. **Content gaps** (wat ontbreekt er in huidige content? 3-5 gaps)
-7. **Aanbevolen woordenaantal** (gemiddelde + 20%, minimaal 1000, maximaal 2000)
+7. **Aanbevolen woordenaantal** (gemiddelde + 20%, minimaal ${MIN_SUGGESTED_LENGTH}, maximaal ${MAX_SUGGESTED_LENGTH})
 
 BELANGRIJK:
 - Wees realistisch over woordenaantallen (niet te hoog inschatten)
@@ -134,7 +136,7 @@ Respond in JSON format:
   "lsiKeywords": string[] (15-20 LSI keywords),
   "paaQuestions": string[] (6-8 PAA vragen),
   "contentGaps": string[] (3-5 gaps),
-  "suggestedLength": number (gemiddelde + 20%, min 1000, max 2000)
+  "suggestedLength": number (gemiddelde + 20%, min ${MIN_SUGGESTED_LENGTH}, max ${MAX_SUGGESTED_LENGTH})
 }`;
 
     try {
@@ -173,7 +175,7 @@ Respond in JSON format:
         
         // Validate and cap the suggested length
         if (analysis.suggestedLength) {
-          analysis.suggestedLength = Math.min(Math.max(analysis.suggestedLength, 1000), 2000);
+          analysis.suggestedLength = Math.min(Math.max(analysis.suggestedLength, MIN_SUGGESTED_LENGTH), MAX_SUGGESTED_LENGTH);
         }
         
         // Ensure we have LSI keywords

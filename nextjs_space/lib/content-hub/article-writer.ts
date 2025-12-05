@@ -7,6 +7,10 @@ import { sendChatCompletion, sendStreamingChatCompletion } from '../aiml-chat-cl
 import { TEXT_MODELS } from '../aiml-api';
 import type { SERPAnalysis } from './serp-analyzer';
 
+// Constants for article generation
+const TOKEN_MULTIPLIER = 3; // Multiplier for target word count to max tokens
+const MAX_TOKENS_LIMIT = 16000; // Maximum tokens to prevent exceeding model limits
+
 export interface ArticleWriteOptions {
   title: string;
   keywords: string[];
@@ -205,7 +209,7 @@ Respond in JSON format:
         },
       ],
       temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * 3, 16000), // Increased for longer articles
+      max_tokens: Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT), // Increased for longer articles
       stream: false,
     });
 
