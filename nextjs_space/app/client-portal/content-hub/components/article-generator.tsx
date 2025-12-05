@@ -106,13 +106,18 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
     const startTime = Date.now();
     let phaseStartTime = startTime;
 
+    // Track all intervals for cleanup
+    let researchInterval: NodeJS.Timeout | null = null;
+    let contentInterval: NodeJS.Timeout | null = null;
+    let seoInterval: NodeJS.Timeout | null = null;
+
     try {
       // Phase 1: Research & Analysis
       updatePhase(0, { status: 'in-progress', message: 'Analyzing SERP and gathering sources...' });
       setProgress(5);
 
       // Simulate progress updates during research phase
-      const researchInterval = setInterval(() => {
+      researchInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + RESEARCH_INCREMENT, RESEARCH_MAX));
       }, RESEARCH_INTERVAL_MS);
 
@@ -130,7 +135,10 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         signal: controller.signal,
       });
 
-      clearInterval(researchInterval);
+      if (researchInterval) {
+        clearInterval(researchInterval);
+        researchInterval = null;
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -154,13 +162,17 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       });
       
       // Simulate progress during content generation
-      const contentInterval = setInterval(() => {
+      contentInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + CONTENT_INCREMENT, CONTENT_MAX));
       }, CONTENT_INTERVAL_MS);
 
       // Wait for the response data
       const data = await response.json();
-      clearInterval(contentInterval);
+      
+      if (contentInterval) {
+        clearInterval(contentInterval);
+        contentInterval = null;
+      }
 
       const phase2Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
       updatePhase(1, { 
@@ -178,12 +190,16 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       });
       
       // Simulate progress
-      const seoInterval = setInterval(() => {
+      seoInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + SEO_INCREMENT, SEO_MAX));
       }, SEO_INTERVAL_MS);
       
       await new Promise(resolve => setTimeout(resolve, VISUAL_FEEDBACK_DELAY_MS)); // Give time for visual feedback
-      clearInterval(seoInterval);
+      
+      if (seoInterval) {
+        clearInterval(seoInterval);
+        seoInterval = null;
+      }
 
       const phase3Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
       updatePhase(2, { 
@@ -246,6 +262,11 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         });
       }
     } finally {
+      // Clean up all intervals to prevent memory leaks
+      if (researchInterval) clearInterval(researchInterval);
+      if (contentInterval) clearInterval(contentInterval);
+      if (seoInterval) clearInterval(seoInterval);
+      
       setAbortController(null);
       setGenerating(false);
     }

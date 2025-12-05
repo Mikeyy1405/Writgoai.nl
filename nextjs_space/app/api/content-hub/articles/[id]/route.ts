@@ -123,26 +123,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
 
-    // Delete the article
-    await prisma.contentHubArticle.delete({
-      where: { id: params.id },
-    });
-
-    // Update the site's total articles count
-    await prisma.contentHubSite.update({
-      where: { id: article.siteId },
-      data: {
-        totalArticles: {
-          decrement: 1,
-        },
-        // Also decrement completed articles if it was completed
-        ...(article.status === 'published' && {
-          completedArticles: {
+    // Delete the article and update site counts in a transaction to ensure atomicity
+    await prisma.$transaction([
+      prisma.contentHubArticle.delete({
+        where: { id: params.id },
+      }),
+      prisma.contentHubSite.update({
+        where: { id: article.siteId },
+        data: {
+          totalArticles: {
             decrement: 1,
           },
-        }),
-      },
-    });
+          // Also decrement completed articles if it was completed
+          ...(article.status === 'published' && {
+            completedArticles: {
+              decrement: 1,
+            },
+          }),
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
