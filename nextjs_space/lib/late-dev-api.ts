@@ -296,6 +296,11 @@ export function getPlatformDisplayName(platform: string): string {
     instagram: 'Instagram',
     twitter: 'X (Twitter)',
     youtube: 'YouTube',
+    tiktok: 'TikTok',
+    pinterest: 'Pinterest',
+    reddit: 'Reddit',
+    bluesky: 'Bluesky',
+    threads: 'Threads',
   };
   return names[platform.toLowerCase()] || platform;
 }
@@ -310,6 +315,11 @@ export function getPlatformColor(platform: string): string {
     instagram: '#E4405F',
     twitter: '#000000',
     youtube: '#FF0000',
+    tiktok: '#000000',
+    pinterest: '#E60023',
+    reddit: '#FF4500',
+    bluesky: '#0085FF',
+    threads: '#000000',
   };
   return colors[platform.toLowerCase()] || '#6B7280';
 }
