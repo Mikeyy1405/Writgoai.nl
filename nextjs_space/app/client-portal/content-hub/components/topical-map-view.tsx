@@ -35,6 +35,9 @@ interface Article {
   searchIntent: string | null;
   wordpressUrl: string | null;
   publishedAt: string | null;
+  content: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
 }
 
 interface Cluster {
