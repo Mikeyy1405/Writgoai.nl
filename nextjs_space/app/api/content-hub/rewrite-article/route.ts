@@ -126,7 +126,8 @@ Geef het herschreven artikel terug in JSON formaat:
     // Parse JSON response with robust error handling
     let rewrittenData;
     try {
-      const content = response.content || response.choices?.[0]?.message?.content || '';
+      const chatResponse = response as { choices?: Array<{ message?: { content?: string } }> };
+      const content = chatResponse.choices?.[0]?.message?.content || '';
       
       if (!content) {
         throw new Error('Geen content ontvangen van AI model');
@@ -158,7 +159,8 @@ Geef het herschreven artikel terug in JSON formaat:
       }
     } catch (parseError: any) {
       console.error('[Content Hub] Failed to parse rewrite response:', parseError);
-      console.error('[Content Hub] Raw response:', response.content || response);
+      const chatResponse = response as { choices?: Array<{ message?: { content?: string } }> };
+      console.error('[Content Hub] Raw response:', chatResponse.choices?.[0]?.message?.content || response);
       return NextResponse.json(
         { 
           error: 'Kon herschreven content niet verwerken',
