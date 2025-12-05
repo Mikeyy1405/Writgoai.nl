@@ -16,9 +16,11 @@ import {
   Info,
   Upload,
   ExternalLink,
+  Settings,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ArticleGenerator from './article-generator';
+import InlineGenerationStatus from './inline-generation-status';
 
 interface Article {
   id: string;
@@ -39,9 +41,25 @@ interface ArticleRowProps {
   onUpdate?: () => void;
 }
 
+interface GenerationPhase {
+  name: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+  message?: string;
+  duration?: number;
+}
+
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const [showGenerator, setShowGenerator] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [phases, setPhases] = useState<GenerationPhase[]>([
+    { name: 'Research & Analysis', status: 'pending' },
+    { name: 'Content Generation', status: 'pending' },
+    { name: 'SEO & Images', status: 'pending' },
+    { name: 'Publishing', status: 'pending' },
+  ]);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const getStatusIcon = () => {
     switch (article.status) {
@@ -92,6 +110,102 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
         {intent}
       </Badge>
     );
+  };
+
+  const updatePhase = (index: number, updates: Partial<GenerationPhase>) => {
+    setPhases(prev => prev.map((phase, i) => 
+      i === index ? { ...phase, ...updates } : phase
+    ));
+  };
+
+  const handleCancel = async () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    
+    setGenerating(false);
+    setProgress(0);
+    setPhases(prev => prev.map(phase => ({ 
+      ...phase, 
+      status: phase.status === 'in-progress' ? 'pending' : phase.status 
+    })));
+    
+    toast.info('Generation cancelled');
+    
+    // Reset article status in database
+    try {
+      await fetch(`/api/content-hub/articles/${article.id}/cancel`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Failed to reset article status:', error);
+      toast.warning('Generation stopped, but status could not be reset');
+    }
+  };
+
+  const handleGenerate = async () => {
+    const controller = new AbortController();
+    setAbortController(controller);
+    setGenerating(true);
+    setProgress(0);
+
+    try {
+      // Phase 1: Research
+      updatePhase(0, { status: 'in-progress', message: 'Analyzing SERP...' });
+      setProgress(10);
+
+      const response = await fetch('/api/content-hub/write-article', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articleId: article.id,
+          generateImages: true,
+          includeFAQ: true,
+          autoPublish: false,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate article');
+      }
+
+      const data = await response.json();
+
+      // Mark all phases as completed
+      setPhases(prev => prev.map(phase => ({ 
+        ...phase, 
+        status: 'completed' 
+      })));
+      setProgress(100);
+
+      toast.success('Article generated successfully!');
+      
+      setTimeout(() => {
+        onUpdate?.();
+        setGenerating(false);
+      }, 1000);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Request was cancelled');
+        return;
+      }
+      
+      console.error('Generation error:', error);
+      toast.error(error.message || 'Failed to generate article');
+      
+      // Mark current phase as failed
+      const currentPhaseIndex = phases.findIndex(p => p.status === 'in-progress');
+      if (currentPhaseIndex !== -1) {
+        updatePhase(currentPhaseIndex, { status: 'failed', message: error.message });
+      }
+    } finally {
+      setAbortController(null);
+      setGenerating(false);
+    }
   };
 
   const handlePublish = async () => {
@@ -188,15 +302,25 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
 
             {/* Actions */}
             <div className="flex-shrink-0 flex gap-2">
-              {article.status === 'pending' && (
-                <Button 
-                  size="sm" 
-                  onClick={() => setShowGenerator(true)}
-                  className="gap-2"
-                >
-                  <Play className="h-4 w-4" />
-                  Generate
-                </Button>
+              {article.status === 'pending' && !generating && (
+                <>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowGenerator(true)}
+                    className="gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleGenerate}
+                    className="gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    Generate
+                  </Button>
+                </>
               )}
               
               {article.status === 'published' && !article.wordpressUrl && (
@@ -241,10 +365,20 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
               )}
             </div>
           </div>
+
+          {/* Inline Generation Status */}
+          {generating && (
+            <InlineGenerationStatus
+              progress={progress}
+              phases={phases}
+              onCancel={handleCancel}
+              generating={generating}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Article Generator Modal */}
+      {/* Article Generator Modal - For Settings Only */}
       {showGenerator && (
         <ArticleGenerator
           article={article}
