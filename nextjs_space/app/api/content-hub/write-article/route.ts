@@ -4,16 +4,129 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { writeArticle, generateFAQ } from '@/lib/content-hub/article-writer';
 import { analyzeSERP, gatherSources } from '@/lib/content-hub/serp-analyzer';
-import { generateFeaturedImage } from '@/lib/content-hub/image-generator';
+import { generateFeaturedImage, insertImagesInContent } from '@/lib/content-hub/image-generator';
 import { findLinkOpportunities } from '@/lib/content-hub/internal-linker';
 import { generateMetaTitle, generateMetaDescription, generateSlug, generateArticleSchema, generateYoastMeta } from '@/lib/content-hub/seo-optimizer';
 import { autoSaveToLibrary } from '@/lib/content-library-helper';
 import { publishToWordPress, getWordPressConfig } from '@/lib/wordpress-publisher';
+import { searchBolcomProducts, getBolcomProductDetails, type BolcomCredentials } from '@/lib/bolcom-api';
 
 // Constants for article generation
 const MIN_WORD_COUNT = 1000; // Minimum recommended word count
 const MIN_TARGET_WORD_COUNT = 1200; // Minimum target word count for generation
 const TARGET_IMAGE_COUNT = 7; // Target number of images per article
+
+/**
+ * Fetch sitemap URLs from a WordPress site
+ */
+async function fetchSitemapUrls(siteUrl: string): Promise<Array<{ url: string; title: string }>> {
+  try {
+    const sitemapUrl = `${siteUrl}/sitemap.xml`;
+    console.log(`[Sitemap] Fetching from: ${sitemapUrl}`);
+    
+    const response = await fetch(sitemapUrl, {
+      headers: {
+        'User-Agent': 'WritgoAI Content Hub Bot',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[Sitemap] Failed to fetch: ${response.status}`);
+      return [];
+    }
+
+    const xml = await response.text();
+    
+    // Parse XML and extract URLs (simple regex for <loc> tags)
+    const locMatches = xml.match(/<loc>(.*?)<\/loc>/g);
+    if (!locMatches) {
+      console.warn('[Sitemap] No URLs found in sitemap');
+      return [];
+    }
+
+    const urls = locMatches
+      .map(loc => loc.replace(/<\/?loc>/g, '').trim())
+      .filter(url => url.startsWith('http'))
+      .map(url => ({
+        url,
+        title: url.split('/').pop() || url, // Use last segment as title
+      }))
+      .slice(0, 50); // Limit to 50 URLs for performance
+
+    console.log(`[Sitemap] Found ${urls.length} URLs`);
+    return urls;
+  } catch (error: any) {
+    console.error('[Sitemap] Error fetching sitemap:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Generate HTML for Bol.com product boxes
+ */
+function generateBolcomProductBoxes(products: any[]): string {
+  if (!products || products.length === 0) return '';
+
+  return products.map(product => {
+    const price = product.bestOffer?.price || product.offer?.price || 'N/A';
+    const image = product.images?.[0]?.url || product.image?.url || '';
+    const rating = product.rating || 0;
+    const stars = '⭐'.repeat(Math.round(rating));
+
+    return `
+<div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; background: #f9fafb;">
+  <div style="display: flex; gap: 1.5rem; align-items: start;">
+    ${image ? `<img src="${image}" alt="${product.title}" style="width: 150px; height: 150px; object-fit: contain; border-radius: 4px;" />` : ''}
+    <div style="flex: 1;">
+      <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem;">
+        <a href="${product.affiliateLink || product.url}" target="_blank" rel="nofollow sponsored" style="color: #1d4ed8; text-decoration: none;">
+          ${product.title}
+        </a>
+      </h3>
+      ${product.description ? `<p style="margin: 0.5rem 0; color: #6b7280; font-size: 0.875rem;">${product.description.substring(0, 150)}...</p>` : ''}
+      <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
+        <span style="font-size: 1.5rem; font-weight: bold; color: #059669;">€${price}</span>
+        ${rating > 0 ? `<span style="color: #f59e0b;">${stars} (${rating.toFixed(1)})</span>` : ''}
+      </div>
+      <a href="${product.affiliateLink || product.url}" target="_blank" rel="nofollow sponsored" 
+         style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #0066c0; color: white; text-decoration: none; border-radius: 4px; font-weight: 600;">
+        Bekijk op Bol.com →
+      </a>
+    </div>
+  </div>
+</div>`;
+  }).join('\n');
+}
+
+/**
+ * Insert Bol.com products into content after H2 sections
+ */
+function insertBolcomProductsInContent(html: string, productBoxesHtml: string): string {
+  if (!productBoxesHtml) return html;
+
+  // Split content by H2 tags
+  const h2Regex = /<h2/gi;
+  const sections = html.split(h2Regex);
+  
+  if (sections.length <= 2) {
+    // Not enough sections, append at end
+    return html + '\n' + productBoxesHtml;
+  }
+
+  // Insert products after the 2nd or 3rd H2 section
+  const insertPosition = Math.min(3, sections.length - 1);
+  let result = sections[0];
+
+  for (let i = 1; i < sections.length; i++) {
+    result += '<h2' + sections[i];
+    
+    if (i === insertPosition) {
+      result += '\n' + productBoxesHtml + '\n';
+    }
+  }
+
+  return result;
+}
 
 /**
  * POST /api/content-hub/write-article
@@ -131,6 +244,21 @@ export async function POST(req: NextRequest) {
       sources = { sources: [], insights: [] };
     }
 
+    // Fetch sitemap for internal linking
+    console.log('[Content Hub] Fetching sitemap for internal links...');
+    const sitemapUrls = await fetchSitemapUrls(article.site.wordpressUrl);
+    
+    // Generate internal link suggestions
+    let internalLinks: Array<{ url: string; anchorText: string }> = [];
+    if (sitemapUrls.length > 0) {
+      // Select top 5-7 relevant URLs for internal linking
+      internalLinks = sitemapUrls.slice(0, 7).map(page => ({
+        url: page.url,
+        anchorText: page.title.replace(/-/g, ' ').replace(/\//g, ''),
+      }));
+      console.log(`[Content Hub] Found ${internalLinks.length} internal link opportunities`);
+    }
+
     // Phase 2: Writing
     console.log('[Content Hub] Phase 2: Content Generation');
     await prisma.contentHubArticle.update({
@@ -140,16 +268,21 @@ export async function POST(req: NextRequest) {
         researchData: {
           serpAnalysis,
           sources,
+          sitemapUrls: sitemapUrls.slice(0, 20), // Store first 20 for reference
         } as any,
       },
     });
 
     let articleResult;
     try {
-      // Ensure minimum word count
-      const targetWordCount = Math.max(serpAnalysis.suggestedLength || 1400, MIN_TARGET_WORD_COUNT);
+      // Ensure word count is between 1200-1500 words based on SERP
+      const serpWordCount = serpAnalysis.suggestedLength || 1400;
+      const targetWordCount = Math.min(
+        Math.max(serpWordCount, MIN_TARGET_WORD_COUNT),
+        1500 // Cap at 1500 to avoid too long articles
+      );
       
-      console.log(`[Content Hub] Starting content generation - Target: ${targetWordCount} words`);
+      console.log(`[Content Hub] Starting content generation - Target: ${targetWordCount} words (SERP suggested: ${serpWordCount})`);
       
       articleResult = await writeArticle({
         title: article.title,
@@ -158,6 +291,7 @@ export async function POST(req: NextRequest) {
         tone: 'professional',
         language: 'nl',
         serpAnalysis,
+        internalLinks: internalLinks.length > 0 ? internalLinks : undefined,
         includeFAQ,
       });
 
@@ -258,23 +392,93 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Phase 4: Enhance content with images and products
+    console.log('[Content Hub] Phase 4: Enhancing content with images and products');
+    let enhancedContent = articleResult.content;
+
+    // Insert images into content (after H2 sections)
+    if (articleImages.length > 0) {
+      console.log(`[Content Hub] Inserting ${articleImages.length} images into content...`);
+      enhancedContent = insertImagesInContent(enhancedContent, articleImages);
+    }
+
+    // Try to add Bol.com products if client has credentials
+    try {
+      // Check if client has active projects with Bol.com enabled
+      const bolcomProject = await prisma.project.findFirst({
+        where: {
+          clientId: client.id,
+          bolcomEnabled: true,
+          bolcomClientId: { not: null },
+          bolcomClientSecret: { not: null },
+        },
+        select: {
+          bolcomClientId: true,
+          bolcomClientSecret: true,
+          bolcomAffiliateId: true,
+        },
+      });
+
+      if (bolcomProject?.bolcomClientId && bolcomProject?.bolcomClientSecret) {
+        console.log('[Content Hub] Searching for Bol.com products...');
+        
+        const bolcomCredentials: BolcomCredentials = {
+          clientId: bolcomProject.bolcomClientId,
+          clientSecret: bolcomProject.bolcomClientSecret,
+          affiliateId: bolcomProject.bolcomAffiliateId || undefined,
+        };
+
+        // Search for products related to the article
+        const searchResults = await searchBolcomProducts(
+          article.keywords[0] || article.title,
+          bolcomCredentials,
+          {
+            resultsPerPage: 3,
+            countryCode: 'NL',
+          }
+        );
+
+        if (searchResults.results.length > 0) {
+          console.log(`[Content Hub] Found ${searchResults.results.length} Bol.com products`);
+          
+          // Get detailed info for products
+          const productDetails = await Promise.all(
+            searchResults.results.slice(0, 3).map(p =>
+              getBolcomProductDetails(p.ean, bolcomCredentials).catch(() => null)
+            )
+          );
+
+          const validProducts = productDetails.filter(p => p !== null);
+          
+          if (validProducts.length > 0) {
+            const productBoxesHtml = generateBolcomProductBoxes(validProducts);
+            enhancedContent = insertBolcomProductsInContent(enhancedContent, productBoxesHtml);
+            console.log(`[Content Hub] Added ${validProducts.length} Bol.com product boxes to content`);
+          }
+        }
+      }
+    } catch (bolcomError: any) {
+      console.error('[Content Hub] Bol.com integration error:', bolcomError.message);
+      // Continue without Bol.com products - not critical
+    }
+
     // Generate schema markup
     const schema = generateArticleSchema({
       title: article.title,
       excerpt: articleResult.excerpt,
-      content: articleResult.content,
+      content: enhancedContent,
       imageUrl: featuredImageUrl || undefined,
     });
 
     // Save article
     const generationTime = Math.floor((Date.now() - startTime) / 1000);
     
-    // First update with generated content
+    // First update with enhanced content
     await prisma.contentHubArticle.update({
       where: { id: articleId },
       data: {
         status: 'published',
-        content: articleResult.content,
+        content: enhancedContent,
         metaTitle,
         metaDescription,
         featuredImage: featuredImageUrl,
@@ -307,8 +511,8 @@ export async function POST(req: NextRequest) {
       clientId: client.id,
       type: 'blog',
       title: article.title,
-      content: articleResult.content,
-      contentHtml: articleResult.content, // Both are HTML in this case
+      content: enhancedContent,
+      contentHtml: enhancedContent, // Use enhanced content with images and products
       category: 'blog',
       tags: article.keywords,
       description: articleResult.excerpt,
@@ -350,7 +554,7 @@ export async function POST(req: NextRequest) {
             wpConfig,
             {
               title: article.title,
-              content: articleResult.content,
+              content: enhancedContent, // Use enhanced content with images and products
               excerpt: articleResult.excerpt,
               status: 'publish',
               tags: article.keywords,

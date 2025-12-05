@@ -108,18 +108,28 @@ export async function generateFeaturedImage(
   keywords: string[],
   options?: Partial<ImageGenerationOptions>
 ): Promise<GeneratedImage> {
-  // Create a descriptive prompt for the featured image
-  const prompt = `Professional, high-quality featured image for article titled "${articleTitle}". Related to: ${keywords.slice(0, 3).join(', ')}. Clean, modern style. Suitable for blog post header.`;
+  // Create ultra-realistic prompt for featured image
+  const keywordContext = keywords.slice(0, 3).join(', ');
+  const prompt = `Ultra realistic photograph, 8K quality, professional photography:
+Subject: ${articleTitle}
+Keywords: ${keywordContext}
+Style: Professional blog header, documentary photography, natural colors, sharp focus
+Setting: Real-world environment, natural lighting, authentic scene
+Technical: Shot on Sony A7R IV, 50mm lens, f/2.8, professional studio or natural daylight
+Quality: Hero image, photorealistic, magazine quality, suitable for article header
+Composition: Wide aspect ratio, centered subject, professional framing
+Exclude: NO cartoon, NO illustration, NO 3D render, NO digital art, NO text, NO watermarks`;
   
   return generateArticleImage({
     prompt,
     aspectRatio: '16:9',
+    model: 'flux-pro', // Force Flux Pro for featured images
     ...options,
   });
 }
 
 /**
- * Generate image prompts from article content
+ * Generate ultra-realistic image prompts from article content
  * Note: This function extracts text from HTML for use as AI image generation prompts only.
  * The output is never inserted back into HTML, so XSS concerns don't apply here.
  */
@@ -145,16 +155,32 @@ export function extractImagePrompts(
     .slice(0, maxImages);
   
   headings.forEach(heading => {
-    prompts.push(`Professional illustration for: ${heading}. Modern, clean style.`);
+    // Generate ultra-realistic, specific prompts for Flux Pro
+    prompts.push(generateUltraRealisticPrompt(heading, articleTitle));
   });
   
   // If we don't have enough headings, add a generic one
   if (prompts.length === 0) {
     const cleanTitle = articleTitle.replace(/[<>'"]/g, '').substring(0, 200);
-    prompts.push(`Professional image for article about: ${cleanTitle}`);
+    prompts.push(generateUltraRealisticPrompt(cleanTitle, articleTitle));
   }
   
   return prompts.slice(0, maxImages);
+}
+
+/**
+ * Generate ultra-realistic prompt for Flux Pro
+ * Optimized for photorealistic, documentary-style images
+ */
+function generateUltraRealisticPrompt(topic: string, context: string): string {
+  return `Ultra realistic photograph, 8K quality, professional photography:
+Subject: ${topic}
+Context: ${context}
+Style: Documentary photography, natural colors, sharp focus, professional composition
+Setting: Real-world authentic environment, natural lighting
+Technical: Shot on Sony A7R IV, 85mm lens, f/1.8, natural daylight, high dynamic range
+Quality: Photorealistic, crisp details, professional grade
+Exclude: NO cartoon, NO illustration, NO 3D render, NO digital art, NO text overlays, NO watermarks, NO logos`;
 }
 
 /**
@@ -322,6 +348,55 @@ export async function generateArticleImagesWithAltText(
   console.log(`[Image Generator] Total images: ${allImages.length} (${stockImages.length} stock, ${aiImages.length} AI)`);
   
   return allImages;
+}
+
+/**
+ * Insert images into article content after H2 sections
+ * Places images strategically throughout the article
+ */
+export function insertImagesInContent(
+  html: string,
+  images: GeneratedImage[]
+): string {
+  if (!images || images.length === 0) {
+    return html;
+  }
+
+  // Split content by H2 tags
+  const h2Regex = /<h2/gi;
+  const sections = html.split(h2Regex);
+  
+  if (sections.length <= 1) {
+    // No H2 sections, return original content
+    return html;
+  }
+
+  let result = sections[0]; // Intro section
+  let imageIndex = 0;
+
+  // Reconstruct content with images inserted after every 2-3 H2 sections
+  for (let i = 1; i < sections.length; i++) {
+    result += '<h2' + sections[i];
+
+    // Insert image after every 2 sections (or 3 for longer articles)
+    const insertFrequency = sections.length > 8 ? 3 : 2;
+    
+    if (i % insertFrequency === 0 && imageIndex < images.length) {
+      const image = images[imageIndex];
+      const altText = image.altText || `Afbeelding ${imageIndex + 1} bij artikel`;
+      
+      result += `
+<figure style="margin: 2rem 0; text-align: center;">
+  <img src="${image.url}" alt="${altText}" 
+       style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" 
+       loading="lazy" />
+  ${image.photographer ? `<figcaption style="margin-top: 0.5rem; font-size: 0.875rem; color: #666;">Foto: ${image.photographer}</figcaption>` : ''}
+</figure>`;
+      imageIndex++;
+    }
+  }
+
+  return result;
 }
 
 /**

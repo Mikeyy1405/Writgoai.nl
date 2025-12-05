@@ -89,12 +89,38 @@ KRITISCH - OUTPUT REGELS:
 4. GEEN \`\`\` backticks
 5. Begin direct met <p> en eindig met </p>
 
-HTML FORMAT:
-- Gebruik alleen deze tags: <p>, <h2>, <h3>, <ul>, <ol>, <li>, <a>, <strong>, <em>
+HTML FORMAT & CONTENT VARIATIE:
+- Gebruik deze tags: <p>, <h2>, <h3>, <ul>, <ol>, <li>, <a>, <strong>, <em>, <blockquote>, <table>, <tr>, <th>, <td>
 - Begin altijd met een <p> tag
 - Gebruik H2 voor hoofdsecties
 - Gebruik H3 voor subsecties
-- Eindig altijd met </p>`;
+- Eindig altijd met </p>
+
+VERPLICHTE CONTENT VARIATIE:
+- Gebruik bullet points (<ul><li>) voor opsommingen van voordelen, tips, of lijsten
+- Gebruik genummerde lijsten (<ol><li>) voor stappen of procedures
+- Voeg minimaal 1 tabel toe (<table>) met relevante vergelijkingen of data
+- Gebruik blockquotes (<blockquote>) voor belangrijke tips, quotes of highlights
+- Houd paragrafen KORT (max 3-4 zinnen per <p>)
+- Varieer tussen tekst, lijsten, tabellen en quotes voor betere leesbaarheid
+
+VOORBEELD STRUCTUUR:
+<p>Korte intro paragraaf...</p>
+<h2>Sectie titel</h2>
+<p>Korte tekst...</p>
+<ul>
+  <li>Belangrijk punt 1</li>
+  <li>Belangrijk punt 2</li>
+  <li>Belangrijk punt 3</li>
+</ul>
+<blockquote>💡 <strong>Pro tip:</strong> Belangrijke informatie of expert advies hier</blockquote>
+<h3>Subsectie</h3>
+<p>Meer details...</p>
+<table>
+  <tr><th>Aspect</th><th>Optie A</th><th>Optie B</th></tr>
+  <tr><td>Prijs</td><td>€99</td><td>€149</td></tr>
+  <tr><td>Rating</td><td>⭐⭐⭐⭐</td><td>⭐⭐⭐⭐⭐</td></tr>
+</table>`;
 }
 
 /**
