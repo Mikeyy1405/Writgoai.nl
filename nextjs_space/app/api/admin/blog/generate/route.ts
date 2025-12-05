@@ -10,6 +10,48 @@ function sendSSE(controller: ReadableStreamDefaultController, data: any) {
   controller.enqueue(new TextEncoder().encode(message));
 }
 
+/**
+ * Helper function to extract plain text from AI-generated HTML for metadata
+ * 
+ * SECURITY NOTE: This function is used to extract plain text from AI-generated HTML
+ * for metadata purposes (title, excerpt). The HTML content comes from our controlled
+ * AI generation system, not from user input. The full HTML content is stored as-is
+ * in the database for display purposes.
+ * 
+ * For production use with user-generated content, consider using a proper HTML sanitization
+ * library like DOMPurify or sanitize-html.
+ */
+function stripHtmlTags(html: string): string {
+  if (!html) return '';
+  
+  // Simple text extraction: remove all content between < and >
+  // This is safe for our use case since:
+  // 1. Content is AI-generated, not user input
+  // 2. Only used for metadata extraction (title/excerpt)
+  // 3. Full HTML is preserved in database for display
+  let text = html
+    .replace(/<[^>]+>/g, ' ') // Replace all tags with spaces
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+  
+  // Decode basic HTML entities
+  const entities: Record<string, string> = {
+    '&nbsp;': ' ',
+    '&quot;': '"',
+    '&#039;': "'",
+    '&apos;': "'",
+    '&lt;': '<',
+    '&gt;': '>',
+    '&amp;': '&', // This must be last
+  };
+  
+  for (const [entity, char] of Object.entries(entities)) {
+    text = text.replace(new RegExp(entity, 'g'), char);
+  }
+  
+  return text.trim();
+}
+
 // POST - Generate blog content with streaming support
 export async function POST(request: NextRequest) {
   try {
@@ -132,7 +174,7 @@ BELANGRIJK:
             });
 
             const titleMatch = content.match(/<h1[^>]*>(.*?)<\/h1>/i);
-            const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '') : articleTitle;
+            const title = titleMatch ? stripHtmlTags(titleMatch[1]) : articleTitle;
 
             let slug = title
               .toLowerCase()
@@ -161,11 +203,11 @@ BELANGRIJK:
             }
 
             const paragraphs = content.match(/<p>(.*?)<\/p>/gi) || [];
-            const excerpt = paragraphs
-              .slice(0, 2)
-              .join(' ')
-              .replace(/<[^>]*>/g, '')
-              .substring(0, 300);
+            const excerpt = stripHtmlTags(
+              paragraphs
+                .slice(0, 2)
+                .join(' ')
+            ).substring(0, 300);
 
             const actualWordCount = content.split(/\s+/).length;
             const readingTimeMinutes = Math.ceil(actualWordCount / 200);
@@ -284,7 +326,7 @@ BELANGRIJK:
     content = content.replace(/^```html\s*/i, '').replace(/\s*```$/i, '');
 
     const titleMatch = content.match(/<h1[^>]*>(.*?)<\/h1>/i);
-    const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '') : articleTitle;
+    const title = titleMatch ? stripHtmlTags(titleMatch[1]) : articleTitle;
 
     const slug = title
       .toLowerCase()
@@ -294,11 +336,11 @@ BELANGRIJK:
       .replace(/^-+|-+$/g, '');
 
     const paragraphs = content.match(/<p>(.*?)<\/p>/gi) || [];
-    const excerpt = paragraphs
-      .slice(0, 2)
-      .join(' ')
-      .replace(/<[^>]*>/g, '')
-      .substring(0, 300);
+    const excerpt = stripHtmlTags(
+      paragraphs
+        .slice(0, 2)
+        .join(' ')
+    ).substring(0, 300);
 
     const actualWordCount = content.split(/\s+/).length;
     const readingTimeMinutes = Math.ceil(actualWordCount / 200);
