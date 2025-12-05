@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AccountsTab from './components/accounts-tab';
 import PlanningTab from './components/planning-tab';
@@ -8,8 +7,6 @@ import CreatePostTab from './components/create-post-tab';
 import OverviewTab from './components/overview-tab';
 
 export default function SocialMediaSuitePage() {
-  const [activeTab, setActiveTab] = useState('accounts');
-
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -21,7 +18,7 @@ export default function SocialMediaSuitePage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue="accounts" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="accounts">🔗 Accounts</TabsTrigger>
           <TabsTrigger value="planning">📅 Planning</TabsTrigger>

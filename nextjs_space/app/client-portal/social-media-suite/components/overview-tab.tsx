@@ -211,7 +211,7 @@ export default function OverviewTab() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
-              <Select value={filter} onValueChange={(val: any) => setFilter(val)}>
+              <Select value={filter} onValueChange={(val: 'all' | 'draft' | 'scheduled' | 'published') => setFilter(val)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

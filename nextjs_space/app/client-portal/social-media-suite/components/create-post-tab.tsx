@@ -31,6 +31,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+const PLACEHOLDER_IMAGE_URL = 'https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=AI+Generated+Image';
+
 const PLATFORMS = [
   { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: '#0A66C2' },
   { id: 'facebook', name: 'Facebook', icon: Facebook, color: '#1877F2' },
@@ -116,7 +118,7 @@ Dit is een AI-gegenereerde post voor ${platformName}!
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Use a placeholder image
-      setImageUrl('https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=AI+Generated+Image');
+      setImageUrl(PLACEHOLDER_IMAGE_URL);
       toast.success('Afbeelding gegenereerd!', { id: 'image' });
     } catch (error) {
       console.error('Error generating image:', error);
