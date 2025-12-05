@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
       const stats = affiliateStats.get(affiliateId);
       stats.totalReferrals++;
       
-      if (referredClient && referredClient.subscriptionStatus === 'active') {
+      if (referredClient && (referredClient as any).subscriptionStatus === 'active') {
         stats.activeReferrals++;
       }
       
@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
     // Bereken totalen
     const activeReferralsCount = affiliatePrograms.filter(r => {
       const client = referredClientsMap.get(r.referredClientId);
-      return client && client.subscriptionStatus === 'active';
+      return client && (client as any).subscriptionStatus === 'active';
     }).length;
 
     const totalStats = {
