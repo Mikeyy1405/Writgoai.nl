@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Phase 3: SEO & Images
-    console.log('[Content Hub] Phase 3: SEO & Images');
+    console.log('[Content Hub] Phase 3: SEO Optimization & Image Generation');
     
     // Generate SEO metadata
     const metaTitle = generateMetaTitle(
@@ -220,18 +220,36 @@ export async function POST(req: NextRequest) {
     );
     const slug = generateSlug(article.title);
 
-    // Generate featured image
+    // Generate images (featured + article images)
     let featuredImageUrl = null;
+    let articleImages: any[] = [];
+    
     if (generateImages) {
       try {
+        console.log('[Content Hub] Generating featured image...');
         const featuredImage = await generateFeaturedImage(
           article.title,
           article.keywords,
           { useFreeStock: true }
         );
         featuredImageUrl = featuredImage.url;
+        console.log('[Content Hub] Featured image generated successfully');
+        
+        // Generate additional article images (6-8 total with stock photos)
+        console.log('[Content Hub] Searching for article images...');
+        const { generateArticleImagesWithAltText } = await import('@/lib/content-hub/image-generator');
+        
+        articleImages = await generateArticleImagesWithAltText(
+          article.title,
+          articleResult.content,
+          article.keywords,
+          7 // Target 7 images total
+        );
+        
+        console.log(`[Content Hub] Generated ${articleImages.length} article images (featured + ${articleImages.length - 1} additional)`);
       } catch (error) {
-        console.error('[Content Hub] Featured image generation failed:', error);
+        console.error('[Content Hub] Image generation failed:', error);
+        // Continue without images - not critical
       }
     }
 
@@ -260,6 +278,18 @@ export async function POST(req: NextRequest) {
         faqSection: faqSection as any,
         schemaMarkup: schema as any,
         generationTime,
+        researchData: {
+          ...((article.researchData as any) || {}),
+          serpAnalysis,
+          sources,
+          articleImages: articleImages.map(img => ({
+            url: img.url,
+            altText: img.altText,
+            filename: img.filename,
+            source: img.source,
+          })),
+          imageCount: articleImages.length,
+        } as any,
       },
     });
 
@@ -385,6 +415,9 @@ export async function POST(req: NextRequest) {
         contentId: saveResult.contentId || null,
         wordpressUrl,
         wordpressPostId,
+        imageCount: articleImages.length,
+        lsiKeywords: serpAnalysis.lsiKeywords?.length || 0,
+        paaQuestions: serpAnalysis.paaQuestions?.length || 0,
       },
     });
   } catch (error: any) {

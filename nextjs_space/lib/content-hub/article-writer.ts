@@ -184,8 +184,9 @@ Respond in JSON format:
     ... (${paaQuestions.length} vragen totaal)
   ],
   "suggestedImages": [
-    "Professional image suggestion 1 met alt-text keywords",
-    ... (6-8 image suggestions)
+    "Descriptive image prompt 1 (bijv: 'Dashboard met SEO analytics en ranking metrics')",
+    "Descriptive image prompt 2 (bijv: 'Team dat samenwerkt aan content strategie')",
+    ... (6-8 image suggestions - beschrijvend en specifiek)
   ]
 }
 

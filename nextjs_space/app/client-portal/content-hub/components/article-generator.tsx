@@ -240,7 +240,9 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         message: '✅ SEO & afbeeldingen geoptimaliseerd',
         duration: phase3Duration,
         metrics: {
-          images: generateImages ? 1 : 0,
+          images: data.article?.imageCount || (generateImages ? 1 : 0),
+          lsiKeywords: data.article?.lsiKeywords,
+          paaQuestions: data.article?.paaQuestions,
         }
       });
       setProgress(85);

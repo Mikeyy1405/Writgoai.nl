@@ -1,9 +1,11 @@
 /**
  * Image Generator for Content Hub
  * Generates featured images and article images using FLUX or free stock images
+ * Enhanced with Pexels/Unsplash integration and SEO-optimized alt text
  */
 
 import { generateSmartImage } from '../smart-image-generator';
+import { searchFreeStockImages, type StockImageResult } from '../free-stock-images';
 
 export interface ImageGenerationOptions {
   prompt: string;
@@ -16,6 +18,10 @@ export interface GeneratedImage {
   url: string;
   prompt: string;
   source: 'ai' | 'stock';
+  altText?: string; // SEO-optimized alt text
+  filename?: string; // SEO-optimized filename
+  photographer?: string;
+  photographerUrl?: string;
 }
 
 /**
@@ -141,6 +147,173 @@ export function extractImagePrompts(
   }
   
   return prompts.slice(0, maxImages);
+}
+
+/**
+ * Generate SEO-optimized alt text for an image
+ */
+export function generateAltText(
+  imageDescription: string,
+  keywords: string[]
+): string {
+  // Create natural alt text that includes keywords
+  const keyword = keywords[0] || '';
+  const description = imageDescription
+    .replace(/professional illustration for:/gi, '')
+    .replace(/professional image for:/gi, '')
+    .replace(/modern, clean style/gi, '')
+    .trim();
+  
+  // Format: "Descriptive text met keyword in natuurlijke zin"
+  let altText = description;
+  
+  // Add keyword if not already present
+  if (keyword && !altText.toLowerCase().includes(keyword.toLowerCase())) {
+    altText = `${description} - ${keyword}`;
+  }
+  
+  // Ensure alt text is between 10-15 words and max 125 characters
+  const words = altText.split(/\s+/);
+  if (words.length > 15) {
+    altText = words.slice(0, 15).join(' ');
+  }
+  
+  if (altText.length > 125) {
+    altText = altText.substring(0, 122) + '...';
+  }
+  
+  return altText;
+}
+
+/**
+ * Generate SEO-optimized filename for an image
+ */
+export function generateSEOFilename(
+  description: string,
+  keywords: string[],
+  index: number = 0
+): string {
+  // Create descriptive filename with keywords
+  const keyword = keywords[0] || 'image';
+  const cleanDescription = description
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .substring(0, 50);
+  
+  const cleanKeyword = keyword
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-');
+  
+  // Format: keyword-description-01.jpg
+  return `${cleanKeyword}-${cleanDescription}-${String(index + 1).padStart(2, '0')}.jpg`;
+}
+
+/**
+ * Search for stock images with SEO optimization
+ */
+export async function searchStockImagesForArticle(
+  prompts: string[],
+  keywords: string[],
+  count: number = 6
+): Promise<GeneratedImage[]> {
+  const images: GeneratedImage[] = [];
+  
+  console.log(`[Image Generator] Searching stock images for ${prompts.length} prompts...`);
+  
+  // Search for each prompt
+  for (let i = 0; i < Math.min(prompts.length, count); i++) {
+    const prompt = prompts[i];
+    
+    try {
+      const results = await searchFreeStockImages({
+        query: prompt.replace(/professional illustration for:/gi, '').trim(),
+        orientation: 'horizontal',
+        minWidth: 1200,
+        minHeight: 600,
+        count: 1,
+      });
+      
+      if (results.length > 0) {
+        const stockImage = results[0];
+        const altText = generateAltText(prompt, keywords);
+        const filename = generateSEOFilename(prompt, keywords, i);
+        
+        images.push({
+          url: stockImage.url,
+          prompt,
+          source: 'stock',
+          altText,
+          filename,
+          photographer: stockImage.photographer,
+          photographerUrl: stockImage.photographerUrl,
+        });
+        
+        console.log(`[Image Generator] Found stock image ${i + 1}: ${filename}`);
+      }
+    } catch (error) {
+      console.error(`[Image Generator] Failed to find stock image for prompt ${i + 1}:`, error);
+    }
+  }
+  
+  console.log(`[Image Generator] Found ${images.length} stock images`);
+  return images;
+}
+
+/**
+ * Generate multiple images for an article (6-8 images)
+ * Uses stock images as primary source for cost efficiency
+ */
+export async function generateArticleImagesWithAltText(
+  articleTitle: string,
+  articleContent: string,
+  keywords: string[],
+  targetImageCount: number = 7
+): Promise<GeneratedImage[]> {
+  console.log(`[Image Generator] Generating ${targetImageCount} images for article...`);
+  
+  // Extract image prompts from content
+  const prompts = extractImagePrompts(articleContent, articleTitle, targetImageCount);
+  
+  // First try to get stock images (free and fast)
+  const stockImages = await searchStockImagesForArticle(prompts, keywords, targetImageCount);
+  
+  // If we have enough stock images, return them
+  if (stockImages.length >= Math.min(targetImageCount - 2, 5)) {
+    console.log(`[Image Generator] Using ${stockImages.length} stock images`);
+    return stockImages;
+  }
+  
+  // Otherwise, combine stock images with AI-generated ones if needed
+  console.log(`[Image Generator] Got ${stockImages.length} stock images, need ${targetImageCount - stockImages.length} more`);
+  
+  // For remaining images, we can generate AI images (but keep it minimal for cost)
+  const remainingCount = Math.min(targetImageCount - stockImages.length, 2); // Max 2 AI images
+  const aiImages: GeneratedImage[] = [];
+  
+  for (let i = 0; i < remainingCount && i < prompts.length; i++) {
+    try {
+      const aiImage = await generateArticleImage({
+        prompt: prompts[stockImages.length + i],
+        aspectRatio: '16:9',
+        useFreeStock: false, // Force AI generation for fallback
+      });
+      
+      aiImages.push({
+        ...aiImage,
+        altText: generateAltText(prompts[stockImages.length + i], keywords),
+        filename: generateSEOFilename(prompts[stockImages.length + i], keywords, stockImages.length + i),
+      });
+    } catch (error) {
+      console.error(`[Image Generator] Failed to generate AI image ${i + 1}:`, error);
+    }
+  }
+  
+  const allImages = [...stockImages, ...aiImages];
+  console.log(`[Image Generator] Total images: ${allImages.length} (${stockImages.length} stock, ${aiImages.length} AI)`);
+  
+  return allImages;
 }
 
 /**
