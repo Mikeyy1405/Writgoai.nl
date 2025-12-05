@@ -90,6 +90,7 @@ export default function AccountsTab({ projectId }: AccountsTabProps) {
 
     try {
       setConnecting(platformId);
+      console.log('[Social Connect] Starting connection for:', platformId, 'project:', projectId);
       
       const response = await fetch('/api/client/late-dev/connect', {
         method: 'POST',
@@ -97,23 +98,51 @@ export default function AccountsTab({ projectId }: AccountsTabProps) {
         body: JSON.stringify({ projectId, platform: platformId }),
       });
 
+      console.log('[Social Connect] Response status:', response.status);
       const data = await response.json();
+      console.log('[Social Connect] Response data:', data);
 
-      if (response.ok && data.inviteUrl) {
-        // Open invite URL in new window
-        window.open(data.inviteUrl, '_blank', 'width=600,height=700');
-        toast.success('Volg de stappen in het nieuwe venster om je account te koppelen');
+      if (!response.ok) {
+        // Specifieke foutmeldingen
+        if (response.status === 503) {
+          toast.error('Social media service tijdelijk niet beschikbaar. Probeer later opnieuw.');
+        } else if (response.status === 404) {
+          toast.error('Project niet gevonden. Ververs de pagina en probeer opnieuw.');
+        } else if (response.status === 400) {
+          toast.error(data.error || 'Ongeldige aanvraag. Controleer je project instellingen.');
+        } else {
+          toast.error(data.error || `Fout bij koppelen (${response.status})`);
+        }
+        return;
+      }
+
+      if (data.inviteUrl) {
+        // Open invite URL
+        const popup = window.open(data.inviteUrl, '_blank', 'width=600,height=700');
+        
+        if (!popup || popup.closed) {
+          // Popup blocked
+          toast.error('Pop-up geblokkeerd! Sta pop-ups toe voor deze site.', {
+            action: {
+              label: 'Open handmatig',
+              onClick: () => window.open(data.inviteUrl, '_blank'),
+            },
+          });
+        } else {
+          toast.success('Volg de stappen in het nieuwe venster om je account te koppelen. Klik daarna op "Synchroniseren".');
+        }
         
         // Refresh accounts after 5 seconds
         setTimeout(() => {
           loadAccounts();
         }, 5000);
       } else {
-        toast.error(data.error || 'Kon connectie niet starten');
+        console.error('[Social Connect] No inviteUrl in response:', data);
+        toast.error('Geen koppellink ontvangen. Probeer opnieuw of neem contact op met support.');
       }
     } catch (error) {
-      console.error('Error connecting platform:', error);
-      toast.error('Fout bij koppelen van platform');
+      console.error('[Social Connect] Error:', error);
+      toast.error('Netwerkfout bij koppelen. Controleer je internetverbinding.');
     } finally {
       setConnecting(null);
     }

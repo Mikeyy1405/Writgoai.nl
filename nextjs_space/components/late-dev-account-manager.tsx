@@ -131,26 +131,53 @@ export function LateDevAccountManager({ projectId, onAccountsChange }: LateDevAc
   const handleConnect = async (platform?: string) => {
     try {
       setConnecting(true);
+      console.log('[Social Connect] Starting connection for:', platform, 'project:', projectId);
+      
       const response = await fetch('/api/client/late-dev/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, platform }),
       });
 
+      console.log('[Social Connect] Response status:', response.status);
+      const data = await response.json();
+      console.log('[Social Connect] Response data:', data);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to generate invite');
+        // Specifieke foutmeldingen
+        if (response.status === 503) {
+          toast.error('Social media service tijdelijk niet beschikbaar. Probeer later opnieuw.');
+        } else if (response.status === 404) {
+          toast.error('Project niet gevonden. Ververs de pagina en probeer opnieuw.');
+        } else if (response.status === 400) {
+          toast.error(data.error || 'Ongeldige aanvraag. Controleer je project instellingen.');
+        } else {
+          toast.error(data.error || `Fout bij koppelen (${response.status})`);
+        }
+        return;
       }
 
-      const data = await response.json();
+      if (!data.inviteUrl) {
+        console.error('[Social Connect] No inviteUrl in response:', data);
+        toast.error('Geen koppellink ontvangen. Probeer opnieuw of neem contact op met support.');
+        return;
+      }
+
       setInviteUrl(data.inviteUrl);
       setInviteDialog(true);
 
       // Open in new window
-      window.open(data.inviteUrl, '_blank', 'width=600,height=700');
+      const popup = window.open(data.inviteUrl, '_blank', 'width=600,height=700');
+      
+      if (!popup || popup.closed) {
+        // Popup blocked
+        toast.error('Pop-up geblokkeerd! Sta pop-ups toe voor deze site of gebruik de "Open Handmatig" knop.');
+      } else {
+        toast.success('Volg de stappen in het nieuwe venster om je account te koppelen.');
+      }
     } catch (error: any) {
-      console.error('Failed to connect:', error);
-      toast.error(error.message || 'Kon geen verbindingslink genereren');
+      console.error('[Social Connect] Error:', error);
+      toast.error('Netwerkfout bij koppelen. Controleer je internetverbinding.');
     } finally {
       setConnecting(false);
     }
