@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
 
     // Refine content
     const response = await sendChatCompletion({
-      model: 'gpt-5.1',
+      model: 'claude-sonnet-4-5-20250929',
+      taskType: 'content_rewrite',
       temperature: settings?.temperature || 0.7,
       stream: false,
       messages: [
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
             conversationId,
             role: 'assistant',
             content: `**Verfijnde content:**\n\n${refinedContent}\n\n*Verfijning instructie: ${instruction}*`,
-            model: 'gpt-5.1',
+            model: 'claude-sonnet-4-5-20250929',
           },
         });
       }

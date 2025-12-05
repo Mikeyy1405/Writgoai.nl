@@ -85,7 +85,7 @@ Behoud de inhoud maar maak het wetenschappelijker.`
     console.log('[Text Rewriter] Content length:', content.length);
     console.log('[Text Rewriter] Preserve HTML:', preserveHtml);
 
-    // Call AIML API
+    // Call AIML API with correct model ID
     const response = await fetch(AIML_API_URL, {
       method: 'POST',
       headers: {
@@ -93,7 +93,7 @@ Behoud de inhoud maar maak het wetenschappelijker.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5.1',
+        model: 'claude-sonnet-4-5-20250929', // Use correct Claude model for content rewriting
         messages: [
           {
             role: 'system',
@@ -124,16 +124,16 @@ Behoud de inhoud maar maak het wetenschappelijker.`
 
     console.log('[Text Rewriter] Rewrite successful, length:', rewrittenContent.length);
 
-    // Track API usage (GPT-5.1 costs: $0.03 input, $0.06 output per 1K tokens)
+    // Track API usage (Claude Sonnet 4.5 costs: $0.003 input, $0.015 output per 1K tokens)
     const inputTokens = Math.ceil(content.length / 4);
     const outputTokens = Math.ceil(rewrittenContent.length / 4);
-    const totalCost = (inputTokens / 1000 * 0.03) + (outputTokens / 1000 * 0.06);
+    const totalCost = (inputTokens / 1000 * 0.003) + (outputTokens / 1000 * 0.015);
     const creditsUsed = Math.ceil(totalCost);
 
     await trackApiUsage({
       clientId: session.user.id,
       feature: 'text-rewriter',
-      model: 'gpt-5.1',
+      model: 'claude-sonnet-4-5-20250929',
       inputTokens,
       outputTokens,
       success: true,

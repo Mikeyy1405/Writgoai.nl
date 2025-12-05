@@ -23,7 +23,7 @@ const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; 
   
   // Long-form Content
   blog_long: {
-    primary: 'claude-sonnet-4-5-20250514',
+    primary: 'claude-sonnet-4-5-20250929',
     fallback: 'gpt-5-2025-08-07',
     budget: 'deepseek-ai/DeepSeek-V3',
   },
@@ -45,7 +45,7 @@ const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; 
   // Video Scripts
   video_script: {
     primary: 'gpt-5-2025-08-07',
-    fallback: 'claude-sonnet-4-5-20250514',
+    fallback: 'claude-sonnet-4-5-20250929',
   },
   
   video_hook: {
@@ -73,13 +73,13 @@ const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; 
   
   // Code Tasks
   code_generate: {
-    primary: 'claude-sonnet-4-5-20250514',
+    primary: 'claude-sonnet-4-5-20250929',
     fallback: 'gpt-5-2025-08-07',
     budget: 'Qwen/Qwen2.5-Coder-32B-Instruct',
   },
   
   code_review: {
-    primary: 'claude-sonnet-4-5-20250514',
+    primary: 'claude-sonnet-4-5-20250929',
     fallback: 'gpt-4o',
   },
   

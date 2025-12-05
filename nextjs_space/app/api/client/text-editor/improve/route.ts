@@ -98,7 +98,7 @@ Maak deze tekst natuurlijker en menselijker volgens de regels hierboven.`;
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
           ],
-          model: 'gpt-5.1',
+          model: 'claude-sonnet-4-5-20250929',
           temperature: 0.9, // Higher for more variation
         }),
       });

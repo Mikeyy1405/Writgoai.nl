@@ -12,23 +12,124 @@ interface ModelConfig {
   capabilities: readonly ModelCapability[];
 }
 
+// 🎯 CENTRALIZED AI MODEL CONFIGURATION
+// Correct AIML API Model IDs (verified with user requirements)
+export const AI_MODELS = {
+  // Content & Writing (Dutch content, good price/quality)
+  CONTENT_REWRITE: 'claude-sonnet-4-5-20250929',
+  
+  // Code (Premium - fully autonomous)
+  CODE_PREMIUM: 'anthropic/claude-opus-4-5',
+  CODE_STANDARD: 'claude-sonnet-4-5-20250929',
+  
+  // Analysis & Large Context
+  LARGE_CODEBASE: 'google/gemini-3-pro-preview',  // 1M context window, cheaper
+  HUGE_DOCUMENTS: 'x-ai/grok-4-fast-reasoning',    // 2M tokens context
+  
+  // Research (real-time internet)
+  RESEARCH: 'perplexity/sonar-pro',
+  
+  // Fallback (most reliable)
+  FALLBACK: 'gpt-4o-mini',
+} as const;
+
+// Task types for intelligent routing
+export type TaskType = 
+  | 'content_rewrite'
+  | 'blog_writing'
+  | 'seo_optimization'
+  | 'code_complex'
+  | 'code_simple'
+  | 'refactoring'
+  | 'research'
+  | 'large_document'
+  | 'codebase_analysis'
+  | 'general';
+
+/**
+ * Get the appropriate model for a specific task type
+ * Implements intelligent model routing based on task requirements
+ */
+export function getModelForTask(taskType: TaskType): string {
+  switch(taskType) {
+    case 'content_rewrite':
+    case 'blog_writing':
+    case 'seo_optimization':
+      return AI_MODELS.CONTENT_REWRITE;
+    case 'code_complex':
+    case 'refactoring':
+      return AI_MODELS.CODE_PREMIUM;
+    case 'code_simple':
+      return AI_MODELS.CODE_STANDARD;
+    case 'research':
+      return AI_MODELS.RESEARCH;
+    case 'large_document':
+      return AI_MODELS.HUGE_DOCUMENTS;
+    case 'codebase_analysis':
+      return AI_MODELS.LARGE_CODEBASE;
+    default:
+      return AI_MODELS.CONTENT_REWRITE;
+  }
+}
+
+/**
+ * Get fallback models for a given model
+ * Implements fallback mechanism for model failures
+ */
+export function getFallbackModels(primaryModel: string): string[] {
+  // If primary is content rewrite, fallback to standard code model then fallback
+  if (primaryModel === AI_MODELS.CONTENT_REWRITE) {
+    return [AI_MODELS.CODE_STANDARD, AI_MODELS.FALLBACK];
+  }
+  // If primary is premium code, fallback to standard code then content rewrite
+  if (primaryModel === AI_MODELS.CODE_PREMIUM) {
+    return [AI_MODELS.CODE_STANDARD, AI_MODELS.CONTENT_REWRITE, AI_MODELS.FALLBACK];
+  }
+  // Default fallback chain
+  return [AI_MODELS.CONTENT_REWRITE, AI_MODELS.FALLBACK];
+}
+
 // Available AI models via AIML API
 export const AVAILABLE_MODELS: readonly ModelConfig[] = [
   { 
-    id: 'openai/gpt-5-1', 
-    name: 'GPT-5.1', 
-    provider: 'OpenAI', 
-    description: '🚀 Nieuwste GPT-5.1 model, meest geavanceerd voor alle taken',
-    contextWindow: 128000,
-    capabilities: ['chat', 'vision', 'code', 'analysis', 'web-search'] as const
-  },
-  { 
-    id: 'anthropic/claude-4-5-sonnet', 
-    name: 'Claude 4.5 Sonnet', 
+    id: AI_MODELS.CONTENT_REWRITE, 
+    name: 'Claude Sonnet 4.5', 
     provider: 'Anthropic', 
-    description: '🧠 Claude 4.5 Sonnet - Uitstekend in code, reasoning en complexe projecten',
+    description: '🚀 Best voor Nederlandse content, uitstekende prijs/kwaliteit',
     contextWindow: 200000,
     capabilities: ['chat', 'vision', 'code', 'analysis', 'artifacts', 'extended-context'] as const
+  },
+  { 
+    id: AI_MODELS.CODE_PREMIUM, 
+    name: 'Claude Opus 4.5', 
+    provider: 'Anthropic', 
+    description: '🧠 Beste kwaliteit, volledig autonoom voor complexe code',
+    contextWindow: 200000,
+    capabilities: ['chat', 'vision', 'code', 'analysis', 'artifacts', 'extended-context'] as const
+  },
+  { 
+    id: AI_MODELS.LARGE_CODEBASE, 
+    name: 'Gemini 3 Pro Preview', 
+    provider: 'Google', 
+    description: '📚 1M context window, ideaal voor grote codebase analyse',
+    contextWindow: 1000000,
+    capabilities: ['chat', 'vision', 'code', 'analysis', 'extended-context'] as const
+  },
+  { 
+    id: AI_MODELS.RESEARCH, 
+    name: 'Perplexity Sonar Pro', 
+    provider: 'Perplexity', 
+    description: '🔍 Real-time internet search met bronnen en citaties',
+    contextWindow: 128000,
+    capabilities: ['chat', 'web-search'] as const
+  },
+  { 
+    id: AI_MODELS.FALLBACK, 
+    name: 'GPT-4o Mini', 
+    provider: 'OpenAI', 
+    description: '⚡ Snel en betrouwbaar fallback model',
+    contextWindow: 128000,
+    capabilities: ['chat', 'vision', 'code', 'analysis'] as const
   },
 ];
 
@@ -38,7 +139,7 @@ export type ModelId = typeof AVAILABLE_MODELS[number]['id'];
  * Get the default AI model
  */
 export function getDefaultModel(): ModelId {
-  return 'openai/gpt-5-1';
+  return AI_MODELS.CONTENT_REWRITE;
 }
 
 /**

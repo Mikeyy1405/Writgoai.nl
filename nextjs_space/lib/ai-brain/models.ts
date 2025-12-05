@@ -198,17 +198,17 @@ export const CHAT_MODELS: AIModel[] = [
 
   // Anthropic Claude Models
   {
-    id: 'claude-sonnet-4-5-20250514',
+    id: 'claude-sonnet-4-5-20250929',
     name: 'Claude Sonnet 4.5',
     provider: 'Anthropic',
     category: 'chat',
-    description: 'Beste coding model, 1M context, 77.2% SWE-bench',
+    description: 'Beste coding model, 1M context, 77.2% SWE-bench, beste Nederlandse content',
     strengths: ['Beste voor code', 'Enorm context window', 'Hoge intelligentie', 'Excellent voor Nederlands'],
     weaknesses: ['Duur', 'Langzamer dan Haiku'],
     contextWindow: 1000000,
     maxOutput: 8192,
-    costPer1kInput: 3.0,
-    costPer1kOutput: 15.0,
+    costPer1kInput: 0.3,
+    costPer1kOutput: 1.5,
     speed: 'medium',
     quality: 5,
     bestFor: ['code_generate', 'code_review', 'blog_long', 'research'],
@@ -216,7 +216,7 @@ export const CHAT_MODELS: AIModel[] = [
     multimodal: true,
     streaming: true,
     reasoning: false,
-    releaseDate: '2025-05-14'
+    releaseDate: '2025-09-29'
   },
   {
     id: 'claude-opus-4-5-20250514',
