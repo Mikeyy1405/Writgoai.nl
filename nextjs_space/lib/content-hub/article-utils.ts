@@ -9,6 +9,24 @@ export const IN_PROGRESS_STATUSES = ['researching', 'writing', 'publishing'] as 
 export const COMPLETED_STATUSES = ['published'] as const;
 
 /**
+ * Check if an article status is in progress
+ * @param status - Article status to check
+ * @returns True if the status indicates work in progress
+ */
+export function isInProgress(status: string): boolean {
+  return (IN_PROGRESS_STATUSES as readonly string[]).includes(status);
+}
+
+/**
+ * Check if an article status is completed
+ * @param status - Article status to check
+ * @returns True if the status indicates completion
+ */
+export function isCompleted(status: string): boolean {
+  return (COMPLETED_STATUSES as readonly string[]).includes(status);
+}
+
+/**
  * Filters and validates keywords array
  * Removes empty strings and trims whitespace
  * @param keywords - Array of keywords to filter
