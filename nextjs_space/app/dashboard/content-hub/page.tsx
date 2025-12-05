@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 /**
- * Dashboard Content Hub page - Redirects to Client Portal Content Hub
- * This page has been deprecated in favor of the unified Content Hub interface.
+ * Dashboard Content Hub page - Redirects to Agency Content Hub
+ * This page redirects to the agency-specific content hub for Writgo.nl blog management.
  */
 export default function DashboardContentHubPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to Client Portal Content Hub
-    router.replace('/client-portal/content-hub');
+    // Redirect to Agency Content Hub
+    router.replace('/dashboard/agency/content-hub');
   }, [router]);
 
   return (
