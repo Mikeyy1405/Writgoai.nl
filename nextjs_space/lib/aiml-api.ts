@@ -31,7 +31,7 @@ export const TEXT_MODELS = {
   GPT5: 'gpt-5-2025-08-07', // Nieuwste OpenAI flagship
   GPT5_MINI: 'gpt-5-mini-2025-08-07', // Snelle GPT-5 variant
   GPT5_NANO: 'gpt-5-nano-2025-08-07', // Ultra snelle GPT-5
-  GPT5_CHAT: 'gpt-5-chat-latest', // Automatisch nieuwste GPT-5
+  GPT5_CHAT: 'claude-sonnet-4-5-20250929', // Beste voor content (was gpt-5-chat-latest)
   
   // GPT-4 modellen (OpenAI)
   REASONING: 'gpt-4o', // Beste voor complexe redeneringen

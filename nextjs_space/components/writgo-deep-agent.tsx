@@ -527,16 +527,16 @@ interface StatusLogEntry {
 
 // Chat/LLM models beschikbaar via AIML API
 const CHAT_MODELS = [
-  // 🔥 NIEUWSTE GPT-5 MODELLEN (2025)
-  { value: 'gpt-5-2025-08-07', label: 'GPT-5 🚀 (NIEUW)', recommended: true, description: 'Nieuwste OpenAI flagship - meest krachtig' },
+  // 🔥 NIEUWSTE MODELLEN (2025)
+  { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5 🚀 (NIEUW)', recommended: true, description: 'Beste voor Nederlandse content - uitstekend voor alles' },
+  { value: 'gpt-5-2025-08-07', label: 'GPT-5 🚀', recommended: true, description: 'Nieuwste OpenAI flagship - meest krachtig' },
   { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini ⚡', recommended: true, description: 'Snelle GPT-5 variant - beste balans' },
   { value: 'gpt-5-nano-2025-08-07', label: 'GPT-5 Nano 💨', description: 'Ultra snelle GPT-5 - perfecte prijs/kwaliteit' },
-  { value: 'gpt-5-chat-latest', label: 'GPT-5 Chat (Latest)', recommended: true, description: 'Automatisch nieuwste GPT-5 versie' },
   
   // 🔥 AANBEVOLEN (BESTAAND)
   { value: 'gpt-4o', label: 'GPT-4o ⭐', recommended: true, description: 'Beste balans: krachtig, snel, betrouwbaar' },
   { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash ⚡', recommended: true, description: 'Snelste model met uitstekende kwaliteit' },
-  { value: 'claude-sonnet-4-5', label: 'Claude 3.5 Sonnet ⭐', recommended: true, description: 'Beste voor creatief schrijven' },
+  { value: 'google/gemini-3-pro-preview', label: 'Gemini 3 Pro Preview ⭐', recommended: true, description: '1M context - beste voor grote documenten' },
   
   // OpenAI GPT Models
   { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'Sneller dan GPT-4, lagere kosten' },
