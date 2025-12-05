@@ -129,6 +129,9 @@ export const adminOnlyItems: NavigationItem[] = [
   // 📦 Opdrachten
   { label: 'Opdrachten', href: '/admin/assignments', icon: Package, adminOnly: true },
   
+  // 📁 Projecten
+  { label: 'Projecten', href: '/dashboard/agency/projects', icon: FolderKanban, adminOnly: true },
+  
   // 💰 Financieel
   {
     isSuite: true,
@@ -148,7 +151,6 @@ export const adminOnlyItems: NavigationItem[] = [
     icon: FileText,
     adminOnly: true,
     items: [
-      { label: 'Projecten', href: '/dashboard/agency/projects', icon: FolderKanban, adminOnly: true },
       { label: 'Blog CMS', href: '/admin/blog', icon: FileText, adminOnly: true },
       { label: 'Content Hub', href: '/dashboard/agency/content-hub', icon: Globe, adminOnly: true },
       { label: 'AI Agent', href: '/dashboard/agent', icon: Bot, adminOnly: true },
