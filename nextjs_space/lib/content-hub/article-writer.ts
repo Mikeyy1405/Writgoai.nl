@@ -18,7 +18,7 @@ export interface ArticleWriteOptions {
   tone?: string;
   language?: string;
   serpAnalysis?: SERPAnalysis;
-  internalLinks?: Array<{ url: string; anchorText: string }>;
+  internalLinks?: Array<{ url: string; anchorText: string }>;  
   includeImages?: boolean;
   includeFAQ?: boolean;
   includeYouTube?: boolean;
@@ -30,8 +30,31 @@ export interface ArticleResult {
   metaDescription: string;
   excerpt: string;
   wordCount: number;
-  faqSection?: Array<{ question: string; answer: string }>;
+  faqSection?: Array<{ question: string; answer: string }>;  
   suggestedImages?: string[];
+}
+
+/**
+ * Clean AI response by removing markdown code blocks
+ * Handles various formats: ```json\n...\n``` or ```\n...\n``` or ```json ... ```
+ */
+function cleanJsonResponse(content: string): string {
+  let cleaned = content.trim();
+  
+  // Remove markdown code blocks (various formats)
+  cleaned = cleaned
+    .replace(/^```json\s*/i, '')  // Remove opening ```json
+    .replace(/^```\s*/i, '')       // Remove opening ```
+    .replace(/\s*```$/i, '')       // Remove closing ```
+    .trim();
+  
+  // Try to extract JSON object if still wrapped in other content
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[0];
+  }
+  
+  return cleaned;
 }
 
 /**
@@ -177,31 +200,22 @@ ${options.internalLinks ? '✅ 4-6 interne links met natuurlijke ankerteksten' :
 📤 OUTPUT FORMAT
 ═══════════════════════════════════════════════════════
 
-Respond in JSON format:
+IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response must be a valid JSON object:
 {
-  "content": "Volledige artikel content in HTML (body content, ZONDER de H1 titel!)",
-  "metaTitle": "${title.substring(0, 50)}..." (max 60 karakters met focus keyword),
-  "metaDescription": "SEO meta description (150-155 karakters met focus keyword en CTA)",
-  "excerpt": "Korte samenvatting voor previews (150 woorden)",
-  "faqSection": [
-    {"question": "PAA vraag 1?", "answer": "40-60 woorden antwoord"},
-    ... (${paaQuestions.length} vragen totaal)
-  ],
-  "suggestedImages": [
-    "Descriptive image prompt 1 (bijv: 'Dashboard met SEO analytics en ranking metrics')",
-    "Descriptive image prompt 2 (bijv: 'Team dat samenwerkt aan content strategie')",
-    ... (6-8 image suggestions - beschrijvend en specifiek)
-  ]
-}
-
-⚠️ BELANGRIJK: De 'content' moet starten met een intro paragraaf, NIET met de H1 titel!`;
+  "content": "Full article content in HTML",
+  "metaTitle": "SEO-optimized meta title (max 60 chars)",
+  "metaDescription": "SEO-optimized meta description (max 160 chars)",
+  "excerpt": "Short excerpt (150 words)",
+  ${options.includeFAQ ? '"faqSection": [{"question": "...", "answer": "..."}], ' : ''}
+  "suggestedImages": ["Image description 1", "Image description 2"]
+}`;
 
     const response = await sendChatCompletion({
       model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for best content quality
       messages: [
         {
           role: 'system',
-          content: `Je bent een expert SEO content writer die artikelen schrijft die hoog ranken in Google. Je volgt strikte SEO best practices en E-E-A-T richtlijnen. Je schrijft in ${language.toUpperCase()} met een ${tone} toon.`,
+          content: `You are an expert SEO content writer who creates engaging, well-researched articles in ${language.toUpperCase()}. Always respond with valid JSON only, never wrap in markdown code blocks.`,
         },
         {
           role: 'user',
@@ -213,17 +227,17 @@ Respond in JSON format:
       stream: false,
     });
 
-    const content = (response as any).choices[0]?.message?.content || '{}';
+    const rawContent = (response as any).choices[0]?.message?.content || '{}';
     
-    // Parse JSON response
+    // Parse JSON response - handle markdown code blocks
     let result;
     try {
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
-                       content.match(/```\n([\s\S]*?)\n```/) ||
-                       [null, content];
-      result = JSON.parse(jsonMatch[1] || content);
+      const cleanedContent = cleanJsonResponse(rawContent);
+      console.log('[Article Writer] Cleaned JSON length:', cleanedContent.length);
+      result = JSON.parse(cleanedContent);
     } catch (e) {
       console.error('[Article Writer] Failed to parse JSON:', e);
+      console.error('[Article Writer] Raw content preview:', rawContent.substring(0, 500));
       throw new Error('Failed to parse article generation response');
     }
 
@@ -270,119 +284,4 @@ export async function* writeArticleStream(
     // First, generate outline
     yield { type: 'status', content: 'Generating article outline...' };
     
-    const outlinePrompt = `Create a detailed outline for an article titled "${title}" in ${language.toUpperCase()}.
-Keywords: ${keywords.join(', ')}
-Target: ${targetWordCount} words
-
-Provide 6-10 main sections with H2 headings. Include subheadings (H3) where appropriate.
-
-Respond with just the outline in markdown format.`;
-
-    const outlineResponse = await sendChatCompletion({
-      model: TEXT_MODELS.FAST,
-      messages: [{ role: 'user', content: outlinePrompt }],
-      temperature: 0.7,
-      max_tokens: 1000,
-      stream: false,
-    });
-
-    const outline = (outlineResponse as any).choices[0]?.message?.content || '';
-    yield { type: 'outline', content: outline };
-
-    // Generate full content
-    yield { type: 'status', content: 'Writing article content...' };
-    
-    const contentPrompt = `Write a complete article based on this outline:
-
-${outline}
-
-Requirements:
-- Write in ${language.toUpperCase()}
-- Target ${targetWordCount} words
-- Use ${tone} tone
-- Include keywords: ${keywords.join(', ')}
-- Write engaging, SEO-optimized content
-- Use HTML formatting
-
-Write the full article:`;
-
-    // Stream the article content using Claude 4.5 Sonnet
-    const stream = await sendStreamingChatCompletion({
-      model: TEXT_MODELS.CLAUDE_45, // Use Claude 4.5 Sonnet for content writing
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert SEO content writer in ${language.toUpperCase()}.`,
-        },
-        {
-          role: 'user',
-          content: contentPrompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: Math.min(targetWordCount * 2, 8000),
-    });
-
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
-        yield { type: 'content', content: delta };
-      }
-    }
-
-    yield { type: 'status', content: 'Article completed!' };
-  } catch (error: any) {
-    console.error('[Article Writer] Streaming error:', error);
-    
-    // Create user-friendly Dutch error message
-    let userMessage = 'Het streamen van het artikel is mislukt';
-    
-    if (error.message.includes('timeout') || error.message.includes('Timeout')) {
-      userMessage = 'Het artikel schrijven duurde te lang. Probeer een kortere tekst.';
-    } else if (error.message.includes('API')) {
-      userMessage = 'De AI service is tijdelijk niet beschikbaar. Probeer het later opnieuw.';
-    }
-    
-    throw new Error(userMessage);
-  }
-}
-
-/**
- * Generate FAQ section for an article
- */
-export async function generateFAQ(
-  topic: string,
-  language: string = 'nl'
-): Promise<Array<{ question: string; answer: string }>> {
-  try {
-    const prompt = `Generate 6-8 frequently asked questions and detailed answers for the topic: "${topic}" in ${language.toUpperCase()}.
-
-Respond in JSON format:
-{
-  "faqs": [
-    {"question": "...", "answer": "..."}
-  ]
-}`;
-
-    const response = await sendChatCompletion({
-      model: TEXT_MODELS.FAST,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 2000,
-      stream: false,
-    });
-
-    const content = (response as any).choices[0]?.message?.content || '{}';
-    const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || 
-                     content.match(/```\n([\s\S]*?)\n```/) ||
-                     [null, content];
-    const result = JSON.parse(jsonMatch[1] || content);
-    
-    return result.faqs || [];
-  } catch (error: any) {
-    console.error('[Article Writer] FAQ generation error:', error);
-    console.log('[Article Writer] Doorgaan zonder FAQ sectie');
-    // Return empty array - FAQ is optional, don't block article generation
-    return [];
-  }
-}
+    const outlinePrompt = `Create a detailed outline for an article titled \
