@@ -50,7 +50,7 @@ export default function SettingsSuitePage() {
       setProjects(data.projects || []);
     } catch (error) {
       console.error('Error loading projects:', error);
-      toast.error('Kon projecten niet laden');
+      toast.error('Kon projecten niet laden. Probeer de pagina te vernieuwen of neem contact op met support.');
     } finally {
       setLoading(false);
     }
