@@ -44,7 +44,11 @@ interface Account {
   connectedAt: string;
 }
 
-export default function AccountsTab() {
+interface AccountsTabProps {
+  projectId: string | null;
+}
+
+export default function AccountsTab({ projectId }: AccountsTabProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -52,12 +56,17 @@ export default function AccountsTab() {
 
   useEffect(() => {
     loadAccounts();
-  }, []);
+  }, [projectId]);
 
   const loadAccounts = async () => {
+    if (!projectId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await fetch('/api/client/late-dev/accounts');
+      const response = await fetch(`/api/client/late-dev/accounts?projectId=${projectId}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -74,13 +83,18 @@ export default function AccountsTab() {
   };
 
   const connectPlatform = async (platformId: string) => {
+    if (!projectId) {
+      toast.error('Selecteer eerst een project');
+      return;
+    }
+
     try {
       setConnecting(platformId);
       
       const response = await fetch('/api/client/late-dev/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform: platformId }),
+        body: JSON.stringify({ projectId, platform: platformId }),
       });
 
       const data = await response.json();
@@ -106,11 +120,18 @@ export default function AccountsTab() {
   };
 
   const syncAccounts = async () => {
+    if (!projectId) {
+      toast.error('Selecteer eerst een project');
+      return;
+    }
+
     try {
       setSyncing(true);
       
       const response = await fetch('/api/client/late-dev/sync', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
       });
 
       const data = await response.json();
@@ -128,6 +149,21 @@ export default function AccountsTab() {
       setSyncing(false);
     }
   };
+
+  if (!projectId) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center text-muted-foreground">
+              <p className="text-lg font-medium mb-2">Geen project geselecteerd</p>
+              <p>Selecteer een project om je social media accounts te koppelen</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
