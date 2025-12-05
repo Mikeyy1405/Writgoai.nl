@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +45,9 @@ export default function ContentHubPage() {
   const [loading, setLoading] = useState(true);
   const [showConnector, setShowConnector] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  
+  // Use ref to prevent duplicate syncs
+  const isSyncingRef = useRef(false);
 
   useEffect(() => {
     loadSites();
@@ -82,8 +85,23 @@ export default function ContentHubPage() {
   };
 
   const handleSyncExisting = async () => {
-    if (!selectedSite) return;
+    if (!selectedSite || syncing || isSyncingRef.current) return;
     
+    // Check cooldown - minimum 30 seconds between syncs
+    const SYNC_COOLDOWN_MS = 30000;
+    const lastSyncKey = `content-hub-last-sync-${selectedSite.id}`;
+    const lastSyncTime = localStorage.getItem(lastSyncKey);
+    
+    if (lastSyncTime) {
+      const timeSinceLastSync = Date.now() - parseInt(lastSyncTime, 10);
+      if (timeSinceLastSync < SYNC_COOLDOWN_MS) {
+        const remainingSeconds = Math.ceil((SYNC_COOLDOWN_MS - timeSinceLastSync) / 1000);
+        toast.info(`Wacht nog ${remainingSeconds} seconden voor de volgende sync`, { id: 'sync' });
+        return;
+      }
+    }
+    
+    isSyncingRef.current = true;
     setSyncing(true);
     toast.loading('Bestaande WordPress content synchroniseren...', { id: 'sync' });
     
@@ -104,15 +122,20 @@ export default function ContentHubPage() {
       }
 
       const data = await response.json();
+      
+      // Store sync timestamp
+      localStorage.setItem(lastSyncKey, Date.now().toString());
+      
       toast.success(`${data.stats.synced} artikelen gesynchroniseerd!`, { id: 'sync' });
       
-      // Reload sites and topical map to show synced content
+      // Reload sites but don't trigger another sync
       await loadSites();
     } catch (error: any) {
       console.error('Failed to sync:', error);
       toast.error(error.message || 'Kon bestaande content niet synchroniseren', { id: 'sync' });
     } finally {
       setSyncing(false);
+      isSyncingRef.current = false;
     }
   };
 

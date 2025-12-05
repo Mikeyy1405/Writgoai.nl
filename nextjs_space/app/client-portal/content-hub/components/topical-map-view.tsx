@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -58,6 +58,11 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  
+  // Use ref to track if we're syncing to prevent duplicate calls
+  const isSyncingRef = useRef(false);
+  // Use ref to track if initial sync for this filter has been done
+  const hasSyncedForFilterRef = useRef<Set<string>>(new Set());
 
   const loadTopicalMap = useCallback(async () => {
     try {
@@ -122,8 +127,26 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
   }, [clusters, filter, searchQuery, selectedCluster]);
 
   const syncExistingContent = useCallback(async (silent = false) => {
-    if (syncing) return; // Prevent multiple simultaneous syncs
+    // Prevent multiple simultaneous syncs using ref (not state to avoid unnecessary re-renders)
+    if (isSyncingRef.current) return;
     
+    // Check cooldown - minimum 30 seconds between syncs
+    const SYNC_COOLDOWN_MS = 30000; // 30 seconds
+    const lastSyncKey = `content-hub-last-sync-${siteId}`;
+    const lastSyncTime = localStorage.getItem(lastSyncKey);
+    
+    if (lastSyncTime) {
+      const timeSinceLastSync = Date.now() - parseInt(lastSyncTime, 10);
+      if (timeSinceLastSync < SYNC_COOLDOWN_MS) {
+        const remainingSeconds = Math.ceil((SYNC_COOLDOWN_MS - timeSinceLastSync) / 1000);
+        if (!silent) {
+          toast.info(`Wacht nog ${remainingSeconds} seconden voor de volgende sync`, { id: 'sync' });
+        }
+        return;
+      }
+    }
+    
+    isSyncingRef.current = true;
     setSyncing(true);
     setSyncError(null);
     setSyncMessage(null);
@@ -144,6 +167,9 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       if (!response.ok) {
         throw new Error(data.error || 'Synchronisatie mislukt');
       }
+      
+      // Store sync timestamp
+      localStorage.setItem(lastSyncKey, Date.now().toString());
       
       // Handle success or warning
       if (data.warning) {
@@ -168,8 +194,9 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
       }
     } finally {
       setSyncing(false);
+      isSyncingRef.current = false;
     }
-  }, [syncing, siteId, loadTopicalMap]);
+  }, [siteId, loadTopicalMap]); // Removed 'syncing' from deps as we use ref for checking
 
   // useEffect hooks after function definitions
   useEffect(() => {
@@ -180,11 +207,25 @@ export default function TopicalMapView({ siteId, filter = 'all' }: TopicalMapVie
     filterClusters();
   }, [filterClusters]);
 
-  // Auto-sync when published filter is active
+  // Auto-sync when published filter is active (only once per filter change)
   useEffect(() => {
-    if (filter === 'published' && siteId) {
-      syncExistingContent(true); // silent sync on initial load
+    // Only sync for published filter
+    if (filter !== 'published' || !siteId) {
+      return;
     }
+    
+    const syncKey = `${siteId}-${filter}`;
+    
+    // Skip if already synced for this combination
+    if (hasSyncedForFilterRef.current.has(syncKey)) {
+      return;
+    }
+    
+    // Mark as synced before calling to prevent race conditions
+    hasSyncedForFilterRef.current.add(syncKey);
+    
+    // Use the existing syncExistingContent function (silent mode)
+    syncExistingContent(true);
   }, [filter, siteId, syncExistingContent]);
 
   const handleGenerateMap = async () => {
