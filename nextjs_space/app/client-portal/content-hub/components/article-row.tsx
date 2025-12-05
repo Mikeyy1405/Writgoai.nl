@@ -25,7 +25,7 @@ import ArticleGenerator from './article-generator';
 import RewriteModal from './rewrite-modal';
 import EditArticleModal from './edit-article-modal';
 import DeleteConfirmationModal from './delete-confirmation-modal';
-import { IN_PROGRESS_STATUSES } from '@/lib/content-hub/article-utils';
+import { isInProgress } from '@/lib/content-hub/article-utils';
 
 interface Article {
   id: string;
@@ -306,7 +306,7 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
               )}
 
               {/* Delete button - available for all statuses except in-progress */}
-              {!IN_PROGRESS_STATUSES.includes(article.status) && (
+              {!isInProgress(article.status) && (
                 <Button 
                   size="sm" 
                   variant="ghost"
