@@ -49,7 +49,7 @@ function getImageModel(projectSetting: string): keyof typeof IMAGE_MODELS {
     case 'nano-banana-pro':
       return 'NANO_BANANA_PRO';
     default:
-      return 'SD_35';  // Default: Stable Diffusion 3.5 - BESTE kwaliteit/prijs ratio (4 credits vs 5 voor Flux)
+      return 'FLUX_PRO';  // Default: Flux Pro - Ultra-realistische afbeeldingen
   }
 }
 
@@ -82,7 +82,7 @@ export async function generateSmartImage(
 ): Promise<SmartImageResult> {
   try {
     // Haal project settings op als projectId beschikbaar is
-    let imageModel = 'stable-diffusion-35';  // Default: SD 3.5 - beste kwaliteit/prijs
+    let imageModel = 'flux-pro';  // Default: Flux Pro - Ultra-realistische afbeeldingen
     let useFreeStockImages = true;  // Default
 
     if (options.projectId) {
