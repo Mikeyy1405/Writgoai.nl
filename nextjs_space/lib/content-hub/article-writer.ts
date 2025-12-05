@@ -148,7 +148,9 @@ function parseArticleResponse(rawContent: string, title: string, keywords: strin
         content: extractedContent,
         metaTitle: title.substring(0, 60),
         metaDescription: `Lees meer over ${keywords[0] || title}`.substring(0, 160),
-        excerpt: extractedContent.substring(0, 300).replace(/<[^>]*>/g, ''),
+        // Create safe text-only excerpt by removing all HTML tags
+        // Note: This is for display only, not for sanitizing user input
+        excerpt: extractedContent.substring(0, 300).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
         suggestedImages: [],
       };
     }
