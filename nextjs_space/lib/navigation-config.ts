@@ -149,7 +149,7 @@ export const adminOnlyItems: NavigationItem[] = [
     adminOnly: true,
     items: [
       { label: 'Blog CMS', href: '/admin/blog', icon: FileText, adminOnly: true },
-      { label: 'Content Hub', href: '/dashboard/content-hub', icon: FolderKanban, adminOnly: true },
+      { label: 'Content Hub', href: '/dashboard/agency/content-hub', icon: FolderKanban, adminOnly: true },
       { label: 'AI Agent', href: '/dashboard/agent', icon: Bot, adminOnly: true },
     ],
   },
