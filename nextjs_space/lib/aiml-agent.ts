@@ -29,8 +29,8 @@ export const AVAILABLE_MODELS = {
   // 🚀 OPENAI MODELLEN
   // ═══════════════════════════════════════════════════════
   GPT_5: 'gpt-5',                           // 🔥 NIEUWSTE - 400K context
-  GPT_4O: 'claude-sonnet-4-5-20250929',                         // Beste alles-in-één - 128K context
-  GPT_4O_MINI: 'claude-sonnet-4-5-20250929',              // Beste budget OpenAI
+  GPT_4O: 'gpt-4o',                         // Beste alles-in-één - 128K context
+  GPT_4O_MINI: 'gpt-4o-mini',              // Beste budget OpenAI
   GPT_4_TURBO: 'gpt-4-turbo',              // Sneller dan GPT-4 - 128K context
   GPT_4: 'gpt-4',                           // Classic GPT-4
   GPT_35_TURBO: 'gpt-3.5-turbo',           // Legacy budget
@@ -42,8 +42,8 @@ export const AVAILABLE_MODELS = {
   // ═══════════════════════════════════════════════════════
   // 🧠 ANTHROPIC CLAUDE MODELLEN
   // ═══════════════════════════════════════════════════════
-  CLAUDE_35_SONNET: 'claude-sonnet-4-5',   // Top kwaliteit - 200K context
-  CLAUDE_35_OPUS: 'claude-3-5-opus-20250514',       // Meest intelligent - 200K context
+  CLAUDE_45_SONNET: 'claude-sonnet-4-5-20250929',   // 🔥 Top kwaliteit voor Nederlandse content - 1M context
+  CLAUDE_45_OPUS: 'anthropic/claude-opus-4-5',      // 🔥 Meest intelligent, autonoom - 1M context
   CLAUDE_35_HAIKU: 'claude-3-5-haiku-20241022',     // Snelste Claude 3.5
   CLAUDE_3_OPUS: 'claude-3-opus-20240229',          // Legacy premium
   CLAUDE_3_SONNET: 'claude-3-sonnet-20240229',      // Balanced
@@ -150,7 +150,7 @@ export const AVAILABLE_MODELS = {
 export const MODEL_ROUTING = {
   // Blog schrijven - Lang, gedetailleerd, creatief
   blog_writing: {
-    premium: AVAILABLE_MODELS.CLAUDE_35_SONNET,    // Beste voor lange content
+    premium: AVAILABLE_MODELS.CLAUDE_45_SONNET,    // Beste voor lange Nederlandse content
     balanced: AVAILABLE_MODELS.DEEPSEEK_R1,        // Goed + goedkoop
     budget: AVAILABLE_MODELS.GPT_4O_MINI,          // Budget optie
     fallbacks: [
@@ -169,7 +169,7 @@ export const MODEL_ROUTING = {
     balanced: AVAILABLE_MODELS.GPT_4O_MINI,        // Snel + goed
     budget: AVAILABLE_MODELS.GEMINI_15_FLASH,      // Cheapest
     fallbacks: [
-      AVAILABLE_MODELS.CLAUDE_35_SONNET,
+      AVAILABLE_MODELS.CLAUDE_45_SONNET,
       AVAILABLE_MODELS.DEEPSEEK_CHAT
     ],
     temperature: 0.8,
@@ -179,7 +179,7 @@ export const MODEL_ROUTING = {
   
   // Video scripts - Structuur, timing, engaging
   video_script: {
-    premium: AVAILABLE_MODELS.CLAUDE_35_SONNET,    // Script expert
+    premium: AVAILABLE_MODELS.CLAUDE_45_SONNET,    // Script expert
     balanced: AVAILABLE_MODELS.DEEPSEEK_R1,        // Goed voor structuur
     budget: AVAILABLE_MODELS.CLAUDE_3_HAIKU,       // Snelste Claude
     fallbacks: [
@@ -197,7 +197,7 @@ export const MODEL_ROUTING = {
     balanced: AVAILABLE_MODELS.DEEPSEEK_R1,        // Reasoning specialist
     budget: AVAILABLE_MODELS.GPT_4O_MINI,          // Budget denker
     fallbacks: [
-      AVAILABLE_MODELS.CLAUDE_35_SONNET,
+      AVAILABLE_MODELS.CLAUDE_45_SONNET,
       AVAILABLE_MODELS.GEMINI_2_FLASH_THINKING,
       AVAILABLE_MODELS.GPT_4_TURBO
     ],
@@ -212,7 +212,7 @@ export const MODEL_ROUTING = {
     balanced: AVAILABLE_MODELS.GPT_4O_MINI,        // Snelste
     budget: AVAILABLE_MODELS.GEMINI_15_FLASH,      // Cheapest
     fallbacks: [
-      AVAILABLE_MODELS.CLAUDE_35_SONNET,
+      AVAILABLE_MODELS.CLAUDE_45_SONNET,
       AVAILABLE_MODELS.DEEPSEEK_CHAT,
       AVAILABLE_MODELS.LLAMA_31_70B
     ],
@@ -227,7 +227,7 @@ export const MODEL_ROUTING = {
     balanced: AVAILABLE_MODELS.DEEPSEEK_R1,        // Reasoning + analyse
     budget: AVAILABLE_MODELS.GPT_4O_MINI,          // Budget research
     fallbacks: [
-      AVAILABLE_MODELS.CLAUDE_35_OPUS,
+      AVAILABLE_MODELS.CLAUDE_45_OPUS,
       AVAILABLE_MODELS.O1_PREVIEW,
       AVAILABLE_MODELS.GPT_5
     ],
@@ -396,8 +396,10 @@ export async function callWithModel(
   const modelMap: Record<string, string> = {
     'gpt-4': AVAILABLE_MODELS.GPT_4O,
     'gpt-4-turbo': AVAILABLE_MODELS.GPT_4_TURBO,
-    'claude-3-opus': AVAILABLE_MODELS.CLAUDE_35_OPUS,
-    'claude-3-sonnet': AVAILABLE_MODELS.CLAUDE_35_SONNET,
+    'claude-3-opus': AVAILABLE_MODELS.CLAUDE_45_OPUS,
+    'claude-3-sonnet': AVAILABLE_MODELS.CLAUDE_45_SONNET,
+    'claude-4-opus': AVAILABLE_MODELS.CLAUDE_45_OPUS,
+    'claude-4-sonnet': AVAILABLE_MODELS.CLAUDE_45_SONNET,
     'gemini-pro': AVAILABLE_MODELS.GEMINI_25_PRO,
     'llama-3-70b': AVAILABLE_MODELS.LLAMA_31_70B,
     'mistral-large': AVAILABLE_MODELS.MISTRAL_LARGE,
@@ -412,11 +414,11 @@ export async function callWithModel(
   if (actualModel.includes('gpt') || actualModel.includes('openai')) {
     fallbacks.push(AVAILABLE_MODELS.GPT_4O_MINI, AVAILABLE_MODELS.GPT_4_TURBO);
   } else if (actualModel.includes('claude')) {
-    fallbacks.push(AVAILABLE_MODELS.CLAUDE_35_SONNET, AVAILABLE_MODELS.CLAUDE_35_HAIKU);
+    fallbacks.push(AVAILABLE_MODELS.CLAUDE_45_SONNET, AVAILABLE_MODELS.CLAUDE_35_HAIKU);
   } else if (actualModel.includes('gemini')) {
     fallbacks.push(AVAILABLE_MODELS.GEMINI_25_FLASH, AVAILABLE_MODELS.GEMINI_15_PRO);
   } else {
-    fallbacks.push(AVAILABLE_MODELS.GPT_4O_MINI, AVAILABLE_MODELS.CLAUDE_35_SONNET);
+    fallbacks.push(AVAILABLE_MODELS.GPT_4O_MINI, AVAILABLE_MODELS.CLAUDE_45_SONNET);
   }
   
   // Try primary model

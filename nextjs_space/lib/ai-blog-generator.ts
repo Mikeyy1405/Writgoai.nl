@@ -1064,7 +1064,7 @@ START NU MET HET SCHRIJVEN:
   ], {
     temperature: 0.8,
     max_tokens: Math.ceil(params.wordCount * 2.5), // Ruime marge voor formatting
-    preferredModel: AVAILABLE_MODELS.CLAUDE_35_SONNET // Claude 3.5 Sonnet is beste voor lange-form content
+    preferredModel: AVAILABLE_MODELS.CLAUDE_45_SONNET // Claude 4.5 Sonnet is beste voor lange-form content
   });
 }
 

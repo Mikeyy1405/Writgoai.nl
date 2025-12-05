@@ -40,9 +40,10 @@ Lever ALLEEN de verbeterde ${language.toUpperCase()} code op, zonder extra uitle
       systemPrompt += ` ${settings.personality}`;
     }
 
-    // Generate refined code using GPT-5.1 or selected model
+    // Generate refined code using Claude Sonnet or selected model
     const response = await sendChatCompletion({
-      model: settings?.model || 'gpt-5.1',
+      model: settings?.model || 'claude-sonnet-4-5-20250929',
+      taskType: 'code_simple', // Use intelligent routing for code tasks
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },

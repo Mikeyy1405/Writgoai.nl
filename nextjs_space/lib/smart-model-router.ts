@@ -5,68 +5,68 @@
  */
 
 // 🎯 MODEL CATEGORIES
-// 🚀 ALLES GEMINI 3 PRO VOOR MAXIMALE KWALITEIT EN CONSISTENTIE
+// Updated with correct AIML API model IDs
 export const MODEL_CATEGORIES = {
   // Web Search - Voor actuele informatie
   WEB_SEARCH: {
-    primary: 'google/gemini-3-pro-preview',
+    primary: 'perplexity/sonar-pro',
     fallback: 'google/gemini-3-pro-preview',
-    description: 'Real-time web search met Gemini 3 Pro'
+    description: 'Real-time web search met Perplexity Sonar Pro'
   },
   
   // Advanced Reasoning - Voor complexe analyses
   REASONING: {
     primary: 'google/gemini-3-pro-preview',
-    fallback: 'google/gemini-3-pro-preview',
+    fallback: 'claude-sonnet-4-5-20250929',
     description: 'Diepgaande redenering met Gemini 3 Pro'
   },
   
   // Long Context - Voor grote documenten
   LONG_CONTEXT: {
     primary: 'google/gemini-3-pro-preview',
-    fallback: 'google/gemini-3-pro-preview',
-    description: 'Tot 2M+ tokens context met Gemini 3 Pro'
+    fallback: 'claude-sonnet-4-5-20250929',
+    description: 'Tot 1M+ tokens context'
   },
   
-  // Creative Writing - Voor blogs en content
+  // Creative Writing - Voor blogs en content (Dutch)
   CREATIVE: {
-    primary: 'google/gemini-3-pro-preview',
+    primary: 'claude-sonnet-4-5-20250929',
     fallback: 'google/gemini-3-pro-preview',
-    description: 'Creatieve en natuurlijke schrijfstijl met Gemini 3 Pro'
+    description: 'Beste Nederlandse content met Claude Sonnet 4.5'
   },
   
   // Fast Generation - Voor snelle responses
   FAST: {
-    primary: 'google/gemini-3-pro-preview',
-    fallback: 'google/gemini-3-pro-preview',
-    description: 'Snelle antwoorden met Gemini 3 Pro'
+    primary: 'claude-sonnet-4-5-20250929',
+    fallback: 'gpt-4o-mini',
+    description: 'Snelle antwoorden met goede kwaliteit'
   },
   
   // Code Generation - Voor programmeren
   CODE: {
-    primary: 'google/gemini-3-pro-preview',
-    fallback: 'google/gemini-3-pro-preview',
-    description: 'Code generatie met Gemini 3 Pro'
+    primary: 'anthropic/claude-opus-4-5',
+    fallback: 'claude-sonnet-4-5-20250929',
+    description: 'Beste code generatie met Claude Opus 4.5'
   },
   
   // Dutch Language - Voor Nederlandse teksten
   DUTCH: {
-    primary: 'google/gemini-3-pro-preview',
+    primary: 'claude-sonnet-4-5-20250929',
     fallback: 'google/gemini-3-pro-preview',
-    description: 'Nederlandse taal met Gemini 3 Pro'
+    description: 'Beste Nederlandse taal met Claude Sonnet 4.5'
   },
   
   // SEO Writing - Voor SEO-geoptimaliseerde content
   SEO_WRITING: {
-    primary: 'google/gemini-3-pro-preview',
+    primary: 'claude-sonnet-4-5-20250929',
     fallback: 'google/gemini-3-pro-preview',
-    description: 'SEO-geoptimaliseerd schrijven met Gemini 3 Pro'
+    description: 'SEO-geoptimaliseerd schrijven met Claude Sonnet 4.5'
   },
   
   // Multimodal - Voor afbeeldingen
   VISION: {
     primary: 'google/gemini-3-pro-preview',
-    fallback: 'google/gemini-3-pro-preview',
+    fallback: 'gpt-4o',
     description: 'Afbeelding analyse met Gemini 3 Pro'
   }
 };

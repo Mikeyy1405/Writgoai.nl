@@ -106,9 +106,10 @@ Geef het herschreven artikel terug in JSON formaat:
   "improvements": "Korte samenvatting van de belangrijkste verbeteringen"
 }`;
 
-    // Call Claude 4.5 Sonnet
+    // Call Claude 4.5 Sonnet with task-based routing
     const response = await sendChatCompletion({
-      model: 'claude-sonnet-4-5-20250514', // Claude 4.5 Sonnet
+      model: 'claude-sonnet-4-5-20250929', // Claude 4.5 Sonnet (correct model ID)
+      taskType: 'content_rewrite', // Use intelligent routing with fallback
       messages: [
         {
           role: 'system',
