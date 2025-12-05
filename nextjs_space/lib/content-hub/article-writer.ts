@@ -145,14 +145,14 @@ Integreer deze elementen natuurlijk door het artikel:
 STAP 3: CONTENT STRUCTUUR
 Gebruik deze H2/H3 structuur (gebaseerd op SERP analyse):
 
-${options.serpAnalysis?.commonHeadings.slice(0, 6).map((heading, idx) => `
+${options.serpAnalysis?.commonHeadings?.slice(0, 6).map((heading, idx) => `
 <h2>${heading}</h2>
 <p>[150-250 woorden met:]
 - Beantwoord een PAA vraag relevant voor deze sectie
 - Integreer 2-3 LSI keywords natuurlijk
 - Voeg E-E-A-T element toe (ervaring/expertise)
 - Voeg praktisch voorbeeld of tip toe
-${options.internalLinks && options.internalLinks[idx] ? `- Voeg interne link toe: <a href="${options.internalLinks[idx].url}">${options.internalLinks[idx].anchorText}</a>` : ''}
+${options.internalLinks && idx < options.internalLinks.length && options.internalLinks[idx] ? `- Voeg interne link toe: <a href="${options.internalLinks[idx].url}">${options.internalLinks[idx].anchorText}</a>` : ''}
 </p>
 
 ${idx < 3 ? `<h3>[Relevante subsectie]</h3>
@@ -361,14 +361,14 @@ Integreer deze elementen natuurlijk door het artikel:
 STAP 3: CONTENT STRUCTUUR
 Gebruik deze H2/H3 structuur (gebaseerd op SERP analyse):
 
-${options.serpAnalysis?.commonHeadings.slice(0, 6).map((heading, idx) => `
+${options.serpAnalysis?.commonHeadings?.slice(0, 6).map((heading, idx) => `
 <h2>${heading}</h2>
 <p>[150-250 woorden met:]
 - Beantwoord een PAA vraag relevant voor deze sectie
 - Integreer 2-3 LSI keywords natuurlijk
 - Voeg E-E-A-T element toe (ervaring/expertise)
 - Voeg praktisch voorbeeld of tip toe
-${options.internalLinks && options.internalLinks[idx] ? `- Voeg interne link toe: <a href="${options.internalLinks[idx].url}">${options.internalLinks[idx].anchorText}</a>` : ''}
+${options.internalLinks && idx < options.internalLinks.length && options.internalLinks[idx] ? `- Voeg interne link toe: <a href="${options.internalLinks[idx].url}">${options.internalLinks[idx].anchorText}</a>` : ''}
 </p>
 
 ${idx < 3 ? `<h3>[Relevante subsectie]</h3>
