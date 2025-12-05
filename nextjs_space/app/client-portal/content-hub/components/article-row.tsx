@@ -25,6 +25,7 @@ import ArticleGenerator from './article-generator';
 import RewriteModal from './rewrite-modal';
 import EditArticleModal from './edit-article-modal';
 import DeleteConfirmationModal from './delete-confirmation-modal';
+import { IN_PROGRESS_STATUSES } from '@/lib/content-hub/article-utils';
 
 interface Article {
   id: string;
@@ -47,9 +48,6 @@ interface ArticleRowProps {
   article: Article;
   onUpdate?: () => void;
 }
-
-// Statuses where article operations are in progress
-const IN_PROGRESS_STATUSES = ['researching', 'writing', 'publishing'];
 
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const [showGenerator, setShowGenerator] = useState(false);

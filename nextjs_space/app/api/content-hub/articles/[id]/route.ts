@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-import { getValidKeywords, validateArticleTitle, validateKeywords } from '@/lib/content-hub/article-utils';
+import { getValidKeywords, validateArticleTitle, validateKeywords, COMPLETED_STATUSES } from '@/lib/content-hub/article-utils';
 
 /**
  * PATCH /api/content-hub/articles/[id]
@@ -124,6 +124,8 @@ export async function DELETE(
     }
 
     // Delete the article and update site counts in a transaction to ensure atomicity
+    const isCompleted = COMPLETED_STATUSES.includes(article.status as any);
+    
     await prisma.$transaction([
       prisma.contentHubArticle.delete({
         where: { id: params.id },
@@ -135,7 +137,7 @@ export async function DELETE(
             decrement: 1,
           },
           // Also decrement completed articles if it was completed
-          ...(article.status === 'published' && {
+          ...(isCompleted && {
             completedArticles: {
               decrement: 1,
             },
