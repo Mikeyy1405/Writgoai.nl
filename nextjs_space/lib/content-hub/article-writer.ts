@@ -278,7 +278,7 @@ Schrijf nu het complete artikel in HTML formaat:`;
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 12000, // Verhoogd voor lange artikelen!
+      max_tokens: 12000, // Verhoogde limiet voor lange artikelen
       stream: false,
     });
 
@@ -303,9 +303,6 @@ Schrijf nu het complete artikel in HTML formaat:`;
 
     console.log(`[Article Writer] Success! Generated ${wordCount} words`);
 
-    // Generate metadata from content
-    const plainText = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-    
     return {
       content: html,
       metaTitle: generateMetaTitle(title, keywords),
@@ -474,7 +471,7 @@ Schrijf nu het complete artikel in HTML formaat:`;
         { role: 'user', content: prompt },
       ],
       temperature: 0.7,
-      max_tokens: 12000, // Verhoogd voor lange artikelen!
+      max_tokens: 12000, // Verhoogde limiet voor lange artikelen
       stream: true,
     });
 
