@@ -311,7 +311,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
             onClick={generating ? handleCancel : onClose}
             disabled={false}
           >
-            {progress === 100 ? 'Sluiten' : generating ? 'Annuleren' : 'Annuleren'}
+            {progress === 100 ? 'Sluiten' : 'Annuleren'}
           </Button>
           {progress === 0 && (
             <Button 
