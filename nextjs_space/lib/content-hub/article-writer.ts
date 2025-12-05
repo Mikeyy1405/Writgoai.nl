@@ -45,8 +45,8 @@ function cleanJsonResponse(content: string): string {
   // Matches ```json...``` or ```...``` with optional whitespace and newlines
   cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
   
-  // Remove any leading/trailing non-JSON characters
-  cleaned = cleaned.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+  // Remove any leading text before the first opening brace
+  cleaned = cleaned.replace(/^[^{]*/, '');
   
   // Try to extract JSON object if still wrapped in other content
   // Use greedy match to get the outermost JSON object
