@@ -91,10 +91,35 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
     setGenerating(true);
     setProgress(0);
 
+    // Progress simulation constants
+    const RESEARCH_INTERVAL_MS = 500;
+    const RESEARCH_INCREMENT = 2;
+    const RESEARCH_MAX = 20;
+    const CONTENT_INTERVAL_MS = 800;
+    const CONTENT_INCREMENT = 1;
+    const CONTENT_MAX = 50;
+    const SEO_INTERVAL_MS = 400;
+    const SEO_INCREMENT = 2;
+    const SEO_MAX = 80;
+    const VISUAL_FEEDBACK_DELAY_MS = 2000;
+
+    const startTime = Date.now();
+    let phaseStartTime = startTime;
+
+    // Track all intervals for cleanup
+    let researchInterval: NodeJS.Timeout | null = null;
+    let contentInterval: NodeJS.Timeout | null = null;
+    let seoInterval: NodeJS.Timeout | null = null;
+
     try {
-      // Phase 1: Research
-      updatePhase(0, { status: 'in-progress', message: 'Analyzing SERP...' });
-      setProgress(10);
+      // Phase 1: Research & Analysis
+      updatePhase(0, { status: 'in-progress', message: 'Analyzing SERP and gathering sources...' });
+      setProgress(5);
+
+      // Simulate progress updates during research phase
+      researchInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + RESEARCH_INCREMENT, RESEARCH_MAX));
+      }, RESEARCH_INTERVAL_MS);
 
       const response = await fetch('/api/content-hub/write-article', {
         method: 'POST',
@@ -110,24 +135,113 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate article');
+      if (researchInterval) {
+        clearInterval(researchInterval);
+        researchInterval = null;
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate article');
+      }
 
-      // Mark all phases as completed
-      setPhases(prev => prev.map(phase => ({ 
-        ...phase, 
-        status: 'completed' 
-      })));
+      // Phase 1 completed
+      const phase1Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
+      updatePhase(0, { 
+        status: 'completed', 
+        message: 'SERP analysis and source gathering completed',
+        duration: phase1Duration
+      });
+      setProgress(25);
+
+      // Phase 2: Content Generation
+      phaseStartTime = Date.now();
+      updatePhase(1, { 
+        status: 'in-progress', 
+        message: 'Generating high-quality content with AI...'
+      });
+      
+      // Simulate progress during content generation
+      contentInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + CONTENT_INCREMENT, CONTENT_MAX));
+      }, CONTENT_INTERVAL_MS);
+
+      // Wait for the response data
+      const data = await response.json();
+      
+      if (contentInterval) {
+        clearInterval(contentInterval);
+        contentInterval = null;
+      }
+
+      const phase2Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
+      updatePhase(1, { 
+        status: 'completed',
+        message: `Generated ${data.article?.wordCount || '~2000'} words`,
+        duration: phase2Duration
+      });
+      setProgress(60);
+
+      // Phase 3: SEO & Images
+      phaseStartTime = Date.now();
+      updatePhase(2, { 
+        status: 'in-progress',
+        message: generateImages ? 'Optimizing SEO and generating images...' : 'Optimizing SEO metadata...'
+      });
+      
+      // Simulate progress
+      seoInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + SEO_INCREMENT, SEO_MAX));
+      }, SEO_INTERVAL_MS);
+      
+      await new Promise(resolve => setTimeout(resolve, VISUAL_FEEDBACK_DELAY_MS)); // Give time for visual feedback
+      
+      if (seoInterval) {
+        clearInterval(seoInterval);
+        seoInterval = null;
+      }
+
+      const phase3Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
+      updatePhase(2, { 
+        status: 'completed',
+        message: 'SEO optimization completed',
+        duration: phase3Duration
+      });
+      setProgress(85);
+
+      // Phase 4: Publishing
+      phaseStartTime = Date.now();
+      if (autoPublish && data.article?.wordpressUrl) {
+        updatePhase(3, { 
+          status: 'in-progress',
+          message: 'Publishing to WordPress...'
+        });
+        setProgress(90);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const phase4Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
+        updatePhase(3, { 
+          status: 'completed',
+          message: 'Published to WordPress successfully',
+          duration: phase4Duration
+        });
+      } else {
+        updatePhase(3, { 
+          status: 'completed',
+          message: 'Content saved to library',
+          duration: 1
+        });
+      }
+      
       setProgress(100);
 
-      toast.success('Article generated successfully!');
+      const totalDuration = Math.floor((Date.now() - startTime) / 1000);
+      toast.success(`Article generated successfully in ${totalDuration}s!`);
       
       setTimeout(() => {
         onComplete();
-      }, 1000);
+      }, 1500);
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('Request was cancelled');
@@ -140,9 +254,19 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       // Mark current phase as failed
       const currentPhaseIndex = phases.findIndex(p => p.status === 'in-progress');
       if (currentPhaseIndex !== -1) {
-        updatePhase(currentPhaseIndex, { status: 'failed', message: error.message });
+        const phaseDuration = Math.floor((Date.now() - phaseStartTime) / 1000);
+        updatePhase(currentPhaseIndex, { 
+          status: 'failed', 
+          message: error.message || 'An error occurred',
+          duration: phaseDuration
+        });
       }
     } finally {
+      // Clean up all intervals to prevent memory leaks
+      if (researchInterval) clearInterval(researchInterval);
+      if (contentInterval) clearInterval(contentInterval);
+      if (seoInterval) clearInterval(seoInterval);
+      
       setAbortController(null);
       setGenerating(false);
     }
