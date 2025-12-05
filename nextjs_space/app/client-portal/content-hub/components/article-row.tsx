@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Pencil,
   Trash2,
+  Settings,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ArticleGenerator from './article-generator';
@@ -26,6 +27,8 @@ import RewriteModal from './rewrite-modal';
 import EditArticleModal from './edit-article-modal';
 import DeleteConfirmationModal from './delete-confirmation-modal';
 import { isInProgress } from '@/lib/content-hub/article-utils';
+import InlineGenerationStatus from '@/components/content-hub/inline-generation-status';
+import { GenerationPhase } from '@/lib/content-hub/generation-types';
 
 interface Article {
   id: string;
@@ -49,6 +52,10 @@ interface ArticleRowProps {
   onUpdate?: () => void;
 }
 
+// Constants for SSE parsing
+const MAX_PARSE_ERRORS = 3; // Maximum parse errors before showing toast
+const SSE_DATA_PREFIX_LENGTH = 6; // Length of 'data: ' prefix in SSE messages
+
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const [showGenerator, setShowGenerator] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -56,6 +63,31 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [phases, setPhases] = useState<GenerationPhase[]>([
+    { 
+      name: 'SERP Analyse', 
+      status: 'pending',
+      message: 'Top 10 Google resultaten analyseren...',
+    },
+    { 
+      name: 'Content Generatie', 
+      status: 'pending',
+      message: 'SEO-geoptimaliseerde content schrijven...',
+    },
+    { 
+      name: 'SEO & Afbeeldingen', 
+      status: 'pending',
+      message: 'Meta data en afbeeldingen optimaliseren...',
+    },
+    { 
+      name: 'Publicatie', 
+      status: 'pending',
+      message: 'Content opslaan...',
+    },
+  ]);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const getStatusIcon = () => {
     switch (article.status) {
@@ -138,6 +170,208 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
 
   const handleRewrite = () => {
     setShowRewriteModal(true);
+  };
+
+  const updatePhase = (index: number, updates: Partial<GenerationPhase>) => {
+    setPhases(prev => prev.map((phase, i) => 
+      i === index ? { ...phase, ...updates } : phase
+    ));
+  };
+
+  const handleCancel = async () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    
+    setGenerating(false);
+    setProgress(0);
+    setPhases(prev => prev.map(phase => ({ 
+      ...phase, 
+      status: phase.status === 'in-progress' ? 'pending' : phase.status 
+    })));
+    
+    toast.info('Generatie geannuleerd');
+    
+    // Reset article status in database
+    try {
+      await fetch(`/api/content-hub/articles/${article.id}/cancel`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Failed to reset article status:', error);
+      toast.warning('Generatie gestopt, maar status kon niet worden gereset');
+    }
+  };
+
+  const handleGenerate = async () => {
+    const controller = new AbortController();
+    setAbortController(controller);
+    setGenerating(true);
+    setProgress(0);
+
+    const startTime = Date.now();
+    const phaseStartTimes: { [key: number]: number } = {};
+    let parseErrorCount = 0; // Track parse errors locally
+
+    try {
+      const response = await fetch('/api/content-hub/write-article', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articleId: article.id,
+          generateImages: true,
+          includeFAQ: true,
+          autoPublish: false,
+          streamUpdates: true, // Enable SSE streaming
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate article');
+      }
+
+      // Handle SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      if (!reader) {
+        throw new Error('Kan geen real-time updates ontvangen. Probeer het opnieuw.');
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
+        }
+        
+        if (done) break;
+
+        // Process complete SSE messages
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(SSE_DATA_PREFIX_LENGTH));
+              
+              // Reset error count on successful parse
+              parseErrorCount = 0;
+              
+              // Map backend steps to frontend phases
+              let phaseIndex = -1;
+              if (data.step === 'serp-analysis') {
+                phaseIndex = 0;
+              } else if (data.step === 'content-generation') {
+                phaseIndex = 1;
+              } else if (data.step === 'seo-optimization') {
+                phaseIndex = 2;
+              } else if (data.step === 'saving' || data.step === 'publishing') {
+                phaseIndex = 3;
+              }
+
+              // Update progress
+              if (data.progress !== undefined) {
+                setProgress(data.progress);
+              }
+
+              // Update phase
+              if (phaseIndex !== -1 && phaseIndex < phases.length) {
+                if (data.status === 'in-progress') {
+                  phaseStartTimes[phaseIndex] = Date.now();
+                  updatePhase(phaseIndex, {
+                    status: 'in-progress',
+                    message: data.message || phases[phaseIndex]?.message,
+                  });
+                } else if (data.status === 'completed') {
+                  const duration = phaseStartTimes[phaseIndex] 
+                    ? Math.floor((Date.now() - phaseStartTimes[phaseIndex]) / 1000)
+                    : undefined;
+                  
+                  updatePhase(phaseIndex, {
+                    status: 'completed',
+                    message: data.message || '✅ Voltooid',
+                    duration,
+                    metrics: data.metrics,
+                  });
+                } else if (data.status === 'failed') {
+                  const duration = phaseStartTimes[phaseIndex]
+                    ? Math.floor((Date.now() - phaseStartTimes[phaseIndex]) / 1000)
+                    : undefined;
+                  
+                  updatePhase(phaseIndex, {
+                    status: 'failed',
+                    message: data.message || data.error || 'Fout opgetreden',
+                    duration,
+                  });
+                }
+              }
+
+              // Handle completion
+              if (data.step === 'complete') {
+                if (data.status === 'success') {
+                  setProgress(100);
+                  const totalDuration = Math.floor((Date.now() - startTime) / 1000);
+                  toast.success(`Artikel succesvol gegenereerd in ${totalDuration}s!`);
+                  
+                  setTimeout(() => {
+                    onUpdate?.();
+                    setGenerating(false);
+                  }, 1500);
+                } else if (data.status === 'error') {
+                  throw new Error(data.error || 'Het voltooien van het artikel is mislukt');
+                }
+                break;
+              }
+
+              // Handle error
+              if (data.step === 'error') {
+                throw new Error(data.error || data.message || 'Het genereren van het artikel is mislukt');
+              }
+            } catch (parseError) {
+              console.error('Error parsing SSE data:', parseError);
+              // Only show toast if this happens repeatedly
+              parseErrorCount++;
+              if (parseErrorCount > MAX_PARSE_ERRORS) {
+                toast.error('Fout bij ontvangen van updates. Controleer de browser console.');
+              }
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Request was cancelled');
+        return;
+      }
+      
+      console.error('Generation error:', error);
+      toast.error(error.message || 'Failed to generate article');
+      
+      // Mark current phase as failed
+      const currentPhaseIndex = phases.findIndex(p => p.status === 'in-progress');
+      if (currentPhaseIndex !== -1) {
+        const duration = phaseStartTimes[currentPhaseIndex]
+          ? Math.floor((Date.now() - phaseStartTimes[currentPhaseIndex]) / 1000)
+          : undefined;
+        
+        updatePhase(currentPhaseIndex, { 
+          status: 'failed', 
+          message: error.message || 'Er is een fout opgetreden',
+          duration,
+        });
+      }
+    } finally {
+      setAbortController(null);
+      setGenerating(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -229,7 +463,7 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
 
             {/* Actions */}
             <div className="flex-shrink-0 flex gap-2">
-              {article.status === 'pending' && (
+              {article.status === 'pending' && !generating && (
                 <>
                   <Button 
                     size="sm" 
@@ -242,7 +476,16 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
                   </Button>
                   <Button 
                     size="sm" 
+                    variant="outline"
                     onClick={() => setShowGenerator(true)}
+                    className="gap-2"
+                    title="Generatie instellingen"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleGenerate}
                     className="gap-2"
                   >
                     <Play className="h-4 w-4" />
@@ -319,10 +562,20 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
               )}
             </div>
           </div>
+
+          {/* Inline Generation Status */}
+          {generating && (
+            <InlineGenerationStatus
+              progress={progress}
+              phases={phases}
+              onCancel={handleCancel}
+              generating={generating}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Article Generator Modal */}
+      {/* Article Generator Modal - For Settings Only */}
       {showGenerator && (
         <ArticleGenerator
           article={article}
