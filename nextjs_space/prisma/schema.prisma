@@ -1432,6 +1432,10 @@ model BlogPost {
   lastAnalyzed       DateTime?
   searchConsoleData  Json?
   
+  // Admin Project Relation
+  adminProjectId     String?
+  adminProject       AdminProject? @relation(fields: [adminProjectId], references: [id])
+  
   // Relations
   versions           BlogVersion[]
 
@@ -1439,6 +1443,7 @@ model BlogPost {
   @@index([status])
   @@index([publishedAt])
   @@index([category])
+  @@index([adminProjectId])
 }
 
 model BlogIdea {
@@ -1469,6 +1474,40 @@ model BlogVersion {
   blogPost      BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
   
   @@index([blogPostId])
+}
+
+model AdminProject {
+  id                   String    @id @default(cuid())
+  name                 String
+  websiteUrl           String?
+  description          String?
+  
+  // WordPress Connection
+  wordpressUrl         String?
+  wordpressUsername    String?
+  wordpressPassword    String?   // Encrypted application password
+  wordpressCategory    String?
+  wordpressAutoPublish Boolean   @default(false)
+  
+  // Project Settings
+  language             Language  @default(NL)
+  niche                String?
+  targetAudience       String?
+  brandVoice           String?
+  keywords             String[]  @default([])
+  
+  // Status
+  isActive             Boolean   @default(true)
+  
+  // Timestamps
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  // Relations
+  blogPosts            BlogPost[]
+  
+  @@index([name])
+  @@index([isActive])
 }
 
 model EmailDraft {

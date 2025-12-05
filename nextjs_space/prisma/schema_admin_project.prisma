@@ -1,0 +1,36 @@
+// AdminProject model to be added to schema.prisma
+// Add this model after BlogVersion and before EmailDraft
+
+model AdminProject {
+  id                String    @id @default(cuid())
+  name              String
+  websiteUrl        String?
+  description       String?
+  
+  // WordPress Connection
+  wordpressUrl      String?
+  wordpressUsername String?
+  wordpressPassword String?   // Encrypted application password
+  wordpressCategory String?
+  wordpressAutoPublish Boolean @default(false)
+  
+  // Project Settings
+  language          Language  @default(NL)
+  niche             String?
+  targetAudience    String?
+  brandVoice        String?
+  keywords          String[]  @default([])
+  
+  // Status
+  isActive          Boolean   @default(true)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  blogPosts         BlogPost[]
+  
+  @@index([name])
+  @@index([isActive])
+}
