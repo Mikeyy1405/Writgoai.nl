@@ -11,6 +11,9 @@ import type { SERPAnalysis } from './serp-analyzer';
 const TOKEN_MULTIPLIER = 3; // Multiplier for target word count to max tokens
 const MAX_TOKENS_LIMIT = 16000; // Maximum tokens to prevent exceeding model limits
 const JSON_STRUCTURE_BUFFER = 500; // Buffer tokens to ensure JSON structure can be completed
+const MIN_CONTENT_LENGTH = 200; // Minimum content length in characters to consider valid
+const RETRY_TOKEN_MULTIPLIER = 2.5; // Reduced multiplier for retry attempts
+const RETRY_MAX_TOKENS = 12000; // Maximum tokens for retry attempts
 
 export interface ArticleWriteOptions {
   title: string;
@@ -130,6 +133,8 @@ function parseArticleResponse(rawContent: string, title: string, keywords: strin
   }
   
   // Aggressive extraction - search for content field
+  // This regex matches: "content":"..." followed by either "," or "}"
+  // Capturing group 1 contains the actual content value
   const contentMatch = rawContent.match(/"content"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"|\"\s*\})/);
   if (contentMatch && contentMatch[1]) {
     const extractedContent = contentMatch[1]
@@ -137,7 +142,7 @@ function parseArticleResponse(rawContent: string, title: string, keywords: strin
       .replace(/\\"/g, '"')
       .replace(/\\\\/g, '\\');
     
-    if (extractedContent.length > 200) {
+    if (extractedContent.length > MIN_CONTENT_LENGTH) {
       console.log('[Article Writer] Extracted content field directly');
       return {
         content: extractedContent,
@@ -233,7 +238,7 @@ export async function writeArticle(
       // Adjust max_tokens based on attempt (smaller on retry = more chance of complete JSON)
       const adjustedMaxTokens = attempt === 1 
         ? Math.min(targetWordCount * TOKEN_MULTIPLIER, MAX_TOKENS_LIMIT - JSON_STRUCTURE_BUFFER)
-        : Math.min(targetWordCount * 2.5, 12000);
+        : Math.min(targetWordCount * RETRY_TOKEN_MULTIPLIER, RETRY_MAX_TOKENS);
       
       // Build comprehensive context from SERP analysis
       let serpContext = '';
@@ -395,7 +400,7 @@ IMPORTANT: Respond with ONLY valid JSON, no markdown code blocks. The response m
       // Parse with multiple strategies
       const result = parseArticleResponse(rawContent, title, keywords);
       
-      if (!result.content || result.content.length < 200) {
+      if (!result.content || result.content.length < MIN_CONTENT_LENGTH) {
         throw new Error('Parsed content too short');
       }
       
