@@ -113,7 +113,7 @@ export default function WordPressPostEditor({ post, siteId, onClose, onSave }: W
               className="font-mono text-sm"
             />
             <p className="text-xs text-muted-foreground">
-              Gebruik HTML tags zoals &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;strong&gt;, etc.
+              Gebruik HTML tags zoals h2, p, ul, li, strong voor opmaak
             </p>
           </div>
 

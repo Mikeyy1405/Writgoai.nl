@@ -365,7 +365,7 @@ export default function ContentHubPage() {
                 </TabsContent>
 
                 <TabsContent value="wordpress" className="mt-6">
-                  <WordPressPostsList siteId={selectedSite.id} />
+                  <WordPressPostsList siteId={selectedSite.id} wordpressUrl={selectedSite.wordpressUrl} />
                 </TabsContent>
 
                 <TabsContent value="library" className="mt-6">

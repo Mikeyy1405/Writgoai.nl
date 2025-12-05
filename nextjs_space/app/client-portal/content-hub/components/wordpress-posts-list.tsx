@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import WordPressPostEditor from './wordpress-post-editor';
 import AIRewriteModal from './ai-rewrite-modal';
+import { getWordPressEditUrl } from '@/lib/wordpress-helpers';
 
 interface WordPressPost {
   id: number;
@@ -39,9 +40,10 @@ interface WordPressPost {
 
 interface WordPressPostsListProps {
   siteId: string;
+  wordpressUrl: string;
 }
 
-export default function WordPressPostsList({ siteId }: WordPressPostsListProps) {
+export default function WordPressPostsList({ siteId, wordpressUrl }: WordPressPostsListProps) {
   const [posts, setPosts] = useState<WordPressPost[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<WordPressPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -282,7 +284,7 @@ export default function WordPressPostsList({ siteId }: WordPressPostsListProps) 
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => window.open(`${post.link.replace(post.slug, '')}wp-admin/post.php?post=${post.id}&action=edit`, '_blank')}
+                    onClick={() => window.open(getWordPressEditUrl(wordpressUrl, post.id), '_blank')}
                     className="gap-2"
                   >
                     <ExternalLink className="h-4 w-4" />

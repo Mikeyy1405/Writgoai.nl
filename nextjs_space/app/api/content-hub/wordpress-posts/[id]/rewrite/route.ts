@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { sendChatCompletion } from '@/lib/aiml-chat-client';
+import { countWords, sanitizeHtml } from '@/lib/wordpress-helpers';
 
 /**
  * POST /api/content-hub/wordpress-posts/[id]/rewrite
@@ -211,8 +212,8 @@ Geef het herschreven artikel terug in JSON formaat:
     }
 
     // Count words
-    const plainText = rewrittenData.content.replace(/<[^>]*>/g, ' ').trim();
-    const wordCount = plainText.split(/\s+/).filter(word => word.length > 0).length;
+    const wordCount = countWords(rewrittenData.content);
+    const originalWordCount = countWords(post.content.rendered);
 
     // If preview only, return without saving
     if (previewOnly) {
@@ -220,14 +221,14 @@ Geef het herschreven artikel terug in JSON formaat:
         success: true,
         preview: true,
         rewrittenPost: {
-          title: rewrittenData.title || post.title.rendered.replace(/<[^>]*>/g, ''),
+          title: rewrittenData.title || sanitizeHtml(post.title.rendered),
           content: rewrittenData.content,
           metaDescription: rewrittenData.metaDescription,
           improvements: rewrittenData.improvements,
           wordCount,
-          originalTitle: post.title.rendered.replace(/<[^>]*>/g, ''),
+          originalTitle: sanitizeHtml(post.title.rendered),
           originalContent: post.content.rendered,
-          originalWordCount: post.content.rendered.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter((w: string) => w.length > 0).length,
+          originalWordCount,
         },
       });
     }
@@ -239,7 +240,7 @@ Geef het herschreven artikel terug in JSON formaat:
       };
       
       // Only update title if it changed
-      if (rewrittenData.title && rewrittenData.title !== post.title.rendered.replace(/<[^>]*>/g, '')) {
+      if (rewrittenData.title && rewrittenData.title !== sanitizeHtml(post.title.rendered)) {
         updateData.title = rewrittenData.title;
       }
 
@@ -281,7 +282,7 @@ Geef het herschreven artikel terug in JSON formaat:
         message: 'Post succesvol herschreven en gepubliceerd naar WordPress',
         rewrittenPost: {
           id: params.id,
-          title: rewrittenData.title || post.title.rendered.replace(/<[^>]*>/g, ''),
+          title: rewrittenData.title || sanitizeHtml(post.title.rendered),
           content: rewrittenData.content,
           metaDescription: rewrittenData.metaDescription,
           improvements: rewrittenData.improvements,

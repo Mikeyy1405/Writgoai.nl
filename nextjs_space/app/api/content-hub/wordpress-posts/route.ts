@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { countWords, sanitizeHtml } from '@/lib/wordpress-helpers';
 
 /**
  * GET /api/content-hub/wordpress-posts
@@ -135,18 +136,17 @@ export async function GET(req: NextRequest) {
         }
 
         // Count words in content
-        const plainText = post.content.rendered.replace(/<[^>]*>/g, ' ').trim();
-        const wordCount = plainText.split(/\s+/).filter(word => word.length > 0).length;
+        const wordCount = countWords(post.content.rendered);
 
         return {
           id: post.id,
-          title: post.title.rendered.replace(/<[^>]*>/g, ''),
+          title: sanitizeHtml(post.title.rendered),
           slug: post.slug,
           link: post.link,
           status: post.status,
           date: post.date,
           modified: post.modified,
-          excerpt: post.excerpt.rendered.replace(/<[^>]*>/g, '').substring(0, 200),
+          excerpt: sanitizeHtml(post.excerpt.rendered).substring(0, 200),
           content: post.content.rendered,
           wordCount,
           featuredImage,

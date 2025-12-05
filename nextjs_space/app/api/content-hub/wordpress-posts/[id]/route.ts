@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { countWords, sanitizeHtml } from '@/lib/wordpress-helpers';
 
 /**
  * GET /api/content-hub/wordpress-posts/[id]
@@ -189,12 +190,10 @@ export async function PUT(
       if (content) updateData.content = content;
       if (excerpt) updateData.excerpt = excerpt;
       
-      // Update Yoast meta description if provided
-      if (metaDescription) {
-        updateData.yoast_meta = {
-          yoast_wpseo_metadesc: metaDescription,
-        };
-      }
+      // Note: Meta description update depends on SEO plugin installed
+      // Yoast SEO typically uses 'yoast_head_json' but may require separate API
+      // For now, we update the standard excerpt which is often used as meta description
+      // Custom plugin integration may be needed for advanced SEO field updates
 
       const endpoint = `${wpUrl}/wp-json/wp/v2/posts/${params.id}`;
       const response = await fetch(endpoint, {
@@ -270,22 +269,21 @@ function transformPost(post: any) {
   }
 
   // Count words in content
-  const plainText = post.content.rendered.replace(/<[^>]*>/g, ' ').trim();
-  const wordCount = plainText.split(/\s+/).filter(word => word.length > 0).length;
+  const wordCount = countWords(post.content.rendered);
 
-  // Extract meta description from Yoast
+  // Extract meta description from Yoast (if available)
   const metaDescription = post.yoast_head_json?.description || 
-    post.excerpt.rendered.replace(/<[^>]*>/g, '').substring(0, 160);
+    sanitizeHtml(post.excerpt.rendered).substring(0, 160);
 
   return {
     id: post.id,
-    title: post.title.rendered.replace(/<[^>]*>/g, ''),
+    title: sanitizeHtml(post.title.rendered),
     slug: post.slug,
     link: post.link,
     status: post.status,
     date: post.date,
     modified: post.modified,
-    excerpt: post.excerpt.rendered.replace(/<[^>]*>/g, '').substring(0, 200),
+    excerpt: sanitizeHtml(post.excerpt.rendered).substring(0, 200),
     content: post.content.rendered,
     wordCount,
     featuredImage,
