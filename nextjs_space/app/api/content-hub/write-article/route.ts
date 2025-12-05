@@ -129,8 +129,602 @@ function insertBolcomProductsInContent(html: string, productBoxesHtml: string): 
 }
 
 /**
+ * Handle streaming article generation with SSE updates
+ */
+async function handleStreamingGeneration(
+  article: any,
+  client: any,
+  options: {
+    generateImages: boolean;
+    includeFAQ: boolean;
+    autoPublish: boolean;
+    startTime: number;
+  }
+) {
+  const { generateImages, includeFAQ, autoPublish, startTime } = options;
+
+  // Start streaming response
+  const stream = new TransformStream();
+  const writer = stream.writable.getWriter();
+  const encoder = new TextEncoder();
+
+  const sendUpdate = async (data: any) => {
+    try {
+      await writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+    } catch (error) {
+      console.error('[SSE] Failed to send update:', error);
+    }
+  };
+
+  // Process in background
+  (async () => {
+    try {
+      // Update status to researching
+      await prisma.contentHubArticle.update({
+        where: { id: article.id },
+        data: { status: 'researching' },
+      });
+
+      console.log(`[Content Hub] Starting article generation: ${article.title}`);
+
+      // Phase 1: SERP Analysis
+      await sendUpdate({
+        step: 'serp-analysis',
+        status: 'in-progress',
+        progress: 5,
+        message: `Top 10 Google resultaten analyseren voor ${article.keywords[0] || article.title}...`,
+      });
+
+      console.log('[Content Hub] Phase 1: Research & Analysis');
+      console.log('[Content Hub] Performing real SERP analysis with web search...');
+      
+      let serpAnalysis;
+      try {
+        serpAnalysis = await analyzeSERP(
+          article.keywords[0] || article.title,
+          'nl'
+        );
+        console.log(`[Content Hub] SERP analysis voltooid - Target: ${serpAnalysis.suggestedLength} words, ${serpAnalysis.lsiKeywords?.length || 0} LSI keywords, ${serpAnalysis.paaQuestions?.length || 0} PAA questions`);
+        
+        await sendUpdate({
+          step: 'serp-analysis',
+          status: 'completed',
+          progress: 20,
+          message: '✅ SERP analyse voltooid',
+          metrics: {
+            wordCount: serpAnalysis.suggestedLength,
+            lsiKeywords: serpAnalysis.lsiKeywords?.length || 0,
+            paaQuestions: serpAnalysis.paaQuestions?.length || 0,
+          },
+        });
+      } catch (error: any) {
+        console.error('[Content Hub] SERP analysis failed, using defaults:', error);
+        // Use default analysis if SERP analysis fails
+        serpAnalysis = {
+          keyword: article.keywords[0] || article.title,
+          topResults: [],
+          averageWordCount: 1500,
+          commonHeadings: ['Introductie', 'Wat is het?', 'Voordelen', 'Nadelen', 'Best Practices', 'Tips', 'Conclusie'],
+          topicsCovered: [article.keywords[0] || article.title],
+          questionsFound: [`Wat is ${article.keywords[0] || article.title}?`],
+          contentGaps: ['Praktische voorbeelden', 'Actuele statistieken'],
+          suggestedLength: 1400,
+          lsiKeywords: [
+            article.keywords[0] || article.title,
+            `${article.keywords[0] || article.title} tips`,
+            `beste ${article.keywords[0] || article.title}`,
+            `${article.keywords[0] || article.title} voordelen`,
+          ],
+          paaQuestions: [
+            `Wat is ${article.keywords[0] || article.title}?`,
+            `Hoe werkt ${article.keywords[0] || article.title}?`,
+            `Waarom is ${article.keywords[0] || article.title} belangrijk?`,
+            `Wat zijn de voordelen van ${article.keywords[0] || article.title}?`,
+          ],
+        };
+        
+        await sendUpdate({
+          step: 'serp-analysis',
+          status: 'completed',
+          progress: 20,
+          message: '✅ SERP analyse voltooid (defaults)',
+          metrics: {
+            wordCount: serpAnalysis.suggestedLength,
+          },
+        });
+      }
+
+      let sources;
+      try {
+        sources = await gatherSources(article.title, 'nl');
+        console.log('[Content Hub] Bronnen verzameld');
+      } catch (error: any) {
+        console.error('[Content Hub] Source gathering failed:', error);
+        sources = { sources: [], insights: [] };
+      }
+
+      // Fetch sitemap for internal linking
+      console.log('[Content Hub] Fetching sitemap for internal links...');
+      const sitemapUrls = await fetchSitemapUrls(article.site.wordpressUrl);
+      
+      // Generate internal link suggestions
+      let internalLinks: Array<{ url: string; anchorText: string }> = [];
+      if (sitemapUrls.length > 0) {
+        internalLinks = sitemapUrls.slice(0, 7).map(page => ({
+          url: page.url,
+          anchorText: page.title.replace(/-/g, ' ').replace(/\//g, ''),
+        }));
+        console.log(`[Content Hub] Found ${internalLinks.length} internal link opportunities`);
+      }
+
+      // Phase 2: Content Generation
+      await sendUpdate({
+        step: 'content-generation',
+        status: 'in-progress',
+        progress: 25,
+        message: 'SEO-geoptimaliseerde content schrijven met E-E-A-T...',
+      });
+
+      console.log('[Content Hub] Phase 2: Content Generation');
+      await prisma.contentHubArticle.update({
+        where: { id: article.id },
+        data: { 
+          status: 'writing',
+          researchData: {
+            serpAnalysis,
+            sources,
+            sitemapUrls: sitemapUrls.slice(0, 20),
+          } as any,
+        },
+      });
+
+      let articleResult;
+      try {
+        const serpWordCount = serpAnalysis.suggestedLength || 1400;
+        const targetWordCount = Math.min(
+          Math.max(serpWordCount, MIN_TARGET_WORD_COUNT),
+          1500
+        );
+        
+        console.log(`[Content Hub] Starting content generation - Target: ${targetWordCount} words (SERP suggested: ${serpWordCount})`);
+        
+        articleResult = await writeArticle({
+          title: article.title,
+          keywords: article.keywords,
+          targetWordCount,
+          tone: 'professional',
+          language: 'nl',
+          serpAnalysis,
+          internalLinks: internalLinks.length > 0 ? internalLinks : undefined,
+          includeFAQ,
+        });
+
+        console.log(`[Content Hub] Content generated successfully: ${articleResult.wordCount} words`);
+        
+        await sendUpdate({
+          step: 'content-generation',
+          status: 'completed',
+          progress: 60,
+          message: `✅ ${articleResult.wordCount} woorden gegenereerd`,
+          metrics: {
+            wordCount: articleResult.wordCount,
+            lsiKeywords: serpAnalysis.lsiKeywords?.length || 18,
+            paaQuestions: serpAnalysis.paaQuestions?.length || 6,
+          },
+        });
+      } catch (writeError: any) {
+        console.error('[Content Hub] Article writing failed:', writeError);
+        
+        await prisma.contentHubArticle.update({
+          where: { id: article.id },
+          data: { 
+            status: 'failed',
+            researchData: {
+              error: writeError.message,
+              timestamp: new Date().toISOString(),
+            } as any,
+          },
+        });
+        
+        await sendUpdate({
+          step: 'content-generation',
+          status: 'failed',
+          progress: 60,
+          message: 'Het schrijven van het artikel is mislukt',
+          error: writeError.message,
+        });
+        
+        throw writeError;
+      }
+
+      // Generate FAQ if requested and not included
+      let faqSection = articleResult.faqSection;
+      if (includeFAQ && !faqSection) {
+        faqSection = await generateFAQ(article.title, 'nl');
+      }
+
+      // Phase 3: SEO & Images
+      await sendUpdate({
+        step: 'seo-optimization',
+        status: 'in-progress',
+        progress: 65,
+        message: generateImages ? 'Meta data optimaliseren en afbeeldingen genereren...' : 'SEO metadata optimaliseren...',
+      });
+
+      console.log('[Content Hub] Phase 3: SEO Optimization & Image Generation');
+      
+      // Generate SEO metadata
+      const metaTitle = generateMetaTitle(
+        article.title,
+        article.keywords[0] || article.title
+      );
+      const metaDescription = generateMetaDescription(
+        articleResult.excerpt,
+        article.keywords
+      );
+      const slug = generateSlug(article.title);
+
+      // Generate images (featured + article images)
+      let featuredImageUrl = null;
+      let articleImages: any[] = [];
+      
+      if (generateImages) {
+        try {
+          console.log('[Content Hub] Generating featured image...');
+          const featuredImage = await generateFeaturedImage(
+            article.title,
+            article.keywords,
+            { useFreeStock: true }
+          );
+          featuredImageUrl = featuredImage.url;
+          console.log('[Content Hub] Featured image generated successfully');
+          
+          // Generate additional article images
+          console.log('[Content Hub] Searching for article images...');
+          const { generateArticleImagesWithAltText } = await import('@/lib/content-hub/image-generator');
+          
+          articleImages = await generateArticleImagesWithAltText(
+            article.title,
+            articleResult.content,
+            article.keywords,
+            TARGET_IMAGE_COUNT
+          );
+          
+          console.log(`[Content Hub] Generated ${articleImages.length} article images`);
+          
+          await sendUpdate({
+            step: 'seo-optimization',
+            status: 'completed',
+            progress: 80,
+            message: '✅ SEO & afbeeldingen geoptimaliseerd',
+            metrics: {
+              images: articleImages.length,
+            },
+          });
+        } catch (error) {
+          console.error('[Content Hub] Image generation failed:', error);
+          await sendUpdate({
+            step: 'seo-optimization',
+            status: 'completed',
+            progress: 80,
+            message: '✅ SEO geoptimaliseerd (afbeeldingen overgeslagen)',
+          });
+        }
+      } else {
+        await sendUpdate({
+          step: 'seo-optimization',
+          status: 'completed',
+          progress: 80,
+          message: '✅ SEO metadata geoptimaliseerd',
+        });
+      }
+
+      // Phase 4: Enhance content with images and products
+      console.log('[Content Hub] Phase 4: Enhancing content with images and products');
+      let enhancedContent = articleResult.content;
+
+      // Insert images into content
+      if (articleImages.length > 0) {
+        console.log(`[Content Hub] Inserting ${articleImages.length} images into content...`);
+        enhancedContent = insertImagesInContent(enhancedContent, articleImages);
+      }
+
+      // Try to add Bol.com products if client has credentials
+      try {
+        const bolcomProject = await prisma.project.findFirst({
+          where: {
+            clientId: client.id,
+            bolcomEnabled: true,
+            bolcomClientId: { not: null },
+            bolcomClientSecret: { not: null },
+          },
+          select: {
+            bolcomClientId: true,
+            bolcomClientSecret: true,
+            bolcomAffiliateId: true,
+          },
+        });
+
+        if (bolcomProject?.bolcomClientId && bolcomProject?.bolcomClientSecret) {
+          console.log('[Content Hub] Searching for Bol.com products...');
+          
+          const bolcomCredentials: BolcomCredentials = {
+            clientId: bolcomProject.bolcomClientId,
+            clientSecret: bolcomProject.bolcomClientSecret,
+            affiliateId: bolcomProject.bolcomAffiliateId || undefined,
+          };
+
+          const searchResults = await searchBolcomProducts(
+            article.keywords[0] || article.title,
+            bolcomCredentials,
+            {
+              resultsPerPage: 3,
+              countryCode: 'NL',
+            }
+          );
+
+          if (searchResults.results.length > 0) {
+            console.log(`[Content Hub] Found ${searchResults.results.length} Bol.com products`);
+            
+            const productDetails = await Promise.all(
+              searchResults.results.slice(0, 3).map(p =>
+                getBolcomProductDetails(p.ean, bolcomCredentials).catch(() => null)
+              )
+            );
+
+            const validProducts = productDetails.filter(p => p !== null);
+            
+            if (validProducts.length > 0) {
+              const productBoxesHtml = generateBolcomProductBoxes(validProducts);
+              enhancedContent = insertBolcomProductsInContent(enhancedContent, productBoxesHtml);
+              console.log(`[Content Hub] Added ${validProducts.length} Bol.com product boxes to content`);
+            }
+          }
+        }
+      } catch (bolcomError: any) {
+        console.error('[Content Hub] Bol.com integration error:', bolcomError.message);
+      }
+
+      // Generate schema markup
+      const schema = generateArticleSchema({
+        title: article.title,
+        excerpt: articleResult.excerpt,
+        content: enhancedContent,
+        imageUrl: featuredImageUrl || undefined,
+      });
+
+      // Save article
+      const generationTime = Math.floor((Date.now() - startTime) / 1000);
+      
+      await prisma.contentHubArticle.update({
+        where: { id: article.id },
+        data: {
+          status: 'published',
+          content: enhancedContent,
+          metaTitle,
+          metaDescription,
+          featuredImage: featuredImageUrl,
+          wordCount: articleResult.wordCount,
+          slug,
+          faqSection: faqSection as any,
+          schemaMarkup: schema as any,
+          generationTime,
+          researchData: {
+            serpAnalysis,
+            sources,
+            articleImages: articleImages.map(img => ({
+              url: img.url,
+              altText: img.altText,
+              filename: img.filename,
+              source: img.source,
+            })),
+            imageCount: articleImages.length,
+          } as any,
+        },
+      });
+
+      // Phase 5: Save to Content Library
+      await sendUpdate({
+        step: 'saving',
+        status: 'in-progress',
+        progress: 85,
+        message: 'Content opslaan in bibliotheek...',
+      });
+
+      console.log('[Content Hub] Saving to Content Library...');
+      
+      const saveResult = await autoSaveToLibrary({
+        clientId: client.id,
+        type: 'blog',
+        title: article.title,
+        content: enhancedContent,
+        contentHtml: enhancedContent,
+        category: 'blog',
+        tags: article.keywords,
+        description: articleResult.excerpt,
+        keywords: article.keywords,
+        metaDesc: metaDescription,
+        slug,
+        thumbnailUrl: featuredImageUrl || undefined,
+      });
+
+      if (saveResult.success && saveResult.contentId) {
+        try {
+          await prisma.contentHubArticle.update({
+            where: { id: article.id },
+            data: { contentId: saveResult.contentId },
+          });
+          console.log(`[Content Hub] Content saved to library with ID: ${saveResult.contentId}`);
+        } catch (contentIdError) {
+          console.error('[Content Hub] Failed to link contentId:', contentIdError);
+        }
+      }
+
+      // Phase 6: Auto-publish to WordPress if enabled
+      let wordpressUrl: string | null = null;
+      let wordpressPostId: number | null = null;
+
+      if (autoPublish) {
+        await sendUpdate({
+          step: 'publishing',
+          status: 'in-progress',
+          progress: 90,
+          message: 'Publiceren naar WordPress...',
+        });
+
+        try {
+          console.log('[Content Hub] Auto-publishing to WordPress...');
+          
+          const wpConfig = await getWordPressConfig({
+            clientEmail: client.email,
+          });
+
+          if (wpConfig && wpConfig.siteUrl && wpConfig.username && wpConfig.applicationPassword) {
+            const publishResult = await publishToWordPress(
+              wpConfig,
+              {
+                title: article.title,
+                content: enhancedContent,
+                excerpt: articleResult.excerpt,
+                status: 'publish',
+                tags: article.keywords,
+                featuredImageUrl: featuredImageUrl || undefined,
+                seoTitle: metaTitle,
+                seoDescription: metaDescription,
+                focusKeyword: article.keywords[0] || article.title,
+                useGutenberg: true,
+              }
+            );
+
+            wordpressUrl = publishResult.link;
+            wordpressPostId = publishResult.id;
+
+            await prisma.contentHubArticle.update({
+              where: { id: article.id },
+              data: {
+                wordpressPostId,
+                wordpressUrl,
+                publishedAt: new Date(),
+              },
+            });
+
+            if (saveResult.contentId) {
+              try {
+                await prisma.savedContent.update({
+                  where: { id: saveResult.contentId },
+                  data: {
+                    publishedUrl: wordpressUrl,
+                    publishedAt: new Date(),
+                  },
+                });
+              } catch (updateError) {
+                console.error('[Content Hub] Failed to update SavedContent:', updateError);
+              }
+            }
+
+            console.log(`[Content Hub] Published to WordPress: ${wordpressUrl}`);
+            
+            await sendUpdate({
+              step: 'publishing',
+              status: 'completed',
+              progress: 100,
+              message: '✅ Gepubliceerd naar WordPress',
+            });
+          } else {
+            console.log('[Content Hub] WordPress credentials not configured');
+            await sendUpdate({
+              step: 'publishing',
+              status: 'completed',
+              progress: 100,
+              message: '✅ Content opgeslagen in bibliotheek',
+            });
+          }
+        } catch (wpError: any) {
+          console.error('[Content Hub] WordPress publish error:', wpError);
+          await sendUpdate({
+            step: 'publishing',
+            status: 'completed',
+            progress: 100,
+            message: '✅ Content opgeslagen (WordPress publicatie mislukt)',
+          });
+        }
+      } else {
+        await sendUpdate({
+          step: 'saving',
+          status: 'completed',
+          progress: 100,
+          message: '✅ Content opgeslagen in bibliotheek',
+        });
+      }
+
+      console.log(`[Content Hub] Article completed in ${generationTime}s`);
+
+      // Send final completion update
+      await sendUpdate({
+        step: 'complete',
+        status: 'success',
+        progress: 100,
+        message: autoPublish && wordpressUrl 
+          ? 'Article generated and published to WordPress'
+          : 'Article generated successfully',
+        result: {
+          article: {
+            id: article.id,
+            title: article.title,
+            wordCount: articleResult.wordCount,
+            metaTitle,
+            metaDescription,
+            slug,
+            featuredImage: featuredImageUrl,
+            status: 'published',
+            generationTime,
+            contentId: saveResult.contentId || null,
+            wordpressUrl,
+            wordpressPostId,
+            imageCount: articleImages.length,
+            lsiKeywords: serpAnalysis.lsiKeywords?.length || 0,
+            paaQuestions: serpAnalysis.paaQuestions?.length || 0,
+          },
+        },
+      });
+    } catch (error: any) {
+      console.error('[Content Hub] Streaming generation error:', error);
+      
+      if (article?.id) {
+        try {
+          await prisma.contentHubArticle.update({
+            where: { id: article.id },
+            data: { status: 'failed' },
+          });
+        } catch (e) {
+          console.error('Failed to update article status:', e);
+        }
+      }
+
+      await sendUpdate({
+        step: 'error',
+        status: 'failed',
+        error: error.message || 'Failed to generate article',
+        message: error.message || 'Er is een fout opgetreden',
+      });
+    } finally {
+      await writer.close();
+    }
+  })();
+
+  return new Response(stream.readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
+}
+
+/**
  * POST /api/content-hub/write-article
  * Generate a complete article with all SEO elements
+ * Supports both SSE streaming and traditional JSON response
  */
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
@@ -163,6 +757,7 @@ export async function POST(req: NextRequest) {
       generateImages = true,
       includeFAQ = true,
       autoPublish = false,
+      streamUpdates = false, // New parameter to enable SSE streaming
     } = body;
     
     articleId = bodyArticleId;
@@ -189,6 +784,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // If streaming is requested, use SSE
+    if (streamUpdates) {
+      return handleStreamingGeneration(article, client, {
+        generateImages,
+        includeFAQ,
+        autoPublish,
+        startTime,
+      });
+    }
+
+    // Otherwise, use traditional approach (backward compatibility)
     // Update status to researching
     await prisma.contentHubArticle.update({
       where: { id: articleId },
