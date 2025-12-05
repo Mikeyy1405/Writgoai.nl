@@ -170,6 +170,9 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         throw new Error(errorData.error || 'Failed to generate article');
       }
 
+      // Wait for the response data
+      const data = await response.json();
+
       // Phase 1 completed
       const phase1Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
       updatePhase(0, { 
@@ -193,9 +196,6 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       contentInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + CONTENT_INCREMENT, CONTENT_MAX));
       }, CONTENT_INTERVAL_MS);
-
-      // Wait for the response data
-      const data = await response.json();
       
       if (contentInterval) {
         clearInterval(contentInterval);
