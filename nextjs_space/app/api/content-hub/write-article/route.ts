@@ -239,11 +239,16 @@ export async function POST(req: NextRequest) {
 
     // Link contentId back to ContentHubArticle
     if (saveResult.success && saveResult.contentId) {
-      await prisma.contentHubArticle.update({
-        where: { id: articleId },
-        data: { contentId: saveResult.contentId },
-      });
-      console.log(`[Content Hub] Content saved to library with ID: ${saveResult.contentId}`);
+      try {
+        await prisma.contentHubArticle.update({
+          where: { id: articleId },
+          data: { contentId: saveResult.contentId },
+        });
+        console.log(`[Content Hub] Content saved to library with ID: ${saveResult.contentId}`);
+      } catch (contentIdError) {
+        console.error('[Content Hub] Failed to link contentId (migration may not be applied):', contentIdError);
+        // Don't throw - content is saved, just not linked
+      }
     }
 
     // Auto-publish to WordPress if enabled

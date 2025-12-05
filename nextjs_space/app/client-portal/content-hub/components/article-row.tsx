@@ -17,10 +17,14 @@ import {
   Upload,
   ExternalLink,
   RefreshCw,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ArticleGenerator from './article-generator';
 import RewriteModal from './rewrite-modal';
+import EditArticleModal from './edit-article-modal';
+import DeleteConfirmationModal from './delete-confirmation-modal';
 
 interface Article {
   id: string;
@@ -48,6 +52,9 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
   const [showGenerator, setShowGenerator] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [showRewriteModal, setShowRewriteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getStatusIcon = () => {
     switch (article.status) {
@@ -132,6 +139,29 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
     setShowRewriteModal(true);
   };
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/content-hub/articles/${article.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Verwijderen mislukt');
+      }
+
+      toast.success('Artikel succesvol verwijderd');
+      setShowDeleteModal(false);
+      onUpdate?.();
+    } catch (error: any) {
+      console.error('Failed to delete:', error);
+      toast.error(error.message || 'Kon artikel niet verwijderen');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
       <Card className="hover:shadow-md transition-shadow">
@@ -199,14 +229,25 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
             {/* Actions */}
             <div className="flex-shrink-0 flex gap-2">
               {article.status === 'pending' && (
-                <Button 
-                  size="sm" 
-                  onClick={() => setShowGenerator(true)}
-                  className="gap-2"
-                >
-                  <Play className="h-4 w-4" />
-                  Genereer
-                </Button>
+                <>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowEditModal(true)}
+                    className="gap-2"
+                    title="Bewerk artikel"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowGenerator(true)}
+                    className="gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    Genereer
+                  </Button>
+                </>
               )}
               
               {article.status === 'published' && !article.wordpressUrl && (
@@ -257,8 +298,22 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
                   size="sm" 
                   variant="ghost"
                   onClick={() => setShowGenerator(true)}
+                  title="Bekijk artikel"
                 >
                   <Eye className="h-4 w-4" />
+                </Button>
+              )}
+
+              {/* Delete button - available for all statuses except in-progress */}
+              {!['researching', 'writing', 'publishing'].includes(article.status) && (
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                  title="Verwijder artikel"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -289,6 +344,28 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
           }}
         />
       )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <EditArticleModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={() => {
+            setShowEditModal(false);
+            onUpdate?.();
+          }}
+          article={article}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        articleTitle={article.title}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

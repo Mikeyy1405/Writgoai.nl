@@ -91,10 +91,18 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
     setGenerating(true);
     setProgress(0);
 
+    const startTime = Date.now();
+    let phaseStartTime = startTime;
+
     try {
-      // Phase 1: Research
-      updatePhase(0, { status: 'in-progress', message: 'Analyzing SERP...' });
-      setProgress(10);
+      // Phase 1: Research & Analysis
+      updatePhase(0, { status: 'in-progress', message: 'Analyzing SERP and gathering sources...' });
+      setProgress(5);
+
+      // Simulate progress updates during research phase
+      const researchInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 2, 20));
+      }, 500);
 
       const response = await fetch('/api/content-hub/write-article', {
         method: 'POST',
@@ -110,24 +118,102 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
         signal: controller.signal,
       });
 
+      clearInterval(researchInterval);
+
       if (!response.ok) {
-        throw new Error('Failed to generate article');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate article');
       }
 
-      const data = await response.json();
+      // Phase 1 completed
+      const phase1Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
+      updatePhase(0, { 
+        status: 'completed', 
+        message: 'SERP analysis and source gathering completed',
+        duration: phase1Duration
+      });
+      setProgress(25);
 
-      // Mark all phases as completed
-      setPhases(prev => prev.map(phase => ({ 
-        ...phase, 
-        status: 'completed' 
-      })));
+      // Phase 2: Content Generation
+      phaseStartTime = Date.now();
+      updatePhase(1, { 
+        status: 'in-progress', 
+        message: 'Generating high-quality content with AI...'
+      });
+      
+      // Simulate progress during content generation
+      const contentInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 1, 50));
+      }, 800);
+
+      // Wait for the response data
+      const data = await response.json();
+      clearInterval(contentInterval);
+
+      const phase2Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
+      updatePhase(1, { 
+        status: 'completed',
+        message: `Generated ${data.article?.wordCount || '~2000'} words`,
+        duration: phase2Duration
+      });
+      setProgress(60);
+
+      // Phase 3: SEO & Images
+      phaseStartTime = Date.now();
+      updatePhase(2, { 
+        status: 'in-progress',
+        message: generateImages ? 'Optimizing SEO and generating images...' : 'Optimizing SEO metadata...'
+      });
+      
+      // Simulate progress
+      const seoInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 2, 80));
+      }, 400);
+      
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Give time for visual feedback
+      clearInterval(seoInterval);
+
+      const phase3Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
+      updatePhase(2, { 
+        status: 'completed',
+        message: 'SEO optimization completed',
+        duration: phase3Duration
+      });
+      setProgress(85);
+
+      // Phase 4: Publishing
+      phaseStartTime = Date.now();
+      if (autoPublish && data.article?.wordpressUrl) {
+        updatePhase(3, { 
+          status: 'in-progress',
+          message: 'Publishing to WordPress...'
+        });
+        setProgress(90);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const phase4Duration = Math.floor((Date.now() - phaseStartTime) / 1000);
+        updatePhase(3, { 
+          status: 'completed',
+          message: 'Published to WordPress successfully',
+          duration: phase4Duration
+        });
+      } else {
+        updatePhase(3, { 
+          status: 'completed',
+          message: 'Content saved to library',
+          duration: 1
+        });
+      }
+      
       setProgress(100);
 
-      toast.success('Article generated successfully!');
+      const totalDuration = Math.floor((Date.now() - startTime) / 1000);
+      toast.success(`Article generated successfully in ${totalDuration}s!`);
       
       setTimeout(() => {
         onComplete();
-      }, 1000);
+      }, 1500);
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('Request was cancelled');
@@ -140,7 +226,12 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
       // Mark current phase as failed
       const currentPhaseIndex = phases.findIndex(p => p.status === 'in-progress');
       if (currentPhaseIndex !== -1) {
-        updatePhase(currentPhaseIndex, { status: 'failed', message: error.message });
+        const phaseDuration = Math.floor((Date.now() - phaseStartTime) / 1000);
+        updatePhase(currentPhaseIndex, { 
+          status: 'failed', 
+          message: error.message || 'An error occurred',
+          duration: phaseDuration
+        });
       }
     } finally {
       setAbortController(null);
