@@ -19,6 +19,9 @@ interface AIChatProps {
   currentContent?: string;
 }
 
+// Maximum number of messages to keep in conversation history
+const MAX_CONVERSATION_HISTORY = 6;
+
 export default function AIChat({ currentContent }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -60,7 +63,7 @@ export default function AIChat({ currentContent }: AIChatProps) {
         body: JSON.stringify({
           message: textToSend,
           currentContent,
-          conversationHistory: messages.slice(-6).map((m) => ({
+          conversationHistory: messages.slice(-MAX_CONVERSATION_HISTORY).map((m) => ({
             role: m.role === 'user' ? 'user' : 'assistant',
             content: m.content,
           })),

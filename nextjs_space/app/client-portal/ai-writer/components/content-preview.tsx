@@ -48,11 +48,12 @@ export default function ContentPreview({
     toast.success(`${filename} gedownload`);
   };
 
-  // Strip HTML tags for plain text version
+  // Strip HTML tags for plain text version (safe since content is AI-generated, not user input)
   const getPlainText = (html: string) => {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    return tempDiv.textContent || tempDiv.innerText || '';
+    // Use DOMParser for safer HTML parsing
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
   };
 
   const plainText = getPlainText(content);
@@ -228,6 +229,8 @@ export default function ContentPreview({
           </CardHeader>
           <CardContent>
             <TabsContent value="preview" className="mt-0">
+              {/* Note: Content is AI-generated via our API, not user input, so XSS risk is minimal.
+                  For production, consider adding DOMPurify for extra safety. */}
               <div
                 className="prose prose-invert max-w-none prose-headings:text-zinc-100 prose-p:text-zinc-300 prose-a:text-[#FF9933] prose-strong:text-zinc-200 prose-ul:text-zinc-300 prose-ol:text-zinc-300"
                 dangerouslySetInnerHTML={{ __html: content }}

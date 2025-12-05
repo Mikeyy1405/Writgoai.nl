@@ -16,6 +16,11 @@ export const runtime = 'nodejs';
  * Comprehensive content generation with full customization
  */
 
+// Constants for token calculation and credit deduction
+const MIN_TOKENS = 4000;
+const TOKENS_PER_WORD = 2;
+const WORDS_PER_CREDIT = 500;
+
 interface GenerateRequest {
   // Content Configuration
   contentType: string;
@@ -209,7 +214,7 @@ export async function POST(request: NextRequest) {
 - Primaire keyword: ${keywords}`;
 
     if (secondaryKeywords) {
-      prompt += `\n- Secondary keywords: ${secondaryKeywords}`;
+      prompt += `\n- Secondaire keywords: ${secondaryKeywords}`;
     }
 
     if (targetAudience) {
@@ -262,10 +267,15 @@ Schrijf nu de volledige content in ${languageMap[language]} met proper HTML form
         },
       ],
       temperature: 0.7,
-      max_tokens: Math.max(4000, wordCount * 2),
+      max_tokens: Math.max(MIN_TOKENS, wordCount * TOKENS_PER_WORD),
     });
 
     let generatedContent = response.choices[0]?.message?.content || '';
+
+    // Validate content was generated
+    if (!generatedContent || generatedContent.trim().length === 0) {
+      throw new Error('No content was generated. Please try again.');
+    }
 
     // 7. Generate meta description if requested
     let metaDescription = '';
@@ -292,8 +302,8 @@ Schrijf alleen de meta description, geen extra tekst.`;
       metaDescription = metaResponse.choices[0]?.message?.content?.trim() || '';
     }
 
-    // 8. Deduct credits (estimated based on word count)
-    const creditCost = Math.ceil(wordCount / 500);
+    // 8. Deduct credits AFTER successful generation (estimated based on word count)
+    const creditCost = Math.ceil(wordCount / WORDS_PER_CREDIT);
     await deductCredits(client.id, creditCost, 'AI Writer - Content Generation');
 
     // 9. Return result

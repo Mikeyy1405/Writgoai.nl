@@ -255,7 +255,7 @@ export default function ConfigPanel({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="secondaryKeywords">Secondary Keywords</Label>
+            <Label htmlFor="secondaryKeywords">Secondaire Keywords</Label>
             <Input
               id="secondaryKeywords"
               value={config.secondaryKeywords}
