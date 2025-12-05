@@ -3,13 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-
-const LATE_DEV_API_KEY = process.env.LATE_DEV_API_KEY;
-const LATE_DEV_API_URL = 'https://getlate.dev/api/v1';
+import { getLateDevAccountsByProfile, createLateDevProfile } from '@/lib/late-dev-api';
 
 /**
  * Sync connected accounts from Late.dev to database
  * POST /api/client/late-dev/sync
+ * Uses profile-based approach to fetch accounts for specific project
  */
 export async function POST(req: NextRequest) {
   try {
@@ -38,32 +37,49 @@ export async function POST(req: NextRequest) {
         id: projectId,
         clientId: client.id,
       },
+      include: {
+        socialMediaConfig: true,
+      },
     });
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Fetch all accounts from Late.dev (not profiles)
-    const response = await fetch(`${LATE_DEV_API_URL}/accounts`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${LATE_DEV_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    // Ensure we have a Late.dev profile for this project
+    let profileId = project.socialMediaConfig?.lateDevProfileId;
+    
+    if (!profileId) {
+      console.log('[Late.dev Sync] No profile found, creating one...');
+      const profileResult = await createLateDevProfile(project.name, project.id);
+      
+      if (!profileResult) {
+        return NextResponse.json(
+          { error: 'Failed to create Late.dev profile' },
+          { status: 500 }
+        );
+      }
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('[Late.dev] Sync failed:', error);
-      return NextResponse.json(
-        { error: 'Failed to sync accounts' },
-        { status: response.status }
-      );
+      profileId = profileResult.profileId;
+
+      // Save profile ID in database
+      await prisma.socialMediaConfig.upsert({
+        where: { projectId },
+        create: {
+          projectId,
+          lateDevProfileId: profileResult.profileId,
+          lateDevProfileName: profileResult.name,
+        },
+        update: {
+          lateDevProfileId: profileResult.profileId,
+          lateDevProfileName: profileResult.name,
+        },
+      });
     }
 
-    const data = await response.json();
-    const accounts = data.accounts || data || [];
+    // Fetch accounts for this specific profile from Late.dev API
+    console.log('[Late.dev Sync] Fetching accounts for profile:', profileId);
+    const accounts = await getLateDevAccountsByProfile(profileId);
 
     let syncedCount = 0;
     let newCount = 0;
@@ -73,7 +89,7 @@ export async function POST(req: NextRequest) {
       // Check if account already exists for this project
       const existing = await prisma.lateDevAccount.findFirst({
         where: {
-          lateDevProfileId: account.id,
+          lateDevProfileId: account._id,
           projectId: projectId,
         },
       });
@@ -85,9 +101,8 @@ export async function POST(req: NextRequest) {
           data: {
             platform: account.platform || existing.platform,
             username: account.username,
-            displayName: account.displayName,
-            avatar: account.avatar,
-            isActive: account.isActive !== undefined ? account.isActive : true,
+            displayName: account.username, // Late.dev doesn't always return displayName
+            isActive: true,
             lastUsedAt: new Date(),
           },
         });
@@ -99,12 +114,11 @@ export async function POST(req: NextRequest) {
             data: {
               projectId,
               clientId: client.id,
-              lateDevProfileId: account.id,
+              lateDevProfileId: account._id,
               platform: account.platform,
               username: account.username,
-              displayName: account.displayName,
-              avatar: account.avatar,
-              isActive: account.isActive !== undefined ? account.isActive : true,
+              displayName: account.username,
+              isActive: true,
               connectedAt: new Date(),
               lastUsedAt: new Date(),
             },

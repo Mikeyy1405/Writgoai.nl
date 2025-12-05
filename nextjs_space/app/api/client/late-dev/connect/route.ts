@@ -3,9 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-
-const LATE_DEV_API_KEY = process.env.LATE_DEV_API_KEY;
-const LATE_DEV_API_URL = 'https://getlate.dev/api/v1';
+import { createPlatformInvite, createLateDevProfile } from '@/lib/late-dev-api';
 
 /**
  * Generate Late.dev invite link for connecting social media accounts
@@ -28,8 +26,8 @@ export async function POST(req: NextRequest) {
 
     const { projectId, platform } = await req.json();
 
-    if (!projectId) {
-      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
+    if (!projectId || !platform) {
+      return NextResponse.json({ error: 'Project ID and platform are required' }, { status: 400 });
     }
 
     // Verify project belongs to client
@@ -38,48 +36,61 @@ export async function POST(req: NextRequest) {
         id: projectId,
         clientId: client.id,
       },
+      include: {
+        socialMediaConfig: true,
+      },
     });
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Create invite token via Late.dev API
-    // If platform is specified, scope to that platform; otherwise allow all
-    const scope = platform || 'all';
+    // Ensure we have a Late.dev profile for this project
+    let profileId = project.socialMediaConfig?.lateDevProfileId;
     
-    const response = await fetch(`${LATE_DEV_API_URL}/invite/tokens`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LATE_DEV_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        scope: scope, // Specific platform or 'all'
-        metadata: {
-          clientId: client.id,
-          projectId: projectId,
-          projectName: project.name,
-          platform: platform || 'all',
-        },
-      }),
-    });
+    if (!profileId) {
+      console.log('[Late.dev Connect] No profile found, creating one...');
+      const profileResult = await createLateDevProfile(project.name, project.id);
+      
+      if (!profileResult) {
+        return NextResponse.json(
+          { error: 'Failed to create Late.dev profile' },
+          { status: 500 }
+        );
+      }
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('[Late.dev] Invite creation failed:', error);
+      profileId = profileResult.profileId;
+
+      // Save profile ID in database
+      await prisma.socialMediaConfig.upsert({
+        where: { projectId },
+        create: {
+          projectId,
+          lateDevProfileId: profileResult.profileId,
+          lateDevProfileName: profileResult.name,
+        },
+        update: {
+          lateDevProfileId: profileResult.profileId,
+          lateDevProfileName: profileResult.name,
+        },
+      });
+    }
+
+    // Create platform invite using late-dev-api
+    console.log('[Late.dev Connect] Creating platform invite for:', platform);
+    const invite = await createPlatformInvite(profileId, platform);
+
+    if (!invite) {
       return NextResponse.json(
         { error: 'Failed to create invite link' },
-        { status: response.status }
+        { status: 500 }
       );
     }
 
-    const inviteData = await response.json();
-
     return NextResponse.json({
-      inviteUrl: inviteData.url,
-      inviteId: inviteData.id,
-      expiresAt: inviteData.expiresAt,
+      inviteUrl: invite.inviteUrl,
+      inviteId: invite._id,
+      expiresAt: invite.expiresAt,
     });
   } catch (error: any) {
     console.error('[Late.dev Connect] Error:', error);
