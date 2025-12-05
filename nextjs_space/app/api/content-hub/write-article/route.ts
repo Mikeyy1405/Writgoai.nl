@@ -79,8 +79,9 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Content Hub] Starting article generation: ${article.title}`);
 
-    // Phase 1: Research
+    // Phase 1: Research & SERP Analysis
     console.log('[Content Hub] Phase 1: Research & Analysis');
+    console.log('[Content Hub] Performing real SERP analysis with web search...');
     
     let serpAnalysis;
     try {
@@ -88,19 +89,31 @@ export async function POST(req: NextRequest) {
         article.keywords[0] || article.title,
         'nl'
       );
-      console.log('[Content Hub] SERP analysis voltooid');
+      console.log(`[Content Hub] SERP analysis voltooid - Target: ${serpAnalysis.suggestedLength} words, ${serpAnalysis.lsiKeywords?.length || 0} LSI keywords, ${serpAnalysis.paaQuestions?.length || 0} PAA questions`);
     } catch (error: any) {
       console.error('[Content Hub] SERP analysis failed, using defaults:', error);
       // Use default analysis if SERP analysis fails
       serpAnalysis = {
         keyword: article.keywords[0] || article.title,
         topResults: [],
-        averageWordCount: 2000,
-        commonHeadings: ['Introductie', 'Voordelen', 'Nadelen', 'Tips', 'Conclusie'],
+        averageWordCount: 1500,
+        commonHeadings: ['Introductie', 'Wat is het?', 'Voordelen', 'Nadelen', 'Best Practices', 'Tips', 'Conclusie'],
         topicsCovered: [article.keywords[0] || article.title],
-        questionsFound: [],
-        contentGaps: [],
-        suggestedLength: 2400,
+        questionsFound: [`Wat is ${article.keywords[0] || article.title}?`],
+        contentGaps: ['Praktische voorbeelden', 'Actuele statistieken'],
+        suggestedLength: 1400,
+        lsiKeywords: [
+          article.keywords[0] || article.title,
+          `${article.keywords[0] || article.title} tips`,
+          `beste ${article.keywords[0] || article.title}`,
+          `${article.keywords[0] || article.title} voordelen`,
+        ],
+        paaQuestions: [
+          `Wat is ${article.keywords[0] || article.title}?`,
+          `Hoe werkt ${article.keywords[0] || article.title}?`,
+          `Waarom is ${article.keywords[0] || article.title} belangrijk?`,
+          `Wat zijn de voordelen van ${article.keywords[0] || article.title}?`,
+        ],
       };
     }
 
@@ -128,28 +141,61 @@ export async function POST(req: NextRequest) {
 
     let articleResult;
     try {
+      // Ensure minimum word count of 1200
+      const targetWordCount = Math.max(serpAnalysis.suggestedLength || 1400, 1200);
+      
+      console.log(`[Content Hub] Starting content generation - Target: ${targetWordCount} words`);
+      
       articleResult = await writeArticle({
         title: article.title,
         keywords: article.keywords,
-        targetWordCount: serpAnalysis.suggestedLength || 2000,
+        targetWordCount,
         tone: 'professional',
         language: 'nl',
         serpAnalysis,
         includeFAQ,
       });
 
-      console.log(`[Content Hub] Generated ${articleResult.wordCount} words`);
+      console.log(`[Content Hub] Content generated successfully: ${articleResult.wordCount} words`);
+      
+      // Validate word count meets minimum requirement
+      if (articleResult.wordCount < 1000) {
+        console.warn(`[Content Hub] Warning: Article is only ${articleResult.wordCount} words (minimum 1000 recommended)`);
+      }
+      
     } catch (writeError: any) {
       console.error('[Content Hub] Article writing failed:', writeError);
       
-      // Update article status to failed
+      // Update article status to failed with detailed error
       await prisma.contentHubArticle.update({
         where: { id: articleId },
-        data: { status: 'failed' },
+        data: { 
+          status: 'failed',
+          researchData: {
+            error: writeError.message,
+            timestamp: new Date().toISOString(),
+          } as any,
+        },
       });
       
+      // Provide user-friendly Dutch error messages
+      let userMessage = 'Het schrijven van het artikel is mislukt. Probeer het opnieuw.';
+      
+      if (writeError.message.includes('timeout') || writeError.message.includes('Timeout')) {
+        userMessage = 'Het artikel schrijven duurde te lang. Probeer het artikel korter te maken of later opnieuw.';
+      } else if (writeError.message.includes('rate limit') || writeError.message.includes('too many requests')) {
+        userMessage = 'Te veel verzoeken. Wacht even en probeer het opnieuw.';
+      } else if (writeError.message.includes('API') || writeError.message.includes('model')) {
+        userMessage = 'De AI service is tijdelijk niet beschikbaar. Probeer het over een paar minuten opnieuw.';
+      } else if (writeError.message.includes('parse') || writeError.message.includes('JSON')) {
+        userMessage = 'De AI response kon niet worden verwerkt. Dit kan gebeuren bij complexe artikelen. Probeer het opnieuw.';
+      }
+      
       return NextResponse.json(
-        { error: writeError.message || 'Het schrijven van het artikel is mislukt' },
+        { 
+          error: userMessage,
+          details: process.env.NODE_ENV === 'development' ? writeError.message : undefined,
+        },
         { status: 500 }
       );
     }
