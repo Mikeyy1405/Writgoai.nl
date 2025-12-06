@@ -65,9 +65,9 @@ export async function createPlatformInvite(platform: string, profileId: string) 
   const apiKey = getLateDevApiKey();
   if (!apiKey) throw new Error('Late.dev API key not configured');
   
-  // Generate callback URL that redirects directly back to our app
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://WritgoAI.nl';
-  const callbackUrl = `${baseUrl}/client-portal/social-media-studio?connected=${platform}`;
+  // Generate redirect URL to our own success page
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://writgoai.nl';
+  const redirectUrl = `${baseUrl}/client-portal/social-connect-success?platform=${platform}`;
   
   try {
     const response = await fetch('https://api.late.dev/api/invites', {
@@ -79,7 +79,7 @@ export async function createPlatformInvite(platform: string, profileId: string) 
       body: JSON.stringify({
         profileId,
         platform,
-        redirectUrl: callbackUrl, // Direct redirect back to our app
+        redirectUrl, // Direct redirect back to our app
       })
     });
     
