@@ -74,7 +74,7 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
     { 
       name: 'Content Generatie', 
       status: 'pending',
-      message: 'SEO-geoptimaliseerde content schrijven...',
+      message: 'AI schrijft artikel...',
     },
     { 
       name: 'SEO & Afbeeldingen', 

@@ -8,6 +8,8 @@ function getAimlClient() {
   return new OpenAI({
     baseURL: 'https://api.aimlapi.com/v1',
     apiKey: process.env.AIML_API_KEY || '',
+    timeout: 180000, // 180 seconds (3 minutes) timeout for long AI operations
+    maxRetries: 2, // Retry failed requests up to 2 times
   });
 }
 
