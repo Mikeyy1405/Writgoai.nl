@@ -8,6 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { 
+  getUserFriendlyErrorMessage, 
+  getErrorTip, 
+  handleApiError,
+  copyToClipboard as safelyCopyToClipboard 
+} from '../lib/error-helpers';
 import {
   Loader2,
   Sparkles,
@@ -121,8 +127,7 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
           });
 
           if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to generate content');
+            await handleApiError(response);
           }
 
           const data = await response.json();
@@ -130,22 +135,32 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
           if (data.success && data.post) {
             newContent[platform] = data.post;
           } else {
-            throw new Error('Invalid response format');
+            throw new Error('Onverwacht response formaat');
           }
         } catch (platformError: any) {
           console.error(`Error generating content for ${platform}:`, platformError);
-          const platformName = PLATFORMS.find((p) => p.id === platform)?.name;
-          const errorMessage = platformError?.message || 'Onbekende fout';
+          const platformName = PLATFORMS.find((p) => p.id === platform)?.name || platform;
+          const errorMsg = platformError.message || 'Onbekende fout';
+          const tip = getErrorTip(errorMsg);
+          
           // Continue with other platforms even if one fails
-          newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMessage}\n\nTip: Controleer of je voldoende credits hebt of probeer het onderwerp anders te formuleren.`;
+          newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMsg}${tip}`;
         }
       }
 
       setGeneratedContent(newContent);
-      toast.success('Content succesvol gegenereerd!', { id: 'generate' });
-    } catch (error) {
+      
+      // Show success message if at least one platform succeeded
+      const successfulCount = Object.values(newContent).filter(c => !c.startsWith('⚠️')).length;
+      if (successfulCount > 0) {
+        toast.success(`${successfulCount} van ${selectedPlatforms.length} posts gegenereerd!`, { id: 'generate' });
+      } else {
+        toast.error('Geen posts konden worden gegenereerd', { id: 'generate' });
+      }
+    } catch (error: any) {
       console.error('Error generating content:', error);
-      toast.error('Fout bij genereren van content', { id: 'generate' });
+      const errorMessage = getUserFriendlyErrorMessage(error, 'Fout bij genereren van content');
+      toast.error(errorMessage, { id: 'generate' });
     } finally {
       setGenerating(false);
     }
@@ -196,14 +211,19 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
     }
   };
 
-  const copyToClipboard = (platform: string, content: string) => {
-    navigator.clipboard.writeText(content);
-    setCopied(platform);
-    toast.success('Content gekopieerd!');
+  const copyToClipboard = async (platform: string, content: string) => {
+    const success = await safelyCopyToClipboard(content);
+    
+    if (success) {
+      setCopied(platform);
+      toast.success('Content gekopieerd!');
 
-    setTimeout(() => {
-      setCopied(null);
-    }, 2000);
+      setTimeout(() => {
+        setCopied(null);
+      }, 2000);
+    } else {
+      toast.error('Kon content niet kopiëren. Probeer het handmatig te selecteren en kopiëren.');
+    }
   };
 
   const publishPost = async (platform: string) => {
