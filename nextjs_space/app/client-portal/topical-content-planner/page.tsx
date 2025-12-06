@@ -342,10 +342,11 @@ export default function TopicalContentPlanner() {
   
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { label: string; className: string }> = {
-      pending: { label: 'Wacht', className: 'bg-gray-500/20 text-gray-300' },
-      scheduled: { label: 'Gepland', className: 'bg-purple-500/20 text-purple-300' },
-      generating: { label: 'Bezig', className: 'bg-blue-500/20 text-blue-300' },
-      completed: { label: 'Voltooid', className: 'bg-green-500/20 text-green-300' }
+      pending: { label: 'Wachtend', className: 'bg-orange-500/20 text-orange-300 border-orange-500/30' },
+      scheduled: { label: 'Gepland', className: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+      generating: { label: 'Bezig', className: 'bg-blue-500/20 text-blue-300 border-blue-500/30 animate-pulse' },
+      completed: { label: 'Voltooid', className: 'bg-green-500/20 text-green-300 border-green-500/30' },
+      failed: { label: 'Mislukt', className: 'bg-red-500/20 text-red-300 border-red-500/30' }
     };
     const variant = variants[status] || variants.pending;
     return <Badge className={variant.className}>{variant.label}</Badge>;
@@ -388,23 +389,23 @@ export default function TopicalContentPlanner() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
             Topical Content Planner
           </h1>
-          <p className="text-gray-400">
+          <p className="text-sm sm:text-base text-gray-400">
             Plan en genereer content strategisch vanuit je topical authority map
           </p>
         </div>
         
         {/* Map Selector */}
-        <Card className="mb-6 p-4 bg-gray-800/50 border-gray-700">
-          <div className="flex items-center gap-4 flex-wrap">
-            <label className="text-sm text-gray-400">Topical Map:</label>
+        <Card className="mb-6 p-3 sm:p-4 bg-gray-800/50 border-gray-700">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+            <label className="text-sm text-gray-400 sm:shrink-0">Topical Map:</label>
             <select
               value={selectedMap?.id || ''}
               onChange={(e) => setSelectedMap(maps.find(m => m.id === e.target.value) || null)}
-              className="flex-1 min-w-[200px] px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+              className="flex-1 min-w-0 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm"
             >
               {maps.map(map => (
                 <option key={map.id} value={map.id}>
@@ -412,55 +413,61 @@ export default function TopicalContentPlanner() {
                 </option>
               ))}
             </select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/client-portal/topical-mapping')}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nieuwe Map
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => enrichKeywords('balanced')}
-              disabled={enriching || !selectedMap}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              {enriching ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Verrijken...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 mr-2" />
-                  Verrijk met Real Data
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/client-portal/topical-mapping')}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
+              >
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Nieuwe Map</span>
+                <span className="sm:hidden">Nieuw</span>
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => enrichKeywords('balanced')}
+                disabled={enriching || !selectedMap}
+                className="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-xs sm:text-sm"
+              >
+                {enriching ? (
+                  <>
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
+                    <span className="hidden sm:inline">Verrijken...</span>
+                    <span className="sm:hidden">...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Verrijk met Real Data</span>
+                    <span className="sm:hidden">Verrijk</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </Card>
         
         {selectedMap && (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
-                <div className="text-2xl font-bold text-white">{stats.total}</div>
-                <div className="text-sm text-gray-400">Totaal Topics</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+              <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
+                <div className="text-xl sm:text-2xl font-bold text-white">{stats.total}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Totaal Topics</div>
               </Card>
-              <Card className="p-4 bg-gradient-to-br from-gray-500/10 to-gray-600/10 border-gray-500/20">
-                <div className="text-2xl font-bold text-white">{stats.pending}</div>
-                <div className="text-sm text-gray-400">Wachten</div>
+              <Card className="p-3 sm:p-4 bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-orange-500/20">
+                <div className="text-xl sm:text-2xl font-bold text-white">{stats.pending}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Wachten</div>
               </Card>
-              <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/20">
-                <div className="text-2xl font-bold text-white">{stats.scheduled}</div>
-                <div className="text-sm text-gray-400">Gepland</div>
+              <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
+                <div className="text-xl sm:text-2xl font-bold text-white">{stats.scheduled}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Gepland</div>
               </Card>
-              <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 border-green-500/20">
-                <div className="text-2xl font-bold text-white">{stats.completed}</div>
-                <div className="text-sm text-gray-400">Voltooid</div>
+              <Card className="p-3 sm:p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 border-green-500/20">
+                <div className="text-xl sm:text-2xl font-bold text-white">{stats.completed}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Voltooid</div>
               </Card>
             </div>
 
@@ -470,22 +477,22 @@ export default function TopicalContentPlanner() {
             </div>
             
             {/* Filters & Actions */}
-            <Card className="mb-6 p-4 bg-gray-800/50 border-gray-700">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Card className="mb-6 p-3 sm:p-4 bg-gray-800/50 border-gray-700">
+              <div className="flex flex-col gap-3 sm:gap-4">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <div className="relative flex-1 min-w-0">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
                     <Input
                       placeholder="Zoek topics..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-gray-700 border-gray-600 text-white"
+                      className="pl-8 sm:pl-10 bg-gray-700 border-gray-600 text-white text-sm"
                     />
                   </div>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                    className="px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm min-w-0"
                   >
                     <option value="all">Alle Status</option>
                     <option value="pending">Wachtend</option>
@@ -496,7 +503,7 @@ export default function TopicalContentPlanner() {
                   <select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
-                    className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                    className="px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm min-w-0"
                   >
                     <option value="all">Alle Types</option>
                     <option value="commercial">Commercial</option>
@@ -509,6 +516,7 @@ export default function TopicalContentPlanner() {
                     size="sm"
                     onClick={selectAll}
                     disabled={getFilteredTopics().length === 0}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
                   >
                     Selecteer Alles
                   </Button>
@@ -517,6 +525,7 @@ export default function TopicalContentPlanner() {
                     size="sm"
                     onClick={deselectAll}
                     disabled={selectedTopics.size === 0}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
                   >
                     Deselecteer
                   </Button>
@@ -524,8 +533,8 @@ export default function TopicalContentPlanner() {
               </div>
               
               {selectedTopics.size > 0 && (
-                <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg flex items-center justify-between">
-                  <span className="text-white">
+                <div className="mt-3 sm:mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <span className="text-white text-sm sm:text-base text-center sm:text-left">
                     {selectedTopics.size} topic(s) geselecteerd
                   </span>
                   <div className="flex gap-2">
@@ -533,17 +542,19 @@ export default function TopicalContentPlanner() {
                       size="sm"
                       onClick={generateSelected}
                       disabled={generating}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                      className="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-xs sm:text-sm"
                     >
                       {generating ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Genereren...
+                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
+                          <span className="hidden sm:inline">Genereren...</span>
+                          <span className="sm:hidden">...</span>
                         </>
                       ) : (
                         <>
-                          <Zap className="w-4 h-4 mr-2" />
-                          Genereer Nu
+                          <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Genereer Nu</span>
+                          <span className="sm:hidden">Genereer</span>
                         </>
                       )}
                     </Button>
@@ -551,9 +562,11 @@ export default function TopicalContentPlanner() {
                       size="sm"
                       variant="outline"
                       onClick={openScheduleDialog}
+                      className="flex-1 sm:flex-none text-xs sm:text-sm"
                     >
-                      <CalendarIcon className="w-4 h-4 mr-2" />
-                      Inplannen
+                      <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Inplannen</span>
+                      <span className="sm:hidden">Plan</span>
                     </Button>
                   </div>
                 </div>
@@ -597,22 +610,26 @@ export default function TopicalContentPlanner() {
                         {visibleTopics.map(topic => (
                           <div
                             key={topic.id}
-                            className="flex items-center gap-3 p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors"
+                            className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors"
                           >
-                            <Checkbox
-                              checked={selectedTopics.has(topic.id)}
-                              onCheckedChange={() => toggleTopicSelection(topic.id)}
-                            />
+                            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                              <Checkbox
+                                checked={selectedTopics.has(topic.id)}
+                                onCheckedChange={() => toggleTopicSelection(topic.id)}
+                              />
+                              
+                              {getStatusIcon(topic.status)}
+                              
+                              <h4 className="text-white font-medium text-sm sm:text-base flex-1 sm:hidden">{topic.title}</h4>
+                            </div>
                             
-                            {getStatusIcon(topic.status)}
-                            
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-white font-medium truncate">{topic.title}</h4>
+                            <div className="flex-1 min-w-0 w-full sm:w-auto">
+                              <h4 className="hidden sm:block text-white font-medium truncate">{topic.title}</h4>
                               <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <Badge className={
                                   topic.type === 'commercial' 
-                                    ? 'bg-green-500/20 text-green-300' 
-                                    : 'bg-blue-500/20 text-blue-300'
+                                    ? 'bg-green-500/20 text-green-300 text-xs' 
+                                    : 'bg-blue-500/20 text-blue-300 text-xs'
                                 }>
                                   {topic.type === 'commercial' ? '💰 Commercial' : '💡 Informational'}
                                 </Badge>
@@ -620,7 +637,7 @@ export default function TopicalContentPlanner() {
                                 
                                 {/* Opportunity Score */}
                                 {topic.opportunityScore && (
-                                  <Badge className={`${
+                                  <Badge className={`text-xs ${
                                     topic.opportunityScore >= 70 ? 'bg-green-500/20 text-green-300' :
                                     topic.opportunityScore >= 50 ? 'bg-yellow-500/20 text-yellow-300' :
                                     'bg-red-500/20 text-red-300'
@@ -631,34 +648,34 @@ export default function TopicalContentPlanner() {
                                 
                                 {/* Search Volume */}
                                 {topic.searchVolume && (
-                                  <span className="text-xs text-gray-400">
+                                  <span className="text-xs text-gray-400 whitespace-nowrap">
                                     📊 {topic.searchVolume.toLocaleString()}
                                   </span>
                                 )}
                                 
                                 {/* Difficulty */}
                                 {topic.difficulty && (
-                                  <span className="text-xs text-gray-400">
+                                  <span className="text-xs text-gray-400 whitespace-nowrap">
                                     ⚡ {topic.difficulty}/100
                                   </span>
                                 )}
                                 
                                 {/* CPC */}
                                 {topic.cpc && topic.cpc > 0 && (
-                                  <span className="text-xs text-green-400">
+                                  <span className="text-xs text-green-400 whitespace-nowrap">
                                     💶 €{topic.cpc.toFixed(2)}
                                   </span>
                                 )}
                                 
                                 {/* Seasonality Badge */}
                                 {topic.seasonalityScore && topic.seasonalityScore > 50 && (
-                                  <Badge className="bg-blue-500/20 text-blue-300">
+                                  <Badge className="bg-blue-500/20 text-blue-300 text-xs">
                                     ❄️ Seizoensgebonden
                                   </Badge>
                                 )}
                                 
                                 {topic.scheduledFor && (
-                                  <span className="text-xs text-purple-400">
+                                  <span className="text-xs text-purple-400 whitespace-nowrap">
                                     📅 {new Date(topic.scheduledFor).toLocaleDateString('nl-NL')}
                                   </span>
                                 )}
@@ -669,8 +686,9 @@ export default function TopicalContentPlanner() {
                               size="sm"
                               variant="ghost"
                               onClick={() => editTopic(topic)}
+                              className="self-end sm:self-center"
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
                         ))}
