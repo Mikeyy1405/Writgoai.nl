@@ -435,31 +435,31 @@ export default function ContentPlannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-950 p-3 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-orange-500 flex items-center justify-center">
-                <Rocket className="text-white" size={24} />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-orange-500 flex items-center justify-center shrink-0">
+                <Rocket className="text-white" size={20} />
               </div>
-              Content Planner
+              <span className="leading-tight">Content Planner</span>
             </h1>
-            <p className="text-gray-400 mt-2">
+            <p className="text-xs sm:text-sm text-gray-400 mt-1 sm:mt-2">
               Van strategische planning naar geautomatiseerde content productie
             </p>
           </div>
-          <Badge variant="outline" className="text-purple-400 border-purple-400">
-            <Sparkles className="w-4 h-4 mr-2" />
+          <Badge variant="outline" className="text-purple-400 border-purple-400 text-xs sm:text-sm shrink-0">
+            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             AI-Powered
           </Badge>
         </div>
 
         {/* Project Selector */}
-        <Card className="bg-gray-900 border-gray-800 p-6">
-          <div className="space-y-4">
-            <Label className="text-white text-lg font-semibold">Selecteer Project</Label>
+        <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4 md:p-6">
+          <div className="space-y-3 sm:space-y-4">
+            <Label className="text-white text-base sm:text-lg font-semibold">Selecteer Project</Label>
             <ProjectSelector
               value={selectedProjectId}
               onChange={setSelectedProjectId}
@@ -469,49 +469,52 @@ export default function ContentPlannerPage() {
         </Card>
 
         {selectedProjectId && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
             <TabsList className="bg-gray-900 border border-gray-800 p-1 grid grid-cols-3 gap-1">
               <TabsTrigger
                 value="topical-map"
-                className="data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-xs sm:text-sm"
               >
-                <Map className="w-4 h-4 mr-2" />
-                Topical Map
+                <Map className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Topical Map</span>
+                <span className="sm:hidden">Map</span>
               </TabsTrigger>
               <TabsTrigger
                 value="research"
-                className="data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-xs sm:text-sm"
               >
-                <Search className="w-4 h-4 mr-2" />
-                Content Research
+                <Search className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Content Research</span>
+                <span className="sm:hidden">Research</span>
               </TabsTrigger>
               <TabsTrigger
                 value="planning"
-                className="data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-xs sm:text-sm"
               >
-                <Calendar className="w-4 h-4 mr-2" />
-                Planning & Automatisering
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Planning & Automatisering</span>
+                <span className="sm:hidden">Planning</span>
               </TabsTrigger>
             </TabsList>
 
             {/* TAB 1: TOPICAL MAP */}
-            <TabsContent value="topical-map" className="space-y-6">
-              <Card className="bg-gray-900 border-gray-800 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <Network className="text-purple-400" size={24} />
-                      Strategische Content Map
+            <TabsContent value="topical-map" className="space-y-4 sm:space-y-6">
+              <Card className="bg-gray-900 border-gray-800 p-3 sm:p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+                  <div className="flex-1">
+                    <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                      <Network className="text-purple-400" size={20} />
+                      <span className="leading-tight">Strategische Content Map</span>
                     </h2>
-                    <p className="text-gray-400 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-400 mt-1">
                       Volledige topical authority structuur voor je niche
                     </p>
                   </div>
                   <Button
                     onClick={() => setShowGenerateDialog(true)}
-                    className="bg-gradient-to-r from-purple-500 to-orange-500 hover:from-purple-600 hover:to-orange-600"
+                    className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-orange-500 hover:from-purple-600 hover:to-orange-600 text-sm"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     Nieuwe Map
                   </Button>
                 </div>

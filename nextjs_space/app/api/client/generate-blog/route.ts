@@ -1222,19 +1222,15 @@ Schrijf nu de complete ${reviewTypeText.toLowerCase()} in perfecte HTML formatti
         return;
       }
       
-      // Progress from 57% to 65% max (leave room for post-AI processing)
-      heartbeatProgress = Math.min(heartbeatProgress + 1.0, 65);
+      // Progress from 57% to 69% max (leaves 30% room for image generation, internal links, and final processing)
+      heartbeatProgress = Math.min(heartbeatProgress + 1.0, 69);
       const elapsed = Math.floor((Date.now() - writingStartTime) / 1000);
       const message = heartbeatMessages[heartbeatIndex % heartbeatMessages.length];
       sendStreamStatus(`${message} (${elapsed}s)`, Math.floor(heartbeatProgress));
       heartbeatIndex++;
       
-      // Auto-stop at 65% to prevent hanging
-      if (heartbeatProgress >= 65) {
-        heartbeatStopped = true;
-        clearInterval(heartbeatInterval);
-        console.log('⏹️ [BlogGen] Heartbeat auto-stopped at 65%');
-      }
+      // Don't auto-stop - let the AI finish naturally
+      // The heartbeat will be stopped explicitly after AI response is received
     }, 10000); // Every 10 seconds
     
     try {
