@@ -26,9 +26,11 @@ export default function SocialMediaSuitePage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('ideas');
   const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
+  const [projectLoading, setProjectLoading] = useState(true);
 
   const handleProjectChange = (projectId: string | null, project: Project | null) => {
     setSelectedProjectId(projectId);
+    setProjectLoading(false);
   };
 
   const handleCreateFromIdea = (idea: ContentIdea) => {
@@ -124,14 +126,16 @@ export default function SocialMediaSuitePage() {
 
         <TabsContent value="ideas">
           <ContentIdeasTab 
-            projectId={selectedProjectId} 
+            projectId={selectedProjectId}
+            projectLoading={projectLoading}
             onCreateFromIdea={handleCreateFromIdea}
           />
         </TabsContent>
 
         <TabsContent value="create">
           <CreatePostTab 
-            projectId={selectedProjectId} 
+            projectId={selectedProjectId}
+            projectLoading={projectLoading}
             initialIdea={selectedIdea}
           />
         </TabsContent>

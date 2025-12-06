@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,10 +60,11 @@ interface ContentIdea {
 
 interface CreatePostTabProps {
   projectId: string | null;
+  projectLoading?: boolean;
   initialIdea?: ContentIdea | null;
 }
 
-export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabProps) {
+export default function CreatePostTab({ projectId, projectLoading = false, initialIdea }: CreatePostTabProps) {
   const [topic, setTopic] = useState(initialIdea?.title || '');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
     initialIdea?.suggestedPlatforms || ['linkedin']
@@ -76,6 +77,12 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
   const [scheduledTime, setScheduledTime] = useState('10:00');
   const [copied, setCopied] = useState<string | null>(null);
 
+  // Debug logging for projectId changes
+  useEffect(() => {
+    console.log('[CreatePostTab] projectId changed:', projectId);
+    console.log('[CreatePostTab] projectLoading:', projectLoading);
+  }, [projectId, projectLoading]);
+
   const togglePlatform = (platformId: string) => {
     setSelectedPlatforms((prev) =>
       prev.includes(platformId)
@@ -85,7 +92,10 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
   };
 
   const generateContent = async () => {
+    console.log('[CreatePostTab] generateContent called with projectId:', projectId);
+    
     if (!projectId) {
+      console.warn('[CreatePostTab] No project selected, showing error toast');
       toast.error('Selecteer eerst een project');
       return;
     }
@@ -321,14 +331,20 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
               {/* Generate Button */}
               <Button
                 onClick={generateContent}
-                disabled={generating || !topic.trim() || selectedPlatforms.length === 0}
-                className="w-full"
+                disabled={generating || !topic.trim() || selectedPlatforms.length === 0 || !projectId || projectLoading}
+                className="w-full disabled:opacity-50"
                 size="lg"
+                title={!projectId && !projectLoading ? 'Selecteer eerst een project' : ''}
               >
                 {generating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Genereren...
+                  </>
+                ) : projectLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Project laden...
                   </>
                 ) : (
                   <>

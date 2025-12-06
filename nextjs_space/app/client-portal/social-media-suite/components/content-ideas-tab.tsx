@@ -50,6 +50,7 @@ interface ContentIdea {
 
 interface ContentIdeasTabProps {
   projectId: string | null;
+  projectLoading?: boolean;
   onCreateFromIdea?: (idea: ContentIdea) => void;
 }
 
@@ -62,7 +63,7 @@ const PLATFORMS = [
   { id: 'tiktok', name: 'TikTok', icon: Music2, color: '#000000' },
 ];
 
-export default function ContentIdeasTab({ projectId, onCreateFromIdea }: ContentIdeasTabProps) {
+export default function ContentIdeasTab({ projectId, projectLoading = false, onCreateFromIdea }: ContentIdeasTabProps) {
   const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
@@ -72,8 +73,17 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [copiedPlatform, setCopiedPlatform] = useState<string | null>(null);
 
+  // Debug logging for projectId changes
+  useEffect(() => {
+    console.log('[ContentIdeasTab] projectId changed:', projectId);
+    console.log('[ContentIdeasTab] projectLoading:', projectLoading);
+  }, [projectId, projectLoading]);
+
   const generateIdeas = async () => {
+    console.log('[ContentIdeasTab] generateIdeas called with projectId:', projectId);
+    
     if (!projectId) {
+      console.warn('[ContentIdeasTab] No project selected, showing error toast');
       toast.error('Selecteer eerst een project');
       return;
     }
@@ -301,14 +311,20 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
         </div>
         <Button
           onClick={generateIdeas}
-          disabled={loading || !projectId}
+          disabled={loading || !projectId || projectLoading}
           size="lg"
-          className="bg-orange-500 hover:bg-orange-600"
+          className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50"
+          title={!projectId && !projectLoading ? 'Selecteer eerst een project' : ''}
         >
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Genereren...
+            </>
+          ) : projectLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Project laden...
             </>
           ) : (
             <>
