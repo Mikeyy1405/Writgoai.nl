@@ -163,19 +163,19 @@ export default function ContentHubPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6 px-3 sm:px-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-[#FF9933]" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="w-full sm:w-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-[#FF9933]" />
             Content Hub
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Geïntegreerde content workflow - van onderzoek tot publicatie
           </p>
         </div>
-        <Button onClick={() => setShowConnector(true)} className="gap-2">
+        <Button onClick={() => setShowConnector(true)} className="gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Website Toevoegen
         </Button>
@@ -210,16 +210,18 @@ export default function ContentHubPage() {
       {sites.length > 0 && (
         <div className="space-y-6">
           {/* Site Selector */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {sites.map((site) => (
               <Button
                 key={site.id}
                 variant={selectedSite?.id === site.id ? 'default' : 'outline'}
                 onClick={() => setSelectedSite(site)}
-                className="flex-shrink-0"
+                className="flex-shrink-0 text-xs sm:text-sm"
               >
-                <Globe className="h-4 w-4 mr-2" />
-                {new URL(site.wordpressUrl).hostname}
+                <Globe className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="max-w-[120px] sm:max-w-none truncate">
+                  {new URL(site.wordpressUrl).hostname}
+                </span>
               </Button>
             ))}
           </div>
@@ -228,24 +230,25 @@ export default function ContentHubPage() {
           {selectedSite && (
             <>
               <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
+                <CardHeader className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <Globe className="h-6 w-6 text-[#FF9933]" />
-                      <div>
-                        <CardTitle>{selectedSite.wordpressUrl}</CardTitle>
-                        <CardDescription>
+                      <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-[#FF9933] flex-shrink-0" />
+                      <div className="min-w-0">
+                        <CardTitle className="text-sm sm:text-base truncate" title={selectedSite.wordpressUrl}>{selectedSite.wordpressUrl}</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">
                           {selectedSite.niche || 'Algemene Content'}
                         </CardDescription>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={handleSyncExisting}
                         disabled={syncing}
                         title="Synchroniseer bestaande WordPress artikelen"
+                        className="flex-1 sm:flex-initial"
                       >
                         {syncing ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -253,24 +256,24 @@ export default function ContentHubPage() {
                           <RefreshCw className="h-4 w-4" />
                         )}
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="flex-1 sm:flex-initial">
                         <Settings className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {/* Authority Score */}
-                    <div className="space-y-2">
+                    <div className="space-y-1 sm:space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Autoriteit</span>
-                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs sm:text-sm text-muted-foreground">Autoriteit</span>
+                        <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                       </div>
-                      <div className="text-2xl font-bold">
+                      <div className="text-xl sm:text-2xl font-bold">
                         {selectedSite.authorityScore || 0}/100
                       </div>
-                      <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-secondary h-1.5 sm:h-2 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-[#FF9933] transition-all"
                           style={{ width: `${getAuthorityProgress(selectedSite)}%` }}
@@ -279,43 +282,43 @@ export default function ContentHubPage() {
                     </div>
 
                     {/* Existing Pages */}
-                    <div className="space-y-2">
+                    <div className="space-y-1 sm:space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Bestaand</span>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs sm:text-sm text-muted-foreground">Bestaand</span>
+                        <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                       </div>
-                      <div className="text-2xl font-bold">
+                      <div className="text-xl sm:text-2xl font-bold">
                         {selectedSite.existingPages}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         pagina's
                       </div>
                     </div>
 
                     {/* To Write */}
-                    <div className="space-y-2">
+                    <div className="space-y-1 sm:space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Te Schrijven</span>
-                        <Clock className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs sm:text-sm text-muted-foreground">Te Schrijven</span>
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
                       </div>
-                      <div className="text-2xl font-bold text-orange-500">
+                      <div className="text-xl sm:text-2xl font-bold text-orange-500">
                         {selectedSite.totalArticles - selectedSite.completedArticles}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         artikelen
                       </div>
                     </div>
 
                     {/* Completed */}
-                    <div className="space-y-2">
+                    <div className="space-y-1 sm:space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Voltooid</span>
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <span className="text-xs sm:text-sm text-muted-foreground">Voltooid</span>
+                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                       </div>
-                      <div className="text-2xl font-bold text-green-500">
+                      <div className="text-xl sm:text-2xl font-bold text-green-500">
                         {selectedSite.completedArticles}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         {getCompletionPercentage(selectedSite)}% klaar
                       </div>
                     </div>
@@ -325,30 +328,36 @@ export default function ContentHubPage() {
 
               {/* Content Tabs */}
               <Tabs defaultValue="all" className="w-full">
-                <TabsList>
-                  <TabsTrigger value="all">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Alle Artikelen
+                <TabsList className="w-full flex-wrap h-auto gap-1 sm:gap-0">
+                  <TabsTrigger value="all" className="text-xs sm:text-sm flex-1 sm:flex-initial">
+                    <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Alle Artikelen</span>
+                    <span className="sm:hidden">Alle</span>
                   </TabsTrigger>
-                  <TabsTrigger value="pending">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Te Schrijven
+                  <TabsTrigger value="pending" className="text-xs sm:text-sm flex-1 sm:flex-initial">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Te Schrijven</span>
+                    <span className="sm:hidden">Pending</span>
                   </TabsTrigger>
-                  <TabsTrigger value="published">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Gepubliceerd
+                  <TabsTrigger value="published" className="text-xs sm:text-sm flex-1 sm:flex-initial">
+                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Gepubliceerd</span>
+                    <span className="sm:hidden">Klaar</span>
                   </TabsTrigger>
-                  <TabsTrigger value="wordpress">
-                    <Globe className="h-4 w-4 mr-2" />
-                    WordPress Posts
+                  <TabsTrigger value="wordpress" className="text-xs sm:text-sm flex-1 sm:flex-initial">
+                    <Globe className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">WordPress Posts</span>
+                    <span className="sm:hidden">WP</span>
                   </TabsTrigger>
-                  <TabsTrigger value="library">
-                    <Library className="h-4 w-4 mr-2" />
-                    Bibliotheek
+                  <TabsTrigger value="library" className="text-xs sm:text-sm flex-1 sm:flex-initial">
+                    <Library className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Bibliotheek</span>
+                    <span className="sm:hidden">Bib</span>
                   </TabsTrigger>
-                  <TabsTrigger value="autopilot">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Autopilot
+                  <TabsTrigger value="autopilot" className="text-xs sm:text-sm flex-1 sm:flex-initial">
+                    <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Autopilot</span>
+                    <span className="sm:hidden">Auto</span>
                   </TabsTrigger>
                 </TabsList>
 

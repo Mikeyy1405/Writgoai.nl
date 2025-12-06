@@ -342,11 +342,11 @@ export default function TopicalContentPlanner() {
   
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { label: string; className: string }> = {
-      pending: { label: 'Wachtend', className: 'bg-orange-500/20 text-orange-300 border-orange-500/30' },
-      scheduled: { label: 'Gepland', className: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
-      generating: { label: 'Bezig', className: 'bg-blue-500/20 text-blue-300 border-blue-500/30 animate-pulse' },
-      completed: { label: 'Voltooid', className: 'bg-green-500/20 text-green-300 border-green-500/30' },
-      failed: { label: 'Mislukt', className: 'bg-red-500/20 text-red-300 border-red-500/30' }
+      pending: { label: 'Wachtend', className: 'bg-orange-500/20 text-orange-300 border border-orange-500/30' },
+      scheduled: { label: 'Gepland', className: 'bg-purple-500/20 text-purple-300 border border-purple-500/30' },
+      generating: { label: 'Bezig', className: 'bg-blue-500/20 text-blue-300 border border-blue-500/30 animate-pulse' },
+      completed: { label: 'Voltooid', className: 'bg-green-500/20 text-green-300 border border-green-500/30' },
+      failed: { label: 'Mislukt', className: 'bg-red-500/20 text-red-300 border border-red-500/30' }
     };
     const variant = variants[status] || variants.pending;
     return <Badge className={variant.className}>{variant.label}</Badge>;
@@ -704,7 +704,7 @@ export default function TopicalContentPlanner() {
       
       {/* Edit Topic Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl mx-4 bg-gray-800 border-gray-700 text-white max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl">Topic Bewerken</DialogTitle>
           </DialogHeader>
@@ -885,7 +885,7 @@ export default function TopicalContentPlanner() {
       
       {/* Schedule Dialog */}
       <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-        <DialogContent className="max-w-md bg-gray-800 border-gray-700 text-white">
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-4 bg-gray-800 border-gray-700 text-white max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl">Topics Inplannen</DialogTitle>
           </DialogHeader>
