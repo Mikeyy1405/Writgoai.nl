@@ -121,8 +121,16 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
           });
 
           if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to generate content');
+            const error = await response.json().catch(() => ({ error: 'Onbekende serverfout' }));
+            
+            // Provide specific error messages based on status code
+            if (response.status === 401) {
+              throw new Error('Je bent niet ingelogd');
+            } else if (response.status === 402) {
+              throw new Error('Onvoldoende credits');
+            } else {
+              throw new Error(error.error || 'Fout bij genereren');
+            }
           }
 
           const data = await response.json();
@@ -130,22 +138,50 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
           if (data.success && data.post) {
             newContent[platform] = data.post;
           } else {
-            throw new Error('Invalid response format');
+            throw new Error('Onverwacht response formaat');
           }
         } catch (platformError: any) {
           console.error(`Error generating content for ${platform}:`, platformError);
-          const platformName = PLATFORMS.find((p) => p.id === platform)?.name;
-          const errorMessage = platformError?.message || 'Onbekende fout';
+          const platformName = PLATFORMS.find((p) => p.id === platform)?.name || platform;
+          
+          // Provide helpful error message with tips
+          let errorMsg = platformError.message || 'Onbekende fout';
+          let tip = '';
+          
+          if (errorMsg.includes('credits')) {
+            tip = '\n\nTip: Koop extra credits of upgrade je abonnement.';
+          } else if (errorMsg.includes('ingelogd')) {
+            tip = '\n\nTip: Log opnieuw in.';
+          } else {
+            tip = '\n\nTip: Probeer het onderwerp anders te formuleren of probeer het later opnieuw.';
+          }
+          
           // Continue with other platforms even if one fails
-          newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMessage}\n\nTip: Controleer of je voldoende credits hebt of probeer het onderwerp anders te formuleren.`;
+          newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMsg}${tip}`;
         }
       }
 
       setGeneratedContent(newContent);
-      toast.success('Content succesvol gegenereerd!', { id: 'generate' });
-    } catch (error) {
+      
+      // Show success message if at least one platform succeeded
+      const successfulCount = Object.values(newContent).filter(c => !c.startsWith('⚠️')).length;
+      if (successfulCount > 0) {
+        toast.success(`${successfulCount} van ${selectedPlatforms.length} posts gegenereerd!`, { id: 'generate' });
+      } else {
+        toast.error('Geen posts konden worden gegenereerd', { id: 'generate' });
+      }
+    } catch (error: any) {
       console.error('Error generating content:', error);
-      toast.error('Fout bij genereren van content', { id: 'generate' });
+      
+      // Provide user-friendly error messages
+      let errorMessage = error.message || 'Fout bij genereren van content';
+      
+      // Network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = 'Netwerkfout. Controleer je internetverbinding.';
+      }
+      
+      toast.error(errorMessage, { id: 'generate' });
     } finally {
       setGenerating(false);
     }

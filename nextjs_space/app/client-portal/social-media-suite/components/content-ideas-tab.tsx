@@ -19,6 +19,9 @@ import {
   Star,
   Zap,
   RefreshCw,
+  Copy,
+  Check,
+  X,
 } from 'lucide-react';
 import {
   Dialog,
@@ -58,6 +61,9 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
   const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [generatingPosts, setGeneratingPosts] = useState(false);
+  const [generatedPosts, setGeneratedPosts] = useState<Record<string, string>>({});
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [copiedPlatform, setCopiedPlatform] = useState<string | null>(null);
 
   const generateIdeas = async () => {
     if (!projectId) {
@@ -81,8 +87,18 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to generate ideas');
+        const error = await response.json().catch(() => ({ error: 'Onbekende serverfout' }));
+        
+        // Provide specific error messages based on status code
+        if (response.status === 401) {
+          throw new Error('Je bent niet ingelogd. Log opnieuw in.');
+        } else if (response.status === 402) {
+          throw new Error(error.error || 'Onvoldoende credits. Koop extra credits of upgrade je abonnement.');
+        } else if (response.status === 404) {
+          throw new Error('Project niet gevonden. Selecteer een ander project.');
+        } else {
+          throw new Error(error.error || 'Fout bij genereren van ideeën');
+        }
       }
 
       const data = await response.json();
@@ -91,11 +107,20 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
         setIdeas(data.ideas);
         toast.success(`${data.ideas.length} content ideeën gegenereerd!`, { id: 'ideas' });
       } else {
-        throw new Error('Invalid response format');
+        throw new Error('Onverwacht response formaat van de server');
       }
     } catch (error: any) {
       console.error('Error generating ideas:', error);
-      toast.error(error.message || 'Fout bij genereren van ideeën', { id: 'ideas' });
+      
+      // Provide user-friendly error messages
+      let errorMessage = error.message || 'Fout bij genereren van ideeën';
+      
+      // Network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = 'Netwerkfout. Controleer je internetverbinding.';
+      }
+      
+      toast.error(errorMessage, { id: 'ideas' });
     } finally {
       setLoading(false);
     }
@@ -107,27 +132,118 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
   };
 
   const handleGeneratePosts = async () => {
-    if (!selectedIdea) return;
+    if (!selectedIdea || !projectId) return;
 
     setGeneratingPosts(true);
     toast.loading('AI genereert posts voor alle platforms...', { id: 'generate-posts' });
 
     try {
-      // If parent component provided a callback, use it
+      // If parent component provided a callback, use it to navigate to create tab
       if (onCreateFromIdea) {
         onCreateFromIdea(selectedIdea);
         setShowModal(false);
         toast.success('Navigeren naar post maker...', { id: 'generate-posts' });
-      } else {
-        // Otherwise, generate posts directly (to be implemented)
-        toast.info('Deze functie wordt binnenkort geïmplementeerd', { id: 'generate-posts' });
+        return;
       }
-    } catch (error) {
+
+      // Otherwise, generate posts directly for all platforms
+      const platforms = selectedIdea.suggestedPlatforms;
+      const newPosts: Record<string, string> = {};
+      let successCount = 0;
+      let failCount = 0;
+
+      // Generate posts for each platform
+      for (const platform of platforms) {
+        try {
+          toast.loading(`Bezig met ${platform}...`, { id: 'generate-posts' });
+          
+          const response = await fetch('/api/client/generate-social-post', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              topic: `${selectedIdea.title}\n\n${selectedIdea.description}`,
+              platforms: [platform],
+              tone: 'professional',
+              includeHashtags: true,
+              includeEmojis: true,
+              includeImage: false,
+              language: 'nl',
+              length: 'medium',
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Onbekende serverfout' }));
+            
+            // Provide specific error messages based on status code
+            if (response.status === 401) {
+              throw new Error('Je bent niet ingelogd');
+            } else if (response.status === 402) {
+              throw new Error('Onvoldoende credits');
+            } else {
+              throw new Error(error.error || 'Fout bij genereren');
+            }
+          }
+
+          const data = await response.json();
+          
+          if (data.success && data.post) {
+            newPosts[platform] = data.post;
+            successCount++;
+          } else {
+            throw new Error('Onverwacht response formaat');
+          }
+        } catch (platformError: any) {
+          console.error(`Error generating content for ${platform}:`, platformError);
+          const platformName = PLATFORMS.find((p) => p.id === platform)?.name || platform;
+          
+          // Provide helpful error message with tips
+          let errorMsg = platformError.message || 'Onbekende fout';
+          let tip = '';
+          
+          if (errorMsg.includes('credits')) {
+            tip = '\n\nTip: Koop extra credits of upgrade je abonnement.';
+          } else if (errorMsg.includes('ingelogd')) {
+            tip = '\n\nTip: Log opnieuw in.';
+          } else {
+            tip = '\n\nTip: Probeer het onderwerp anders te formuleren of probeer het later opnieuw.';
+          }
+          
+          newPosts[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMsg}${tip}`;
+          failCount++;
+        }
+      }
+
+      setGeneratedPosts(newPosts);
+      setShowModal(false);
+      setShowResultsModal(true);
+
+      // Show appropriate success message
+      if (successCount === platforms.length) {
+        toast.success(`${successCount} posts succesvol gegenereerd!`, { id: 'generate-posts' });
+      } else if (successCount > 0) {
+        toast.success(`${successCount} posts gegenereerd, ${failCount} mislukt`, { id: 'generate-posts' });
+      } else {
+        toast.error('Geen posts konden worden gegenereerd', { id: 'generate-posts' });
+      }
+    } catch (error: any) {
       console.error('Error generating posts:', error);
-      toast.error('Fout bij genereren van posts', { id: 'generate-posts' });
+      toast.error(error.message || 'Fout bij genereren van posts', { id: 'generate-posts' });
     } finally {
       setGeneratingPosts(false);
     }
+  };
+
+  const copyToClipboard = (platform: string, content: string) => {
+    navigator.clipboard.writeText(content);
+    setCopiedPlatform(platform);
+    toast.success('Content gekopieerd naar klembord!');
+    
+    setTimeout(() => {
+      setCopiedPlatform(null);
+    }, 2000);
   };
 
   const getCategoryBadge = (category: ContentIdea['category']) => {
@@ -363,6 +479,87 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Results Modal for Generated Posts */}
+      <Dialog open={showResultsModal} onOpenChange={setShowResultsModal}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-orange-400" />
+              Gegenereerde Posts
+            </DialogTitle>
+            <DialogDescription>
+              Je posts zijn gegenereerd voor {Object.keys(generatedPosts).length} platform(s)
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {Object.entries(generatedPosts).map(([platformId, content]) => {
+              const platform = PLATFORMS.find((p) => p.id === platformId);
+              if (!platform) return null;
+              
+              const Icon = platform.icon;
+              const isError = content.startsWith('⚠️');
+
+              return (
+                <div 
+                  key={platformId} 
+                  className={`border rounded-lg p-4 space-y-3 ${
+                    isError ? 'border-red-500/30 bg-red-500/5' : 'border-gray-700 bg-gray-800/30'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-5 w-5" style={{ color: platform.color }} />
+                      <span className="font-semibold">{platform.name}</span>
+                      {!isError && (
+                        <Badge variant="outline" className="text-green-400 border-green-400">
+                          {content.length} tekens
+                        </Badge>
+                      )}
+                    </div>
+                    {!isError && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => copyToClipboard(platformId, content)}
+                        className="gap-2"
+                      >
+                        {copiedPlatform === platformId ? (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Gekopieerd
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4" />
+                            Kopiëren
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className={`rounded p-3 text-sm whitespace-pre-wrap ${
+                    isError ? 'bg-red-900/20 text-red-200' : 'bg-gray-900/50'
+                  }`}>
+                    {content}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex gap-3 mt-6 pt-4 border-t border-gray-700">
+            <Button
+              onClick={() => setShowResultsModal(false)}
+              className="flex-1 bg-orange-500 hover:bg-orange-600"
+            >
+              Sluiten
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
