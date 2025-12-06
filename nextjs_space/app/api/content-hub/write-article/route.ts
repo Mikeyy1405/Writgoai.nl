@@ -11,6 +11,9 @@ import { autoSaveToLibrary } from '@/lib/content-library-helper';
 import { publishToWordPress, getWordPressConfig } from '@/lib/wordpress-publisher';
 import { searchBolcomProducts, getBolcomProductDetails, type BolcomCredentials } from '@/lib/bolcom-api';
 
+// Set maximum duration for this route to 5 minutes to handle long AI operations
+export const maxDuration = 300;
+
 // Constants for article generation
 const MIN_WORD_COUNT = 1000; // Minimum recommended word count
 const MIN_TARGET_WORD_COUNT = 1200; // Minimum target word count for generation
@@ -277,7 +280,7 @@ async function handleStreamingGeneration(
         step: 'content-generation',
         status: 'in-progress',
         progress: 25,
-        message: 'SEO-geoptimaliseerde content schrijven met E-E-A-T...',
+        message: 'AI schrijft artikel...',
       });
 
       console.log('[Content Hub] Phase 2: Content Generation');
@@ -301,20 +304,54 @@ async function handleStreamingGeneration(
           1500
         );
         
-        console.log(`[Content Hub] Starting content generation - Target: ${targetWordCount} words (SERP suggested: ${serpWordCount})`);
+        console.log(`[Content Hub] ═══════════════════════════════════════════════════`);
+        console.log(`[Content Hub] STARTING CONTENT GENERATION`);
+        console.log(`[Content Hub] ═══════════════════════════════════════════════════`);
+        console.log(`[Content Hub] Article: ${article.title}`);
+        console.log(`[Content Hub] Target word count: ${targetWordCount} words (SERP suggested: ${serpWordCount})`);
+        console.log(`[Content Hub] Model: Claude 4.5 Sonnet (claude-4-5-sonnet-2025)`);
+        console.log(`[Content Hub] Timestamp: ${new Date().toISOString()}`);
         
-        articleResult = await writeArticle({
-          title: article.title,
-          keywords: article.keywords,
-          targetWordCount,
-          tone: 'professional',
-          language: 'nl',
-          serpAnalysis,
-          internalLinks: internalLinks.length > 0 ? internalLinks : undefined,
-          includeFAQ,
-        });
+        const contentStartTime = Date.now();
+        
+        // Start heartbeat to send periodic updates during long AI operation
+        const heartbeatInterval = setInterval(async () => {
+          try {
+            const elapsed = Math.floor((Date.now() - contentStartTime) / 1000);
+            console.log(`[Content Hub] ⏱️ Content generation in progress... ${elapsed}s elapsed`);
+            await sendUpdate({
+              step: 'content-generation',
+              status: 'in-progress',
+              progress: Math.min(25 + Math.floor(elapsed / 3), 55), // Gradually increase from 25% to 55%
+              message: `AI schrijft artikel... (${elapsed}s)`,
+            });
+          } catch (heartbeatError) {
+            // Log but don't throw - heartbeat failures shouldn't stop generation
+            console.error('[Content Hub] Heartbeat update failed:', heartbeatError);
+          }
+        }, 15000); // Send update every 15 seconds
+        
+        try {
+          articleResult = await writeArticle({
+            title: article.title,
+            keywords: article.keywords,
+            targetWordCount,
+            tone: 'professional',
+            language: 'nl',
+            serpAnalysis,
+            internalLinks: internalLinks.length > 0 ? internalLinks : undefined,
+            includeFAQ,
+          });
+        } finally {
+          clearInterval(heartbeatInterval);
+        }
 
-        console.log(`[Content Hub] Content generated successfully: ${articleResult.wordCount} words`);
+        const contentDuration = Math.floor((Date.now() - contentStartTime) / 1000);
+        console.log(`[Content Hub] ═══════════════════════════════════════════════════`);
+        console.log(`[Content Hub] CONTENT GENERATION COMPLETED`);
+        console.log(`[Content Hub] ═══════════════════════════════════════════════════`);
+        console.log(`[Content Hub] Success! Generated ${articleResult.wordCount} words in ${contentDuration}s`);
+        console.log(`[Content Hub] Timestamp: ${new Date().toISOString()}`);
         
         await sendUpdate({
           step: 'content-generation',
@@ -328,7 +365,41 @@ async function handleStreamingGeneration(
           },
         });
       } catch (writeError: any) {
-        console.error('[Content Hub] Article writing failed:', writeError);
+        console.error('[Content Hub] ═══════════════════════════════════════════════════');
+        console.error('[Content Hub] CONTENT GENERATION FAILED');
+        console.error('[Content Hub] ═══════════════════════════════════════════════════');
+        console.error('[Content Hub] Article:', article.title);
+        console.error('[Content Hub] Error type:', writeError.name || 'Unknown');
+        console.error('[Content Hub] Error message:', writeError.message);
+        console.error('[Content Hub] Error stack:', writeError.stack);
+        console.error('[Content Hub] Timestamp:', new Date().toISOString());
+        
+        // Check for specific error types using error properties and status codes
+        let userFriendlyMessage = 'Het schrijven van het artikel is mislukt';
+        const errorMessage = writeError.message?.toLowerCase() || '';
+        const errorCode = writeError.code || writeError.status || writeError.response?.status;
+        
+        // Check by error code/status first (more reliable)
+        if (errorCode === 429 || errorCode === 'ETIMEDOUT' || errorCode === 'ESOCKETTIMEDOUT') {
+          if (errorCode === 429) {
+            userFriendlyMessage = 'Te veel verzoeken. Wacht een moment en probeer opnieuw.';
+            console.error('[Content Hub] Error cause: RATE LIMIT - Too many API requests (429)');
+          } else {
+            userFriendlyMessage = 'Het artikel schrijven duurde te lang. Probeer het later opnieuw.';
+            console.error('[Content Hub] Error cause: TIMEOUT - AI call took too long');
+          }
+        } else if (errorCode === 502 || errorCode === 503 || errorCode === 504) {
+          userFriendlyMessage = 'De AI service is tijdelijk niet beschikbaar. Probeer het over enkele minuten opnieuw.';
+          console.error(`[Content Hub] Error cause: API UNAVAILABLE - Service error (${errorCode})`);
+        } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+          userFriendlyMessage = 'Het artikel schrijven duurde te lang. Probeer het later opnieuw.';
+          console.error('[Content Hub] Error cause: TIMEOUT - AI call took too long');
+        } else if (errorMessage.includes('rate limit')) {
+          userFriendlyMessage = 'Te veel verzoeken. Wacht een moment en probeer opnieuw.';
+          console.error('[Content Hub] Error cause: RATE LIMIT - Too many API requests');
+        } else {
+          console.error('[Content Hub] Error cause: UNKNOWN - See error details above');
+        }
         
         await prisma.contentHubArticle.update({
           where: { id: article.id },
@@ -336,6 +407,7 @@ async function handleStreamingGeneration(
             status: 'failed',
             researchData: {
               error: writeError.message,
+              errorType: writeError.name || 'Unknown',
               timestamp: new Date().toISOString(),
             } as any,
           },
@@ -345,7 +417,7 @@ async function handleStreamingGeneration(
           step: 'content-generation',
           status: 'failed',
           progress: 60,
-          message: 'Het schrijven van het artikel is mislukt',
+          message: userFriendlyMessage,
           error: writeError.message,
         });
         

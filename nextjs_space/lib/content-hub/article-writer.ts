@@ -167,7 +167,14 @@ export async function writeArticle(
 ): Promise<ArticleResult> {
   const { title, keywords, targetWordCount, tone = 'professional', language = 'nl' } = options;
   
-  console.log(`[Article Writer] Writing article: ${title}`);
+  console.log(`[Article Writer] ═══════════════════════════════════════════════════`);
+  console.log(`[Article Writer] STARTING ARTICLE GENERATION`);
+  console.log(`[Article Writer] ═══════════════════════════════════════════════════`);
+  console.log(`[Article Writer] Title: ${title}`);
+  console.log(`[Article Writer] Target words: ${targetWordCount}`);
+  console.log(`[Article Writer] Keywords: ${keywords.join(', ')}`);
+  console.log(`[Article Writer] Language: ${language}`);
+  console.log(`[Article Writer] Tone: ${tone}`);
   
   // Build comprehensive context from SERP analysis
   let serpContext = '';
@@ -297,6 +304,15 @@ ${options.internalLinks ? '✅ 4-6 interne links met natuurlijke ankerteksten' :
 Schrijf nu het complete artikel in HTML formaat:`;
 
   try {
+    console.log(`[Article Writer] Calling AI API...`);
+    console.log(`[Article Writer] Model: ${TEXT_MODELS.CLAUDE_45}`);
+    console.log(`[Article Writer] Max tokens: 12000`);
+    console.log(`[Article Writer] Temperature: 0.7`);
+    console.log(`[Article Writer] Stream: false`);
+    console.log(`[Article Writer] Request time: ${new Date().toISOString()}`);
+    
+    const aiCallStartTime = Date.now();
+    
     const response = await sendChatCompletion({
       model: TEXT_MODELS.CLAUDE_45,
       messages: [
@@ -307,14 +323,20 @@ Schrijf nu het complete artikel in HTML formaat:`;
       max_tokens: 12000, // Verhoogde limiet voor lange artikelen
       stream: false,
     });
+    
+    const aiCallDuration = Math.floor((Date.now() - aiCallStartTime) / 1000);
+    console.log(`[Article Writer] AI API call completed in ${aiCallDuration}s`);
 
     let html = (response as any).choices[0]?.message?.content || '';
     
     if (!html || html.length < 100) {
+      console.error(`[Article Writer] EMPTY OR INVALID RESPONSE`);
+      console.error(`[Article Writer] Response length: ${html?.length || 0} characters`);
+      console.error(`[Article Writer] Response preview: ${html ? html.substring(0, 200) : 'null or undefined'}`);
       throw new Error('Empty response from AI');
     }
 
-    console.log(`[Article Writer] Received ${html.length} characters`);
+    console.log(`[Article Writer] Received ${html.length} characters from AI`);
 
     // Clean up any markdown artifacts
     html = cleanHtmlResponse(html);
@@ -327,7 +349,12 @@ Schrijf nu het complete artikel in HTML formaat:`;
     // Count words
     const wordCount = countWords(html);
 
-    console.log(`[Article Writer] Success! Generated ${wordCount} words`);
+    console.log(`[Article Writer] ═══════════════════════════════════════════════════`);
+    console.log(`[Article Writer] ARTICLE GENERATION SUCCESS`);
+    console.log(`[Article Writer] ═══════════════════════════════════════════════════`);
+    console.log(`[Article Writer] Generated ${wordCount} words`);
+    console.log(`[Article Writer] HTML length: ${html.length} characters`);
+    console.log(`[Article Writer] Completion time: ${new Date().toISOString()}`);
 
     return {
       content: html,
@@ -339,7 +366,23 @@ Schrijf nu het complete artikel in HTML formaat:`;
     };
 
   } catch (error: any) {
-    console.error('[Article Writer] Error:', error.message);
+    console.error(`[Article Writer] ═══════════════════════════════════════════════════`);
+    console.error(`[Article Writer] ARTICLE GENERATION FAILED`);
+    console.error(`[Article Writer] ═══════════════════════════════════════════════════`);
+    console.error(`[Article Writer] Error type: ${error.name || 'Unknown'}`);
+    console.error(`[Article Writer] Error message: ${error.message}`);
+    console.error(`[Article Writer] Error stack: ${error.stack || 'No stack trace'}`);
+    console.error(`[Article Writer] Failure time: ${new Date().toISOString()}`);
+    
+    // Log additional context if available
+    if (error.response) {
+      console.error(`[Article Writer] API Response status: ${error.response.status}`);
+      console.error(`[Article Writer] API Response data:`, error.response.data);
+    }
+    if (error.code) {
+      console.error(`[Article Writer] Error code: ${error.code}`);
+    }
+    
     throw error; // Don't use fallback - let caller handle retry
   }
 }
