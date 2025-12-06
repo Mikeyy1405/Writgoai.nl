@@ -295,13 +295,13 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-xl">{article.title}</CardTitle>
-              <CardDescription className="mt-1">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+      <Card className="w-full max-w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex items-start sm:items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base sm:text-xl line-clamp-2">{article.title}</CardTitle>
+              <CardDescription className="mt-1 text-xs sm:text-sm">
                 Generate complete SEO-optimized article
               </CardDescription>
             </div>
@@ -310,22 +310,23 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
               size="icon" 
               onClick={onClose}
               disabled={generating}
+              className="flex-shrink-0"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
           {/* Options */}
           {!generating && progress === 0 && (
-            <div className="space-y-4 p-4 border rounded-lg">
-              <h3 className="font-semibold">Generation Options</h3>
+            <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 border rounded-lg">
+              <h3 className="font-semibold text-sm sm:text-base">Generation Options</h3>
               
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="generate-images">Generate Images</Label>
-                  <p className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor="generate-images" className="text-sm">Generate Images</Label>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Create featured image using AI
                   </p>
                 </div>
@@ -333,13 +334,14 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
                   id="generate-images"
                   checked={generateImages}
                   onCheckedChange={setGenerateImages}
+                  className="flex-shrink-0"
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="include-faq">Include FAQ Section</Label>
-                  <p className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor="include-faq" className="text-sm">Include FAQ Section</Label>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Add frequently asked questions
                   </p>
                 </div>
@@ -347,13 +349,14 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
                   id="include-faq"
                   checked={includeFAQ}
                   onCheckedChange={setIncludeFAQ}
+                  className="flex-shrink-0"
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="auto-publish">Auto-publish to WordPress</Label>
-                  <p className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor="auto-publish" className="text-sm">Auto-publish to WordPress</Label>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Publish immediately after generation
                   </p>
                 </div>
@@ -361,6 +364,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
                   id="auto-publish"
                   checked={autoPublish}
                   onCheckedChange={setAutoPublish}
+                  className="flex-shrink-0"
                 />
               </div>
             </div>
@@ -369,20 +373,20 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
           {/* Progress */}
           {generating && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
                 <span className="font-medium">Overall Progress</span>
                 <span className="text-muted-foreground">{progress}%</span>
               </div>
-              <Progress value={progress} className="h-2" />
+              <Progress value={progress} className="h-1.5 sm:h-2" />
             </div>
           )}
 
           {/* Phases */}
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {phases.map((phase, index) => (
               <div 
                 key={index}
-                className={`flex items-start gap-3 p-4 rounded-lg border ${
+                className={`flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border ${
                   phase.status === 'in-progress' ? 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800' :
                   phase.status === 'completed' ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' :
                   phase.status === 'failed' ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800' :
@@ -393,8 +397,8 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
                   {getPhaseIcon(phase.status)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold">{phase.name}</h4>
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                    <h4 className="font-semibold text-sm sm:text-base">{phase.name}</h4>
                     {phase.status !== 'pending' && (
                       <Badge 
                         variant={
@@ -402,43 +406,43 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
                           phase.status === 'in-progress' ? 'secondary' :
                           'destructive'
                         }
-                        className="text-xs"
+                        className="text-[10px] sm:text-xs"
                       >
                         {phase.status}
                       </Badge>
                     )}
                   </div>
                   {phase.message && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       {phase.message}
                     </p>
                   )}
                   {phase.metrics && (
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                       {phase.metrics.wordCount !== undefined && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
                           📝 {phase.metrics.wordCount} woorden
                         </Badge>
                       )}
                       {phase.metrics.lsiKeywords !== undefined && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
                           🔍 {phase.metrics.lsiKeywords} LSI keywords
                         </Badge>
                       )}
                       {phase.metrics.paaQuestions !== undefined && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
                           ❓ {phase.metrics.paaQuestions} FAQ vragen
                         </Badge>
                       )}
                       {phase.metrics.images !== undefined && phase.metrics.images > 0 && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
                           🖼️ {phase.metrics.images} afbeelding(en)
                         </Badge>
                       )}
                     </div>
                   )}
                   {phase.duration && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                       ⏱️ {phase.duration}s
                     </p>
                   )}
@@ -448,14 +452,14 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
           </div>
 
           {/* Article Info */}
-          <div className="p-4 bg-muted rounded-lg space-y-2">
-            <div className="flex items-center justify-between text-sm">
+          <div className="p-3 sm:p-4 bg-muted rounded-lg space-y-2">
+            <div className="flex items-center justify-between text-xs sm:text-sm">
               <span className="text-muted-foreground">Cluster</span>
-              <Badge variant="outline">{article.cluster}</Badge>
+              <Badge variant="outline" className="text-xs">{article.cluster}</Badge>
             </div>
             <div className="flex flex-wrap gap-1">
               {article.keywords.map((keyword, idx) => (
-                <Badge key={idx} variant="secondary" className="text-xs">
+                <Badge key={idx} variant="secondary" className="text-[10px] sm:text-xs">
                   {keyword}
                 </Badge>
               ))}
@@ -463,11 +467,12 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-2">
+        <CardFooter className="flex flex-col sm:flex-row justify-end gap-2 p-4 sm:p-6">
           <Button 
             variant="outline" 
             onClick={generating ? handleCancel : onClose}
             disabled={false}
+            className="w-full sm:w-auto"
           >
             {progress === 100 ? 'Sluiten' : 'Annuleren'}
           </Button>
@@ -475,7 +480,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
             <Button 
               onClick={handleGenerate} 
               disabled={generating}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               {generating ? (
                 <>

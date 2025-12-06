@@ -942,7 +942,7 @@ export default function ContentPlannerPage() {
 
       {/* Generate Dialog */}
       <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
-        <DialogContent className="bg-gray-900 border-gray-800 text-white max-w-2xl">
+        <DialogContent className="bg-gray-900 border-gray-800 text-white max-w-[95vw] sm:max-w-2xl mx-4 max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl flex items-center gap-2">
               <Network className="text-purple-400" size={24} />
@@ -965,7 +965,7 @@ export default function ContentPlannerPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-white">Aantal Topics</Label>
                   <Input
