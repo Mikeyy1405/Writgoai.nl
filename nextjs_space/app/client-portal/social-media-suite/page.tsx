@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,10 +26,21 @@ export default function SocialMediaSuitePage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('ideas');
   const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
+  const [projectLoading, setProjectLoading] = useState(true);
 
   const handleProjectChange = (projectId: string | null, project: Project | null) => {
     setSelectedProjectId(projectId);
+    setProjectLoading(false);
   };
+
+  // Set loading to false after a timeout to handle cases where ProjectSelector
+  // doesn't call onChange (e.g., when there are no projects)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setProjectLoading(false);
+    }, 2000); // Give ProjectSelector 2 seconds to load and auto-select
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCreateFromIdea = (idea: ContentIdea) => {
     // Switch to create post tab with the idea pre-filled
@@ -124,14 +135,16 @@ export default function SocialMediaSuitePage() {
 
         <TabsContent value="ideas">
           <ContentIdeasTab 
-            projectId={selectedProjectId} 
+            projectId={selectedProjectId}
+            projectLoading={projectLoading}
             onCreateFromIdea={handleCreateFromIdea}
           />
         </TabsContent>
 
         <TabsContent value="create">
           <CreatePostTab 
-            projectId={selectedProjectId} 
+            projectId={selectedProjectId}
+            projectLoading={projectLoading}
             initialIdea={selectedIdea}
           />
         </TabsContent>
