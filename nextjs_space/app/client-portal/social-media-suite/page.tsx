@@ -132,54 +132,100 @@ export default function SocialMediaSuitePage() {
   };
 
   const generateIdeas = async () => {
-    console.log('🔥 generateIdeas clicked!');
-    console.log('📦 selectedProjectId:', selectedProjectId);
-    console.log('📦 loadingIdeas:', loadingIdeas);
-    console.log('📦 loadingProjects:', loadingProjects);
+    // LOG ALLES - zelfs voordat we iets checken
+    addDebug('🔥 KNOP GEKLIKT - generateIdeas START');
     
-    if (!selectedProjectId) {
-      console.log('❌ No project selected, returning early');
-      toast.error('Selecteer eerst een project');
-      return;
-    }
-
     try {
-      console.log('🚀 Starting API call...');
-      setLoadingIdeas(true);
-      toast.loading('AI genereert content ideeën...', { id: 'ideas' });
-
-      const response = await fetch('/api/client/social/generate-ideas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: selectedProjectId, count: 10 }),
-      });
-
-      console.log('📥 Response status:', response.status);
-      console.log('📥 Response ok:', response.ok);
-
-      if (!response.ok) {
-        const error = await response.json();
-        console.log('❌ API Error:', error);
-        throw new Error(error.error || 'Fout bij genereren van ideeën');
+      addDebug(`📦 selectedProjectId = ${selectedProjectId}`);
+      addDebug(`📦 typeof selectedProjectId = ${typeof selectedProjectId}`);
+      
+      if (!selectedProjectId) {
+        addDebug('❌ STOP: selectedProjectId is null/undefined');
+        toast.error('Selecteer eerst een project');
+        return;
       }
 
-      const data = await response.json();
-      console.log('✅ API Response:', data);
+      addDebug('✅ Project check passed');
+      addDebug('🔄 Setting loadingIdeas to true...');
+      setLoadingIdeas(true);
       
+      addDebug('🔔 Showing toast...');
+      toast.loading('AI genereert content ideeën...', { id: 'ideas' });
+
+      addDebug('🌐 Creating fetch request...');
+      const url = '/api/client/social/generate-ideas';
+      const body = JSON.stringify({ projectId: selectedProjectId, count: 10 });
+      addDebug(`🌐 URL: ${url}`);
+      addDebug(`🌐 Body: ${body}`);
+
+      addDebug('🚀 Calling fetch NOW...');
+      
+      let response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: body,
+        });
+        addDebug(`📥 Fetch completed! Status: ${response.status}`);
+      } catch (fetchError: any) {
+        addDebug(`❌ FETCH ERROR: ${fetchError.message}`);
+        addDebug(`❌ FETCH ERROR TYPE: ${fetchError.name}`);
+        throw fetchError;
+      }
+
+      addDebug(`📥 Response OK: ${response.ok}`);
+      addDebug(`📥 Response Status: ${response.status}`);
+      addDebug(`📥 Response StatusText: ${response.statusText}`);
+
+      if (!response.ok) {
+        addDebug('❌ Response NOT OK, parsing error...');
+        let errorData;
+        try {
+          errorData = await response.json();
+          addDebug(`❌ Error data: ${JSON.stringify(errorData)}`);
+        } catch (parseError) {
+          addDebug(`❌ Could not parse error response`);
+          errorData = { error: 'Unknown error' };
+        }
+        throw new Error(errorData.error || 'Fout bij genereren van ideeën');
+      }
+
+      addDebug('✅ Response OK, parsing JSON...');
+      let data;
+      try {
+        data = await response.json();
+        addDebug(`📦 Data received: ${JSON.stringify(data).substring(0, 100)}...`);
+      } catch (parseError: any) {
+        addDebug(`❌ JSON PARSE ERROR: ${parseError.message}`);
+        throw parseError;
+      }
+      
+      addDebug(`📦 data.success = ${data.success}`);
+      addDebug(`📦 data.ideas exists = ${!!data.ideas}`);
+      addDebug(`📦 data.ideas.length = ${data.ideas?.length || 0}`);
+
       if (data.success && data.ideas) {
+        addDebug(`🎉 SUCCESS! Setting ${data.ideas.length} ideas...`);
         setIdeas(data.ideas);
         toast.success(`${data.ideas.length} content ideeën gegenereerd!`, { id: 'ideas' });
-        addDebug('🎉 SUCCESS!');
+        addDebug('🎉 Ideas set successfully!');
       } else {
-        addDebug('❌ Onverwacht response formaat');
+        addDebug('❌ Unexpected response format');
+        addDebug(`❌ Full data: ${JSON.stringify(data)}`);
         throw new Error('Onverwacht response formaat');
       }
     } catch (error: any) {
-      console.error('❌ Catch error:', error);
+      addDebug(`❌❌❌ CAUGHT ERROR ❌❌❌`);
+      addDebug(`❌ Error message: ${error.message}`);
+      addDebug(`❌ Error name: ${error.name}`);
+      addDebug(`❌ Error stack: ${error.stack?.substring(0, 200) || 'no stack'}`);
+      console.error('Full error:', error);
       toast.error(error.message || 'Fout bij genereren van ideeën', { id: 'ideas' });
     } finally {
+      addDebug('🏁 FINALLY block - setting loadingIdeas to false');
       setLoadingIdeas(false);
-      addDebug('✅ generateIdeas klaar');
+      addDebug('✅ generateIdeas COMPLETE');
     }
   };
 
