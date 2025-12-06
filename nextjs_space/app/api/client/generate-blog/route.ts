@@ -1222,7 +1222,7 @@ Schrijf nu de complete ${reviewTypeText.toLowerCase()} in perfecte HTML formatti
         return;
       }
       
-      // Progress from 57% to 69% max (leave room for post-AI processing)
+      // Progress from 57% to 69% max (leaves 30% room for image generation, internal links, and final processing)
       heartbeatProgress = Math.min(heartbeatProgress + 1.0, 69);
       const elapsed = Math.floor((Date.now() - writingStartTime) / 1000);
       const message = heartbeatMessages[heartbeatIndex % heartbeatMessages.length];

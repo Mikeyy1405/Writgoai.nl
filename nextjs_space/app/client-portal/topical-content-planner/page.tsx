@@ -459,7 +459,7 @@ export default function TopicalContentPlanner() {
               </Card>
               <Card className="p-3 sm:p-4 bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-orange-500/20">
                 <div className="text-xl sm:text-2xl font-bold text-white">{stats.pending}</div>
-                <div className="text-xs sm:text-sm text-gray-400">Wachten</div>
+                <div className="text-xs sm:text-sm text-gray-400">Wachtend</div>
               </Card>
               <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
                 <div className="text-xl sm:text-2xl font-bold text-white">{stats.scheduled}</div>
