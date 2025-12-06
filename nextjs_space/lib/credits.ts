@@ -276,9 +276,13 @@ export async function checkCreditsWithAdminBypass(
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
     const isUnlimited = client?.isUnlimited || isAdmin;
 
-    // Log for debugging
+    // Log for debugging (mask email in production)
+    const emailForLog = process.env.NODE_ENV === 'production' 
+      ? `${email.substring(0, 3)}***@${email.split('@')[1]}` 
+      : email;
+    
     console.log('💳 Credit check:', {
-      email,
+      email: emailForLog,
       clientFound: !!client,
       clientIsUnlimited: client?.isUnlimited,
       userRole: user?.role,

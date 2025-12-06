@@ -182,7 +182,8 @@ Genereer ALLEEN de JSON zonder extra tekst:
     let remainingCredits = UNLIMITED_CREDITS;
     if (!creditCheck.isUnlimited && user) {
       // Calculate remaining credits BEFORE database update (user object has current values)
-      const currentTotal = user.subscriptionCredits + user.topUpCredits;
+      // TypeScript guarantees user is not null here, but being explicit for clarity
+      const currentTotal = (user.subscriptionCredits || 0) + (user.topUpCredits || 0);
       remainingCredits = currentTotal - requiredCredits;
       
       let subscriptionDeduction = Math.min(user.subscriptionCredits, requiredCredits);

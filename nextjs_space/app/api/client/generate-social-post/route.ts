@@ -344,7 +344,8 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
     // Deduct credits (only if not unlimited - admins and unlimited users skip this)
     if (!creditCheck.isUnlimited && user) {
       // Calculate remaining credits BEFORE database update (user object has current values)
-      const currentTotal = user.subscriptionCredits + user.topUpCredits;
+      // TypeScript guarantees user is not null here, but being explicit for clarity
+      const currentTotal = (user.subscriptionCredits || 0) + (user.topUpCredits || 0);
       remainingCredits = currentTotal - creditsUsed;
       
       const subscriptionDeduct = Math.min(user.subscriptionCredits, creditsUsed);
