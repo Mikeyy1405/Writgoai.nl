@@ -72,6 +72,20 @@ export default function SocialMediaSuitePage() {
     loadProjects();
   }, []);
 
+  // Test API connectivity on mount
+  useEffect(() => {
+    const testApi = async () => {
+      try {
+        console.log('🧪 Testing API connectivity...');
+        const response = await fetch('/api/client/projects');
+        console.log('🧪 Projects API status:', response.status);
+      } catch (error) {
+        console.error('🧪 API test failed:', error);
+      }
+    };
+    testApi();
+  }, []);
+
   const loadProjects = async () => {
     try {
       setLoadingProjects(true);
@@ -100,12 +114,19 @@ export default function SocialMediaSuitePage() {
   };
 
   const generateIdeas = async () => {
+    console.log('🔥 generateIdeas clicked!');
+    console.log('📦 selectedProjectId:', selectedProjectId);
+    console.log('📦 loadingIdeas:', loadingIdeas);
+    console.log('📦 loadingProjects:', loadingProjects);
+    
     if (!selectedProjectId) {
+      console.log('❌ No project selected, returning early');
       toast.error('Selecteer eerst een project');
       return;
     }
 
     try {
+      console.log('🚀 Starting API call...');
       setLoadingIdeas(true);
       toast.loading('AI genereert content ideeën...', { id: 'ideas' });
 
@@ -115,12 +136,17 @@ export default function SocialMediaSuitePage() {
         body: JSON.stringify({ projectId: selectedProjectId, count: 10 }),
       });
 
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response ok:', response.ok);
+
       if (!response.ok) {
         const error = await response.json();
+        console.log('❌ API Error:', error);
         throw new Error(error.error || 'Fout bij genereren van ideeën');
       }
 
       const data = await response.json();
+      console.log('✅ API Response:', data);
       
       if (data.success && data.ideas) {
         setIdeas(data.ideas);
@@ -129,7 +155,7 @@ export default function SocialMediaSuitePage() {
         throw new Error('Onverwacht response formaat');
       }
     } catch (error: any) {
-      console.error('Error generating ideas:', error);
+      console.error('❌ Catch error:', error);
       toast.error(error.message || 'Fout bij genereren van ideeën', { id: 'ideas' });
     } finally {
       setLoadingIdeas(false);
@@ -326,24 +352,47 @@ export default function SocialMediaSuitePage() {
                   <CardTitle>💡 Content Ideeën</CardTitle>
                   <CardDescription>AI-gegenereerde content ideeën</CardDescription>
                 </div>
-                <Button
-                  onClick={generateIdeas}
-                  disabled={loadingIdeas || !selectedProjectId || loadingProjects}
-                  size="sm"
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
-                  {loadingIdeas ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Genereren...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Genereer 10 Ideeën
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Button clicked, calling generateIdeas');
+                      generateIdeas();
+                    }}
+                    disabled={loadingIdeas || !selectedProjectId || loadingProjects}
+                    size="sm"
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    {loadingIdeas ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Genereren...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Genereer 10 Ideeën
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      console.log('🧪 Test button clicked!');
+                      alert('Button works!');
+                    }}
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    Test Click
+                  </Button>
+                </div>
+              </div>
+              {/* Debug info */}
+              <div className="text-xs text-gray-500 px-6 pb-2">
+                Debug: projectId={selectedProjectId || 'null'}, 
+                loadingProjects={String(loadingProjects)}, 
+                loadingIdeas={String(loadingIdeas)}
               </div>
             </CardHeader>
             <CardContent>
