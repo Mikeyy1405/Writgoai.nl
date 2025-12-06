@@ -158,9 +158,9 @@ export default function SocialMediaSuitePage() {
 
       const newContent: Record<string, string> = {};
 
-      // Generate content for each platform
-      for (const platform of selectedPlatforms) {
-        try {
+      // Generate content for all platforms concurrently
+      const results = await Promise.allSettled(
+        selectedPlatforms.map(async (platform) => {
           const response = await fetch('/api/client/generate-social-post', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -183,16 +183,24 @@ export default function SocialMediaSuitePage() {
           const data = await response.json();
           
           if (data.success && data.post) {
-            newContent[platform] = data.post;
+            return { platform, post: data.post };
           } else {
             throw new Error('Onverwacht response formaat');
           }
-        } catch (error: any) {
-          console.error(`Error generating content for ${platform}:`, error);
+        })
+      );
+
+      // Process results
+      results.forEach((result, index) => {
+        const platform = selectedPlatforms[index];
+        if (result.status === 'fulfilled') {
+          newContent[platform] = result.value.post;
+        } else {
+          console.error(`Error generating content for ${platform}:`, result.reason);
           const platformName = PLATFORMS.find((p) => p.id === platform)?.name || platform;
-          newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${error.message}`;
+          newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${result.reason.message || 'Onbekende fout'}`;
         }
-      }
+      });
 
       setGeneratedContent(newContent);
       
@@ -280,11 +288,15 @@ export default function SocialMediaSuitePage() {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium whitespace-nowrap">Project:</label>
+            <label htmlFor="project-select" className="text-sm font-medium whitespace-nowrap">
+              Project:
+            </label>
             <select
+              id="project-select"
               value={selectedProjectId || ''}
               onChange={(e) => setSelectedProjectId(e.target.value || null)}
               disabled={loadingProjects}
+              aria-label="Selecteer een project"
               className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               {loadingProjects ? (
