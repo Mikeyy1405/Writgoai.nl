@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   Loader2,
@@ -22,7 +23,13 @@ import {
   Calendar,
   Star,
   Zap,
+  Lightbulb,
+  PenTool,
+  CalendarDays,
 } from 'lucide-react';
+import ContentCalendar from './components/content-calendar';
+import ScheduleModal from './components/schedule-modal';
+import { renderMarkdown, PlatformId } from '@/lib/social-media-utils';
 
 interface Project {
   id: string;
@@ -51,6 +58,9 @@ const PLATFORMS = [
 ];
 
 export default function SocialMediaSuitePage() {
+  // Tab state
+  const [activeTab, setActiveTab] = useState('ideas');
+
   // Project state
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -66,6 +76,10 @@ export default function SocialMediaSuitePage() {
   const [generatedContent, setGeneratedContent] = useState<Record<string, string>>({});
   const [generatingContent, setGeneratingContent] = useState(false);
   const [copiedPlatform, setCopiedPlatform] = useState<string | null>(null);
+
+  // Schedule modal state
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [postToSchedule, setPostToSchedule] = useState<{ content: string; platform: PlatformId } | null>(null);
 
   // Debug state for mobile debugging
   const [debugLog, setDebugLog] = useState<string[]>([]);
@@ -338,6 +352,16 @@ export default function SocialMediaSuitePage() {
     }
   };
 
+  const handleSchedulePost = (platform: string, content: string) => {
+    setPostToSchedule({ content, platform: platform as PlatformId });
+    setScheduleModalOpen(true);
+  };
+
+  const handleScheduled = () => {
+    // Refresh calendar if on that tab
+    setActiveTab('calendar');
+  };
+
   const getCategoryBadge = (category: ContentIdea['category']) => {
     const styles = {
       trending: 'bg-red-500/20 text-red-300 border-red-500/50',
@@ -375,39 +399,9 @@ export default function SocialMediaSuitePage() {
           </Badge>
         </h1>
         <p className="text-muted-foreground">
-          Genereer content ideeën en posts voor al je social media platforms
+          Genereer content ideeën, posts en plan je social media strategie
         </p>
       </div>
-
-      {/* DEBUG PANEL - Zichtbaar op mobiel */}
-      <Card className="bg-yellow-900/20 border-yellow-500">
-        <CardHeader className="py-2">
-          <CardTitle className="text-sm text-yellow-400">🐛 Debug Panel (Mobiel)</CardTitle>
-        </CardHeader>
-        <CardContent className="py-2">
-          <div className="text-xs space-y-1">
-            <p>📱 Project ID: <span className="text-green-400">{selectedProjectId || 'GEEN'}</span></p>
-            <p>📱 Projecten geladen: <span className="text-green-400">{projects.length}</span></p>
-            <p>📱 Loading Projects: <span className={loadingProjects ? 'text-red-400' : 'text-green-400'}>{String(loadingProjects)}</span></p>
-            <p>📱 Loading Ideas: <span className={loadingIdeas ? 'text-red-400' : 'text-green-400'}>{String(loadingIdeas)}</span></p>
-            <p>📱 Knop disabled: <span className={(!selectedProjectId || loadingProjects || loadingIdeas) ? 'text-red-400' : 'text-green-400'}>
-              {String(!selectedProjectId || loadingProjects || loadingIdeas)}
-            </span></p>
-          </div>
-          
-          {/* Debug Log */}
-          <div className="mt-2 max-h-32 overflow-y-auto bg-black/50 rounded p-2">
-            <p className="text-yellow-400 text-xs font-bold mb-1">Log:</p>
-            {debugLog.length === 0 ? (
-              <p className="text-gray-500 text-xs">Nog geen acties...</p>
-            ) : (
-              debugLog.map((log, i) => (
-                <p key={i} className="text-xs text-gray-300">{log}</p>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Project Selector */}
       <Card>
@@ -440,244 +434,278 @@ export default function SocialMediaSuitePage() {
         </CardContent>
       </Card>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: Content Ideas */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>💡 Content Ideeën</CardTitle>
-                  <CardDescription>AI-gegenereerde content ideeën</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('Button clicked, calling generateIdeas');
-                      generateIdeas();
-                    }}
-                    disabled={loadingIdeas || !selectedProjectId || loadingProjects}
-                    size="sm"
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    {loadingIdeas ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Genereren...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Genereer 10 Ideeën
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      console.log('🧪 Test button clicked!');
-                      alert('Button works!');
-                    }}
-                    size="sm"
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    Test Click
-                  </Button>
-                </div>
-              </div>
-              {/* Debug info */}
-              <div className="text-xs text-gray-500 px-6 pb-2">
-                Debug: projectId={selectedProjectId || 'null'}, 
-                loadingProjects={String(loadingProjects)}, 
-                loadingIdeas={String(loadingIdeas)}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {ideas.length === 0 ? (
-                <div className="text-center py-12">
-                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-orange-500 opacity-50" />
-                  <p className="text-muted-foreground">
-                    Klik op de knop hierboven om ideeën te genereren
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                  {ideas.map((idea) => (
-                    <Card
-                      key={idea.id}
-                      className="cursor-pointer hover:border-orange-500/50 transition-colors"
-                      onClick={() => handleIdeaClick(idea)}
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsTrigger value="ideas" className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4" />
+            <span className="hidden sm:inline">Ideeën</span>
+            <span className="sm:hidden">💡</span>
+          </TabsTrigger>
+          <TabsTrigger value="create" className="flex items-center gap-2">
+            <PenTool className="h-4 w-4" />
+            <span className="hidden sm:inline">Post Maker</span>
+            <span className="sm:hidden">✏️</span>
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4" />
+            <span className="hidden sm:inline">Planning</span>
+            <span className="sm:hidden">📅</span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Ideeën Tab */}
+        <TabsContent value="ideas" className="space-y-4 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column: Content Ideas */}
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>💡 Content Ideeën</CardTitle>
+                      <CardDescription>AI-gegenereerde content ideeën</CardDescription>
+                    </div>
+                    <Button
+                      onClick={generateIdeas}
+                      disabled={loadingIdeas || !selectedProjectId || loadingProjects}
+                      size="sm"
+                      className="bg-orange-500 hover:bg-orange-600"
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          {getCategoryBadge(idea.category)}
-                          {idea.urgency === 'high' && (
-                            <Badge className="bg-red-500/20 text-red-300">🔥 Urgent</Badge>
-                          )}
-                        </div>
-                        <h3 className="font-semibold text-white mb-1">{idea.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-3">{idea.description}</p>
-                        <div className="flex items-center gap-2">
-                          {idea.suggestedPlatforms.map((platformId) => {
-                            const platform = PLATFORMS.find((p) => p.id === platformId);
-                            if (!platform) return null;
-                            const Icon = platform.icon;
-                            return (
-                              <div
-                                key={platformId}
-                                className="p-1.5 rounded bg-gray-700/50"
-                                title={platform.name}
-                              >
-                                <Icon className="w-3 h-3" style={{ color: platform.color }} />
-                              </div>
-                            );
-                          })}
-                          <Badge variant="outline" className="ml-auto text-green-400 border-green-400 text-xs">
-                            {idea.estimatedEngagement}%
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                      {loadingIdeas ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Genereren...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Genereer Ideeën
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {ideas.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Sparkles className="w-12 h-12 mx-auto mb-4 text-orange-500 opacity-50" />
+                      <p className="text-muted-foreground">
+                        Klik op de knop hierboven om ideeën te genereren
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                      {ideas.map((idea) => (
+                        <Card
+                          key={idea.id}
+                          className="cursor-pointer hover:border-orange-500/50 transition-colors"
+                          onClick={() => handleIdeaClick(idea)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              {getCategoryBadge(idea.category)}
+                              {idea.urgency === 'high' && (
+                                <Badge className="bg-red-500/20 text-red-300">🔥 Urgent</Badge>
+                              )}
+                            </div>
+                            <h3 className="font-semibold text-white mb-1">{idea.title}</h3>
+                            <p className="text-sm text-muted-foreground mb-3">{idea.description}</p>
+                            <div className="flex items-center gap-2">
+                              {idea.suggestedPlatforms.map((platformId) => {
+                                const platform = PLATFORMS.find((p) => p.id === platformId);
+                                if (!platform) return null;
+                                const Icon = platform.icon;
+                                return (
+                                  <div
+                                    key={platformId}
+                                    className="p-1.5 rounded bg-gray-700/50"
+                                    title={platform.name}
+                                  >
+                                    <Icon className="w-3 h-3" style={{ color: platform.color }} />
+                                  </div>
+                                );
+                              })}
+                              <Badge variant="outline" className="ml-auto text-green-400 border-green-400 text-xs">
+                                {idea.estimatedEngagement}%
+                              </Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
 
-        {/* Right Column: Post Maker */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>✏️ Post Maker</CardTitle>
-              <CardDescription>Creëer content voor je platforms</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Topic Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Onderwerp</label>
-                <Textarea
-                  placeholder="Voer een onderwerp in of klik op een idee..."
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  rows={4}
-                />
-              </div>
-
-              {/* Platform Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Platforms</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {PLATFORMS.map((platform) => {
-                    const Icon = platform.icon;
-                    const isSelected = selectedPlatforms.includes(platform.id);
-                    return (
-                      <Button
-                        key={platform.id}
-                        type="button"
-                        variant={isSelected ? 'default' : 'outline'}
-                        onClick={() => togglePlatform(platform.id)}
-                        className="justify-start"
-                        size="sm"
-                      >
-                        <Icon className="h-4 w-4 mr-2" />
-                        {platform.name}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Generate Button */}
-              <Button
-                onClick={generateContent}
-                disabled={generatingContent || !topic.trim() || selectedPlatforms.length === 0 || !selectedProjectId}
-                className="w-full bg-orange-500 hover:bg-orange-600"
-                size="lg"
-              >
-                {generatingContent ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Genereren...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Genereer Content
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Generated Content Results */}
-          {Object.keys(generatedContent).length > 0 && (
+        {/* Post Maker Tab */}
+        <TabsContent value="create" className="space-y-4 mt-6">
+          <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>📝 Gegenereerde Posts</CardTitle>
-                <CardDescription>Klik op kopiëren om te gebruiken</CardDescription>
+                <CardTitle>✏️ Post Maker</CardTitle>
+                <CardDescription>Creëer content voor je platforms</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
-                {Object.entries(generatedContent).map(([platformId, content]) => {
-                  const platform = PLATFORMS.find((p) => p.id === platformId);
-                  if (!platform) return null;
-                  const Icon = platform.icon;
-                  const isError = content.startsWith('⚠️');
+              <CardContent className="space-y-4">
+                {/* Topic Input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Onderwerp</label>
+                  <Textarea
+                    placeholder="Voer een onderwerp in of klik op een idee..."
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    rows={4}
+                  />
+                </div>
 
-                  return (
-                    <div
-                      key={platformId}
-                      className={`border rounded-lg p-3 ${
-                        isError ? 'border-red-500/30 bg-red-500/5' : 'border-gray-700 bg-gray-800/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" style={{ color: platform.color }} />
-                          <span className="font-semibold text-sm">{platform.name}</span>
-                          {!isError && (
-                            <Badge variant="outline" className="text-xs">
-                              {content.length} tekens
-                            </Badge>
-                          )}
-                        </div>
-                        {!isError && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => copyToClipboard(platformId, content)}
-                          >
-                            {copiedPlatform === platformId ? (
-                              <>
-                                <Check className="h-3 w-3 mr-1" />
-                                Gekopieerd
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3 w-3 mr-1" />
-                                Kopiëren
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                      <div
-                        className={`rounded p-2 text-sm whitespace-pre-wrap ${
-                          isError ? 'bg-red-900/20 text-red-200' : 'bg-gray-900/50'
-                        }`}
-                      >
-                        {content}
-                      </div>
-                    </div>
-                  );
-                })}
+                {/* Platform Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Platforms</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PLATFORMS.map((platform) => {
+                      const Icon = platform.icon;
+                      const isSelected = selectedPlatforms.includes(platform.id);
+                      return (
+                        <Button
+                          key={platform.id}
+                          type="button"
+                          variant={isSelected ? 'default' : 'outline'}
+                          onClick={() => togglePlatform(platform.id)}
+                          className="justify-start"
+                          size="sm"
+                        >
+                          <Icon className="h-4 w-4 mr-2" />
+                          {platform.name}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Generate Button */}
+                <Button
+                  onClick={generateContent}
+                  disabled={generatingContent || !topic.trim() || selectedPlatforms.length === 0 || !selectedProjectId}
+                  className="w-full bg-orange-500 hover:bg-orange-600"
+                  size="lg"
+                >
+                  {generatingContent ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Genereren...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Genereer Content
+                    </>
+                  )}
+                </Button>
               </CardContent>
             </Card>
-          )}
-        </div>
-      </div>
+
+            {/* Generated Content Results */}
+            {Object.keys(generatedContent).length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>📝 Gegenereerde Posts</CardTitle>
+                  <CardDescription>Gebruik de knoppen om te kopiëren of in te plannen</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
+                  {Object.entries(generatedContent).map(([platformId, content]) => {
+                    const platform = PLATFORMS.find((p) => p.id === platformId);
+                    if (!platform) return null;
+                    const Icon = platform.icon;
+                    const isError = content.startsWith('⚠️');
+
+                    return (
+                      <div
+                        key={platformId}
+                        className={`border rounded-lg p-3 ${
+                          isError ? 'border-red-500/30 bg-red-500/5' : 'border-gray-700 bg-gray-800/30'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" style={{ color: platform.color }} />
+                            <span className="font-semibold text-sm">{platform.name}</span>
+                            {!isError && (
+                              <Badge variant="outline" className="text-xs">
+                                {content.length} tekens
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div
+                          className={`rounded p-3 text-sm mb-3 ${
+                            isError ? 'bg-red-900/20 text-red-200' : 'bg-gray-900/50'
+                          }`}
+                          dangerouslySetInnerHTML={{ 
+                            __html: isError ? content : renderMarkdown(content)
+                          }}
+                        />
+                        {!isError && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => copyToClipboard(platformId, content)}
+                              className="flex-1"
+                            >
+                              {copiedPlatform === platformId ? (
+                                <>
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Gekopieerd
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3 w-3 mr-1" />
+                                  Kopiëren
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleSchedulePost(platformId, content)}
+                              className="flex-1 bg-orange-500 hover:bg-orange-600"
+                            >
+                              <Calendar className="h-3 w-3 mr-1" />
+                              Inplannen
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Calendar Tab */}
+        <TabsContent value="calendar" className="mt-6">
+          <ContentCalendar projectId={selectedProjectId} />
+        </TabsContent>
+      </Tabs>
+
+      {/* Schedule Modal */}
+      {postToSchedule && selectedProjectId && (
+        <ScheduleModal
+          isOpen={scheduleModalOpen}
+          onClose={() => {
+            setScheduleModalOpen(false);
+            setPostToSchedule(null);
+          }}
+          content={postToSchedule.content}
+          platform={postToSchedule.platform}
+          projectId={selectedProjectId}
+          onScheduled={handleScheduled}
+        />
+      )}
     </div>
   );
 }

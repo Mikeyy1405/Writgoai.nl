@@ -8,6 +8,7 @@ import { prisma } from '@/lib/db';
 import { autoSaveToLibrary } from '@/lib/content-library-helper';
 import { CREDIT_COSTS, checkCreditsWithAdminBypass, UNLIMITED_CREDITS } from '@/lib/credits';
 import { getClientToneOfVoice, generateToneOfVoicePrompt } from '@/lib/tone-of-voice-helper';
+import { filterForbiddenWords } from '@/lib/social-media-utils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -330,7 +331,11 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
       max_tokens: 1000,
     });
 
-    const postContent = writingResponse.choices?.[0]?.message?.content || '';
+    let postContent = writingResponse.choices?.[0]?.message?.content || '';
+    
+    // Filter verboden woorden
+    postContent = filterForbiddenWords(postContent);
+    
     console.log('✅ Social post completed');
 
     // Extract hashtags
