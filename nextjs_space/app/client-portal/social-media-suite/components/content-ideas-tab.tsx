@@ -80,10 +80,7 @@ export default function ContentIdeasTab({ projectId, projectLoading = false, onC
   }, [projectId, projectLoading]);
 
   const generateIdeas = async () => {
-    console.log('[ContentIdeasTab] generateIdeas called with projectId:', projectId);
-    
     if (!projectId) {
-      console.warn('[ContentIdeasTab] No project selected, showing error toast');
       toast.error('Selecteer eerst een project');
       return;
     }

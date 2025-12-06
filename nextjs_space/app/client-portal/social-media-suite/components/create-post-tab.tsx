@@ -92,10 +92,7 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
   };
 
   const generateContent = async () => {
-    console.log('[CreatePostTab] generateContent called with projectId:', projectId);
-    
     if (!projectId) {
-      console.warn('[CreatePostTab] No project selected, showing error toast');
       toast.error('Selecteer eerst een project');
       return;
     }
