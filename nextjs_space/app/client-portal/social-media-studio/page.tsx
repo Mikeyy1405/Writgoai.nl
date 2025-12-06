@@ -250,6 +250,33 @@ export default function SocialMediaStudio() {
     }
   }, [session]);
 
+  // Listen for OAuth success messages from popup window
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Verify message type
+      if (event.data && event.data.type === 'SOCIAL_CONNECT_SUCCESS') {
+        console.log('[Social Media Studio] Received connection success for:', event.data.platform);
+        
+        // Show success toast
+        toast.success(`${event.data.platform} succesvol verbonden!`);
+        
+        // Reload accounts to show the new connection
+        loadAccounts();
+        
+        // Optional: Switch to accounts tab to show the result
+        setActiveTab('accounts');
+      }
+    };
+
+    // Add event listener for messages from popup
+    window.addEventListener('message', handleMessage);
+    
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);// Empty dependencies since loadAccounts and toast are stable
+
   // Platform icons
   const platformIcons: Record<string, any> = {
     instagram: Instagram,
@@ -485,24 +512,36 @@ export default function SocialMediaStudio() {
       });
 
       if (!response.ok) {
-        throw new Error('Fout bij verbinden van account');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Fout bij verbinden van account');
       }
 
       const data = await response.json();
       
-      // Open invite URL in new window
+      // Open invite URL in popup window
       if (data.inviteUrl) {
-        window.open(data.inviteUrl, '_blank', 'width=600,height=700');
-        toast.success('Volg de stappen om je account te verbinden');
+        const popup = window.open(
+          data.inviteUrl, 
+          `connect_${platform}`,
+          'width=600,height=700,location=yes,scrollbars=yes,status=yes'
+        );
         
-        // Reload accounts after a delay
-        setTimeout(() => {
-          loadAccounts();
-        }, 5000);
+        if (!popup) {
+          toast.error('Pop-up werd geblokkeerd. Sta pop-ups toe en probeer opnieuw.');
+          return;
+        }
+        
+        toast.success('OAuth venster geopend - volg de stappen om je account te verbinden');
+        
+        // No need for setTimeout - we use postMessage now
+        // The message listener will handle reloading accounts
+      } else {
+        toast.error('Geen koppellink ontvangen van server');
       }
     } catch (error) {
-      console.error('Error connecting account:', error);
-      toast.error('Fout bij verbinden van account');
+      console.error('[Social Media Studio] Error connecting account:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Fout bij verbinden van account';
+      toast.error(errorMessage);
     } finally {
       setConnectingPlatform('');
     }
