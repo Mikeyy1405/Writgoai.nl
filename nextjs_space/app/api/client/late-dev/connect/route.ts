@@ -10,8 +10,9 @@ import { createPlatformInvite, createLateDevProfile } from '@/lib/late-dev-api';
  * POST /api/client/late-dev/connect
  */
 export async function POST(req: NextRequest) {
+  const logPrefix = '[Late.dev Connect]';
+  
   try {
-    const logPrefix = '[Late.dev Connect]';
     console.log(`${logPrefix} API route called`);
     
     const session = await getServerSession(authOptions);
