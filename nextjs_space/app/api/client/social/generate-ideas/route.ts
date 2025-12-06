@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { chatCompletion, selectOptimalModelForTask } from '@/lib/aiml-api';
 import { prisma } from '@/lib/db';
-import { CREDIT_COSTS } from '@/lib/credits';
+import { CREDIT_COSTS, checkCreditsWithAdminBypass } from '@/lib/credits';
 
 interface ContentIdea {
   id: string;
@@ -32,7 +32,19 @@ export async function POST(req: NextRequest) {
 
     console.log('💡 Generating content ideas:', { projectId, count });
 
-    // Get user and check credits
+    // Check credits with admin bypass
+    const requiredCredits = CREDIT_COSTS.SOCIAL_MEDIA_IDEAS;
+    const creditCheck = await checkCreditsWithAdminBypass(session.user.email, requiredCredits);
+    
+    if (!creditCheck.allowed) {
+      const statusCode = creditCheck.reason?.includes('niet gevonden') ? 404 : 402;
+      return NextResponse.json(
+        { error: creditCheck.reason || `Onvoldoende credits. Je hebt minimaal ${requiredCredits} credits nodig voor content ideeën.` },
+        { status: statusCode }
+      );
+    }
+
+    // Get user for credit deduction (only needed if not unlimited)
     const user = await prisma.client.findUnique({
       where: { email: session.user.email },
       select: { 
@@ -42,14 +54,6 @@ export async function POST(req: NextRequest) {
         isUnlimited: true
       },
     });
-
-    const requiredCredits = CREDIT_COSTS.SOCIAL_MEDIA_IDEAS;
-    if (!user || (!user.isUnlimited && (user.subscriptionCredits + user.topUpCredits) < requiredCredits)) {
-      return NextResponse.json(
-        { error: `Onvoldoende credits. Je hebt minimaal ${requiredCredits} credits nodig voor content ideeën.` },
-        { status: 402 }
-      );
-    }
 
     // Get project info for context
     const project = await prisma.project.findUnique({
@@ -175,8 +179,8 @@ Genereer ALLEEN de JSON zonder extra tekst:
     // Take only the requested count
     parsedIdeas = parsedIdeas.slice(0, count);
 
-    // Deduct credits if not unlimited
-    if (!user.isUnlimited) {
+    // Deduct credits if not unlimited (admins and unlimited users skip this)
+    if (!creditCheck.isUnlimited && user) {
       let subscriptionDeduction = Math.min(user.subscriptionCredits, requiredCredits);
       let topUpDeduction = requiredCredits - subscriptionDeduction;
 
@@ -189,6 +193,8 @@ Genereer ALLEEN de JSON zonder extra tekst:
       });
 
       console.log(`💳 Credits deducted: ${requiredCredits} (${subscriptionDeduction} subscription + ${topUpDeduction} top-up)`);
+    } else {
+      console.log(`💳 Credits NOT deducted (unlimited/admin user)`);
     }
 
     console.log(`✅ Generated ${parsedIdeas.length} content ideas`);
@@ -196,7 +202,7 @@ Genereer ALLEEN de JSON zonder extra tekst:
     return NextResponse.json({
       success: true,
       ideas: parsedIdeas,
-      creditsUsed: user.isUnlimited ? 0 : requiredCredits
+      creditsUsed: creditCheck.isUnlimited ? 0 : requiredCredits
     });
 
   } catch (error: any) {

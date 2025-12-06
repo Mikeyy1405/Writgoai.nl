@@ -240,3 +240,81 @@ export function calculateCreditCost(
       return CREDIT_COSTS.CHAT_MESSAGE_BASIC;
   }
 }
+
+/**
+ * Check credits with admin bypass
+ * Admins and superadmins always get access, regardless of credit balance
+ */
+export async function checkCreditsWithAdminBypass(
+  email: string,
+  requiredCredits: number
+): Promise<{ allowed: boolean; reason?: string; isUnlimited: boolean }> {
+  try {
+    // Check client
+    const client = await prisma.client.findUnique({
+      where: { email },
+      select: { 
+        id: true,
+        subscriptionCredits: true,
+        topUpCredits: true,
+        isUnlimited: true
+      },
+    });
+
+    // Check admin status in User table
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { role: true }
+    });
+
+    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+    const isUnlimited = client?.isUnlimited || isAdmin;
+
+    // Log for debugging
+    console.log('💳 Credit check:', {
+      email,
+      clientFound: !!client,
+      clientIsUnlimited: client?.isUnlimited,
+      userRole: user?.role,
+      isAdmin,
+      effectiveUnlimited: isUnlimited,
+      subscriptionCredits: client?.subscriptionCredits || 0,
+      topUpCredits: client?.topUpCredits || 0,
+      requiredCredits,
+    });
+
+    // Admin bypass - always allow
+    if (isUnlimited) {
+      return { allowed: true, isUnlimited: true };
+    }
+
+    // Check if client exists
+    if (!client) {
+      return { 
+        allowed: false, 
+        reason: 'Gebruiker niet gevonden. Neem contact op met support.',
+        isUnlimited: false 
+      };
+    }
+
+    // Check if client has enough credits
+    const totalCredits = client.subscriptionCredits + client.topUpCredits;
+    if (totalCredits < requiredCredits) {
+      return { 
+        allowed: false, 
+        reason: `Onvoldoende credits. Je hebt ${requiredCredits} credits nodig, maar hebt ${totalCredits}.`,
+        isUnlimited: false 
+      };
+    }
+
+    return { allowed: true, isUnlimited: false };
+  } catch (error) {
+    console.error('❌ Error in checkCreditsWithAdminBypass:', error);
+    // On error, deny access for safety
+    return { 
+      allowed: false, 
+      reason: 'Er ging iets mis bij het controleren van credits. Probeer het opnieuw.',
+      isUnlimited: false 
+    };
+  }
+}

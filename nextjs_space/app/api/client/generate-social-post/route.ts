@@ -6,7 +6,7 @@ import { getServerSession } from 'next-auth';
 import { chatCompletion, selectOptimalModelForTask } from '@/lib/aiml-api';
 import { prisma } from '@/lib/db';
 import { autoSaveToLibrary } from '@/lib/content-library-helper';
-import { CREDIT_COSTS } from '@/lib/credits';
+import { CREDIT_COSTS, checkCreditsWithAdminBypass } from '@/lib/credits';
 import { getClientToneOfVoice, generateToneOfVoicePrompt } from '@/lib/tone-of-voice-helper';
 
 export async function POST(req: NextRequest) {
@@ -39,10 +39,22 @@ export async function POST(req: NextRequest) {
 
     console.log('📱 Social post generation started:', { topic, platform, tone });
 
-    // Check user credits
+    // Check credits with admin bypass
+    const requiredCredits = CREDIT_COSTS.SOCIAL_POST;
+    const creditCheck = await checkCreditsWithAdminBypass(session.user.email, requiredCredits);
+    
+    if (!creditCheck.allowed) {
+      const statusCode = creditCheck.reason?.includes('niet gevonden') ? 404 : 402;
+      return NextResponse.json(
+        { error: creditCheck.reason || `Onvoldoende credits. Je hebt minimaal ${requiredCredits} credits nodig voor een social media post.` },
+        { status: statusCode }
+      );
+    }
+
+    // Get user for credit deduction and tone of voice (only needed if not unlimited)
     const user = await prisma.client.findUnique({
       where: { email: session.user.email },
-            select: { 
+      select: { 
         id: true, 
         subscriptionCredits: true,
         topUpCredits: true,
@@ -50,17 +62,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const requiredCredits = CREDIT_COSTS.SOCIAL_POST; // 15 credits
-    if (!user || (!user.isUnlimited && (user.subscriptionCredits + user.topUpCredits) < requiredCredits)) {
-      return NextResponse.json(
-        { error: `Onvoldoende credits. Je hebt minimaal ${requiredCredits} credits nodig voor een social media post.` },
-        { status: 402 }
-      );
+    // Get client's tone of voice settings (if user exists in Client table)
+    let customToneInstructions = '';
+    if (user) {
+      const toneOfVoiceData = await getClientToneOfVoice(user.id);
+      customToneInstructions = generateToneOfVoicePrompt(toneOfVoiceData, tone as any);
     }
-
-    // Get client's tone of voice settings
-    const toneOfVoiceData = await getClientToneOfVoice(user.id);
-    const customToneInstructions = generateToneOfVoicePrompt(toneOfVoiceData, tone as any);
 
     // Platform specifications
     const platformSpecs: Record<string, { maxLength: number; style: string; hashtagCount: number }> = {
@@ -333,8 +340,9 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
 
     // Deduct credits
     const creditsUsed = CREDIT_COSTS.SOCIAL_POST; // 20 credits voor social media post
-        // Deduct credits (only if not unlimited)
-    if (!user.isUnlimited) {
+    
+    // Deduct credits (only if not unlimited - admins and unlimited users skip this)
+    if (!creditCheck.isUnlimited && user) {
       const subscriptionDeduct = Math.min(user.subscriptionCredits, creditsUsed);
       const topUpDeduct = Math.max(0, creditsUsed - subscriptionDeduct);
       
@@ -346,35 +354,41 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
           totalCreditsUsed: { increment: creditsUsed },
         },
       });
+      
+      console.log(`💳 Credits deducted: ${creditsUsed} (${subscriptionDeduct} subscription + ${topUpDeduct} top-up)`);
+    } else {
+      console.log(`💳 Credits NOT deducted (unlimited/admin user)`);
     }
 
-    const remainingCredits = user.isUnlimited ? 999999 : (user.subscriptionCredits + user.topUpCredits - creditsUsed);
+    const remainingCredits = creditCheck.isUnlimited ? 999999 : (user ? (user.subscriptionCredits + user.topUpCredits - creditsUsed) : 0);
 
-    // AUTO-SAVE: Sla social post automatisch op in Content Bibliotheek
-    console.log('💾 Auto-saving to Content Library...');
-    
-    try {
-      const saveResult = await autoSaveToLibrary({
-        clientId: user.id,
-        type: 'social',
-        title: `${platform.toUpperCase()} post: ${topic}`,
-        content: postContent,
-        category: 'social-media',
-        tags: ['ai-generated', 'social-media', platform, ...(useStorytelling ? ['storytelling', storyType] : [])],
-        description: postContent.substring(0, 200),
-        keywords: hashtags.map((tag: string) => tag.replace('#', '')),
-      });
+    // AUTO-SAVE: Sla social post automatisch op in Content Bibliotheek (only if user exists in Client table)
+    if (user) {
+      console.log('💾 Auto-saving to Content Library...');
       
-      if (saveResult.saved) {
-        console.log(`✅ ${saveResult.message}`);
-      } else if (saveResult.duplicate) {
-        console.log(`⏭️  ${saveResult.message}`);
-      } else {
-        console.warn(`⚠️ ${saveResult.message}`);
+      try {
+        const saveResult = await autoSaveToLibrary({
+          clientId: user.id,
+          type: 'social',
+          title: `${platform.toUpperCase()} post: ${topic}`,
+          content: postContent,
+          category: 'social-media',
+          tags: ['ai-generated', 'social-media', platform, ...(useStorytelling ? ['storytelling', storyType] : [])],
+          description: postContent.substring(0, 200),
+          keywords: hashtags.map((tag: string) => tag.replace('#', '')),
+        });
+        
+        if (saveResult.saved) {
+          console.log(`✅ ${saveResult.message}`);
+        } else if (saveResult.duplicate) {
+          console.log(`⏭️  ${saveResult.message}`);
+        } else {
+          console.warn(`⚠️ ${saveResult.message}`);
+        }
+      } catch (saveError) {
+        console.error('❌ Error auto-saving to library:', saveError);
+        // Continue anyway - auto-save failure should not block the response
       }
-    } catch (saveError) {
-      console.error('❌ Error auto-saving to library:', saveError);
-      // Continue anyway - auto-save failure should not block the response
     }
 
     return NextResponse.json({
