@@ -2,7 +2,7 @@
 /**
  * Late.dev API Client - Profile & Invite Based Integration
  * Uses centralized WritgoAI API key for all operations
- * Clients connect their own accounts via Platform Invites
+ * Clients connect their own accounts via Connect API
  * Documentation: https://docs.getlate.dev/
  */
 
@@ -19,7 +19,7 @@ const getCentralApiKey = (): string => {
 
 export interface LateDevAccount {
   _id: string;
-  platform: string; // 'linkedin', 'facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'pinterest', 'reddit'
+  platform: string;
   username?: string;
   profileId?: string;
 }
@@ -44,6 +44,12 @@ export interface PlatformInvite {
   createdAt: string;
 }
 
+export interface ConnectResponse {
+  authUrl: string;
+  platform: string;
+  profileId: string;
+}
+
 /**
  * Create a Late.dev Profile for a project (one profile per project)
  */
@@ -63,7 +69,7 @@ export async function createLateDevProfile(projectName: string, projectId: strin
       body: JSON.stringify({
         name: profileName,
         description: `WritgoAI Project: ${projectName}`,
-        color: '#FF9933', // WritgoAI orange
+        color: '#FF9933',
       }),
     });
 
@@ -111,50 +117,48 @@ export async function getLateDevProfiles(): Promise<LateDevProfile[]> {
 }
 
 /**
- * Create Platform Invite for client to connect their account
+ * Start OAuth connection for a platform using the Connect API
+ * This is the correct way to connect accounts with custom redirect URL
+ * 
+ * Uses: GET /v1/connect/{platform}?profileId=XXX&redirect_url=YOUR_URL
+ * Returns: { authUrl: "https://..." } - redirect user to this URL
  */
-export async function createPlatformInvite(profileId: string, platform: string): Promise<PlatformInvite | null> {
+export async function startPlatformConnect(profileId: string, platform: string): Promise<ConnectResponse | null> {
   try {
     const apiKey = getCentralApiKey();
     
-    // Special logging for LinkedIn
     const isLinkedIn = platform.toLowerCase() === 'linkedin';
-    const logPrefix = isLinkedIn ? '[LinkedIn Connect]' : '[Late.dev]';
+    const logPrefix = isLinkedIn ? '[LinkedIn Connect]' : '[Late.dev Connect]';
     
-    console.log(`${logPrefix} Creating platform invite for:`, platform, 'on profile:', profileId);
+    console.log(`${logPrefix} Starting OAuth connection for:`, platform, 'on profile:', profileId);
     
     // Create redirect URL to our own success page
     const baseUrl = process.env.NEXTAUTH_URL || 'https://writgoai.nl';
     const redirectUrl = `${baseUrl}/client-portal/social-connect-success?platform=${platform}`;
     
     console.log(`${logPrefix} Redirect URL:`, redirectUrl);
-    console.log(`${logPrefix} API endpoint:`, `${LATE_DEV_API_BASE}/platform-invites`);
     
-    const payload = {
-      profileId,
-      platform, // instagram, facebook, linkedin, twitter, tiktok, youtube, pinterest, reddit, bluesky, threads
-      redirectUrl,
-    };
+    // Build the Connect API URL with query parameters
+    const connectUrl = new URL(`${LATE_DEV_API_BASE}/connect/${platform.toLowerCase()}`);
+    connectUrl.searchParams.set('profileId', profileId);
+    connectUrl.searchParams.set('redirect_url', redirectUrl);
     
-    console.log(`${logPrefix} Request payload:`, JSON.stringify(payload, null, 2));
+    console.log(`${logPrefix} Connect API URL:`, connectUrl.toString());
     
-    const response = await fetch(`${LATE_DEV_API_BASE}/platform-invites`, {
-      method: 'POST',
+    const response = await fetch(connectUrl.toString(), {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
     });
 
     console.log(`${logPrefix} Response status:`, response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`${logPrefix} Failed to create platform invite`);
+      console.error(`${logPrefix} Failed to start platform connection`);
       console.error(`${logPrefix} Status:`, response.status, response.statusText);
       console.error(`${logPrefix} Error body:`, errorText);
-      console.error(`${logPrefix} Request payload was:`, payload);
       
       if (isLinkedIn) {
         console.error(`${logPrefix} LinkedIn-specifieke fout - controleer of LinkedIn is ingeschakeld in Late.dev dashboard`);
@@ -164,30 +168,51 @@ export async function createPlatformInvite(profileId: string, platform: string):
     }
 
     const data = await response.json();
-    console.log(`${logPrefix} Platform invite created successfully`);
-    console.log(`${logPrefix} Invite URL:`, data.invite?.inviteUrl);
-    console.log(`${logPrefix} Invite ID:`, data.invite?._id);
-    console.log(`${logPrefix} Expires at:`, data.invite?.expiresAt);
+    console.log(`${logPrefix} Connect response received`);
+    console.log(`${logPrefix} Auth URL:`, data.authUrl);
     
-    return data.invite;
+    return {
+      authUrl: data.authUrl,
+      platform: platform.toLowerCase(),
+      profileId: profileId,
+    };
   } catch (error: any) {
     const isLinkedIn = platform.toLowerCase() === 'linkedin';
-    const logPrefix = isLinkedIn ? '[LinkedIn Connect]' : '[Late.dev]';
+    const logPrefix = isLinkedIn ? '[LinkedIn Connect]' : '[Late.dev Connect]';
     
-    console.error(`${logPrefix} Exception creating platform invite:`, error);
+    console.error(`${logPrefix} Exception starting platform connection:`, error);
     console.error(`${logPrefix} Error message:`, error.message);
-    console.error(`${logPrefix} Error stack:`, error.stack);
-    
-    if (isLinkedIn) {
-      console.error(`${logPrefix} Dit kan duiden op een probleem met de LinkedIn OAuth configuratie`);
-    }
     
     return null;
   }
 }
 
 /**
- * Get platform invites for a profile
+ * Legacy function - now wraps startPlatformConnect for backwards compatibility
+ * Returns a PlatformInvite-like object with inviteUrl set to authUrl
+ */
+export async function createPlatformInvite(profileId: string, platform: string): Promise<PlatformInvite | null> {
+  const connectResult = await startPlatformConnect(profileId, platform);
+  
+  if (!connectResult) {
+    return null;
+  }
+  
+  // Return a PlatformInvite-compatible object
+  return {
+    _id: `connect_${Date.now()}`,
+    token: '',
+    profileId: connectResult.profileId,
+    platform: connectResult.platform,
+    inviteUrl: connectResult.authUrl,
+    isUsed: false,
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+    createdAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Get platform invites for a profile (legacy endpoint)
  */
 export async function getPlatformInvites(profileId?: string): Promise<PlatformInvite[]> {
   try {
@@ -264,13 +289,12 @@ export async function validateLateDevApiKey(): Promise<boolean> {
 
 /**
  * Publish a post to Late.dev (using central key)
- * Updated to use new Late.dev API format with platforms array
  */
 export async function publishToLateDev(params: {
-  accountIds: string[]; // Array of Late.dev account IDs
-  platforms: Array<{ platform: string; accountId: string }>; // Platform-specific data
+  accountIds: string[];
+  platforms: Array<{ platform: string; accountId: string }>;
   content: string;
-  mediaItems?: Array<{ type: string; url: string }>; // AI-generated images
+  mediaItems?: Array<{ type: string; url: string }>;
   scheduledFor?: Date;
   timezone?: string;
   publishNow?: boolean;
