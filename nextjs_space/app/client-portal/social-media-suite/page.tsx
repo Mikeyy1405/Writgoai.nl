@@ -195,7 +195,8 @@ export default function SocialMediaSuitePage() {
       let data;
       try {
         data = await response.json();
-        addDebug(`📦 Data received: ${JSON.stringify(data).substring(0, 100)}...`);
+        const dataPreview = JSON.stringify(data).substring(0, 100);
+        addDebug(`📦 Data received: ${dataPreview}...`);
       } catch (parseError: any) {
         addDebug(`❌ JSON PARSE ERROR: ${parseError.message}`);
         throw parseError;
@@ -212,7 +213,8 @@ export default function SocialMediaSuitePage() {
         addDebug('🎉 Ideas set successfully!');
       } else {
         addDebug('❌ Unexpected response format');
-        addDebug(`❌ Full data: ${JSON.stringify(data)}`);
+        const dataDebug = JSON.stringify(data).substring(0, 200);
+        addDebug(`❌ Full data: ${dataDebug}...`);
         throw new Error('Onverwacht response formaat');
       }
     } catch (error: any) {
