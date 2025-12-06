@@ -119,6 +119,10 @@ export async function createPlatformInvite(profileId: string, platform: string):
     
     console.log('[Late.dev] Creating platform invite for:', platform, 'on profile:', profileId);
     
+    // Create redirect URL to our own success page
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://writgoai.nl';
+    const redirectUrl = `${baseUrl}/client-portal/social-connect-success?platform=${platform}`;
+    
     const response = await fetch(`${LATE_DEV_API_BASE}/platform-invites`, {
       method: 'POST',
       headers: {
@@ -128,13 +132,14 @@ export async function createPlatformInvite(profileId: string, platform: string):
       body: JSON.stringify({
         profileId,
         platform, // instagram, facebook, linkedin, twitter, tiktok, youtube, pinterest, reddit, bluesky, threads
+        redirectUrl,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[Late.dev] Failed to create platform invite:', response.status, errorText);
-      console.error('[Late.dev] Payload was:', { profileId, platform });
+      console.error('[Late.dev] Payload was:', { profileId, platform, redirectUrl });
       return null;
     }
 

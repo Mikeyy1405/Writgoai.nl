@@ -54,6 +54,10 @@ export async function createInviteToken(data: GetLateInvite) {
  * Create a platform-specific invite
  */
 export async function createPlatformInvite(platform: string, profileId: string) {
+  // Generate redirect URL to our own success page
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://writgoai.nl';
+  const redirectUrl = `${baseUrl}/client-portal/social-connect-success?platform=${platform}`;
+  
   const response = await fetch(`${GETLATE_API_URL}/platform-invites`, {
     method: 'POST',
     headers: {
@@ -63,6 +67,7 @@ export async function createPlatformInvite(platform: string, profileId: string) 
     body: JSON.stringify({
       platform,
       profileId,
+      redirectUrl,
     }),
   });
 
