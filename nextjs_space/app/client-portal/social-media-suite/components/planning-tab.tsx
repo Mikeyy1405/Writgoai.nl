@@ -44,7 +44,11 @@ interface CalendarPost {
   status: 'scheduled' | 'published' | 'draft';
 }
 
-export default function PlanningTab() {
+interface PlanningTabProps {
+  projectId: string | null;
+}
+
+export default function PlanningTab({ projectId }: PlanningTabProps) {
   const [loading, setLoading] = useState(false);
   const [numberOfDays, setNumberOfDays] = useState('7');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['linkedin', 'facebook']);
@@ -59,6 +63,11 @@ export default function PlanningTab() {
   };
 
   const generateContentPlanning = async () => {
+    if (!projectId) {
+      toast.error('Selecteer eerst een project');
+      return;
+    }
+
     if (selectedPlatforms.length === 0) {
       toast.error('Selecteer minimaal één platform');
       return;
@@ -66,38 +75,48 @@ export default function PlanningTab() {
 
     try {
       setLoading(true);
-      toast.loading('Content planning genereren...', { id: 'planning' });
+      toast.loading('AI genereert waardevolle content planning...', { id: 'planning' });
 
-      // Mock implementation - in production this would call an API
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetch('/api/client/social-media/generate-planning', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId,
+          numberOfDays: parseInt(numberOfDays),
+          platforms: selectedPlatforms,
+        }),
+      });
 
-      const days = parseInt(numberOfDays);
-      const mockPosts: CalendarPost[] = [];
-
-      for (let i = 0; i < days; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() + i);
-
-        selectedPlatforms.forEach((platform) => {
-          mockPosts.push({
-            id: `${platform}-${i}`,
-            date: date.toISOString().split('T')[0],
-            time: '10:00',
-            platform,
-            content: `📅 Post ${i + 1} voor ${platform} - gegenereerd door AI`,
-            status: 'scheduled',
-          });
-        });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate planning');
       }
 
-      setCalendarPosts(mockPosts);
-      toast.success(`${mockPosts.length} posts gegenereerd voor ${days} dagen!`, {
-        id: 'planning',
-      });
-    } catch (error) {
+      const data = await response.json();
+
+      if (data.success && data.posts) {
+        // Transform API response to calendar posts format
+        const newPosts: CalendarPost[] = data.posts.map((post: any) => ({
+          id: post.id,
+          date: new Date(post.scheduledFor).toISOString().split('T')[0],
+          time: new Date(post.scheduledFor).toTimeString().slice(0, 5),
+          platform: post.platform,
+          content: post.content,
+          status: 'scheduled' as const,
+        }));
+
+        setCalendarPosts(newPosts);
+        toast.success(data.message || `${data.generated} posts succesvol gegenereerd!`, {
+          id: 'planning',
+        });
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error: any) {
       console.error('Error generating planning:', error);
-      toast.error('Fout bij genereren van planning', { id: 'planning' });
+      toast.error(error.message || 'Fout bij genereren van planning', { id: 'planning' });
     } finally {
       setLoading(false);
     }

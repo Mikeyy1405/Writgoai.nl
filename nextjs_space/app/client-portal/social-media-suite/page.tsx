@@ -52,11 +52,11 @@ export default function SocialMediaSuitePage() {
         </TabsContent>
 
         <TabsContent value="planning">
-          <PlanningTab />
+          <PlanningTab projectId={selectedProjectId} />
         </TabsContent>
 
         <TabsContent value="create">
-          <CreatePostTab />
+          <CreatePostTab projectId={selectedProjectId} />
         </TabsContent>
 
         <TabsContent value="overview">
