@@ -1,14 +1,14 @@
 
 /**
  * Platform Connection API
- * Generates invite link for specific platform if not exists
+ * Generates invite link for specific platform - ALWAYS creates fresh invite
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-import { createPlatformInvite, getPlatformInvites } from '@/lib/late-dev-api';
+import { createPlatformInvite } from '@/lib/late-dev-api';
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,27 +51,8 @@ export async function POST(req: NextRequest) {
 
     const profileId = project.socialMediaConfig.lateDevProfileId;
 
-    // Check of er al een invite bestaat voor dit platform MET geldige URL
-    try {
-      const existingInvites = await getPlatformInvites(profileId);
-      const platformInvite = existingInvites.find(
-        inv => inv.platform === platform && !inv.isUsed && inv.inviteUrl
-      );
-
-      if (platformInvite) {
-        console.log('[Connect] Using existing invite for:', platform);
-        return NextResponse.json({
-          success: true,
-          inviteUrl: platformInvite.inviteUrl,
-          platform,
-        });
-      }
-    } catch (error) {
-      console.error('[Connect] Error checking existing invites:', error);
-    }
-
-    // Maak nieuwe invite aan
-    console.log('[Connect] Creating new invite for:', platform);
+    // ALWAYS create a fresh invite to avoid expired token issues
+    console.log('[Connect] Creating fresh invite for:', platform);
     const invite = await createPlatformInvite(profileId, platform);
 
     if (!invite) {
@@ -81,10 +62,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log('[Connect] Fresh invite created, expires:', invite.expiresAt);
+
     return NextResponse.json({
       success: true,
       inviteUrl: invite.inviteUrl,
       platform: invite.platform,
+      expiresAt: invite.expiresAt,
     });
   } catch (error: any) {
     console.error('[Connect] Error:', error);
