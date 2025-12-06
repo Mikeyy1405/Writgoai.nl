@@ -316,14 +316,19 @@ async function handleStreamingGeneration(
         
         // Start heartbeat to send periodic updates during long AI operation
         const heartbeatInterval = setInterval(async () => {
-          const elapsed = Math.floor((Date.now() - contentStartTime) / 1000);
-          console.log(`[Content Hub] ⏱️ Content generation in progress... ${elapsed}s elapsed`);
-          await sendUpdate({
-            step: 'content-generation',
-            status: 'in-progress',
-            progress: Math.min(25 + Math.floor(elapsed / 3), 55), // Gradually increase from 25% to 55%
-            message: `AI schrijft artikel... (${elapsed}s)`,
-          });
+          try {
+            const elapsed = Math.floor((Date.now() - contentStartTime) / 1000);
+            console.log(`[Content Hub] ⏱️ Content generation in progress... ${elapsed}s elapsed`);
+            await sendUpdate({
+              step: 'content-generation',
+              status: 'in-progress',
+              progress: Math.min(25 + Math.floor(elapsed / 3), 55), // Gradually increase from 25% to 55%
+              message: `AI schrijft artikel... (${elapsed}s)`,
+            });
+          } catch (heartbeatError) {
+            // Log but don't throw - heartbeat failures shouldn't stop generation
+            console.error('[Content Hub] Heartbeat update failed:', heartbeatError);
+          }
         }, 15000); // Send update every 15 seconds
         
         try {
@@ -369,17 +374,29 @@ async function handleStreamingGeneration(
         console.error('[Content Hub] Error stack:', writeError.stack);
         console.error('[Content Hub] Timestamp:', new Date().toISOString());
         
-        // Check for specific error types
+        // Check for specific error types using error properties and status codes
         let userFriendlyMessage = 'Het schrijven van het artikel is mislukt';
-        if (writeError.message?.includes('timeout') || writeError.message?.includes('timed out')) {
+        const errorMessage = writeError.message?.toLowerCase() || '';
+        const errorCode = writeError.code || writeError.status || writeError.response?.status;
+        
+        // Check by error code/status first (more reliable)
+        if (errorCode === 429 || errorCode === 'ETIMEDOUT' || errorCode === 'ESOCKETTIMEDOUT') {
+          if (errorCode === 429) {
+            userFriendlyMessage = 'Te veel verzoeken. Wacht een moment en probeer opnieuw.';
+            console.error('[Content Hub] Error cause: RATE LIMIT - Too many API requests (429)');
+          } else {
+            userFriendlyMessage = 'Het artikel schrijven duurde te lang. Probeer het later opnieuw.';
+            console.error('[Content Hub] Error cause: TIMEOUT - AI call took too long');
+          }
+        } else if (errorCode === 502 || errorCode === 503 || errorCode === 504) {
+          userFriendlyMessage = 'De AI service is tijdelijk niet beschikbaar. Probeer het over enkele minuten opnieuw.';
+          console.error(`[Content Hub] Error cause: API UNAVAILABLE - Service error (${errorCode})`);
+        } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
           userFriendlyMessage = 'Het artikel schrijven duurde te lang. Probeer het later opnieuw.';
           console.error('[Content Hub] Error cause: TIMEOUT - AI call took too long');
-        } else if (writeError.message?.includes('rate limit') || writeError.message?.includes('429')) {
+        } else if (errorMessage.includes('rate limit')) {
           userFriendlyMessage = 'Te veel verzoeken. Wacht een moment en probeer opnieuw.';
           console.error('[Content Hub] Error cause: RATE LIMIT - Too many API requests');
-        } else if (writeError.message?.includes('API') || writeError.message?.includes('502') || writeError.message?.includes('503')) {
-          userFriendlyMessage = 'De AI service is tijdelijk niet beschikbaar. Probeer het over enkele minuten opnieuw.';
-          console.error('[Content Hub] Error cause: API UNAVAILABLE - External service issue');
         } else {
           console.error('[Content Hub] Error cause: UNKNOWN - See error details above');
         }

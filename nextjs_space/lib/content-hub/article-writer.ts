@@ -331,8 +331,8 @@ Schrijf nu het complete artikel in HTML formaat:`;
     
     if (!html || html.length < 100) {
       console.error(`[Article Writer] EMPTY OR INVALID RESPONSE`);
-      console.error(`[Article Writer] Response length: ${html.length} characters`);
-      console.error(`[Article Writer] Response preview: ${html.substring(0, 200)}`);
+      console.error(`[Article Writer] Response length: ${html?.length || 0} characters`);
+      console.error(`[Article Writer] Response preview: ${html ? html.substring(0, 200) : 'null or undefined'}`);
       throw new Error('Empty response from AI');
     }
 
