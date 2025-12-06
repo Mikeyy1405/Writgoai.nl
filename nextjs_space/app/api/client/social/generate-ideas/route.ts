@@ -179,6 +179,7 @@ Genereer ALLEEN de JSON zonder extra tekst:
     parsedIdeas = parsedIdeas.slice(0, count);
 
     // Deduct credits if not unlimited (admins and unlimited users skip this)
+    let remainingCredits = UNLIMITED_CREDITS;
     if (!creditCheck.isUnlimited && user) {
       let subscriptionDeduction = Math.min(user.subscriptionCredits, requiredCredits);
       let topUpDeduction = requiredCredits - subscriptionDeduction;
@@ -191,6 +192,7 @@ Genereer ALLEEN de JSON zonder extra tekst:
         }
       });
 
+      remainingCredits = user.subscriptionCredits + user.topUpCredits - requiredCredits;
       console.log(`💳 Credits deducted: ${requiredCredits} (${subscriptionDeduction} subscription + ${topUpDeduction} top-up)`);
     } else {
       console.log(`💳 Credits NOT deducted (unlimited/admin user)`);
@@ -202,7 +204,7 @@ Genereer ALLEEN de JSON zonder extra tekst:
       success: true,
       ideas: parsedIdeas,
       creditsUsed: creditCheck.isUnlimited ? 0 : requiredCredits,
-      remainingCredits: creditCheck.isUnlimited ? UNLIMITED_CREDITS : (user ? (user.subscriptionCredits + user.topUpCredits - requiredCredits) : 0)
+      remainingCredits
     });
 
   } catch (error: any) {

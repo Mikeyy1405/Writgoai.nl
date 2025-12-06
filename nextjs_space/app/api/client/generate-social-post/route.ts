@@ -338,7 +338,8 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
     const hashtags = hashtagMatches || [];
 
     // Deduct credits
-    const creditsUsed = CREDIT_COSTS.SOCIAL_POST; // 20 credits voor social media post
+    const creditsUsed = CREDIT_COSTS.SOCIAL_POST;
+    let remainingCredits = UNLIMITED_CREDITS;
     
     // Deduct credits (only if not unlimited - admins and unlimited users skip this)
     if (!creditCheck.isUnlimited && user) {
@@ -354,12 +355,11 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
         },
       });
       
+      remainingCredits = user.subscriptionCredits + user.topUpCredits - creditsUsed;
       console.log(`💳 Credits deducted: ${creditsUsed} (${subscriptionDeduct} subscription + ${topUpDeduct} top-up)`);
     } else {
       console.log(`💳 Credits NOT deducted (unlimited/admin user)`);
     }
-
-    const remainingCredits = creditCheck.isUnlimited ? UNLIMITED_CREDITS : (user ? (user.subscriptionCredits + user.topUpCredits - creditsUsed) : 0);
 
     // AUTO-SAVE: Sla social post automatisch op in Content Bibliotheek (only if user exists in Client table)
     if (user) {
