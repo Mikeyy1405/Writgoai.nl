@@ -12,18 +12,29 @@ import OverviewTab from './components/overview-tab';
 import ContentIdeasTab from './components/content-ideas-tab';
 import ProjectSelector, { Project } from '@/components/project-selector';
 
+interface ContentIdea {
+  id: string;
+  title: string;
+  description: string;
+  suggestedPlatforms: string[];
+  category: string;
+  urgency: string;
+  estimatedEngagement: number;
+}
+
 export default function SocialMediaSuitePage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('ideas');
+  const [selectedIdea, setSelectedIdea] = useState<ContentIdea | null>(null);
 
   const handleProjectChange = (projectId: string | null, project: Project | null) => {
     setSelectedProjectId(projectId);
   };
 
-  const handleCreateFromIdea = (idea: any) => {
+  const handleCreateFromIdea = (idea: ContentIdea) => {
     // Switch to create post tab with the idea pre-filled
+    setSelectedIdea(idea);
     setActiveTab('create');
-    // You can pass the idea data to CreatePostTab if needed
   };
 
   return (
@@ -119,7 +130,10 @@ export default function SocialMediaSuitePage() {
         </TabsContent>
 
         <TabsContent value="create">
-          <CreatePostTab projectId={selectedProjectId} />
+          <CreatePostTab 
+            projectId={selectedProjectId} 
+            initialIdea={selectedIdea}
+          />
         </TabsContent>
 
         <TabsContent value="planning">
