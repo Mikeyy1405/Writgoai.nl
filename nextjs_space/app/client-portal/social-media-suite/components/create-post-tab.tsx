@@ -8,6 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { 
+  getUserFriendlyErrorMessage, 
+  getErrorTip, 
+  handleApiError,
+  copyToClipboard as safelyCopyToClipboard 
+} from '../lib/error-helpers';
 import {
   Loader2,
   Sparkles,
@@ -121,16 +127,7 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
           });
 
           if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Onbekende serverfout' }));
-            
-            // Provide specific error messages based on status code
-            if (response.status === 401) {
-              throw new Error('Je bent niet ingelogd');
-            } else if (response.status === 402) {
-              throw new Error('Onvoldoende credits');
-            } else {
-              throw new Error(error.error || 'Fout bij genereren');
-            }
+            await handleApiError(response);
           }
 
           const data = await response.json();
@@ -143,18 +140,8 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
         } catch (platformError: any) {
           console.error(`Error generating content for ${platform}:`, platformError);
           const platformName = PLATFORMS.find((p) => p.id === platform)?.name || platform;
-          
-          // Provide helpful error message with tips
-          let errorMsg = platformError.message || 'Onbekende fout';
-          let tip = '';
-          
-          if (errorMsg.includes('credits')) {
-            tip = '\n\nTip: Koop extra credits of upgrade je abonnement.';
-          } else if (errorMsg.includes('ingelogd')) {
-            tip = '\n\nTip: Log opnieuw in.';
-          } else {
-            tip = '\n\nTip: Probeer het onderwerp anders te formuleren of probeer het later opnieuw.';
-          }
+          const errorMsg = platformError.message || 'Onbekende fout';
+          const tip = getErrorTip(errorMsg);
           
           // Continue with other platforms even if one fails
           newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMsg}${tip}`;
@@ -172,15 +159,7 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
       }
     } catch (error: any) {
       console.error('Error generating content:', error);
-      
-      // Provide user-friendly error messages
-      let errorMessage = error.message || 'Fout bij genereren van content';
-      
-      // Network errors
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        errorMessage = 'Netwerkfout. Controleer je internetverbinding.';
-      }
-      
+      const errorMessage = getUserFriendlyErrorMessage(error, 'Fout bij genereren van content');
       toast.error(errorMessage, { id: 'generate' });
     } finally {
       setGenerating(false);
@@ -232,14 +211,19 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
     }
   };
 
-  const copyToClipboard = (platform: string, content: string) => {
-    navigator.clipboard.writeText(content);
-    setCopied(platform);
-    toast.success('Content gekopieerd!');
+  const copyToClipboard = async (platform: string, content: string) => {
+    const success = await safelyCopyToClipboard(content);
+    
+    if (success) {
+      setCopied(platform);
+      toast.success('Content gekopieerd!');
 
-    setTimeout(() => {
-      setCopied(null);
-    }, 2000);
+      setTimeout(() => {
+        setCopied(null);
+      }, 2000);
+    } else {
+      toast.error('Kon content niet kopiëren. Probeer het handmatig te selecteren en kopiëren.');
+    }
   };
 
   const publishPost = async (platform: string) => {

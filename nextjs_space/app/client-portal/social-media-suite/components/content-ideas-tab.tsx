@@ -5,6 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { 
+  getUserFriendlyErrorMessage, 
+  getErrorTip, 
+  handleApiError,
+  copyToClipboard as safelyCopyToClipboard 
+} from '../lib/error-helpers';
 import {
   Loader2,
   Sparkles,
@@ -87,18 +93,7 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Onbekende serverfout' }));
-        
-        // Provide specific error messages based on status code
-        if (response.status === 401) {
-          throw new Error('Je bent niet ingelogd. Log opnieuw in.');
-        } else if (response.status === 402) {
-          throw new Error(error.error || 'Onvoldoende credits. Koop extra credits of upgrade je abonnement.');
-        } else if (response.status === 404) {
-          throw new Error('Project niet gevonden. Selecteer een ander project.');
-        } else {
-          throw new Error(error.error || 'Fout bij genereren van ideeën');
-        }
+        await handleApiError(response);
       }
 
       const data = await response.json();
@@ -111,15 +106,7 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
       }
     } catch (error: any) {
       console.error('Error generating ideas:', error);
-      
-      // Provide user-friendly error messages
-      let errorMessage = error.message || 'Fout bij genereren van ideeën';
-      
-      // Network errors
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        errorMessage = 'Netwerkfout. Controleer je internetverbinding.';
-      }
-      
+      const errorMessage = getUserFriendlyErrorMessage(error, 'Fout bij genereren van ideeën');
       toast.error(errorMessage, { id: 'ideas' });
     } finally {
       setLoading(false);
@@ -146,17 +133,13 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
         return;
       }
 
-      // Otherwise, generate posts directly for all platforms
+      // Otherwise, generate posts directly for all platforms concurrently
       const platforms = selectedIdea.suggestedPlatforms;
       const newPosts: Record<string, string> = {};
-      let successCount = 0;
-      let failCount = 0;
-
-      // Generate posts for each platform
-      for (const platform of platforms) {
+      
+      // Generate posts for all platforms concurrently
+      const generatePromises = platforms.map(async (platform) => {
         try {
-          toast.loading(`Bezig met ${platform}...`, { id: 'generate-posts' });
-          
           const response = await fetch('/api/client/generate-social-post', {
             method: 'POST',
             headers: {
@@ -175,46 +158,51 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
           });
 
           if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Onbekende serverfout' }));
-            
-            // Provide specific error messages based on status code
-            if (response.status === 401) {
-              throw new Error('Je bent niet ingelogd');
-            } else if (response.status === 402) {
-              throw new Error('Onvoldoende credits');
-            } else {
-              throw new Error(error.error || 'Fout bij genereren');
-            }
+            await handleApiError(response);
           }
 
           const data = await response.json();
           
           if (data.success && data.post) {
-            newPosts[platform] = data.post;
-            successCount++;
+            return { platform, post: data.post, success: true };
           } else {
             throw new Error('Onverwacht response formaat');
           }
         } catch (platformError: any) {
           console.error(`Error generating content for ${platform}:`, platformError);
           const platformName = PLATFORMS.find((p) => p.id === platform)?.name || platform;
+          const errorMsg = platformError.message || 'Onbekende fout';
+          const tip = getErrorTip(errorMsg);
           
-          // Provide helpful error message with tips
-          let errorMsg = platformError.message || 'Onbekende fout';
-          let tip = '';
-          
-          if (errorMsg.includes('credits')) {
-            tip = '\n\nTip: Koop extra credits of upgrade je abonnement.';
-          } else if (errorMsg.includes('ingelogd')) {
-            tip = '\n\nTip: Log opnieuw in.';
+          return { 
+            platform, 
+            post: `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMsg}${tip}`,
+            success: false 
+          };
+        }
+      });
+
+      // Wait for all promises to settle
+      const results = await Promise.allSettled(generatePromises);
+      let successCount = 0;
+      let failCount = 0;
+
+      // Process results
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          const { platform, post, success } = result.value;
+          newPosts[platform] = post;
+          if (success) {
+            successCount++;
           } else {
-            tip = '\n\nTip: Probeer het onderwerp anders te formuleren of probeer het later opnieuw.';
+            failCount++;
           }
-          
-          newPosts[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMsg}${tip}`;
+        } else {
+          // This should rarely happen as we handle errors within each promise
+          console.error('Unexpected promise rejection:', result.reason);
           failCount++;
         }
-      }
+      });
 
       setGeneratedPosts(newPosts);
       setShowModal(false);
@@ -236,14 +224,19 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
     }
   };
 
-  const copyToClipboard = (platform: string, content: string) => {
-    navigator.clipboard.writeText(content);
-    setCopiedPlatform(platform);
-    toast.success('Content gekopieerd naar klembord!');
+  const copyToClipboard = async (platform: string, content: string) => {
+    const success = await safelyCopyToClipboard(content);
     
-    setTimeout(() => {
-      setCopiedPlatform(null);
-    }, 2000);
+    if (success) {
+      setCopiedPlatform(platform);
+      toast.success('Content gekopieerd naar klembord!');
+      
+      setTimeout(() => {
+        setCopiedPlatform(null);
+      }, 2000);
+    } else {
+      toast.error('Kon content niet kopiëren. Probeer het handmatig te selecteren en kopiëren.');
+    }
   };
 
   const getCategoryBadge = (category: ContentIdea['category']) => {
