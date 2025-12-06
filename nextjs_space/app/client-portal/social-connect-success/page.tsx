@@ -101,8 +101,23 @@ export default function SocialConnectSuccessPage() {
         return false;
       }
     };
-    setIsPopup(checkIfPopup());
-  }, []);
+    const popupStatus = checkIfPopup();
+    setIsPopup(popupStatus);
+    
+    // If this is a popup, send success message to parent window
+    if (popupStatus && window.opener) {
+      try {
+        window.opener.postMessage({
+          type: 'SOCIAL_CONNECT_SUCCESS',
+          platform: platform || 'unknown',
+          timestamp: Date.now()
+        }, '*');
+        console.log('[Social Connect Success] Sent success message to parent window');
+      } catch (error) {
+        console.error('[Social Connect Success] Failed to send message to parent:', error);
+      }
+    }
+  }, [platform]);
 
   useEffect(() => {
     // Auto-redirect or close after 5 seconds

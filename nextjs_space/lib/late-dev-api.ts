@@ -117,11 +117,26 @@ export async function createPlatformInvite(profileId: string, platform: string):
   try {
     const apiKey = getCentralApiKey();
     
-    console.log('[Late.dev] Creating platform invite for:', platform, 'on profile:', profileId);
+    // Special logging for LinkedIn
+    const isLinkedIn = platform.toLowerCase() === 'linkedin';
+    const logPrefix = isLinkedIn ? '[LinkedIn Connect]' : '[Late.dev]';
+    
+    console.log(`${logPrefix} Creating platform invite for:`, platform, 'on profile:', profileId);
     
     // Create redirect URL to our own success page
     const baseUrl = process.env.NEXTAUTH_URL || 'https://writgoai.nl';
     const redirectUrl = `${baseUrl}/client-portal/social-connect-success?platform=${platform}`;
+    
+    console.log(`${logPrefix} Redirect URL:`, redirectUrl);
+    console.log(`${logPrefix} API endpoint:`, `${LATE_DEV_API_BASE}/platform-invites`);
+    
+    const payload = {
+      profileId,
+      platform, // instagram, facebook, linkedin, twitter, tiktok, youtube, pinterest, reddit, bluesky, threads
+      redirectUrl,
+    };
+    
+    console.log(`${logPrefix} Request payload:`, JSON.stringify(payload, null, 2));
     
     const response = await fetch(`${LATE_DEV_API_BASE}/platform-invites`, {
       method: 'POST',
@@ -129,25 +144,44 @@ export async function createPlatformInvite(profileId: string, platform: string):
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        profileId,
-        platform, // instagram, facebook, linkedin, twitter, tiktok, youtube, pinterest, reddit, bluesky, threads
-        redirectUrl,
-      }),
+      body: JSON.stringify(payload),
     });
+
+    console.log(`${logPrefix} Response status:`, response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Late.dev] Failed to create platform invite:', response.status, errorText);
-      console.error('[Late.dev] Payload was:', { profileId, platform, redirectUrl });
+      console.error(`${logPrefix} Failed to create platform invite`);
+      console.error(`${logPrefix} Status:`, response.status, response.statusText);
+      console.error(`${logPrefix} Error body:`, errorText);
+      console.error(`${logPrefix} Request payload was:`, payload);
+      
+      if (isLinkedIn) {
+        console.error(`${logPrefix} LinkedIn-specifieke fout - controleer of LinkedIn is ingeschakeld in Late.dev dashboard`);
+      }
+      
       return null;
     }
 
     const data = await response.json();
-    console.log('[Late.dev] Platform invite created:', platform, '-> URL:', data.invite?.inviteUrl);
+    console.log(`${logPrefix} Platform invite created successfully`);
+    console.log(`${logPrefix} Invite URL:`, data.invite?.inviteUrl);
+    console.log(`${logPrefix} Invite ID:`, data.invite?._id);
+    console.log(`${logPrefix} Expires at:`, data.invite?.expiresAt);
+    
     return data.invite;
   } catch (error: any) {
-    console.error('[Late.dev] Error creating platform invite:', error);
+    const isLinkedIn = platform.toLowerCase() === 'linkedin';
+    const logPrefix = isLinkedIn ? '[LinkedIn Connect]' : '[Late.dev]';
+    
+    console.error(`${logPrefix} Exception creating platform invite:`, error);
+    console.error(`${logPrefix} Error message:`, error.message);
+    console.error(`${logPrefix} Error stack:`, error.stack);
+    
+    if (isLinkedIn) {
+      console.error(`${logPrefix} Dit kan duiden op een probleem met de LinkedIn OAuth configuratie`);
+    }
+    
     return null;
   }
 }
