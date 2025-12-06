@@ -42,7 +42,11 @@ const PLATFORMS = [
   { id: 'tiktok', name: 'TikTok', icon: Music2, color: '#000000' },
 ];
 
-export default function CreatePostTab() {
+interface CreatePostTabProps {
+  projectId: string | null;
+}
+
+export default function CreatePostTab({ projectId }: CreatePostTabProps) {
   const [topic, setTopic] = useState('');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['linkedin']);
   const [generatedContent, setGeneratedContent] = useState<Record<string, string>>({});
@@ -62,6 +66,11 @@ export default function CreatePostTab() {
   };
 
   const generateContent = async () => {
+    if (!projectId) {
+      toast.error('Selecteer eerst een project');
+      return;
+    }
+
     if (!topic.trim()) {
       toast.error('Voer een onderwerp in');
       return;
@@ -74,27 +83,52 @@ export default function CreatePostTab() {
 
     try {
       setGenerating(true);
-      toast.loading('Content genereren...', { id: 'generate' });
+      toast.loading('AI genereert echte, waardevolle content...', { id: 'generate' });
 
-      // Mock implementation - in production this would call an AI API
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const newContent: Record<string, string> = {};
 
-      const mockContent: Record<string, string> = {};
+      // Generate content for each selected platform
+      for (const platform of selectedPlatforms) {
+        try {
+          const response = await fetch('/api/client/generate-social-post', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              topic,
+              platforms: [platform],
+              tone: 'professional',
+              includeHashtags: true,
+              includeEmojis: true,
+              includeImage: false,
+              language: 'nl',
+              length: 'medium',
+            }),
+          });
 
-      selectedPlatforms.forEach((platform) => {
-        const platformName = PLATFORMS.find((p) => p.id === platform)?.name;
-        mockContent[platform] = `🚀 ${topic}
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to generate content');
+          }
 
-Dit is een AI-gegenereerde post voor ${platformName}! 
+          const data = await response.json();
+          
+          if (data.success && data.post) {
+            newContent[platform] = data.post;
+          } else {
+            throw new Error('Invalid response format');
+          }
+        } catch (platformError: any) {
+          console.error(`Error generating content for ${platform}:`, platformError);
+          const platformName = PLATFORMS.find((p) => p.id === platform)?.name;
+          const errorMessage = platformError?.message || 'Onbekende fout';
+          // Continue with other platforms even if one fails
+          newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMessage}\n\nTip: Controleer of je voldoende credits hebt of probeer het onderwerp anders te formuleren.`;
+        }
+      }
 
-✨ Optimaal geformatteerd voor dit platform
-📱 Met relevante hashtags
-💡 Professionele tone of voice
-
-#${topic.replace(/\s+/g, '')} #AI #SocialMedia`;
-      });
-
-      setGeneratedContent(mockContent);
+      setGeneratedContent(newContent);
       toast.success('Content succesvol gegenereerd!', { id: 'generate' });
     } catch (error) {
       console.error('Error generating content:', error);
@@ -112,17 +146,38 @@ Dit is een AI-gegenereerde post voor ${platformName}!
 
     try {
       setGeneratingImage(true);
-      toast.loading('Afbeelding genereren...', { id: 'image' });
+      toast.loading('AI genereert een professionele afbeelding...', { id: 'image' });
 
-      // Mock implementation
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Get the first generated content or use topic for image context
+      const contentForImage = Object.values(generatedContent)[0] || topic;
 
-      // Use a placeholder image
-      setImageUrl(PLACEHOLDER_IMAGE_URL);
-      toast.success('Afbeelding gegenereerd!', { id: 'image' });
+      const response = await fetch('/api/social-media/generate-media', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: contentForImage,
+          mediaType: 'image',
+          style: 'realistic',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate image');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.mediaUrl) {
+        setImageUrl(data.mediaUrl);
+        toast.success('Afbeelding gegenereerd!', { id: 'image' });
+      } else {
+        throw new Error('No image URL in response');
+      }
     } catch (error) {
       console.error('Error generating image:', error);
-      toast.error('Fout bij genereren van afbeelding', { id: 'image' });
+      toast.error('Fout bij genereren van afbeelding. Voer handmatig een URL in.', { id: 'image' });
     } finally {
       setGeneratingImage(false);
     }

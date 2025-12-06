@@ -175,7 +175,7 @@ Max 200 woorden.`;
       long: '200-300 woorden'
     };
 
-    const writingPrompt = `Je bent een social media expert. Schrijf een ${platform.toUpperCase()} post in het ${language === 'nl' ? 'Nederlands' : 'Engels'}.
+    const writingPrompt = `Je bent een social media expert die WAARDEVOLLE en ENGAGING posts schrijft. Schrijf een ${platform.toUpperCase()} post in het ${language === 'nl' ? 'Nederlands' : 'Engels'}.
 
 **ONDERWERP:** ${topic}
 
@@ -190,26 +190,123 @@ ${customToneInstructions}
 - Toon: ${toneInstructions[tone] || toneInstructions.professional}
 - Lengte: ${lengthGuide[length] || lengthGuide.medium}
 - Max lengte: ${spec.maxLength} karakters
-- Emoji's: ${includeEmojis ? 'Ja, gebruik relevant' : 'Nee'}
-- Hashtags: ${includeHashtags ? `Ja, ${spec.hashtagCount} relevante hashtags` : 'Nee'}
+- Emoji's: ${includeEmojis ? 'Ja, gebruik relevant (1-3 per sectie)' : 'Nee'}
+- Hashtags: ${includeHashtags ? `Ja, ${spec.hashtagCount} relevante hashtags aan het einde` : 'Nee'}
 ${useStorytelling ? `- Storytelling: JA - ${storyType}\n\n**STORYTELLING STRUCTUUR:**\n${storytellingTypes[storyType] || storytellingTypes['hero-journey']}` : ''}
 
+**VERPLICHTE STRUCTUUR (GEBRUIK DIT ALTIJD):**
+${useStorytelling ? 'Volg de storytelling structuur hierboven!' : `
+1. **HOOK** (Eerste zin) - Pak aandacht met:
+   - Een controversiële stelling (bijv: "Stop met deze 3 fouten...")
+   - Een verrassende vraag (bijv: "Wist je dat 90% van de mensen dit verkeerd doet?")
+   - Een pakkend feit (bijv: "85% van de bedrijven maakt deze vergissing...")
+   
+2. **BODY** (Waardevolle content) - Geef concrete tips/inzichten:
+   - Gebruik genummerde lijsten (1️⃣, 2️⃣, 3️⃣)
+   - Geef specifieke voorbeelden en uitleg
+   - Maak het direct toepasbaar
+   - Gebruik pijltjes (→) voor sub-punten
+   
+3. **CALL-TO-ACTION** (Engagement) - Eindig met:
+   - Een vraag die mensen laat reageren
+   - Een discussie starter
+   - Een oproep om ervaringen te delen`}
+
 **PLATFORM BEST PRACTICES:**
-${platform === 'linkedin' ? '- Start met een hook vraag of statement\n- Gebruik line breaks voor leesbaarheid\n- Eindig met een vraag of CTA' : ''}
-${platform === 'twitter' ? '- Direct en krachtig\n- Binnen 280 karakters\n- Geen lange threads' : ''}
-${platform === 'instagram' ? '- Visueel en emotioneel\n- Storytelling\n- Veel line breaks' : ''}
-${platform === 'facebook' ? '- Persoonlijk en conversatie\n- Vraag engagement\n- Niet te lang' : ''}
-${platform === 'tiktok' ? '- Trend-focused\n- Hook in eerste zin\n- Call-to-action voor video' : ''}
+${platform === 'linkedin' ? `- Professionele toon maar wel persoonlijk
+- Gebruik line breaks voor leesbaarheid (witregel tussen secties)
+- Start met een krachtige hook die professionals aanspreekt
+- Geef business-waarde en praktische inzichten
+- Eindig met een vraag om engagement te stimuleren
+- Voorbeelden: "Welke fout maakte jij vroeger? 👇", "Ben je het hier mee eens? 💬"` : ''}
+${platform === 'twitter' ? `- Direct en krachtig binnen 280 karakters
+- Eén sterke boodschap
+- Gebruik pakkende opening
+- Max 2-3 hashtags` : ''}
+${platform === 'instagram' ? `- Visueel en emotioneel
+- Kortere paragrafen (2-3 regels per paragraaf)
+- Start met emoji + hook
+- Vertel een mini-verhaal
+- Veel witregel tussen secties
+- 10-15 relevante hashtags` : ''}
+${platform === 'facebook' ? `- Persoonlijke en conversational toon
+- Stel vragen aan de community
+- Gebruik relateerbare voorbeelden
+- Gemakkelijk te lezen formatting
+- Moedig discussie aan` : ''}
+${platform === 'tiktok' ? `- Trend-focused en energiek
+- Hook in eerste 3 woorden
+- Kort en punchy
+- Call-to-action voor engagement` : ''}
 
-**STRUCTUUR:**
-${useStorytelling ? 'Volg de storytelling structuur hierboven!' : `1. **Hook** - Grijp aandacht in eerste regel
-2. **Waarde** - Deel inzicht, tip, of informatie
-3. **Engagement** - Vraag, CTA of discussie starter`}
-${includeHashtags ? `${useStorytelling ? '6' : '4'}. **Hashtags** - ${spec.hashtagCount} relevante hashtags aan het einde` : ''}
+**VOORBEELDEN VAN GOEDE ${platform.toUpperCase()} POSTS:**
 
-${useStorytelling ? 'Maak het verhaal PERSOONLIJK en EMOTIONEEL. Gebruik concrete details en voorbeelden.' : ''}
+${platform === 'linkedin' ? `
+"Stop met deze 3 fouten als je remote werkt 💻
 
-Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line breaks.`;
+De meeste remote workers maken dezelfde fouten:
+
+1️⃣ De hele dag in pyjama werken
+→ Je hersenen schakelen niet naar 'werk-modus'
+
+2️⃣ Geen vaste werkplek  
+→ Je concentratie gaat achteruit zonder dedicated workspace
+
+3️⃣ Lunch achter je laptop
+→ Geen pauzes = productiviteitsdip in de middag
+
+Welke fout maakte jij vroeger? 👇
+
+#remotework #productiviteit #thuiswerken #werkvanuit huis #tips"
+` : ''}
+
+${platform === 'instagram' ? `
+"Je hoeft niet 7 dagen per week te sporten 🏋️
+
+En dat is goed nieuws! ✨
+
+De waarheid?
+→ 3-4 keer per week is perfect
+→ Je spieren hebben rust nodig
+→ Overtraining doet meer kwaad dan goed
+
+Begin met 3 dagen:
+• Maandag: Kracht
+• Woensdag: Cardio  
+• Vrijdag: Full body
+
+Consistency > Intensiteit 💪
+
+Hoe vaak train jij per week? 👇
+
+#fitness #sporten #gezondleven #fitnesstips #workout #training #fitfam #gezond #motivatie #sport"
+` : ''}
+
+${platform === 'facebook' ? `
+Kleine tip voor mensen die hun eerste plantje gekocht hebben 🌱
+
+Water geven is NIET het belangrijkste (vind ik persoonlijk ook altijd verrassend!)
+
+Het belangrijkste is licht. De meeste kamerplanten sterven door te weinig licht, niet door te weinig water.
+
+Mijn tip: 
+Zet je plant eerst op de plek waar je hem wilt hebben. Kijk na 1 week: worden de bladeren geel/slap? Verplaats hem dichter naar het raam.
+
+En ja, elke plant is anders, maar dit is een goed startpunt 😊
+
+Hebben jullie tips voor beginners? Deel ze hieronder! 👇
+` : ''}
+
+**BELANGRIJK:**
+- Schrijf ECHTE, waardevolle content - geen vage tips of placeholder tekst
+- Gebruik concrete voorbeelden en specifieke cijfers/feiten waar mogelijk
+- Maak het engaging en actionable
+- Geen generic tekst zoals "Dit is een AI-gegenereerde post" - dat is VERBODEN
+- De lezer moet direct waarde krijgen uit de post
+
+${includeHashtags ? `\n**HASHTAGS:** Plaats ${spec.hashtagCount} relevante hashtags aan het einde. Mix populaire en niche-specifieke tags.` : ''}
+
+Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line breaks en emoji's.`;
 
     const writingResponse = await chatCompletion({
       model: writingModel.primary.model,
