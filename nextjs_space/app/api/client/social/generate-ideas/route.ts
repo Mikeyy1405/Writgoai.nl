@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const requiredCredits = CREDIT_COSTS.SOCIAL_MEDIA_IDEAS || 10; // 10 credits for content ideas
+    const requiredCredits = CREDIT_COSTS.SOCIAL_MEDIA_IDEAS;
     if (!user || (!user.isUnlimited && (user.subscriptionCredits + user.topUpCredits) < requiredCredits)) {
       return NextResponse.json(
         { error: `Onvoldoende credits. Je hebt minimaal ${requiredCredits} credits nodig voor content ideeën.` },

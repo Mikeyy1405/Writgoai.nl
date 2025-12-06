@@ -69,7 +69,6 @@ export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabP
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('10:00');
   const [copied, setCopied] = useState<string | null>(null);
-  const [generateForAll, setGenerateForAll] = useState(false);
 
   const togglePlatform = (platformId: string) => {
     setSelectedPlatforms((prev) =>
