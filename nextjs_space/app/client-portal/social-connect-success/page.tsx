@@ -12,6 +12,7 @@ import {
   Twitter,
   Youtube,
   Loader2,
+  RefreshCw,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -81,8 +82,10 @@ export default function SocialConnectSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const platform = searchParams.get('platform') || 'social media';
+  const projectId = searchParams.get('projectId');
   const [countdown, setCountdown] = useState(5);
   const [isPopup, setIsPopup] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
 
   const platformConfig = PLATFORM_CONFIG[platform.toLowerCase()] || {
     name: platform,
@@ -91,6 +94,48 @@ export default function SocialConnectSuccessPage() {
   };
 
   const PlatformIcon = platformConfig.icon;
+
+  // Auto-sync accounts after successful connection
+  useEffect(() => {
+    const syncAccounts = async () => {
+      // Get projectId from URL or localStorage
+      const storedProjectId = projectId || localStorage.getItem('lastSocialConnectProjectId');
+      
+      if (!storedProjectId) {
+        console.log('[Social Connect Success] No projectId found, skipping auto-sync');
+        return;
+      }
+
+      setSyncStatus('syncing');
+      console.log('[Social Connect Success] Auto-syncing accounts for project:', storedProjectId);
+
+      try {
+        const response = await fetch('/api/client/late-dev/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ projectId: storedProjectId }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[Social Connect Success] Sync successful:', data);
+          setSyncStatus('success');
+        } else {
+          console.error('[Social Connect Success] Sync failed:', response.status);
+          setSyncStatus('error');
+        }
+      } catch (error) {
+        console.error('[Social Connect Success] Sync error:', error);
+        setSyncStatus('error');
+      }
+    };
+
+    // Sync after a short delay to ensure connection is complete
+    const syncTimer = setTimeout(syncAccounts, 1000);
+    return () => clearTimeout(syncTimer);
+  }, [projectId]);
 
   useEffect(() => {
     // Check if this is a popup window
@@ -179,6 +224,32 @@ export default function SocialConnectSuccessPage() {
             <p className="text-gray-400 text-sm">
               is succesvol verbonden met WritgoAI
             </p>
+          </div>
+
+          {/* Sync Status */}
+          <div className="bg-gray-800/50 rounded-lg p-3">
+            <div className="flex items-center justify-center gap-2">
+              {syncStatus === 'syncing' && (
+                <>
+                  <RefreshCw className="h-4 w-4 text-orange-500 animate-spin" />
+                  <span className="text-sm text-gray-300">Account synchroniseren...</span>
+                </>
+              )}
+              {syncStatus === 'success' && (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-400">Account gesynchroniseerd!</span>
+                </>
+              )}
+              {syncStatus === 'error' && (
+                <>
+                  <span className="text-sm text-yellow-400">Klik op &quot;Sync&quot; in de Social Media Suite om te synchroniseren</span>
+                </>
+              )}
+              {syncStatus === 'idle' && (
+                <span className="text-sm text-gray-400">Voorbereiden...</span>
+              )}
+            </div>
           </div>
 
           {/* Next Steps */}
