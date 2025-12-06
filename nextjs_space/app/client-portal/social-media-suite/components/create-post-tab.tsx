@@ -42,13 +42,26 @@ const PLATFORMS = [
   { id: 'tiktok', name: 'TikTok', icon: Music2, color: '#000000' },
 ];
 
-interface CreatePostTabProps {
-  projectId: string | null;
+interface ContentIdea {
+  id: string;
+  title: string;
+  description: string;
+  suggestedPlatforms: string[];
+  category: string;
+  urgency: string;
+  estimatedEngagement: number;
 }
 
-export default function CreatePostTab({ projectId }: CreatePostTabProps) {
-  const [topic, setTopic] = useState('');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['linkedin']);
+interface CreatePostTabProps {
+  projectId: string | null;
+  initialIdea?: ContentIdea | null;
+}
+
+export default function CreatePostTab({ projectId, initialIdea }: CreatePostTabProps) {
+  const [topic, setTopic] = useState(initialIdea?.title || '');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
+    initialIdea?.suggestedPlatforms || ['linkedin']
+  );
   const [generatedContent, setGeneratedContent] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
@@ -215,13 +228,38 @@ export default function CreatePostTab({ projectId }: CreatePostTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Show when started from idea */}
+      {initialIdea && (
+        <Card className="bg-gradient-to-r from-orange-500/10 to-orange-600/5 border-orange-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-orange-400" />
+                  <span className="text-sm font-semibold text-orange-400">
+                    Gestart vanuit Content Idee
+                  </span>
+                </div>
+                <h3 className="font-semibold text-white mb-1">{initialIdea.title}</h3>
+                <p className="text-sm text-muted-foreground">{initialIdea.description}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Input */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Post Maken</CardTitle>
-              <CardDescription>Voer een onderwerp in en laat AI de rest doen</CardDescription>
+              <CardDescription>
+                {initialIdea 
+                  ? 'Content wordt gegenereerd voor alle geselecteerde platforms'
+                  : 'Voer een onderwerp in en laat AI de rest doen'
+                }
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Topic Input */}
