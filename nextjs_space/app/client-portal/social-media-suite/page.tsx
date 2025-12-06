@@ -81,167 +81,72 @@ export default function SocialMediaSuitePage() {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [postToSchedule, setPostToSchedule] = useState<{ content: string; platform: PlatformId } | null>(null);
 
-  // Debug state for mobile debugging
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-
-  const addDebug = (message: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setDebugLog(prev => [`[${timestamp}] ${message}`, ...prev].slice(0, 20));
-  };
-
   // Load projects on mount
   useEffect(() => {
     loadProjects();
   }, []);
 
-  // Test API connectivity on mount
-  useEffect(() => {
-    const testApi = async () => {
-      try {
-        console.log('🧪 Testing API connectivity...');
-        const response = await fetch('/api/client/projects');
-        console.log('🧪 Projects API status:', response.status);
-      } catch (error) {
-        console.error('🧪 API test failed:', error);
-      }
-    };
-    testApi();
-  }, []);
-
   const loadProjects = async () => {
-    addDebug('🚀 loadProjects gestart');
     try {
       setLoadingProjects(true);
       const response = await fetch('/api/client/projects');
-      addDebug(`📥 Projects API response: ${response.status}`);
       
       if (!response.ok) {
-        addDebug('❌ Projects API failed');
         throw new Error('Failed to load projects');
       }
 
       const data = await response.json();
-      addDebug(`✅ ${data.projects?.length || 0} projecten geladen`);
       setProjects(data.projects || []);
 
       // Auto-select primary project
       const primaryProject = data.projects?.find((p: Project) => p.isPrimary);
       if (primaryProject) {
-        addDebug(`📌 Primary project: ${primaryProject.name}`);
         setSelectedProjectId(primaryProject.id);
       } else if (data.projects && data.projects.length > 0) {
-        addDebug(`📌 Eerste project: ${data.projects[0].name}`);
         setSelectedProjectId(data.projects[0].id);
-      } else {
-        addDebug('⚠️ Geen projecten gevonden');
       }
     } catch (error: any) {
-      addDebug(`❌ Error: ${error.message}`);
       console.error('Error loading projects:', error);
       toast.error('Kon projecten niet laden');
     } finally {
       setLoadingProjects(false);
-      addDebug('✅ loadProjects klaar');
     }
   };
 
   const generateIdeas = async () => {
-    // LOG ALLES - zelfs voordat we iets checken
-    addDebug('🔥 KNOP GEKLIKT - generateIdeas START');
-    
     try {
-      addDebug(`📦 selectedProjectId = ${selectedProjectId}`);
-      addDebug(`📦 typeof selectedProjectId = ${typeof selectedProjectId}`);
-      
       if (!selectedProjectId) {
-        addDebug('❌ STOP: selectedProjectId is null/undefined');
         toast.error('Selecteer eerst een project');
         return;
       }
 
-      addDebug('✅ Project check passed');
-      addDebug('🔄 Setting loadingIdeas to true...');
       setLoadingIdeas(true);
-      
-      addDebug('🔔 Showing toast...');
       toast.loading('AI genereert content ideeën...', { id: 'ideas' });
 
-      addDebug('🌐 Creating fetch request...');
-      const url = '/api/client/social/generate-ideas';
-      const body = JSON.stringify({ projectId: selectedProjectId, count: 10 });
-      addDebug(`🌐 URL: ${url}`);
-      addDebug(`🌐 Body: ${body}`);
-
-      addDebug('🚀 Calling fetch NOW...');
-      
-      let response;
-      try {
-        response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: body,
-        });
-        addDebug(`📥 Fetch completed! Status: ${response.status}`);
-      } catch (fetchError: any) {
-        addDebug(`❌ FETCH ERROR: ${fetchError.message}`);
-        addDebug(`❌ FETCH ERROR TYPE: ${fetchError.name}`);
-        throw fetchError;
-      }
-
-      addDebug(`📥 Response OK: ${response.ok}`);
-      addDebug(`📥 Response Status: ${response.status}`);
-      addDebug(`📥 Response StatusText: ${response.statusText}`);
+      const response = await fetch('/api/client/social/generate-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: selectedProjectId, count: 10 }),
+      });
 
       if (!response.ok) {
-        addDebug('❌ Response NOT OK, parsing error...');
-        let errorData;
-        try {
-          errorData = await response.json();
-          addDebug(`❌ Error data: ${JSON.stringify(errorData)}`);
-        } catch (parseError) {
-          addDebug(`❌ Could not parse error response`);
-          errorData = { error: 'Unknown error' };
-        }
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || 'Fout bij genereren van ideeën');
       }
 
-      addDebug('✅ Response OK, parsing JSON...');
-      let data;
-      try {
-        data = await response.json();
-        const dataPreview = JSON.stringify(data).substring(0, 100);
-        addDebug(`📦 Data received: ${dataPreview}...`);
-      } catch (parseError: any) {
-        addDebug(`❌ JSON PARSE ERROR: ${parseError.message}`);
-        throw parseError;
-      }
-      
-      addDebug(`📦 data.success = ${data.success}`);
-      addDebug(`📦 data.ideas exists = ${!!data.ideas}`);
-      addDebug(`📦 data.ideas.length = ${data.ideas?.length || 0}`);
+      const data = await response.json();
 
       if (data.success && data.ideas) {
-        addDebug(`🎉 SUCCESS! Setting ${data.ideas.length} ideas...`);
         setIdeas(data.ideas);
         toast.success(`${data.ideas.length} content ideeën gegenereerd!`, { id: 'ideas' });
-        addDebug('🎉 Ideas set successfully!');
       } else {
-        addDebug('❌ Unexpected response format');
-        const dataDebug = JSON.stringify(data).substring(0, 200);
-        addDebug(`❌ Full data: ${dataDebug}...`);
         throw new Error('Onverwacht response formaat');
       }
     } catch (error: any) {
-      addDebug(`❌❌❌ CAUGHT ERROR ❌❌❌`);
-      addDebug(`❌ Error message: ${error.message}`);
-      addDebug(`❌ Error name: ${error.name}`);
-      addDebug(`❌ Error stack: ${error.stack?.substring(0, 200) || 'no stack'}`);
-      console.error('Full error:', error);
+      console.error('Error generating ideas:', error);
       toast.error(error.message || 'Fout bij genereren van ideeën', { id: 'ideas' });
     } finally {
-      addDebug('🏁 FINALLY block - setting loadingIdeas to false');
       setLoadingIdeas(false);
-      addDebug('✅ generateIdeas COMPLETE');
     }
   };
 
