@@ -343,6 +343,10 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
     
     // Deduct credits (only if not unlimited - admins and unlimited users skip this)
     if (!creditCheck.isUnlimited && user) {
+      // Calculate remaining credits BEFORE database update (user object has current values)
+      const currentTotal = user.subscriptionCredits + user.topUpCredits;
+      remainingCredits = currentTotal - creditsUsed;
+      
       const subscriptionDeduct = Math.min(user.subscriptionCredits, creditsUsed);
       const topUpDeduct = Math.max(0, creditsUsed - subscriptionDeduct);
       
@@ -355,8 +359,7 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
         },
       });
       
-      remainingCredits = user.subscriptionCredits + user.topUpCredits - creditsUsed;
-      console.log(`💳 Credits deducted: ${creditsUsed} (${subscriptionDeduct} subscription + ${topUpDeduct} top-up)`);
+      console.log(`💳 Credits deducted: ${creditsUsed} (${subscriptionDeduct} subscription + ${topUpDeduct} top-up). Remaining: ${remainingCredits}`);
     } else {
       console.log(`💳 Credits NOT deducted (unlimited/admin user)`);
     }
