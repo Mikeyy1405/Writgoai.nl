@@ -44,6 +44,22 @@ interface CalendarPost {
   status: 'scheduled' | 'published' | 'draft';
 }
 
+interface GeneratedPost {
+  id: string;
+  platform: string;
+  content: string;
+  scheduledFor: string;
+  articleTitle?: string;
+  hasImage?: boolean;
+}
+
+interface PlanningApiResponse {
+  success: boolean;
+  generated: number;
+  posts: GeneratedPost[];
+  message?: string;
+}
+
 interface PlanningTabProps {
   projectId: string | null;
 }
@@ -94,11 +110,11 @@ export default function PlanningTab({ projectId }: PlanningTabProps) {
         throw new Error(error.error || 'Failed to generate planning');
       }
 
-      const data = await response.json();
+      const data: PlanningApiResponse = await response.json();
 
       if (data.success && data.posts) {
         // Transform API response to calendar posts format
-        const newPosts: CalendarPost[] = data.posts.map((post: any) => ({
+        const newPosts: CalendarPost[] = data.posts.map((post) => ({
           id: post.id,
           date: new Date(post.scheduledFor).toISOString().split('T')[0],
           time: new Date(post.scheduledFor).toTimeString().slice(0, 5),

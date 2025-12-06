@@ -119,10 +119,12 @@ export default function CreatePostTab({ projectId }: CreatePostTabProps) {
           } else {
             throw new Error('Invalid response format');
           }
-        } catch (platformError) {
+        } catch (platformError: any) {
           console.error(`Error generating content for ${platform}:`, platformError);
+          const platformName = PLATFORMS.find((p) => p.id === platform)?.name;
+          const errorMessage = platformError?.message || 'Onbekende fout';
           // Continue with other platforms even if one fails
-          newContent[platform] = `⚠️ Er ging iets mis bij het genereren van content voor dit platform. Probeer het opnieuw.`;
+          newContent[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: ${errorMessage}\n\nTip: Controleer of je voldoende credits hebt of probeer het onderwerp anders te formuleren.`;
         }
       }
 
