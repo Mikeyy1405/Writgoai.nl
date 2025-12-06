@@ -9,7 +9,8 @@ import {
   getUserFriendlyErrorMessage, 
   getErrorTip, 
   handleApiError,
-  copyToClipboard as safelyCopyToClipboard 
+  copyToClipboard as safelyCopyToClipboard,
+  DEFAULT_POST_CONFIG
 } from '../lib/error-helpers';
 import {
   Loader2,
@@ -148,12 +149,7 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
             body: JSON.stringify({
               topic: `${selectedIdea.title}\n\n${selectedIdea.description}`,
               platforms: [platform],
-              tone: 'professional',
-              includeHashtags: true,
-              includeEmojis: true,
-              includeImage: false,
-              language: 'nl',
-              length: 'medium',
+              ...DEFAULT_POST_CONFIG,
             }),
           });
 
@@ -188,7 +184,7 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
       let failCount = 0;
 
       // Process results
-      results.forEach((result) => {
+      results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           const { platform, post, success } = result.value;
           newPosts[platform] = post;
@@ -199,7 +195,11 @@ export default function ContentIdeasTab({ projectId, onCreateFromIdea }: Content
           }
         } else {
           // This should rarely happen as we handle errors within each promise
+          // but we still want to inform the user
+          const platform = platforms[index];
+          const platformName = PLATFORMS.find((p) => p.id === platform)?.name || platform;
           console.error('Unexpected promise rejection:', result.reason);
+          newPosts[platform] = `⚠️ Kon geen content genereren voor ${platformName}\n\nFout: Onverwachte fout bij verwerken\n\nTip: Probeer het opnieuw of neem contact op met support.`;
           failCount++;
         }
       });

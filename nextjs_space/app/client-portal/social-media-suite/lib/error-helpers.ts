@@ -3,6 +3,18 @@
  */
 
 /**
+ * Default configuration for post generation
+ */
+export const DEFAULT_POST_CONFIG = {
+  tone: 'professional' as const,
+  includeHashtags: true,
+  includeEmojis: true,
+  includeImage: false,
+  language: 'nl' as const,
+  length: 'medium' as const,
+};
+
+/**
  * Checks if an error is a network error
  */
 export function isNetworkError(error: any): boolean {
@@ -46,8 +58,10 @@ export async function handleApiError(response: Response): Promise<never> {
     throw new Error('Onvoldoende credits');
   } else if (response.status === 404) {
     throw new Error('Project niet gevonden. Selecteer een ander project.');
+  } else if (response.status >= 500) {
+    throw new Error('Serverfout. Probeer het later opnieuw.');
   } else {
-    throw new Error(error.error || 'Fout bij genereren');
+    throw new Error(error?.error || `Fout bij genereren (status: ${response.status})`);
   }
 }
 
