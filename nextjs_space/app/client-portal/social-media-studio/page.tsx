@@ -275,7 +275,7 @@ export default function SocialMediaStudio() {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, []);// Empty dependencies since loadAccounts and toast are stable
+  }, []); // Empty dependencies since loadAccounts and toast are stable
 
   // Platform icons
   const platformIcons: Record<string, any> = {
