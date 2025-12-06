@@ -12,10 +12,14 @@ import {
   Twitter,
   Youtube,
   Loader2,
+  type LucideIcon,
 } from 'lucide-react';
 
+// Redirect path constant
+const SOCIAL_MEDIA_SUITE_PATH = '/client-portal/social-media-suite';
+
 // Platform configuration
-const PLATFORM_CONFIG: Record<string, { name: string; icon: any; color: string }> = {
+const PLATFORM_CONFIG: Record<string, { name: string; icon: LucideIcon; color: string }> = {
   instagram: { 
     name: 'Instagram', 
     icon: Instagram, 
@@ -109,7 +113,7 @@ export default function SocialConnectSuccessPage() {
           if (isPopup) {
             window.close();
           } else {
-            router.push('/client-portal/social-media-suite');
+            router.push(SOCIAL_MEDIA_SUITE_PATH);
           }
           return 0;
         }
@@ -124,12 +128,12 @@ export default function SocialConnectSuccessPage() {
     if (isPopup) {
       window.close();
     } else {
-      router.push('/client-portal/social-media-suite');
+      router.push(SOCIAL_MEDIA_SUITE_PATH);
     }
   };
 
   const handleBackToSocialMedia = () => {
-    router.push('/client-portal/social-media-suite');
+    router.push(SOCIAL_MEDIA_SUITE_PATH);
   };
 
   return (
