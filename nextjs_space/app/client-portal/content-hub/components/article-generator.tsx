@@ -406,7 +406,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
                           phase.status === 'in-progress' ? 'secondary' :
                           'destructive'
                         }
-                        className="text-[10px] sm:text-xs"
+                        className="text-xs"
                       >
                         {phase.status}
                       </Badge>
@@ -420,29 +420,29 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
                   {phase.metrics && (
                     <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                       {phase.metrics.wordCount !== undefined && (
-                        <Badge variant="outline" className="text-[10px] sm:text-xs">
+                        <Badge variant="outline" className="text-xs">
                           📝 {phase.metrics.wordCount} woorden
                         </Badge>
                       )}
                       {phase.metrics.lsiKeywords !== undefined && (
-                        <Badge variant="outline" className="text-[10px] sm:text-xs">
+                        <Badge variant="outline" className="text-xs">
                           🔍 {phase.metrics.lsiKeywords} LSI keywords
                         </Badge>
                       )}
                       {phase.metrics.paaQuestions !== undefined && (
-                        <Badge variant="outline" className="text-[10px] sm:text-xs">
+                        <Badge variant="outline" className="text-xs">
                           ❓ {phase.metrics.paaQuestions} FAQ vragen
                         </Badge>
                       )}
                       {phase.metrics.images !== undefined && phase.metrics.images > 0 && (
-                        <Badge variant="outline" className="text-[10px] sm:text-xs">
+                        <Badge variant="outline" className="text-xs">
                           🖼️ {phase.metrics.images} afbeelding(en)
                         </Badge>
                       )}
                     </div>
                   )}
                   {phase.duration && (
-                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       ⏱️ {phase.duration}s
                     </p>
                   )}
@@ -459,7 +459,7 @@ export default function ArticleGenerator({ article, onClose, onComplete }: Artic
             </div>
             <div className="flex flex-wrap gap-1">
               {article.keywords.map((keyword, idx) => (
-                <Badge key={idx} variant="secondary" className="text-[10px] sm:text-xs">
+                <Badge key={idx} variant="secondary" className="text-xs">
                   {keyword}
                 </Badge>
               ))}
