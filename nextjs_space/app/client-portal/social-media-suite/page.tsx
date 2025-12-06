@@ -67,6 +67,14 @@ export default function SocialMediaSuitePage() {
   const [generatingContent, setGeneratingContent] = useState(false);
   const [copiedPlatform, setCopiedPlatform] = useState<string | null>(null);
 
+  // Debug state for mobile debugging
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
+  const addDebug = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setDebugLog(prev => [`[${timestamp}] ${message}`, ...prev].slice(0, 20));
+  };
+
   // Load projects on mount
   useEffect(() => {
     loadProjects();
@@ -87,29 +95,39 @@ export default function SocialMediaSuitePage() {
   }, []);
 
   const loadProjects = async () => {
+    addDebug('🚀 loadProjects gestart');
     try {
       setLoadingProjects(true);
       const response = await fetch('/api/client/projects');
+      addDebug(`📥 Projects API response: ${response.status}`);
       
       if (!response.ok) {
+        addDebug('❌ Projects API failed');
         throw new Error('Failed to load projects');
       }
 
       const data = await response.json();
+      addDebug(`✅ ${data.projects?.length || 0} projecten geladen`);
       setProjects(data.projects || []);
 
       // Auto-select primary project
       const primaryProject = data.projects?.find((p: Project) => p.isPrimary);
       if (primaryProject) {
+        addDebug(`📌 Primary project: ${primaryProject.name}`);
         setSelectedProjectId(primaryProject.id);
       } else if (data.projects && data.projects.length > 0) {
+        addDebug(`📌 Eerste project: ${data.projects[0].name}`);
         setSelectedProjectId(data.projects[0].id);
+      } else {
+        addDebug('⚠️ Geen projecten gevonden');
       }
     } catch (error: any) {
+      addDebug(`❌ Error: ${error.message}`);
       console.error('Error loading projects:', error);
       toast.error('Kon projecten niet laden');
     } finally {
       setLoadingProjects(false);
+      addDebug('✅ loadProjects klaar');
     }
   };
 
@@ -151,7 +169,9 @@ export default function SocialMediaSuitePage() {
       if (data.success && data.ideas) {
         setIdeas(data.ideas);
         toast.success(`${data.ideas.length} content ideeën gegenereerd!`, { id: 'ideas' });
+        addDebug('🎉 SUCCESS!');
       } else {
+        addDebug('❌ Onverwacht response formaat');
         throw new Error('Onverwacht response formaat');
       }
     } catch (error: any) {
@@ -159,6 +179,7 @@ export default function SocialMediaSuitePage() {
       toast.error(error.message || 'Fout bij genereren van ideeën', { id: 'ideas' });
     } finally {
       setLoadingIdeas(false);
+      addDebug('✅ generateIdeas klaar');
     }
   };
 
@@ -309,6 +330,36 @@ export default function SocialMediaSuitePage() {
           Genereer content ideeën en posts voor al je social media platforms
         </p>
       </div>
+
+      {/* DEBUG PANEL - Zichtbaar op mobiel */}
+      <Card className="bg-yellow-900/20 border-yellow-500">
+        <CardHeader className="py-2">
+          <CardTitle className="text-sm text-yellow-400">🐛 Debug Panel (Mobiel)</CardTitle>
+        </CardHeader>
+        <CardContent className="py-2">
+          <div className="text-xs space-y-1">
+            <p>📱 Project ID: <span className="text-green-400">{selectedProjectId || 'GEEN'}</span></p>
+            <p>📱 Projecten geladen: <span className="text-green-400">{projects.length}</span></p>
+            <p>📱 Loading Projects: <span className={loadingProjects ? 'text-red-400' : 'text-green-400'}>{String(loadingProjects)}</span></p>
+            <p>📱 Loading Ideas: <span className={loadingIdeas ? 'text-red-400' : 'text-green-400'}>{String(loadingIdeas)}</span></p>
+            <p>📱 Knop disabled: <span className={(!selectedProjectId || loadingProjects || loadingIdeas) ? 'text-red-400' : 'text-green-400'}>
+              {String(!selectedProjectId || loadingProjects || loadingIdeas)}
+            </span></p>
+          </div>
+          
+          {/* Debug Log */}
+          <div className="mt-2 max-h-32 overflow-y-auto bg-black/50 rounded p-2">
+            <p className="text-yellow-400 text-xs font-bold mb-1">Log:</p>
+            {debugLog.length === 0 ? (
+              <p className="text-gray-500 text-xs">Nog geen acties...</p>
+            ) : (
+              debugLog.map((log, i) => (
+                <p key={i} className="text-xs text-gray-300">{log}</p>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Project Selector */}
       <Card>
