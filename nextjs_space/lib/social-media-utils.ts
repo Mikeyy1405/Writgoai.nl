@@ -50,6 +50,13 @@ export const FORBIDDEN_WORD_REPLACEMENTS: Record<string, string> = {
 };
 
 /**
+ * Escape regex special characters to prevent ReDoS
+ */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Filter verboden woorden uit content en vervang ze met betere alternatieven
  */
 export function filterForbiddenWords(content: string): string {
@@ -57,7 +64,9 @@ export function filterForbiddenWords(content: string): string {
   
   // Vervang verboden woorden (case-insensitive)
   for (const [forbidden, replacement] of Object.entries(FORBIDDEN_WORD_REPLACEMENTS)) {
-    const regex = new RegExp(forbidden, 'gi');
+    // Escape special regex characters to prevent ReDoS attacks
+    const escapedForbidden = escapeRegex(forbidden);
+    const regex = new RegExp(escapedForbidden, 'gi');
     filtered = filtered.replace(regex, (match) => {
       // Behoud de hoofdletter structuur van het origineel
       if (match[0] === match[0].toUpperCase()) {
@@ -70,6 +79,9 @@ export function filterForbiddenWords(content: string): string {
   return filtered;
 }
 
+// Pre-compute lowercase forbidden words for efficient checking
+const LOWERCASE_FORBIDDEN_WORDS = DEFAULT_FORBIDDEN_WORDS.map(word => word.toLowerCase());
+
 /**
  * Check of content verboden woorden bevat
  */
@@ -80,9 +92,10 @@ export function containsForbiddenWords(content: string): {
   const found: string[] = [];
   const lowerContent = content.toLowerCase();
   
-  for (const word of DEFAULT_FORBIDDEN_WORDS) {
-    if (lowerContent.includes(word.toLowerCase())) {
-      found.push(word);
+  // Use pre-computed lowercase words for efficiency
+  for (let i = 0; i < LOWERCASE_FORBIDDEN_WORDS.length; i++) {
+    if (lowerContent.includes(LOWERCASE_FORBIDDEN_WORDS[i])) {
+      found.push(DEFAULT_FORBIDDEN_WORDS[i]);
     }
   }
   

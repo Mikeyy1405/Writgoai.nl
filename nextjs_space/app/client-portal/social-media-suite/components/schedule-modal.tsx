@@ -29,7 +29,6 @@ export default function ScheduleModal({
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('10:00');
   const [isScheduling, setIsScheduling] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
 
   const platformConfig = PLATFORM_CONFIG[platform];
 
@@ -80,22 +79,10 @@ export default function ScheduleModal({
   };
 
   const handlePublishNow = async () => {
-    try {
-      setIsPublishing(true);
-      
-      // Voor nu alleen een toast - later echte API integratie
-      toast.info('🚀 Direct publiceren komt binnenkort beschikbaar!');
-      
-      // TODO: Implementeer echte API integratie met sociale media platforms
-      // Dit vereist OAuth tokens per platform en platform-specifieke API calls
-      
-      onClose();
-    } catch (error: any) {
-      console.error('Error publishing post:', error);
-      toast.error(error.message || 'Kon post niet publiceren');
-    } finally {
-      setIsPublishing(false);
-    }
+    // TODO: Implementeer echte API integratie met sociale media platforms
+    // Dit vereist OAuth tokens per platform en platform-specifieke API calls
+    toast.info('🚀 Direct publiceren komt binnenkort beschikbaar!');
+    onClose();
   };
 
   const minDate = new Date().toISOString().split('T')[0];
@@ -189,21 +176,13 @@ export default function ScheduleModal({
             </Button>
             <Button
               onClick={handlePublishNow}
-              disabled={isPublishing}
               variant="outline"
               className="flex-1"
+              title="Komt binnenkort beschikbaar"
             >
-              {isPublishing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Publiceren...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Nu Publiceren
-                </>
-              )}
+              <Send className="h-4 w-4 mr-2" />
+              Nu Publiceren
+              <span className="ml-2 text-xs opacity-70">(Binnenkort)</span>
             </Button>
           </div>
         </div>

@@ -53,6 +53,7 @@ const MONTHS_NL = [
 ];
 
 const DAYS_NL = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+const CONTENT_PREVIEW_LENGTH = 200;
 
 export default function ContentCalendar({ projectId }: ContentCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -60,6 +61,8 @@ export default function ContentCalendar({ projectId }: ContentCalendarProps) {
   const [loading, setLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -127,12 +130,15 @@ export default function ContentCalendar({ projectId }: ContentCalendarProps) {
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!confirm('Weet je zeker dat je deze post wilt verwijderen?')) {
-      return;
-    }
+    setPostToDelete(postId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
 
     try {
-      const response = await fetch(`/api/client/social/schedule/${postId}`, {
+      const response = await fetch(`/api/client/social/schedule/${postToDelete}`, {
         method: 'DELETE',
       });
 
@@ -149,6 +155,9 @@ export default function ContentCalendar({ projectId }: ContentCalendarProps) {
     } catch (error: any) {
       console.error('Error deleting post:', error);
       toast.error('Kon post niet verwijderen');
+    } finally {
+      setDeleteConfirmOpen(false);
+      setPostToDelete(null);
     }
   };
 
@@ -339,13 +348,43 @@ export default function ContentCalendar({ projectId }: ContentCalendarProps) {
                       </div>
                     </div>
                     <div className="text-sm bg-gray-900/50 rounded p-3 whitespace-pre-wrap">
-                      {post.content.substring(0, 200)}
-                      {post.content.length > 200 && '...'}
+                      {post.content.substring(0, CONTENT_PREVIEW_LENGTH)}
+                      {post.content.length > CONTENT_PREVIEW_LENGTH && '...'}
                     </div>
                   </CardContent>
                 </Card>
               );
             })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Post Verwijderen</DialogTitle>
+            <DialogDescription>
+              Weet je zeker dat je deze geplande post wilt verwijderen? Deze actie kan niet ongedaan gemaakt worden.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setPostToDelete(null);
+              }}
+            >
+              Annuleren
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Verwijderen
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
