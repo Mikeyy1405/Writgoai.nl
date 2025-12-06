@@ -6,7 +6,7 @@ import { getServerSession } from 'next-auth';
 import { chatCompletion, selectOptimalModelForTask } from '@/lib/aiml-api';
 import { prisma } from '@/lib/db';
 import { autoSaveToLibrary } from '@/lib/content-library-helper';
-import { CREDIT_COSTS, checkCreditsWithAdminBypass } from '@/lib/credits';
+import { CREDIT_COSTS, checkCreditsWithAdminBypass, UNLIMITED_CREDITS } from '@/lib/credits';
 import { getClientToneOfVoice, generateToneOfVoicePrompt } from '@/lib/tone-of-voice-helper';
 
 export async function POST(req: NextRequest) {
@@ -44,10 +44,9 @@ export async function POST(req: NextRequest) {
     const creditCheck = await checkCreditsWithAdminBypass(session.user.email, requiredCredits);
     
     if (!creditCheck.allowed) {
-      const statusCode = creditCheck.reason?.includes('niet gevonden') ? 404 : 402;
       return NextResponse.json(
         { error: creditCheck.reason || `Onvoldoende credits. Je hebt minimaal ${requiredCredits} credits nodig voor een social media post.` },
-        { status: statusCode }
+        { status: creditCheck.statusCode || 402 }
       );
     }
 
@@ -360,7 +359,7 @@ Schrijf nu de complete ${platform} post! Geen HTML, gewoon platte tekst met line
       console.log(`💳 Credits NOT deducted (unlimited/admin user)`);
     }
 
-    const remainingCredits = creditCheck.isUnlimited ? 999999 : (user ? (user.subscriptionCredits + user.topUpCredits - creditsUsed) : 0);
+    const remainingCredits = creditCheck.isUnlimited ? UNLIMITED_CREDITS : (user ? (user.subscriptionCredits + user.topUpCredits - creditsUsed) : 0);
 
     // AUTO-SAVE: Sla social post automatisch op in Content Bibliotheek (only if user exists in Client table)
     if (user) {

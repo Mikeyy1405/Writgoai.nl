@@ -3,12 +3,18 @@
  * 
  * BELANGRIJK: Credits worden NIET meer afgetrokken of geblokkeerd.
  * Dit systeem logt alleen gebruik voor facturering doeleinden.
+ * 
+ * UITZONDERING: Voor backwards compatibility behouden sommige legacy routes
+ * nog credit checks. Admins en superadmins worden altijd doorgelaten.
  */
 
 import { PrismaClient } from '@prisma/client';
 import { trackUsage } from './usage-tracking';
 
 const prisma = new PrismaClient();
+
+// Constants
+export const UNLIMITED_CREDITS = 999999;
 
 // 💰 Credit costs - nu alleen voor referentie/pricing
 export const CREDIT_COSTS = {
@@ -92,11 +98,11 @@ export async function deductCredits(
     // Log voor analytics (maar trek niets af)
     console.log(`📊 [Usage] ${description} for client ${clientId} (was: ${amount} credits)`);
 
-    return { success: true, newBalance: 999999 };
+    return { success: true, newBalance: UNLIMITED_CREDITS };
   } catch (error: any) {
     console.error('Error in deductCredits:', error);
     // NOOIT blokkeren - return success
-    return { success: true, newBalance: 999999 };
+    return { success: true, newBalance: UNLIMITED_CREDITS };
   }
 }
 
@@ -242,30 +248,30 @@ export function calculateCreditCost(
 }
 
 /**
- * Check credits with admin bypass
+ * Check credits with admin bypass (for legacy routes that still check credits)
  * Admins and superadmins always get access, regardless of credit balance
  */
 export async function checkCreditsWithAdminBypass(
   email: string,
   requiredCredits: number
-): Promise<{ allowed: boolean; reason?: string; isUnlimited: boolean }> {
+): Promise<{ allowed: boolean; reason?: string; isUnlimited: boolean; statusCode?: number }> {
   try {
-    // Check client
-    const client = await prisma.client.findUnique({
-      where: { email },
-      select: { 
-        id: true,
-        subscriptionCredits: true,
-        topUpCredits: true,
-        isUnlimited: true
-      },
-    });
-
-    // Check admin status in User table
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { role: true }
-    });
+    // Execute both queries in parallel for better performance
+    const [client, user] = await Promise.all([
+      prisma.client.findUnique({
+        where: { email },
+        select: { 
+          id: true,
+          subscriptionCredits: true,
+          topUpCredits: true,
+          isUnlimited: true
+        },
+      }),
+      prisma.user.findUnique({
+        where: { email },
+        select: { role: true }
+      })
+    ]);
 
     const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
     const isUnlimited = client?.isUnlimited || isAdmin;
@@ -293,7 +299,8 @@ export async function checkCreditsWithAdminBypass(
       return { 
         allowed: false, 
         reason: 'Gebruiker niet gevonden. Neem contact op met support.',
-        isUnlimited: false 
+        isUnlimited: false,
+        statusCode: 404
       };
     }
 
@@ -303,7 +310,8 @@ export async function checkCreditsWithAdminBypass(
       return { 
         allowed: false, 
         reason: `Onvoldoende credits. Je hebt ${requiredCredits} credits nodig, maar hebt ${totalCredits}.`,
-        isUnlimited: false 
+        isUnlimited: false,
+        statusCode: 402
       };
     }
 
@@ -314,7 +322,8 @@ export async function checkCreditsWithAdminBypass(
     return { 
       allowed: false, 
       reason: 'Er ging iets mis bij het controleren van credits. Probeer het opnieuw.',
-      isUnlimited: false 
+      isUnlimited: false,
+      statusCode: 500
     };
   }
 }

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { chatCompletion, selectOptimalModelForTask } from '@/lib/aiml-api';
 import { prisma } from '@/lib/db';
-import { CREDIT_COSTS, checkCreditsWithAdminBypass } from '@/lib/credits';
+import { CREDIT_COSTS, checkCreditsWithAdminBypass, UNLIMITED_CREDITS } from '@/lib/credits';
 
 interface ContentIdea {
   id: string;
@@ -37,10 +37,9 @@ export async function POST(req: NextRequest) {
     const creditCheck = await checkCreditsWithAdminBypass(session.user.email, requiredCredits);
     
     if (!creditCheck.allowed) {
-      const statusCode = creditCheck.reason?.includes('niet gevonden') ? 404 : 402;
       return NextResponse.json(
         { error: creditCheck.reason || `Onvoldoende credits. Je hebt minimaal ${requiredCredits} credits nodig voor content ideeën.` },
-        { status: statusCode }
+        { status: creditCheck.statusCode || 402 }
       );
     }
 
@@ -202,7 +201,8 @@ Genereer ALLEEN de JSON zonder extra tekst:
     return NextResponse.json({
       success: true,
       ideas: parsedIdeas,
-      creditsUsed: creditCheck.isUnlimited ? 0 : requiredCredits
+      creditsUsed: creditCheck.isUnlimited ? 0 : requiredCredits,
+      remainingCredits: creditCheck.isUnlimited ? UNLIMITED_CREDITS : (user ? (user.subscriptionCredits + user.topUpCredits - requiredCredits) : 0)
     });
 
   } catch (error: any) {
