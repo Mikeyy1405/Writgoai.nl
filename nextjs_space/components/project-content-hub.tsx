@@ -93,7 +93,7 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
         const project = projectData.project;
         
         // Check if project has WordPress credentials configured
-        const hasWpConfig = !!(project.wordpressUrl && project.wordpressUsername && project.wordpressPassword);
+        const hasWpConfig = Boolean(project.wordpressUrl && project.wordpressUsername && project.wordpressPassword);
         setHasWordPressConfigured(hasWpConfig);
         
         if (hasWpConfig) {
@@ -102,35 +102,36 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
           isAutoCreatingRef.current = true;
           setAutoCreating(true);
           
-          const createResponse = await fetch('/api/content-hub/connect-wordpress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              wordpressUrl: project.wordpressUrl,
-              username: project.wordpressUsername,
-              applicationPassword: project.wordpressPassword,
-              projectId: projectId,
-            }),
-          });
-          
-          if (createResponse.ok) {
-            const createData = await createResponse.json();
-            if (createData.success && createData.site) {
-              // API now returns complete site data with all required fields
-              setSite(createData.site);
-              console.log('[Content Hub] Successfully auto-created ContentHubSite from project WordPress config');
-              toast.success('WordPress configuratie overgenomen van project instellingen');
+          try {
+            const createResponse = await fetch('/api/content-hub/connect-wordpress', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                wordpressUrl: project.wordpressUrl,
+                username: project.wordpressUsername,
+                applicationPassword: project.wordpressPassword,
+                projectId: projectId,
+              }),
+            });
+            
+            if (createResponse.ok) {
+              const createData = await createResponse.json();
+              if (createData.success && createData.site) {
+                // API now returns complete site data with all required fields
+                setSite(createData.site);
+                console.log('[Content Hub] Successfully auto-created ContentHubSite from project WordPress config');
+                toast.success('WordPress configuratie overgenomen van project instellingen');
+              }
+            } else {
+              const errorData = await createResponse.json().catch(() => ({}));
+              console.error('Failed to auto-create ContentHubSite from project WordPress config:', errorData);
+              toast.error(errorData.error || 'Kon WordPress verbinding niet automatisch instellen. Controleer je instellingen in de Integraties tab.');
             }
-          } else {
-            const errorData = await createResponse.json().catch(() => ({}));
-            console.error('Failed to auto-create ContentHubSite from project WordPress config:', errorData);
-            // Don't show error toast since this is silent auto-creation - user can still connect manually
-            console.log('[Content Hub] Auto-creation failed, user will see manual connection option');
+          } finally {
+            // Always reset the flags after auto-creation attempt
+            isAutoCreatingRef.current = false;
+            setAutoCreating(false);
           }
-          
-          // Reset the flag after the auto-creation attempt
-          isAutoCreatingRef.current = false;
-          setAutoCreating(false);
         }
       }
     } catch (error: any) {
