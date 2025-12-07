@@ -196,6 +196,10 @@ export async function POST(request: NextRequest) {
 
     const contentTypeMap: Record<string, string> = {
       'blog-artikel': 'Blog artikel',
+      'informatief': 'Informatief artikel',
+      'beste-lijstje': 'Beste lijstje / Top lijst',
+      'review': 'Product Review',
+      'vergelijking': 'Vergelijking',
       'landingspagina': 'Landingspagina',
       'product-beschrijving': 'Product beschrijving',
       'about-us': 'About Us pagina',
@@ -241,6 +245,67 @@ export async function POST(request: NextRequest) {
       prompt += `\n\n**BOL.COM PRODUCTEN (verwerk als aanbevelingen met affiliate links):**\n${bolProducts.map((p) => `- ${p.name}: ${p.url} (€${p.price})`).join('\n')}`;
     }
 
+    // Add content-type specific instructions
+    const contentTypeInstructions: Record<string, string> = {
+      'informatief': `\n\n**CONTENT TYPE SPECIFIEKE INSTRUCTIES - Informatief artikel:**
+- Schrijf educatief en feitelijk
+- Begin met een duidelijke inleiding die de waarde van de informatie uitlegt
+- Verdeel informatie in logische secties met duidelijke koppen
+- Gebruik voorbeelden en praktijkscenario's
+- Voeg waar relevant data, statistieken of onderzoek toe
+- Sluit af met een samenvatting van de belangrijkste punten
+- Focus op kennis overdracht zonder direct te verkopen`,
+
+      'beste-lijstje': `\n\n**CONTENT TYPE SPECIFIEKE INSTRUCTIES - Beste lijstje / Top lijst:**
+- Maak een gerangschikte lijst (bijv. Top 5, Top 10)
+- Begin met een inleiding waarom deze lijst waardevol is
+- Voor elk item in de lijst:
+  * Geef een duidelijke titel met rangnummer
+  * Beschrijf het product/dienst/concept
+  * Vermeld de belangrijkste voordelen
+  * Noem eventuele nadelen eerlijk
+  * Geef een prijs indicatie indien van toepassing
+- Voeg een vergelijkingstabel toe met belangrijkste eigenschappen
+- Sluit af met een conclusie en aanbeveling voor verschillende doelgroepen
+- Maak gebruik van <ol> voor de genummerde lijst`,
+
+      'review': `\n\n**CONTENT TYPE SPECIFIEKE INSTRUCTIES - Product Review:**
+- Begin met een korte introductie van het product
+- Structuur de review met deze secties:
+  * Eerste indruk en unboxing
+  * Design en build quality
+  * Features en specificaties
+  * Performance en gebruikservaring
+  * Voor- en nadelen in duidelijke lijsten
+  * Prijs-kwaliteit verhouding
+  * Vergelijking met alternatieven
+  * Eindoordeel met score (uit 10)
+- Wees eerlijk en objectief
+- Gebruik praktijkvoorbeelden uit realistische scenario's
+- Geef duidelijk aan voor wie dit product wel/niet geschikt is
+- Sluit af met een koopadvies`,
+
+      'vergelijking': `\n\n**CONTENT TYPE SPECIFIEKE INSTRUCTIES - Vergelijking:**
+- Begin met uitleg waarom deze vergelijking relevant is
+- Geef eerst een kort overzicht van elk product/dienst/optie
+- Vergelijk op basis van concrete criteria zoals:
+  * Prijs
+  * Kwaliteit/Features
+  * Gebruiksgemak
+  * Klantenservice
+  * Waarde voor geld
+- Maak een duidelijke vergelijkingstabel met HTML <table> tags
+- Geef elk item een score of beoordeling per criterium
+- Bespreek de verschillen en overeenkomsten
+- Geef aanbevelingen per doelgroep of use case
+- Sluit af met een duidelijke conclusie: welke optie voor wie?`,
+    };
+
+    // Add content-type specific instructions if available
+    if (contentTypeInstructions[contentType]) {
+      prompt += contentTypeInstructions[contentType];
+    }
+
     prompt += `\n\n**FORMAAT:**
 - Gebruik proper HTML formatting met semantische tags (h2, h3, p, ul, ol, etc.)
 - Gebruik <h2> voor hoofdsecties en <h3> voor subsecties
@@ -250,6 +315,7 @@ export async function POST(request: NextRequest) {
 - Gebruik <strong> voor belangrijke tekst
 - Gebruik <em> voor nadruk
 - Maak linkjes met <a href="...">tekst</a>
+- Voor vergelijkingen en reviews: gebruik <table>, <tr>, <th>, <td> voor tabellen
 - Geen markdown, alleen HTML
 - Begin NIET met een <h1> titel (die komt apart)
 
