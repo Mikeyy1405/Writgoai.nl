@@ -9,15 +9,15 @@ Deze guide beschrijft hoe je de fix uitgebreid test voordat je naar productie ga
 ### 1. Test Environment Setup
 
 ```bash
-# Clone de repository
-git clone <repo-url>
-cd Writgoai.nl/nextjs_space
+# In je bestaande repository
+cd nextjs_space
 
-# Install dependencies
+# Install dependencies (als nog niet gedaan)
 yarn install
 
 # Setup test database (of gebruik development database)
 # Zorg dat je een schone database hebt of backup van productie
+# Check .env voor DATABASE_URL configuratie
 ```
 
 ### 2. Apply Migration

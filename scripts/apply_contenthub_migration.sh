@@ -50,6 +50,11 @@ DATABASE_URL=$(grep "^DATABASE_URL=" .env | cut -d '=' -f2- | tr -d '"')
 
 # Check if column exists using psql (if available)
 if command -v psql &> /dev/null; then
+    # Source .env to properly load DATABASE_URL with all its special characters
+    set -a
+    source .env
+    set +a
+    
     COLUMN_EXISTS=$(psql "$DATABASE_URL" -tAc "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='ContentHubSite' AND column_name='projectId');")
     
     if [ "$COLUMN_EXISTS" = "t" ]; then

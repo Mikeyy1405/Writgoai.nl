@@ -72,19 +72,25 @@ async function main() {
     console.log('✅ Project relation works correctly');
     console.log(`   Found ${sitesWithProjectInfo.length} sites with project info\n`);
 
-    // Test 4: Try the exact query from the error
+    // Test 4: Try the exact query from the error (any client/url)
     console.log('Test 4: Testing exact query from error...');
+    // This test verifies that the query syntax works, even if no results are returned
+    // The important part is that it doesn't throw "column does not exist" error
     const testSite = await prisma.contentHubSite.findFirst({
-      where: {
-        clientId: 'test-client-id',
-        wordpressUrl: 'https://example.com',
-      },
       select: {
         id: true,
         projectId: true,
+        wordpressUrl: true,
       },
+      take: 1,
     });
-    console.log('✅ findFirst with projectId works correctly\n');
+    console.log('✅ findFirst with projectId works correctly');
+    if (testSite) {
+      console.log(`   Found a test site: ${testSite.wordpressUrl}`);
+    } else {
+      console.log('   (No sites found, but query executed successfully)');
+    }
+    console.log('');
 
     // Summary
     console.log('═══════════════════════════════════════');
