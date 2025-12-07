@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,14 +53,14 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
   
   // Use ref to prevent duplicate syncs
   const isSyncingRef = useRef(false);
+  // Use ref to prevent infinite recursion when auto-creating from project config
+  const isAutoCreatingRef = useRef(false);
 
-  useEffect(() => {
-    loadProjectSite();
-  }, [projectId]);
-
-  const loadProjectSite = async () => {
+  const loadProjectSite = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // First, check for existing ContentHubSite linked to this project
       const response = await fetch('/api/content-hub/connect-wordpress');
       
       if (!response.ok) {
@@ -75,6 +75,63 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
       
       if (projectSite) {
         setSite(projectSite);
+        return;
+      }
+      
+      // No ContentHubSite found - check if project has WordPress configured
+      // But only do this once to prevent infinite recursion
+      if (!isAutoCreatingRef.current) {
+        const projectResponse = await fetch(`/api/client/projects/${projectId}`);
+        if (!projectResponse.ok) {
+          console.error('Failed to load project details');
+          return;
+        }
+        
+        const projectData = await projectResponse.json();
+        const project = projectData.project;
+        
+        // Check if project has WordPress credentials configured
+        if (project.wordpressUrl && project.wordpressUsername && project.wordpressPassword) {
+          // Project has WordPress configured - auto-create ContentHubSite
+          console.log('[Content Hub] Project has WordPress configured, auto-creating ContentHubSite');
+          isAutoCreatingRef.current = true;
+          
+          const createResponse = await fetch('/api/content-hub/connect-wordpress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              wordpressUrl: project.wordpressUrl,
+              username: project.wordpressUsername,
+              applicationPassword: project.wordpressPassword,
+              projectId: projectId,
+            }),
+          });
+          
+          if (createResponse.ok) {
+            const createData = await createResponse.json();
+            if (createData.success && createData.site) {
+              // Use the full response data with defaults for missing fields
+              setSite({
+                ...createData.site,
+                lastSyncedAt: createData.site.lastSyncedAt || null,
+                authorityScore: createData.site.authorityScore || null,
+                niche: createData.site.niche || null,
+                totalArticles: createData.site.totalArticles || 0,
+                completedArticles: createData.site.completedArticles || 0,
+                createdAt: createData.site.createdAt || new Date().toISOString(),
+                projectId: projectId,
+              });
+              toast.success('WordPress configuratie overgenomen van project instellingen');
+            }
+          } else {
+            const errorData = await createResponse.json().catch(() => ({}));
+            console.error('Failed to auto-create ContentHubSite from project WordPress config:', errorData);
+            toast.error('Kon WordPress configuratie niet overnemen. Probeer handmatig te verbinden.');
+          }
+          
+          // Reset the flag after the auto-creation attempt
+          isAutoCreatingRef.current = false;
+        }
       }
     } catch (error: any) {
       console.error('Failed to load project site:', error);
@@ -82,7 +139,13 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    // Reset the auto-creating flag when projectId changes
+    isAutoCreatingRef.current = false;
+    loadProjectSite();
+  }, [projectId, loadProjectSite]);
 
   const handleSiteConnected = (connectedSite: any) => {
     loadProjectSite();
