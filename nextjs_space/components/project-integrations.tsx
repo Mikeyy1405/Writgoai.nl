@@ -253,7 +253,7 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
             <div className="text-xs sm:text-sm space-y-2">
               <p className="text-gray-400">Geconfigureerd voor:</p>
               <p className="text-white font-medium break-words">{project.wordpressUrl}</p>
-              <p className="text-green-400 text-xs">✓ Inloggegevens opgeslagen</p>
+              <p className="text-green-400 text-xs sm:text-sm">✓ Inloggegevens opgeslagen</p>
             </div>
           ) : (
             <p className="text-xs sm:text-sm text-gray-400">Niet geconfigureerd</p>
