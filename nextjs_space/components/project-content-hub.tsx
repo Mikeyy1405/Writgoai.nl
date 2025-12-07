@@ -171,14 +171,19 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Globe className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Geen WordPress Gekoppeld</h3>
+            <h3 className="text-xl font-semibold mb-2">Content Strategy & Topical Map</h3>
             <p className="text-muted-foreground mb-4 text-center max-w-md">
-              Koppel je WordPress website aan dit project om automatisch SEO-geoptimaliseerde content te genereren.
+              Genereer een topical map en plan je content strategie. WordPress publicatie gebeurt via je Project instellingen.
             </p>
-            <Button onClick={() => setShowConnector(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Koppel WordPress Website
-            </Button>
+            <div className="flex flex-col gap-2 items-center">
+              <Button onClick={() => setShowConnector(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Start Content Planning
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                💡 Tip: Configureer WordPress eerst in je Project instellingen (Integraties tab)
+              </p>
+            </div>
           </CardContent>
         </Card>
 
