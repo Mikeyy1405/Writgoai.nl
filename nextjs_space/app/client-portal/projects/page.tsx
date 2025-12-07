@@ -125,12 +125,6 @@ export default function ProjectsPage() {
               </p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <Link href="/client-portal/content-hub" className="flex-1 sm:flex-initial">
-                <Button variant="outline" className="w-full gap-2 text-gray-300 border-gray-600 hover:bg-gray-800">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="text-sm sm:text-base">Content Hub</span>
-                </Button>
-              </Link>
               <Link href="/client-portal/projects/new" className="flex-1 sm:flex-initial">
                 <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
                   <Plus className="h-4 w-4 mr-2" />

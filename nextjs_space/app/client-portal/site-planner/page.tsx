@@ -13,7 +13,7 @@ export default function SitePlannerPage() {
 
   useEffect(() => {
     // Redirect to Content Hub
-    router.replace('/client-portal/content-hub');
+    router.replace('/client-portal/projects');
   }, [router]);
 
   return (

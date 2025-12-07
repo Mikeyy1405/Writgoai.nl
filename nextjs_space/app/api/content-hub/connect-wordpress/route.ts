@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { wordpressUrl, username, applicationPassword } = body;
+    const { wordpressUrl, username, applicationPassword, projectId: requestProjectId } = body;
 
     if (!wordpressUrl || !username || !applicationPassword) {
       return NextResponse.json(
@@ -82,25 +82,46 @@ export async function POST(req: NextRequest) {
     });
 
     // Try to find matching Project to link
-    let projectId: string | undefined;
-    const matchingProject = await prisma.project.findFirst({
-      where: {
-        clientId: client.id,
-        OR: [
-          { wordpressUrl: wordpressUrl },
-          { websiteUrl: wordpressUrl },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        wordpressUrl: true,
-      },
-    });
-
-    if (matchingProject) {
-      projectId = matchingProject.id;
-      console.log(`[Content Hub] Auto-linking ContentHubSite to Project: ${matchingProject.name} (${matchingProject.id})`);
+    let projectId: string | undefined = requestProjectId;
+    let matchingProject = null;
+    
+    // If projectId provided in request, use it directly
+    if (requestProjectId) {
+      matchingProject = await prisma.project.findFirst({
+        where: {
+          id: requestProjectId,
+          clientId: client.id,
+        },
+        select: {
+          id: true,
+          name: true,
+          wordpressUrl: true,
+        },
+      });
+      if (matchingProject) {
+        console.log(`[Content Hub] Linking ContentHubSite to specified Project: ${matchingProject.name} (${matchingProject.id})`);
+      }
+    } else {
+      // Otherwise try to auto-match by URL
+      matchingProject = await prisma.project.findFirst({
+        where: {
+          clientId: client.id,
+          OR: [
+            { wordpressUrl: wordpressUrl },
+            { websiteUrl: wordpressUrl },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          wordpressUrl: true,
+        },
+      });
+      
+      if (matchingProject) {
+        projectId = matchingProject.id;
+        console.log(`[Content Hub] Auto-linking ContentHubSite to Project: ${matchingProject.name} (${matchingProject.id})`);
+      }
     }
 
     // TODO: SECURITY - Implement encryption for WordPress application passwords before production
