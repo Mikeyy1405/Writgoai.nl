@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,13 +56,7 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
   // Use ref to prevent infinite recursion when auto-creating from project config
   const isAutoCreatingRef = useRef(false);
 
-  useEffect(() => {
-    // Reset the auto-creating flag when projectId changes
-    isAutoCreatingRef.current = false;
-    loadProjectSite();
-  }, [projectId]);
-
-  const loadProjectSite = async () => {
+  const loadProjectSite = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -130,7 +124,9 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
               toast.success('WordPress configuratie overgenomen van project instellingen');
             }
           } else {
-            console.error('Failed to auto-create ContentHubSite from project WordPress config');
+            const errorData = await createResponse.json().catch(() => ({}));
+            console.error('Failed to auto-create ContentHubSite from project WordPress config:', errorData);
+            toast.error('Kon WordPress configuratie niet overnemen. Probeer handmatig te verbinden.');
           }
           
           // Reset the flag after the auto-creation attempt
@@ -143,7 +139,13 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    // Reset the auto-creating flag when projectId changes
+    isAutoCreatingRef.current = false;
+    loadProjectSite();
+  }, [projectId, loadProjectSite]);
 
   const handleSiteConnected = (connectedSite: any) => {
     loadProjectSite();
