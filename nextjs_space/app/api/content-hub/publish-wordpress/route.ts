@@ -49,11 +49,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get article with site
+    // Get article with site and project
     const article = await prisma.contentHubArticle.findUnique({
       where: { id: articleId },
       include: {
-        site: true,
+        site: {
+          include: {
+            project: true,
+          },
+        },
       },
     });
 
@@ -71,9 +75,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!article.site.isConnected || !article.site.wordpressAppPassword) {
+    // Check WordPress configuration - fallback to Project if ContentHubSite not configured
+    let wpSiteUrl = article.site.wordpressUrl;
+    let wpUsername = article.site.wordpressUsername;
+    let wpAppPassword = article.site.wordpressAppPassword;
+    
+    // If ContentHubSite doesn't have WordPress credentials, try to use Project credentials
+    if ((!article.site.isConnected || !wpAppPassword) && article.site.project) {
+      const project = article.site.project;
+      if (project.wordpressUrl && project.wordpressUsername && project.wordpressPassword) {
+        console.log('[Content Hub] Using WordPress credentials from linked Project');
+        wpSiteUrl = project.wordpressUrl;
+        wpUsername = project.wordpressUsername;
+        wpAppPassword = project.wordpressPassword;
+      }
+    }
+    
+    if (!wpSiteUrl || !wpUsername || !wpAppPassword) {
       return NextResponse.json(
-        { error: 'WordPress not connected' },
+        { error: 'Geen website configuratie gevonden. Configureer WordPress in ContentHub of koppel een Project met WordPress instellingen.' },
         { status: 400 }
       );
     }
@@ -86,11 +106,11 @@ export async function POST(req: NextRequest) {
       data: { status: 'publishing' },
     });
 
-    // Initialize WordPress client
+    // Initialize WordPress client with fallback credentials
     const wpClient = new WordPressClient({
-      siteUrl: article.site.wordpressUrl,
-      username: article.site.wordpressUsername || '',
-      applicationPassword: article.site.wordpressAppPassword,
+      siteUrl: wpSiteUrl,
+      username: wpUsername || '',
+      applicationPassword: wpAppPassword,
     });
 
     // Upload featured image if exists

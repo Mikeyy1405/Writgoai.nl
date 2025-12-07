@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +58,7 @@ const MAX_PARSE_ERRORS = 3; // Maximum parse errors before showing toast
 const SSE_DATA_PREFIX_LENGTH = 6; // Length of 'data: ' prefix in SSE messages
 
 export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
+  const router = useRouter();
   const [showGenerator, setShowGenerator] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [showRewriteModal, setShowRewriteModal] = useState(false);
@@ -319,12 +321,23 @@ export default function ArticleRow({ article, onUpdate }: ArticleRowProps) {
                 if (data.status === 'success') {
                   setProgress(100);
                   const totalDuration = Math.floor((Date.now() - startTime) / 1000);
-                  toast.success(`Artikel succesvol gegenereerd in ${totalDuration}s!`);
+                  const contentId = data.result?.article?.contentId;
                   
-                  setTimeout(() => {
-                    onUpdate?.();
-                    setGenerating(false);
-                  }, 1500);
+                  if (contentId) {
+                    toast.success(`Artikel succesvol gegenereerd in ${totalDuration}s! Navigeren naar editor...`);
+                    
+                    setTimeout(() => {
+                      setGenerating(false);
+                      router.push(`/client-portal/content-library/${contentId}/edit`);
+                    }, 1500);
+                  } else {
+                    toast.success(`Artikel succesvol gegenereerd in ${totalDuration}s!`);
+                    
+                    setTimeout(() => {
+                      onUpdate?.();
+                      setGenerating(false);
+                    }, 1500);
+                  }
                 } else if (data.status === 'error') {
                   throw new Error(data.error || 'Het voltooien van het artikel is mislukt');
                 }

@@ -45,8 +45,8 @@ export default function InlineGenerationStatus({
       <div className="flex items-center gap-3">
         <div className="flex-1 space-y-1">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">Overall Progress</span>
-            <span className="text-muted-foreground">{progress}%</span>
+            <span className="font-medium text-gray-900 dark:text-gray-100">Overall Progress</span>
+            <span className="text-gray-700 dark:text-gray-300 font-semibold">{progress}%</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -66,9 +66,9 @@ export default function InlineGenerationStatus({
       {currentPhase && (
         <div className="flex items-center gap-2 text-sm">
           {getPhaseIcon(currentPhase.status)}
-          <span className="font-medium">{currentPhase.name}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">{currentPhase.name}</span>
           {currentPhase.message && (
-            <span className="text-muted-foreground">- {currentPhase.message}</span>
+            <span className="text-gray-700 dark:text-gray-300">- {currentPhase.message}</span>
           )}
         </div>
       )}

@@ -81,6 +81,28 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Try to find matching Project to link
+    let projectId: string | undefined;
+    const matchingProject = await prisma.project.findFirst({
+      where: {
+        clientId: client.id,
+        OR: [
+          { wordpressUrl: wordpressUrl },
+          { websiteUrl: wordpressUrl },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        wordpressUrl: true,
+      },
+    });
+
+    if (matchingProject) {
+      projectId = matchingProject.id;
+      console.log(`[Content Hub] Auto-linking ContentHubSite to Project: ${matchingProject.name} (${matchingProject.id})`);
+    }
+
     // TODO: SECURITY - Implement encryption for WordPress application passwords before production
     // Consider using a library like 'crypto' to encrypt passwords before storing
     // and decrypt when retrieving for API calls
@@ -92,6 +114,7 @@ export async function POST(req: NextRequest) {
       lastSyncedAt: new Date(),
       existingPages,
       niche: testResult.siteInfo?.description || null,
+      projectId: projectId || null,
     };
 
     let site;
@@ -111,13 +134,17 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'WordPress connected successfully',
+      message: matchingProject 
+        ? `WordPress connected successfully and linked to project: ${matchingProject.name}` 
+        : 'WordPress connected successfully',
       site: {
         id: site.id,
         wordpressUrl: site.wordpressUrl,
         isConnected: site.isConnected,
         existingPages: site.existingPages,
         siteInfo: testResult.siteInfo,
+        projectLinked: !!matchingProject,
+        projectName: matchingProject?.name,
       },
     });
   } catch (error: any) {
@@ -160,6 +187,13 @@ export async function GET(req: NextRequest) {
             totalArticles: true,
             completedArticles: true,
             createdAt: true,
+            projectId: true,
+            project: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
           orderBy: {
             createdAt: 'desc',
@@ -192,6 +226,13 @@ export async function GET(req: NextRequest) {
               totalArticles: true,
               completedArticles: true,
               createdAt: true,
+              projectId: true,
+              project: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
             orderBy: {
               createdAt: 'desc',
