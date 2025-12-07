@@ -6,6 +6,23 @@
 
 import { generateSmartImage } from '../smart-image-generator';
 import { searchFreeStockImages, type StockImageResult } from '../free-stock-images';
+import { extractEnhancedImageContext } from '../image-context-enhancer';
+
+/**
+ * Safely extract text from HTML for use in AI prompts only
+ * This is NOT for rendering HTML - it's for semantic text extraction
+ * 
+ * SECURITY NOTE: This function is used ONLY to extract plain text for AI prompt generation.
+ * The output is never rendered as HTML or inserted into the DOM.
+ */
+function safeExtractTextForPrompt(htmlString: string): string {
+  let text = htmlString;
+  text = text.replace(/script|onclick|onerror|onload|javascript:/gi, ''); // Remove script patterns first
+  text = text.replace(/<[^>]*>/g, ''); // Remove all HTML tags
+  text = text.replace(/[<>'"&]/g, ''); // Remove problematic characters
+  text = text.replace(/\s+/g, ' ').trim(); // Normalize whitespace
+  return text;
+}
 
 // SEO constants for image optimization
 const SEO_ALT_TEXT_MAX_WORDS = 15;
@@ -130,6 +147,7 @@ Exclude: NO cartoon, NO illustration, NO 3D render, NO digital art, NO text, NO 
 
 /**
  * Generate ultra-realistic image prompts from article content
+ * Enhanced to extract richer context including paragraphs for better relevance
  * Note: This function extracts text from HTML for use as AI image generation prompts only.
  * The output is never inserted back into HTML, so XSS concerns don't apply here.
  */
@@ -140,23 +158,35 @@ export function extractImagePrompts(
 ): string[] {
   const prompts: string[] = [];
   
-  // Extract H2 headings as potential image topics
+  // Extract H2 headings with their positions for context extraction
   // Using simple regex for extraction since output is only used for AI prompts, not HTML
-  const headingMatches = content.match(/<h2[^>]*>(.*?)<\/h2>/gi) || [];
-  const headings = headingMatches
-    .map(h => {
-      // Strip HTML tags - safe here since we're generating prompts, not rendering HTML
-      let text = h.replace(/<[^>]*>/g, '');
-      // Remove potentially problematic characters for AI prompts
-      text = text.replace(/[<>'"]/g, '').trim();
-      return text;
-    })
-    .filter(h => h.length > 0 && h.length < 200) // Reasonable length for prompts
-    .slice(0, maxImages);
+  const headingMatches = Array.from(content.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi));
   
-  headings.forEach(heading => {
-    // Generate ultra-realistic, specific prompts for Flux Pro
-    prompts.push(generateUltraRealisticPrompt(heading, articleTitle));
+  // Limit to maxImages headings
+  const selectedHeadings = headingMatches.slice(0, maxImages);
+  
+  selectedHeadings.forEach((match) => {
+    // NOTE: This extraction is ONLY used to generate AI image prompts, never rendered as HTML
+    const heading = safeExtractTextForPrompt(match[1]);
+    const headingPosition = match.index || 0;
+    
+    // Extract enhanced context around this heading
+    const context = extractEnhancedImageContext(content, headingPosition + match[0].length, {
+      contextWindowBefore: 200,  // Small window before (just the heading area)
+      contextWindowAfter: 600,   // Larger window after to get paragraph content
+      maxParagraphs: 2,          // Get 2 paragraphs for context
+    });
+    
+    // Build rich contextual prompt
+    let contextualInfo = heading;
+    if (context.paragraphs.length > 0) {
+      // Add first paragraph snippet for richer context (limit to 150 chars)
+      const paragraphSnippet = context.paragraphs[0].substring(0, 150);
+      contextualInfo = `${heading}: ${paragraphSnippet}`;
+    }
+    
+    // Generate ultra-realistic, specific prompts with enhanced context
+    prompts.push(generateUltraRealisticPrompt(contextualInfo, articleTitle));
   });
   
   // If we don't have enough headings, add a generic one

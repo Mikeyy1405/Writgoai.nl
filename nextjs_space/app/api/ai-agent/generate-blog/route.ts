@@ -12,6 +12,7 @@ import { getBannedWordsInstructions, detectBannedWords, removeBannedWords, isCon
 import { autoSaveToLibrary } from '@/lib/content-library-helper';
 import { CREDIT_COSTS } from '@/lib/credits';
 import { getClientToneOfVoice, generateToneOfVoicePrompt } from '@/lib/tone-of-voice-helper';
+import { extractEnhancedImageContext, generateContextualImagePrompt } from '@/lib/image-context-enhancer';
 
 // Helper function to send status updates via streaming
 function createStatusStream() {
@@ -997,39 +998,30 @@ Schrijf nu de complete ${reviewTypeText.toLowerCase()} in perfecte HTML formatti
             try {
               sendStreamStatus(`🖼️ Afbeelding ${i + 1}/${imagePlaceholders.length} genereren...`, 80 + (i * 10 / imagePlaceholders.length));
               
-              // Extract context around the placeholder to generate SPECIFIC, RELEVANT image
+              // Extract ENHANCED context around the placeholder for MAXIMUM relevance
               const placeholderIndex = blogContent.indexOf(placeholder);
-              const contextBefore = blogContent.substring(Math.max(0, placeholderIndex - 500), placeholderIndex);
-              const contextAfter = blogContent.substring(placeholderIndex, Math.min(blogContent.length, placeholderIndex + 300));
+              const context = extractEnhancedImageContext(blogContent, placeholderIndex, {
+                contextWindowBefore: 1200, // Capture more content before
+                contextWindowAfter: 800,   // Capture more content after
+                maxParagraphs: 3,          // Extract up to 3 paragraphs
+              });
               
-              // Extract heading AND paragraph context for MAXIMUM relevance
-              const headingMatch = contextBefore.match(/<h[1-3]>([^<]+)<\/h[1-3]>/);
-              const paragraphMatch = contextAfter.match(/<p>([^<]+)<\/p>/);
+              console.log(`🔍 Enhanced context extraction for image ${i + 1}/${imagePlaceholders.length}:`);
+              console.log(`   - Heading: "${context.heading || 'N/A'}"`);
+              console.log(`   - Paragraphs found: ${context.paragraphs.length}`);
+              console.log(`   - Context preview: "${context.contextualPrompt.substring(0, 150)}..."`);
               
-              // Build detailed, specific prompt from context
-              let contextPrompt = '';
-              if (headingMatch && paragraphMatch) {
-                // Best case: we have both heading and paragraph
-                const heading = headingMatch[1].trim();
-                const paragraph = paragraphMatch[1].substring(0, 150).trim(); // First 150 chars
-                contextPrompt = `${heading}: ${paragraph}`;
-              } else if (headingMatch) {
-                // We have heading only
-                contextPrompt = headingMatch[1].trim();
-              } else if (paragraphMatch) {
-                // We have paragraph only
-                contextPrompt = paragraphMatch[1].substring(0, 150).trim();
-              } else {
-                // Fallback to topic
-                contextPrompt = contentType === 'blog' ? topic : category;
-              }
+              // Generate AI-enhanced contextual prompt for better relevance
+              const mainArticleTopic = contentType === 'blog' ? topic : category;
+              const imagePrompt = await generateContextualImagePrompt(
+                context,
+                stylePrompt,
+                mainArticleTopic
+              );
               
-              // Generate SPECIFIC image prompt with full context
-              const imagePrompt = `${contextPrompt}, ${stylePrompt}. Detailed, specific image matching the exact content context.`;
-              
-              console.log(`Generating CONTEXTUAL image ${i + 1}/${imagePlaceholders.length}:`);
-              console.log(`   - Context extracted: "${contextPrompt.substring(0, 100)}..."`);
-              console.log(`   - Full prompt: "${imagePrompt}"`);
+              console.log(`✨ AI-generated contextual image prompt:`);
+              console.log(`   - Prompt: "${imagePrompt}"`);
+              console.log(`   - Length: ${imagePrompt.length} chars`);
 
             
             // Call image generation API

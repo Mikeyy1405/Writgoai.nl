@@ -25,6 +25,7 @@ import {
 import type { DisplayType } from '@/lib/affiliate-display-html';
 import { generateAffiliateDisplayHTML } from '@/lib/affiliate-display-html';
 import { generateSocialMediaPost, type SocialMediaPost } from '@/lib/social-media-generator';
+import { extractEnhancedImageContext, generateContextualImagePrompt } from '@/lib/image-context-enhancer';
 
 // Helper function to send status updates via streaming
 function createStatusStream() {
@@ -1723,33 +1724,20 @@ Vereisten:
                 continue;
               }
               
-              // Extract context before and after placeholder
-              const contextBefore = blogContent.substring(Math.max(0, contextStart - 600), contextStart);
-              const contextAfter = blogContent.substring(contextStart, Math.min(blogContent.length, contextStart + 400));
+              // Extract ENHANCED context for better image relevance
+              const context = extractEnhancedImageContext(blogContent, contextStart, {
+                contextWindowBefore: 1200, // Capture more content before
+                contextWindowAfter: 800,   // Capture more content after
+                maxParagraphs: 3,          // Extract up to 3 paragraphs
+              });
               
-              // Extract relevant context elements
-              const headingMatch = contextBefore.match(/<h[12]>([^<]+)<\/h[12]>/);
-              const subheadingMatch = contextBefore.match(/<h3>([^<]+)<\/h3>/);
-              const paragraphMatches = contextAfter.match(/<p>([^<]+)<\/p>/g) || [];
+              console.log(`🔍 Enhanced context for image ${imageIndex + 1}/${imageCountToGenerate}:`);
+              console.log(`   - Heading: "${context.heading || 'N/A'}"`);
+              console.log(`   - Paragraphs: ${context.paragraphs.length}`);
+              console.log(`   - Context: "${context.contextualPrompt.substring(0, 100)}..."`);
               
-              // Build context prompt
-              const contextParts: string[] = [];
-              contextParts.push(contentType === 'blog' ? topic : category);
-              
-              if (headingMatch) {
-                contextParts.push(headingMatch[1].trim());
-              }
-              
-              if (subheadingMatch) {
-                contextParts.push(subheadingMatch[1].trim());
-              }
-              
-              if (paragraphMatches.length > 0) {
-                const para1 = paragraphMatches[0].replace(/<\/?p>/g, '').substring(0, 120).trim();
-                contextParts.push(para1);
-              }
-              
-              const contextPrompt = contextParts.join('. ');
+              // Build context prompt from enhanced extraction
+              const contextPrompt = context.contextualPrompt || (contentType === 'blog' ? topic : category);
               
               // Build image prompt - ALWAYS IN ENGLISH for better AI understanding
               const mainTopic = contentType === 'blog' ? topic : category;
