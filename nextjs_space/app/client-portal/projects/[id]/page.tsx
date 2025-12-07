@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, Globe, BookOpen, Settings, TrendingUp, 
-  Loader2, FileText, Link2, Users, Plug
+  Loader2, FileText, Link2, Users, Plug, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import ProjectGSCDashboard from '@/components/project-gsc-dashboard';
 import ProjectSettings from '@/components/project-settings';
 import ProjectIntegrations from '@/components/project-integrations';
 import ProjectAffiliateLinks from '@/components/project-affiliate-links';
+import ProjectContentHub from '@/components/project-content-hub';
 
 interface Project {
   id: string;
@@ -151,7 +152,7 @@ export default function ProjectDetailPage() {
 
         {/* Tabbed Interface */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2 bg-zinc-900 p-1 mb-4 sm:mb-6 h-auto">
+          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 gap-1 sm:gap-2 bg-zinc-900 p-1 mb-4 sm:mb-6 h-auto">
             <TabsTrigger 
               value="overview" 
               className="data-[state=active]:bg-[#ff6b35] data-[state=active]:text-white text-gray-300 hover:text-white text-xs sm:text-sm py-2 sm:py-3"
@@ -159,6 +160,14 @@ export default function ProjectDetailPage() {
               <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 hidden sm:inline" />
               <span className="hidden sm:inline">Info</span>
               <span className="sm:hidden">ℹ️</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="content-hub"
+              className="data-[state=active]:bg-[#ff6b35] data-[state=active]:text-white text-gray-300 hover:text-white text-xs sm:text-sm py-2 sm:py-3"
+            >
+              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 hidden sm:inline" />
+              <span className="hidden sm:inline">Content Hub</span>
+              <span className="sm:hidden">✨</span>
             </TabsTrigger>
             <TabsTrigger 
               value="knowledge"
@@ -297,6 +306,11 @@ export default function ProjectDetailPage() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Content Hub Tab */}
+          <TabsContent value="content-hub">
+            <ProjectContentHub projectId={projectId} projectUrl={project.websiteUrl} />
           </TabsContent>
 
           {/* Knowledge Base Tab */}

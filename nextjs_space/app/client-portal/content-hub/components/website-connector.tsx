@@ -12,9 +12,10 @@ import { toast } from 'sonner';
 interface WebsiteConnectorProps {
   onClose: () => void;
   onSuccess: (site: any) => void;
+  projectId?: string;
 }
 
-export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnectorProps) {
+export default function WebsiteConnector({ onClose, onSuccess, projectId }: WebsiteConnectorProps) {
   const [wordpressUrl, setWordpressUrl] = useState('');
   const [username, setUsername] = useState('');
   const [applicationPassword, setApplicationPassword] = useState('');
@@ -48,6 +49,7 @@ export default function WebsiteConnector({ onClose, onSuccess }: WebsiteConnecto
           wordpressUrl,
           username,
           applicationPassword,
+          projectId,
         }),
       });
 
