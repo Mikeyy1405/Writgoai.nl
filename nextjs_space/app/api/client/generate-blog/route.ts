@@ -1731,7 +1731,7 @@ Vereisten:
                 maxParagraphs: 3,          // Extract up to 3 paragraphs
               });
               
-              console.log(`🔍 Enhanced context for image ${imageIndex + 1}/${imageCountToGenerate}:`);
+              console.log(`🔍 Enhanced context for image ${i + 1}/${placeholderCount}:`);
               console.log(`   - Heading: "${context.heading || 'N/A'}"`);
               console.log(`   - Paragraphs: ${context.paragraphs.length}`);
               console.log(`   - Context: "${context.contextualPrompt.substring(0, 100)}..."`);
