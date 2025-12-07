@@ -192,45 +192,46 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {wpEditing ? (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <div>
-                <Label className="text-gray-300 text-sm">WordPress URL</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">WordPress URL</Label>
                 <Input
                   value={wpSettings.wordpressUrl}
                   onChange={(e) => setWpSettings({ ...wpSettings, wordpressUrl: e.target.value })}
                   placeholder="https://jouwsite.nl"
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div>
-                <Label className="text-gray-300 text-sm">Gebruikersnaam</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Gebruikersnaam</Label>
                 <Input
                   value={wpSettings.wordpressUsername}
                   onChange={(e) => setWpSettings({ ...wpSettings, wordpressUsername: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div>
-                <Label className="text-gray-300 text-sm">Application Password</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Application Password</Label>
                 <Input
                   type="password"
                   value={wpSettings.wordpressPassword}
                   onChange={(e) => setWpSettings({ ...wpSettings, wordpressPassword: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  placeholder={project?.wordpressPassword ? "••••••••" : ""}
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Maak een application password aan in WordPress → Gebruikers → Profiel
+                <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                  {project?.wordpressPassword ? "Laat leeg om het huidige wachtwoord te behouden" : "Maak een application password aan in WordPress → Gebruikers → Profiel"}
                 </p>
               </div>
               <div>
-                <Label className="text-gray-300 text-sm">Categorie (optioneel)</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Categorie (optioneel)</Label>
                 <Input
                   value={wpSettings.wordpressCategory}
                   onChange={(e) => setWpSettings({ ...wpSettings, wordpressCategory: e.target.value })}
                   placeholder="Bijvoorbeeld: Blog"
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -238,23 +239,24 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
                   checked={wpSettings.wordpressAutoPublish}
                   onCheckedChange={(checked) => setWpSettings({ ...wpSettings, wordpressAutoPublish: checked })}
                 />
-                <Label className="text-gray-300 text-sm">Automatisch publiceren</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Automatisch publiceren</Label>
               </div>
               <Button
                 onClick={handleSaveWordPress}
                 disabled={wpSaving}
-                className="w-full bg-[#ff6b35] hover:bg-[#ff8c42] text-white text-sm"
+                className="w-full bg-[#ff6b35] hover:bg-[#ff8c42] text-white text-xs sm:text-sm py-2"
               >
                 {wpSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Opslaan'}
               </Button>
             </div>
           ) : project?.wordpressUrl ? (
-            <div className="text-sm space-y-2">
+            <div className="text-xs sm:text-sm space-y-2">
               <p className="text-gray-400">Geconfigureerd voor:</p>
-              <p className="text-white font-medium">{project.wordpressUrl}</p>
+              <p className="text-white font-medium break-all">{project.wordpressUrl}</p>
+              <p className="text-green-400 text-xs">✓ Inloggegevens opgeslagen</p>
             </div>
           ) : (
-            <p className="text-sm text-gray-400">Niet geconfigureerd</p>
+            <p className="text-xs sm:text-sm text-gray-400">Niet geconfigureerd</p>
           )}
         </CardContent>
       </Card>
@@ -284,32 +286,32 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {bolEditing ? (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <div>
-                <Label className="text-gray-300 text-sm">Client ID</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Client ID</Label>
                 <Input
                   value={bolSettings.bolcomClientId}
                   onChange={(e) => setBolSettings({ ...bolSettings, bolcomClientId: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div>
-                <Label className="text-gray-300 text-sm">Client Secret</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Client Secret</Label>
                 <Input
                   type="password"
                   value={bolSettings.bolcomClientSecret}
                   onChange={(e) => setBolSettings({ ...bolSettings, bolcomClientSecret: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div>
-                <Label className="text-gray-300 text-sm">Affiliate ID</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Affiliate ID</Label>
                 <Input
                   value={bolSettings.bolcomAffiliateId}
                   onChange={(e) => setBolSettings({ ...bolSettings, bolcomAffiliateId: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -317,20 +319,20 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
                   checked={bolSettings.bolcomEnabled}
                   onCheckedChange={(checked) => setBolSettings({ ...bolSettings, bolcomEnabled: checked })}
                 />
-                <Label className="text-gray-300 text-sm">Integratie inschakelen</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Integratie inschakelen</Label>
               </div>
               <Button
                 onClick={handleSaveBolcom}
                 disabled={bolSaving}
-                className="w-full bg-[#ff6b35] hover:bg-[#ff8c42] text-white text-sm"
+                className="w-full bg-[#ff6b35] hover:bg-[#ff8c42] text-white text-xs sm:text-sm py-2"
               >
                 {bolSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Opslaan'}
               </Button>
             </div>
           ) : bolSettings.bolcomEnabled ? (
-            <p className="text-sm text-green-400">✓ Actief</p>
+            <p className="text-xs sm:text-sm text-green-400">✓ Actief</p>
           ) : (
-            <p className="text-sm text-gray-400">Niet ingeschakeld</p>
+            <p className="text-xs sm:text-sm text-gray-400">Niet ingeschakeld</p>
           )}
         </CardContent>
       </Card>
@@ -360,32 +362,32 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {ttEditing ? (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <div>
-                <Label className="text-gray-300 text-sm">Site ID</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Site ID</Label>
                 <Input
                   value={ttSettings.tradeTrackerSiteId}
                   onChange={(e) => setTtSettings({ ...ttSettings, tradeTrackerSiteId: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div>
-                <Label className="text-gray-300 text-sm">Passphrase</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Passphrase</Label>
                 <Input
                   type="password"
                   value={ttSettings.tradeTrackerPassphrase}
                   onChange={(e) => setTtSettings({ ...ttSettings, tradeTrackerPassphrase: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div>
-                <Label className="text-gray-300 text-sm">Campaign ID</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Campaign ID</Label>
                 <Input
                   value={ttSettings.tradeTrackerCampaignId}
                   onChange={(e) => setTtSettings({ ...ttSettings, tradeTrackerCampaignId: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm mt-1"
+                  className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -393,20 +395,20 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
                   checked={ttSettings.tradeTrackerEnabled}
                   onCheckedChange={(checked) => setTtSettings({ ...ttSettings, tradeTrackerEnabled: checked })}
                 />
-                <Label className="text-gray-300 text-sm">Integratie inschakelen</Label>
+                <Label className="text-gray-300 text-xs sm:text-sm">Integratie inschakelen</Label>
               </div>
               <Button
                 onClick={handleSaveTradeTracker}
                 disabled={ttSaving}
-                className="w-full bg-[#ff6b35] hover:bg-[#ff8c42] text-white text-sm"
+                className="w-full bg-[#ff6b35] hover:bg-[#ff8c42] text-white text-xs sm:text-sm py-2"
               >
                 {ttSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Opslaan'}
               </Button>
             </div>
           ) : ttSettings.tradeTrackerEnabled ? (
-            <p className="text-sm text-green-400">✓ Actief</p>
+            <p className="text-xs sm:text-sm text-green-400">✓ Actief</p>
           ) : (
-            <p className="text-sm text-gray-400">Niet ingeschakeld</p>
+            <p className="text-xs sm:text-sm text-gray-400">Niet ingeschakeld</p>
           )}
         </CardContent>
       </Card>

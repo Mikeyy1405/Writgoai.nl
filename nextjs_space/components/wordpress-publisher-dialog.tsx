@@ -318,7 +318,7 @@ export default function WordPressPublisherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-900 text-white border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-zinc-900 text-white border-zinc-800 max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {published ? (
@@ -353,11 +353,11 @@ export default function WordPressPublisherDialog({
         </DialogHeader>
 
         {!published && (
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
             {/* WordPress Site Selector */}
             {wordpressProjects.length > 0 && (
               <div>
-                <Label htmlFor="wp-site" className="text-gray-200">
+                <Label htmlFor="wp-site" className="text-gray-200 text-sm">
                   WordPress Site *
                 </Label>
                 <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
@@ -386,7 +386,7 @@ export default function WordPressPublisherDialog({
 
             {/* Title */}
             <div>
-              <Label htmlFor="wp-title" className="text-gray-200">
+              <Label htmlFor="wp-title" className="text-gray-200 text-sm">
                 Titel *
               </Label>
               <Input
@@ -400,7 +400,7 @@ export default function WordPressPublisherDialog({
 
             {/* Excerpt */}
             <div>
-              <Label htmlFor="wp-excerpt" className="text-gray-200">
+              <Label htmlFor="wp-excerpt" className="text-gray-200 text-sm">
                 Uittreksel
               </Label>
               <Textarea
@@ -414,7 +414,7 @@ export default function WordPressPublisherDialog({
 
             {/* Status */}
             <div>
-              <Label htmlFor="wp-status" className="text-gray-200">
+              <Label htmlFor="wp-status" className="text-gray-200 text-sm">
                 Status
               </Label>
               <Select value={status} onValueChange={(value: any) => setStatus(value)}>
@@ -434,7 +434,7 @@ export default function WordPressPublisherDialog({
 
             {/* Categories */}
             <div>
-              <Label htmlFor="wp-categories" className="text-gray-200">
+              <Label htmlFor="wp-categories" className="text-gray-200 text-sm">
                 Categorieën
               </Label>
               {loadingCategories ? (
@@ -467,7 +467,7 @@ export default function WordPressPublisherDialog({
 
             {/* Tags */}
             <div>
-              <Label htmlFor="wp-tags" className="text-gray-200">
+              <Label htmlFor="wp-tags" className="text-gray-200 text-sm">
                 Tags (gescheiden door komma's)
               </Label>
               <Input
@@ -481,7 +481,7 @@ export default function WordPressPublisherDialog({
 
             {/* Featured Image */}
             <div>
-              <Label htmlFor="wp-featured-image" className="text-gray-200">
+              <Label htmlFor="wp-featured-image" className="text-gray-200 text-sm">
                 Uitgelichte afbeelding URL
               </Label>
               <Input
