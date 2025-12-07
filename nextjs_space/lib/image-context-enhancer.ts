@@ -5,6 +5,35 @@
 
 import { chatCompletion, selectOptimalModelForTask } from './aiml-api';
 
+/**
+ * Safely extract text from HTML for use in AI prompts only
+ * This is NOT for rendering HTML - it's for semantic text extraction
+ * Multiple sanitization steps ensure no HTML/script content remains
+ * 
+ * SECURITY NOTE: This function is used ONLY to extract plain text for AI prompt generation.
+ * The output is never rendered as HTML or inserted into the DOM.
+ * It is sent directly to AI image generation APIs which expect plain text descriptions.
+ */
+function safeExtractTextForPrompt(htmlString: string): string {
+  let text = htmlString;
+  
+  // Step 1: Remove script-like content patterns FIRST (before tag removal)
+  // This prevents any script content from being preserved
+  text = text.replace(/script|onclick|onerror|onload|javascript:/gi, '');
+  
+  // Step 2: Remove all HTML tags (including any that contain the above patterns)
+  text = text.replace(/<[^>]*>/g, '');
+  
+  // Step 3: Remove any remaining angle brackets, quotes, and ampersands
+  // This ensures no HTML entity or tag fragments remain
+  text = text.replace(/[<>'"&]/g, '');
+  
+  // Step 4: Normalize whitespace for clean AI prompt text
+  text = text.replace(/\s+/g, ' ').trim();
+  
+  return text;
+}
+
 export interface ImageContextExtractionResult {
   heading: string | null;
   paragraphs: string[];
@@ -42,26 +71,29 @@ export function extractEnhancedImageContext(
   );
 
   // Extract the most recent heading (h1, h2, or h3) from BEFORE the image
+  // NOTE: This extraction is ONLY used to generate AI image prompts, never rendered as HTML
+  // The text is extracted for semantic understanding, not for display
   const headingMatches = contextBefore.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/gi);
   const heading = headingMatches && headingMatches.length > 0
-    ? headingMatches[headingMatches.length - 1].replace(/<[^>]+>/g, '').trim()
+    ? safeExtractTextForPrompt(headingMatches[headingMatches.length - 1])
     : null;
 
   // Extract multiple paragraphs from BEFORE the image (the content leading up to it)
   // This gives us the context about what the image should illustrate
+  // NOTE: This extraction is ONLY used to generate AI image prompts, never rendered as HTML
   const paragraphMatchesBefore = contextBefore.match(/<p[^>]*>([^<]+)<\/p>/gi) || [];
   
   // Take the LAST few paragraphs before the image (most relevant context)
   const paragraphsBefore = paragraphMatchesBefore
     .slice(-maxParagraphs) // Get last N paragraphs
-    .map(p => p.replace(/<[^>]+>/g, '').trim())
+    .map(p => safeExtractTextForPrompt(p))
     .filter(p => p.length > 20); // Filter out very short paragraphs
 
   // Also extract paragraphs AFTER the image as additional context
   const paragraphMatchesAfter = contextAfter.match(/<p[^>]*>([^<]+)<\/p>/gi) || [];
   const paragraphsAfter = paragraphMatchesAfter
     .slice(0, 1) // Get first paragraph after
-    .map(p => p.replace(/<[^>]+>/g, '').trim())
+    .map(p => safeExtractTextForPrompt(p))
     .filter(p => p.length > 20);
 
   // Combine: prioritize paragraphs before (the context), optionally add one after

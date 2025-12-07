@@ -8,6 +8,22 @@ import { generateSmartImage } from '../smart-image-generator';
 import { searchFreeStockImages, type StockImageResult } from '../free-stock-images';
 import { extractEnhancedImageContext } from '../image-context-enhancer';
 
+/**
+ * Safely extract text from HTML for use in AI prompts only
+ * This is NOT for rendering HTML - it's for semantic text extraction
+ * 
+ * SECURITY NOTE: This function is used ONLY to extract plain text for AI prompt generation.
+ * The output is never rendered as HTML or inserted into the DOM.
+ */
+function safeExtractTextForPrompt(htmlString: string): string {
+  let text = htmlString;
+  text = text.replace(/script|onclick|onerror|onload|javascript:/gi, ''); // Remove script patterns first
+  text = text.replace(/<[^>]*>/g, ''); // Remove all HTML tags
+  text = text.replace(/[<>'"&]/g, ''); // Remove problematic characters
+  text = text.replace(/\s+/g, ' ').trim(); // Normalize whitespace
+  return text;
+}
+
 // SEO constants for image optimization
 const SEO_ALT_TEXT_MAX_WORDS = 15;
 const SEO_ALT_TEXT_MAX_CHARS = 125;
@@ -150,7 +166,8 @@ export function extractImagePrompts(
   const selectedHeadings = headingMatches.slice(0, maxImages);
   
   selectedHeadings.forEach((match) => {
-    const heading = match[1].replace(/<[^>]*>/g, '').replace(/[<>'"]/g, '').trim();
+    // NOTE: This extraction is ONLY used to generate AI image prompts, never rendered as HTML
+    const heading = safeExtractTextForPrompt(match[1]);
     const headingPosition = match.index || 0;
     
     // Extract enhanced context around this heading
