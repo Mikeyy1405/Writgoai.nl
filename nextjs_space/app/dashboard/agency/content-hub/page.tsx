@@ -48,6 +48,9 @@ interface AdminProject {
   websiteUrl: string | null;
   wordpressUrl: string | null;
   blogPostCount: number;
+  projectType?: 'admin' | 'client';
+  clientName?: string;
+  clientEmail?: string;
 }
 
 export default function AgencyContentHubPage() {
@@ -226,11 +229,21 @@ export default function AgencyContentHubPage() {
                     </SelectItem>
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id}>
-                        <div className="flex items-center gap-2">
-                          <FolderKanban className="h-4 w-4" />
-                          <span>{project.name}</span>
-                          {project.wordpressUrl && (
-                            <Badge variant="outline" className="ml-2 text-xs">WP</Badge>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <FolderKanban className="h-4 w-4" />
+                            <span>{project.name}</span>
+                            {project.wordpressUrl && (
+                              <Badge variant="outline" className="ml-2 text-xs">WP</Badge>
+                            )}
+                            {project.projectType === 'client' && (
+                              <Badge variant="secondary" className="ml-2 text-xs">Client</Badge>
+                            )}
+                          </div>
+                          {project.projectType === 'client' && project.clientName && (
+                            <span className="text-xs text-muted-foreground ml-6">
+                              {project.clientName}
+                            </span>
                           )}
                         </div>
                       </SelectItem>

@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
-// GET - List all admin projects
+// GET - List all admin projects and client projects with WordPress integration
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -23,7 +23,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
-    const projects = await prisma.adminProject.findMany({
+    // Fetch admin projects
+    const adminProjects = await prisma.adminProject.findMany({
       include: {
         _count: {
           select: {
@@ -36,15 +37,71 @@ export async function GET() {
       }
     });
 
-    const transformedProjects = projects.map((project: any) => ({
+    const transformedAdminProjects = adminProjects.map((project: any) => ({
       ...project,
       blogPostCount: project._count?.blogPosts || 0,
+      projectType: 'admin',
       _count: undefined
     }));
 
+    // Fetch client projects with WordPress configured
+    const clientProjectsWithWordPress = await prisma.project.findMany({
+      where: {
+        AND: [
+          { wordpressUrl: { not: null } },
+          { wordpressUrl: { not: '' } }
+        ]
+      },
+      include: {
+        client: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        _count: {
+          select: {
+            savedContent: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    const transformedClientProjects = clientProjectsWithWordPress.map((project: any) => ({
+      id: project.id,
+      name: project.name,
+      websiteUrl: project.websiteUrl,
+      description: project.description,
+      wordpressUrl: project.wordpressUrl,
+      wordpressUsername: project.wordpressUsername,
+      wordpressPassword: project.wordpressPassword,
+      wordpressCategory: project.wordpressCategory,
+      wordpressAutoPublish: project.wordpressAutoPublish,
+      language: 'NL', // Default to NL for client projects
+      niche: project.niche,
+      targetAudience: project.targetAudience,
+      brandVoice: project.brandVoice,
+      keywords: project.keywords || [],
+      isActive: project.isActive,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      blogPostCount: project._count?.savedContent || 0,
+      projectType: 'client',
+      clientName: project.client?.name,
+      clientEmail: project.client?.email,
+    }));
+
+    // Combine both lists
+    const allProjects = [...transformedAdminProjects, ...transformedClientProjects];
+
     return NextResponse.json({
-      projects: transformedProjects,
-      count: projects.length
+      projects: allProjects,
+      count: allProjects.length,
+      adminCount: transformedAdminProjects.length,
+      clientCount: transformedClientProjects.length
     });
 
   } catch (error: any) {
