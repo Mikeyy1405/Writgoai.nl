@@ -75,28 +75,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check WordPress configuration - fallback to Project if ContentHubSite not configured
-    let wpSiteUrl = article.site.wordpressUrl;
-    let wpUsername = article.site.wordpressUsername;
-    let wpAppPassword = article.site.wordpressAppPassword;
+    // Check WordPress configuration - prefer Project configuration if complete
+    let wpSiteUrl: string | null = null;
+    let wpUsername: string | null = null;
+    let wpAppPassword: string | null = null;
+    let configSource = 'none';
     
-    // If ContentHubSite doesn't have WordPress credentials, try to use Project credentials
-    if ((!article.site.isConnected || !wpAppPassword) && article.site.project) {
+    // First, try to use Project credentials if available and complete (unified WordPress configuration)
+    if (article.site.project) {
       const project = article.site.project;
       if (project.wordpressUrl && project.wordpressUsername && project.wordpressPassword) {
-        console.log('[Content Hub] Using WordPress credentials from linked Project');
+        console.log('[Content Hub] Using WordPress credentials from linked Project (preferred)');
         wpSiteUrl = project.wordpressUrl;
         wpUsername = project.wordpressUsername;
         wpAppPassword = project.wordpressPassword;
+        configSource = 'Project';
+      }
+    }
+    
+    // Fallback to ContentHubSite configuration if Project doesn't have complete WordPress configuration
+    if (!wpSiteUrl || !wpUsername || !wpAppPassword) {
+      if (article.site.isConnected && article.site.wordpressUrl && article.site.wordpressUsername && article.site.wordpressAppPassword) {
+        console.log('[Content Hub] Using ContentHubSite WordPress credentials (fallback)');
+        wpSiteUrl = article.site.wordpressUrl;
+        wpUsername = article.site.wordpressUsername;
+        wpAppPassword = article.site.wordpressAppPassword;
+        configSource = 'ContentHubSite';
       }
     }
     
     if (!wpSiteUrl || !wpUsername || !wpAppPassword) {
       return NextResponse.json(
-        { error: 'Geen website configuratie gevonden. Configureer WordPress in ContentHub of koppel een Project met WordPress instellingen.' },
+        { error: 'Geen website configuratie gevonden. Configureer WordPress in je Project instellingen.' },
         { status: 400 }
       );
     }
+    
+    console.log(`[Content Hub] Using WordPress configuration from: ${configSource}`);
 
     console.log(`[Content Hub] Publishing article to WordPress: ${article.title}`);
 

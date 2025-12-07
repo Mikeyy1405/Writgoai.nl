@@ -64,7 +64,7 @@ export const baseNavItems: NavigationItem[] = [
   // Dashboard
   { label: 'Dashboard', href: '/client-portal', icon: LayoutDashboard },
   
-  // Projecten - Content Hub is now integrated per-project
+  // Projecten - includes WordPress integration and content generation
   { label: 'Projecten', href: '/client-portal/projects', icon: FolderKanban },
   
   // AI Writer Studio - NEW
@@ -152,7 +152,6 @@ export const adminOnlyItems: NavigationItem[] = [
     adminOnly: true,
     items: [
       { label: 'Blog CMS', href: '/admin/blog', icon: FileText, adminOnly: true },
-      { label: 'Content Hub', href: '/dashboard/agency/content-hub', icon: Globe, adminOnly: true },
       { label: 'AI Agent', href: '/dashboard/agent', icon: Bot, adminOnly: true },
     ],
   },

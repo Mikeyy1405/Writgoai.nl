@@ -166,7 +166,7 @@ export default function ProjectDetailPage() {
               className="data-[state=active]:bg-[#ff6b35] data-[state=active]:text-white text-gray-300 hover:text-white text-xs sm:text-sm py-2 sm:py-3"
             >
               <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 hidden sm:inline" />
-              <span className="hidden sm:inline">Content Hub</span>
+              <span className="hidden sm:inline">Content Planning</span>
               <span className="sm:hidden">✨</span>
             </TabsTrigger>
             <TabsTrigger 
@@ -308,7 +308,7 @@ export default function ProjectDetailPage() {
             )}
           </TabsContent>
 
-          {/* Content Hub Tab */}
+          {/* Content Planning Tab */}
           <TabsContent value="content-hub">
             <ProjectContentHub projectId={projectId} projectUrl={project.websiteUrl} />
           </TabsContent>

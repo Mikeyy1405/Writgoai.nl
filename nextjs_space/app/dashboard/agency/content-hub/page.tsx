@@ -166,7 +166,7 @@ export default function AgencyContentHubPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Content Hub laden...</p>
+          <p className="text-muted-foreground">Blog beheer laden...</p>
         </div>
       </div>
     );
@@ -179,7 +179,7 @@ export default function AgencyContentHubPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Sparkles className="h-8 w-8 text-[#FF9933]" />
-            Writgo.nl Blog Content Hub
+            Writgo.nl Blog Beheer
           </h1>
           <p className="text-muted-foreground mt-1">
             Beheer en genereer content voor de Writgo.nl blog
@@ -360,10 +360,10 @@ export default function AgencyContentHubPage() {
             <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                Content Hub voor Writgo.nl Blog
+                Blog Beheer voor Writgo.nl
               </p>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                Deze Content Hub is specifiek voor het beheren van artikelen op de Writgo.nl blog. 
+                Dit is specifiek voor het beheren van artikelen op de Writgo.nl blog. 
                 Gebruik de AI artikel generator om SEO-geoptimaliseerde content te creëren met SERP analyse, 
                 afbeeldingen generatie en automatische SEO optimalisatie.
               </p>
