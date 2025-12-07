@@ -180,6 +180,25 @@ export async function PATCH(
     if (data.websiteUrl !== undefined) updateData.websiteUrl = data.websiteUrl;
     if (data.description !== undefined) updateData.description = data.description;
     
+    // WordPress integration fields
+    if (data.wordpressUrl !== undefined) updateData.wordpressUrl = data.wordpressUrl;
+    if (data.wordpressUsername !== undefined) updateData.wordpressUsername = data.wordpressUsername;
+    if (data.wordpressPassword !== undefined) updateData.wordpressPassword = data.wordpressPassword;
+    if (data.wordpressCategory !== undefined) updateData.wordpressCategory = data.wordpressCategory;
+    if (data.wordpressAutoPublish !== undefined) updateData.wordpressAutoPublish = data.wordpressAutoPublish;
+    
+    // Bol.com integration fields
+    if (data.bolcomClientId !== undefined) updateData.bolcomClientId = data.bolcomClientId;
+    if (data.bolcomClientSecret !== undefined) updateData.bolcomClientSecret = data.bolcomClientSecret;
+    if (data.bolcomAffiliateId !== undefined) updateData.bolcomAffiliateId = data.bolcomAffiliateId;
+    if (data.bolcomEnabled !== undefined) updateData.bolcomEnabled = data.bolcomEnabled;
+    
+    // TradeTracker integration fields
+    if (data.tradeTrackerSiteId !== undefined) updateData.tradeTrackerSiteId = data.tradeTrackerSiteId;
+    if (data.tradeTrackerPassphrase !== undefined) updateData.tradeTrackerPassphrase = data.tradeTrackerPassphrase;
+    if (data.tradeTrackerCampaignId !== undefined) updateData.tradeTrackerCampaignId = data.tradeTrackerCampaignId;
+    if (data.tradeTrackerEnabled !== undefined) updateData.tradeTrackerEnabled = data.tradeTrackerEnabled;
+    
     const updatedProject = await prisma.project.update({
       where: { id: params.id },
       data: updateData
