@@ -57,6 +57,8 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
   const isAutoCreatingRef = useRef(false);
 
   useEffect(() => {
+    // Reset the auto-creating flag when projectId changes
+    isAutoCreatingRef.current = false;
     loadProjectSite();
   }, [projectId]);
 
@@ -114,18 +116,15 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
           if (createResponse.ok) {
             const createData = await createResponse.json();
             if (createData.success && createData.site) {
-              // Directly set the site instead of reloading
+              // Use the full response data with defaults for missing fields
               setSite({
-                id: createData.site.id,
-                wordpressUrl: createData.site.wordpressUrl,
-                isConnected: createData.site.isConnected,
-                lastSyncedAt: null,
-                existingPages: createData.site.existingPages || 0,
-                authorityScore: null,
-                niche: null,
-                totalArticles: 0,
-                completedArticles: 0,
-                createdAt: new Date().toISOString(),
+                ...createData.site,
+                lastSyncedAt: createData.site.lastSyncedAt || null,
+                authorityScore: createData.site.authorityScore || null,
+                niche: createData.site.niche || null,
+                totalArticles: createData.site.totalArticles || 0,
+                completedArticles: createData.site.completedArticles || 0,
+                createdAt: createData.site.createdAt || new Date().toISOString(),
                 projectId: projectId,
               });
               toast.success('WordPress configuratie overgenomen van project instellingen');
@@ -133,6 +132,9 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
           } else {
             console.error('Failed to auto-create ContentHubSite from project WordPress config');
           }
+          
+          // Reset the flag after the auto-creation attempt
+          isAutoCreatingRef.current = false;
         }
       }
     } catch (error: any) {
