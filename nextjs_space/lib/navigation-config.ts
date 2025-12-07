@@ -64,6 +64,9 @@ export const baseNavItems: NavigationItem[] = [
   // Dashboard
   { label: 'Dashboard', href: '/client-portal', icon: LayoutDashboard },
   
+  // Content Hub
+  { label: 'Content Hub', href: '/client-portal/content-hub', icon: Sparkles, badge: 'Nieuw' },
+  
   // Projecten - includes WordPress integration and content generation
   { label: 'Projecten', href: '/client-portal/projects', icon: FolderKanban },
   
