@@ -253,6 +253,7 @@ model Project {
   sitePlan                       SitePlan?
   toolUsage                      ToolUsage[]
   scheduledPosts                 ScheduledPost[]
+  contentHubSites                ContentHubSite[]
 
   @@index([clientId])
   @@index([websiteUrl])
@@ -2282,6 +2283,10 @@ model ContentHubSite {
   clientId          String
   client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   
+  // Optional Project Link - for syncing with Project WordPress config
+  projectId         String?
+  project           Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  
   // WordPress Connection
   wordpressUrl      String
   wordpressUsername String?
@@ -2305,6 +2310,7 @@ model ContentHubSite {
   articles          ContentHubArticle[]
   
   @@index([clientId])
+  @@index([projectId])
   @@index([wordpressUrl])
 }
 
