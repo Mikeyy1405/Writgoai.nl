@@ -53,6 +53,8 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
   
   // Use ref to prevent duplicate syncs
   const isSyncingRef = useRef(false);
+  // Use ref to prevent infinite recursion when auto-creating from project config
+  const isAutoCreatingRef = useRef(false);
 
   useEffect(() => {
     loadProjectSite();
@@ -61,6 +63,8 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
   const loadProjectSite = async () => {
     try {
       setLoading(true);
+      
+      // First, check for existing ContentHubSite linked to this project
       const response = await fetch('/api/content-hub/connect-wordpress');
       
       if (!response.ok) {
@@ -75,6 +79,61 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
       
       if (projectSite) {
         setSite(projectSite);
+        return;
+      }
+      
+      // No ContentHubSite found - check if project has WordPress configured
+      // But only do this once to prevent infinite recursion
+      if (!isAutoCreatingRef.current) {
+        const projectResponse = await fetch(`/api/client/projects/${projectId}`);
+        if (!projectResponse.ok) {
+          console.error('Failed to load project details');
+          return;
+        }
+        
+        const projectData = await projectResponse.json();
+        const project = projectData.project;
+        
+        // Check if project has WordPress credentials configured
+        if (project.wordpressUrl && project.wordpressUsername && project.wordpressPassword) {
+          // Project has WordPress configured - auto-create ContentHubSite
+          console.log('[Content Hub] Project has WordPress configured, auto-creating ContentHubSite');
+          isAutoCreatingRef.current = true;
+          
+          const createResponse = await fetch('/api/content-hub/connect-wordpress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              wordpressUrl: project.wordpressUrl,
+              username: project.wordpressUsername,
+              applicationPassword: project.wordpressPassword,
+              projectId: projectId,
+            }),
+          });
+          
+          if (createResponse.ok) {
+            const createData = await createResponse.json();
+            if (createData.success && createData.site) {
+              // Directly set the site instead of reloading
+              setSite({
+                id: createData.site.id,
+                wordpressUrl: createData.site.wordpressUrl,
+                isConnected: createData.site.isConnected,
+                lastSyncedAt: null,
+                existingPages: createData.site.existingPages || 0,
+                authorityScore: null,
+                niche: null,
+                totalArticles: 0,
+                completedArticles: 0,
+                createdAt: new Date().toISOString(),
+                projectId: projectId,
+              });
+              toast.success('WordPress configuratie overgenomen van project instellingen');
+            }
+          } else {
+            console.error('Failed to auto-create ContentHubSite from project WordPress config');
+          }
+        }
       }
     } catch (error: any) {
       console.error('Failed to load project site:', error);
