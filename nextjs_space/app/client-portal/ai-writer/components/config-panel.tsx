@@ -333,7 +333,7 @@ export default function ConfigPanel({
             <ProjectSelector
               value={config.projectId}
               onChange={handleProjectChange}
-              autoSelectPrimary={false}
+              autoSelectPrimary={true}
             />
           </div>
 
