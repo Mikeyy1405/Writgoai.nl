@@ -18,8 +18,10 @@ import {
   Sparkles,
   Loader2,
   Library,
+  FolderKanban,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import WebsiteConnector from './components/website-connector';
 import TopicalMapView from './components/topical-map-view';
 import AutopilotSettings from './components/autopilot-settings';
@@ -175,10 +177,20 @@ export default function ContentHubPage() {
             Geïntegreerde content workflow - van onderzoek tot publicatie
           </p>
         </div>
-        <Button onClick={() => setShowConnector(true)} className="gap-2 w-full sm:w-auto">
-          <Plus className="h-4 w-4" />
-          Website Toevoegen
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link href="/client-portal/projects" className="flex-1 sm:flex-initial">
+            <Button variant="outline" className="gap-2 w-full">
+              <FolderKanban className="h-4 w-4" />
+              <span className="hidden sm:inline">Projecten Beheren</span>
+              <span className="sm:hidden">Projecten</span>
+            </Button>
+          </Link>
+          <Button onClick={() => setShowConnector(true)} className="gap-2 flex-1 sm:flex-initial">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Website Toevoegen</span>
+            <span className="sm:hidden">Toevoegen</span>
+          </Button>
+        </div>
       </div>
 
       {/* No sites connected */}

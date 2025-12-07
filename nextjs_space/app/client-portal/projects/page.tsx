@@ -25,6 +25,7 @@ import {
   Plus,
   ArrowLeft,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -123,12 +124,20 @@ export default function ProjectsPage() {
                 Beheer je websites en deel ze met collaborators
               </p>
             </div>
-            <Link href="/client-portal/projects/new" className="w-full sm:w-auto">
-              <Button className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="text-sm sm:text-base">Nieuw project</span>
-              </Button>
-            </Link>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Link href="/client-portal/content-hub" className="flex-1 sm:flex-initial">
+                <Button variant="outline" className="w-full gap-2 text-gray-300 border-gray-600 hover:bg-gray-800">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-sm sm:text-base">Content Hub</span>
+                </Button>
+              </Link>
+              <Link href="/client-portal/projects/new" className="flex-1 sm:flex-initial">
+                <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  <span className="text-sm sm:text-base">Nieuw project</span>
+                </Button>
+              </Link>
+            </div>
         </div>
       </div>
 
