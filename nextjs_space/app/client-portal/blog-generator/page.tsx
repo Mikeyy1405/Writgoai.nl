@@ -111,10 +111,10 @@ export default function BlogGenerator() {
   const [featuredImage, setFeaturedImage] = useState<string>('');
   const [socialMediaPost, setSocialMediaPost] = useState<any>(null);
   
-  // Collapsible states
+  // Collapsible states - SEO and Products open by default for better visibility
   const [basicOpen, setBasicOpen] = useState(true);
-  const [seoOpen, setSeoOpen] = useState(false);
-  const [productsOpen, setProductsOpen] = useState(false);
+  const [seoOpen, setSeoOpen] = useState(true);
+  const [productsOpen, setProductsOpen] = useState(true);
   
   // Load projects
   useEffect(() => {
@@ -676,36 +676,86 @@ export default function BlogGenerator() {
                   />
                 </div>
 
-                {/* Content Type */}
-                <div className="space-y-2">
-                  <Label className="text-white font-semibold">Soort Content</Label>
+                {/* Content Type - PROMINENTER GEMAAKT */}
+                <div className="space-y-3 p-4 bg-gradient-to-br from-[#ff6b35]/10 to-orange-800/10 border border-[#ff6b35]/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[#ff6b35]" />
+                    <Label className="text-white font-bold text-base">Soort Content *</Label>
+                  </div>
                   <Select value={contentType} onValueChange={setContentType}>
-                    <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                    <SelectTrigger className="border-[#ff6b35] bg-zinc-900 text-white h-12 font-medium">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-700 z-[9999]">
-                      <SelectItem value="informatief" className="text-white hover:bg-zinc-800">📝 Informatief Artikel</SelectItem>
-                      <SelectItem value="lijstje" className="text-white hover:bg-zinc-800">📋 Top Lijst / Lijstje</SelectItem>
-                      <SelectItem value="howto" className="text-white hover:bg-zinc-800">🎯 How-to / Tutorial</SelectItem>
-                      <SelectItem value="review-enkel" className="text-white hover:bg-zinc-800">⭐ Product Review (enkel product)</SelectItem>
-                      <SelectItem value="beste-lijst" className="text-white hover:bg-zinc-800">🏆 Beste Producten Lijst (meerdere)</SelectItem>
-                      <SelectItem value="vergelijking" className="text-white hover:bg-zinc-800">⚖️ Vergelijking (A vs B)</SelectItem>
-                      <SelectItem value="nieuws" className="text-white hover:bg-zinc-800">📰 Nieuwsartikel</SelectItem>
-                      <SelectItem value="gids" className="text-white hover:bg-zinc-800">📚 Uitgebreide Gids</SelectItem>
-                      <SelectItem value="mening" className="text-white hover:bg-zinc-800">💭 Mening / Opinion</SelectItem>
+                      <SelectItem value="informatief" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">📝</span>
+                          <span className="font-medium">Informatief Artikel</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="lijstje" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">📋</span>
+                          <span className="font-medium">Top Lijst / Lijstje</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="howto" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🎯</span>
+                          <span className="font-medium">How-to / Tutorial</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="review-enkel" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">⭐</span>
+                          <span className="font-medium">Product Review (enkel)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="beste-lijst" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🏆</span>
+                          <span className="font-medium">Beste Producten Lijst + Bol.com</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="vergelijking" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">⚖️</span>
+                          <span className="font-medium">Vergelijking (A vs B)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="nieuws" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">📰</span>
+                          <span className="font-medium">Nieuwsartikel</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gids" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">📚</span>
+                          <span className="font-medium">Uitgebreide Gids</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="mening" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">💭</span>
+                          <span className="font-medium">Mening / Opinion</span>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-400">
-                    {contentType === 'informatief' && 'Algemene informatie over een onderwerp'}
-                    {contentType === 'lijstje' && 'Top 10, beste tips, checklist, etc.'}
-                    {contentType === 'howto' && 'Stap-voor-stap handleiding'}
-                    {contentType === 'review-enkel' && 'Review van één specifiek product'}
-                    {contentType === 'beste-lijst' && 'Vergelijk meerdere producten met eigen afbeeldingen + affiliate links'}
-                    {contentType === 'vergelijking' && 'Vergelijk twee of meer opties'}
-                    {contentType === 'nieuws' && 'Actueel nieuwsbericht of update'}
-                    {contentType === 'gids' && 'Uitgebreide gids met meerdere hoofdstukken'}
-                    {contentType === 'mening' && 'Persoonlijke mening of standpunt'}
-                  </p>
+                  <div className="bg-zinc-900 p-3 rounded-lg">
+                    <p className="text-sm text-gray-300 leading-relaxed">
+                      {contentType === 'informatief' && '📝 Algemene informatie over een onderwerp - ideaal voor educatieve content'}
+                      {contentType === 'lijstje' && '📋 Top 10, beste tips, checklist - perfect voor quick wins en engagement'}
+                      {contentType === 'howto' && '🎯 Stap-voor-stap handleiding - praktisch en actionable voor lezers'}
+                      {contentType === 'review-enkel' && '⭐ Review van één specifiek product - diepgaand met voor- en nadelen'}
+                      {contentType === 'beste-lijst' && '🏆 Vergelijk meerdere producten met Bol.com affiliate links - ideaal voor conversie'}
+                      {contentType === 'vergelijking' && '⚖️ Vergelijk twee of meer opties - help lezers kiezen'}
+                      {contentType === 'nieuws' && '📰 Actueel nieuwsbericht of update - timely en relevant'}
+                      {contentType === 'gids' && '📚 Uitgebreide gids met meerdere hoofdstukken - uitgebreide informatiebron'}
+                      {contentType === 'mening' && '💭 Persoonlijke mening of standpunt - thought leadership'}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Language + Tone */}
@@ -795,6 +845,38 @@ export default function BlogGenerator() {
                     <p className="text-xs text-gray-400">
                       Vul een URL in om de sitemap te laden voor interne links (zonder project)
                     </p>
+                  </div>
+                )}
+
+                {/* Direct Publiceren naar WordPress - NIEUW EN PROMINENT */}
+                {projectId && (
+                  <div className="space-y-3 p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/30 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-500/20 rounded-lg">
+                          <Globe className="w-5 h-5 text-green-400" />
+                        </div>
+                        <div>
+                          <Label className="text-white font-bold text-base block">Direct Publiceren naar WordPress</Label>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Publiceer automatisch naar je WordPress website na genereren
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={publishToWordPress}
+                        onCheckedChange={setPublishToWordPress}
+                        className="data-[state=checked]:bg-green-500"
+                      />
+                    </div>
+                    {publishToWordPress && (
+                      <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded">
+                        <CheckCircle2 className="w-4 h-4 text-green-400" />
+                        <span className="text-sm text-green-300">
+                          Artikel wordt direct gepubliceerd na generatie
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </CollapsibleContent>
@@ -1042,15 +1124,20 @@ export default function BlogGenerator() {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* SECTIE 4: AFFILIATE PRODUCTEN */}
+            {/* SECTIE 4: AFFILIATE PRODUCTEN - VERBETERD */}
             <Collapsible open={productsOpen} onOpenChange={setProductsOpen}>
               <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <ShoppingBag className="w-5 h-5 text-[#ff6b35]" />
-                    <h3 className="text-lg font-semibold text-white">Affiliate Producten (optioneel)</h3>
+                <div className="flex items-center justify-between p-4 bg-gradient-to-br from-[#ff6b35]/10 to-orange-800/10 border border-[#ff6b35]/30 rounded-lg hover:bg-[#ff6b35]/20 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#ff6b35]/20 rounded-lg">
+                      <ShoppingBag className="w-5 h-5 text-[#ff6b35]" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Affiliate Producten & Links</h3>
+                      <p className="text-xs text-gray-400">Voeg Bol.com producten of eigen affiliate links toe</p>
+                    </div>
                     {selectedProducts.length > 0 && (
-                      <Badge variant="outline" className="border-green-500 text-green-400">
+                      <Badge variant="outline" className="border-green-500 text-green-400 ml-2">
                         {selectedProducts.length} producten
                       </Badge>
                     )}
@@ -1060,18 +1147,50 @@ export default function BlogGenerator() {
               </CollapsibleTrigger>
               
               <CollapsibleContent className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label className="text-white font-semibold">Platform</Label>
+                {/* Info banner */}
+                <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <Sparkles className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-blue-100">
+                    <p className="font-semibold mb-1">💰 Verdien met affiliate marketing</p>
+                    <p className="text-blue-200/80">
+                      Voeg producten toe aan je content en verdien commissie op verkopen via Bol.com of je eigen affiliate links.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-white font-bold text-base">Affiliate Platform</Label>
                   <Select value={affiliatePlatform} onValueChange={(value: any) => setAffiliatePlatform(value)}>
-                    <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                    <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-700 z-[9999]">
-                      <SelectItem value="none" className="text-white hover:bg-zinc-800">Geen producten</SelectItem>
-                      <SelectItem value="bolcom" className="text-white hover:bg-zinc-800">Bol.com</SelectItem>
-                      <SelectItem value="custom" className="text-white hover:bg-zinc-800">Eigen links</SelectItem>
+                      <SelectItem value="none" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span>🚫</span>
+                          <span>Geen producten</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="bolcom" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span>🛒</span>
+                          <span className="font-medium">Bol.com Producten</span>
+                          <Badge variant="outline" className="ml-2 text-xs">Aanbevolen</Badge>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="custom" className="text-white hover:bg-zinc-800 py-3">
+                        <div className="flex items-center gap-2">
+                          <span>🔗</span>
+                          <span>Eigen Affiliate Links</span>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-400">
+                    {affiliatePlatform === 'none' && 'Geen affiliate producten toevoegen'}
+                    {affiliatePlatform === 'bolcom' && '🛒 Zoek en selecteer producten direct vanuit Bol.com catalogus'}
+                    {affiliatePlatform === 'custom' && '🔗 Voeg je eigen affiliate links toe van elk platform'}
+                  </p>
                 </div>
 
                 {affiliatePlatform === 'bolcom' && (
@@ -1082,57 +1201,105 @@ export default function BlogGenerator() {
                       projectId={projectId || undefined}
                     />
                     
-                    <div className="space-y-2">
-                      <Label className="text-white font-semibold">Link Weergave</Label>
+                    <div className="space-y-3 p-4 bg-zinc-800/50 rounded-lg">
+                      <Label className="text-white font-bold text-base">📦 Link Weergave Stijl</Label>
                       <Select value={linkDisplayType} onValueChange={(value: any) => setLinkDisplayType(value)}>
-                        <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white">
+                        <SelectTrigger className="border-zinc-700 bg-zinc-900 text-white h-12">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700 z-[9999]">
-                          <SelectItem value="product-box" className="text-white hover:bg-zinc-800">Product Box ⭐</SelectItem>
-                          <SelectItem value="cta-box" className="text-white hover:bg-zinc-800">CTA Box</SelectItem>
-                          <SelectItem value="inline" className="text-white hover:bg-zinc-800">Inline Links</SelectItem>
-                          <SelectItem value="button" className="text-white hover:bg-zinc-800">Button</SelectItem>
-                          <SelectItem value="ai-mix" className="text-white hover:bg-zinc-800">AI Mix</SelectItem>
+                          <SelectItem value="product-box" className="text-white hover:bg-zinc-800 py-3">
+                            <div className="flex items-center gap-2">
+                              <span>📦</span>
+                              <span className="font-medium">Product Box</span>
+                              <Badge variant="outline" className="ml-2 text-xs">Beste conversie</Badge>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="cta-box" className="text-white hover:bg-zinc-800 py-3">
+                            <div className="flex items-center gap-2">
+                              <span>💬</span>
+                              <span>CTA Box</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="inline" className="text-white hover:bg-zinc-800 py-3">
+                            <div className="flex items-center gap-2">
+                              <span>🔗</span>
+                              <span>Inline Links</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="button" className="text-white hover:bg-zinc-800 py-3">
+                            <div className="flex items-center gap-2">
+                              <span>🔘</span>
+                              <span>Button</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="ai-mix" className="text-white hover:bg-zinc-800 py-3">
+                            <div className="flex items-center gap-2">
+                              <span>🤖</span>
+                              <span>AI Mix (Automatisch)</span>
+                            </div>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
+                      <div className="bg-zinc-900 p-3 rounded text-sm text-gray-300">
+                        {linkDisplayType === 'product-box' && '📦 Visuele productkaart met afbeelding, prijs en "Bekijk op Bol.com" knop - Hoogste conversie'}
+                        {linkDisplayType === 'cta-box' && '💬 Opvallende call-to-action box met product info'}
+                        {linkDisplayType === 'inline' && '🔗 Natuurlijke links in de tekst - minst opdringerig'}
+                        {linkDisplayType === 'button' && '🔘 Duidelijke button met product naam'}
+                        {linkDisplayType === 'ai-mix' && '🤖 AI kiest automatisch de beste weergave per product'}
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {affiliatePlatform === 'custom' && (
-                  <div className="space-y-3">
-                    {customAffiliateLinks.map((link, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={link.name}
-                          onChange={(e) => updateCustomLink(index, 'name', e.target.value)}
-                          placeholder="Product naam..."
-                          className="flex-1 border-zinc-700 bg-zinc-900 text-white"
-                        />
-                        <Input
-                          value={link.url}
-                          onChange={(e) => updateCustomLink(index, 'url', e.target.value)}
-                          placeholder="https://..."
-                          className="flex-1 border-zinc-700 bg-zinc-900 text-white"
-                        />
-                        <Button
-                          onClick={() => removeCustomLink(index)}
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                      <span className="text-lg">💡</span>
+                      <div className="text-sm text-yellow-100">
+                        <p className="font-semibold">Tip: Gebruik je eigen affiliate links</p>
+                        <p className="text-yellow-200/80 mt-1">
+                          Voeg affiliate links toe van Amazon, bol.com, of andere platforms. Geef een duidelijke productnaam en je volledige affiliate URL.
+                        </p>
                       </div>
-                    ))}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {customAffiliateLinks.map((link, index) => (
+                        <div key={index} className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-white text-sm">Product {index + 1}</Label>
+                            <Button
+                              onClick={() => removeCustomLink(index)}
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-400 hover:text-red-300 h-8"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <Input
+                            value={link.name}
+                            onChange={(e) => updateCustomLink(index, 'name', e.target.value)}
+                            placeholder="Bijvoorbeeld: iPhone 15 Pro Max"
+                            className="border-zinc-700 bg-zinc-900 text-white"
+                          />
+                          <Input
+                            value={link.url}
+                            onChange={(e) => updateCustomLink(index, 'url', e.target.value)}
+                            placeholder="https://partner-link.com/product?ref=jouwcode"
+                            className="border-zinc-700 bg-zinc-900 text-white"
+                          />
+                        </div>
+                      ))}
+                    </div>
                     <Button
                       onClick={addCustomLink}
                       variant="outline"
-                      className="w-full border-zinc-700 text-white hover:bg-zinc-800"
+                      className="w-full border-[#ff6b35] text-[#ff6b35] hover:bg-[#ff6b35]/10"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Link Toevoegen
+                      Nog een Link Toevoegen
                     </Button>
                   </div>
                 )}
