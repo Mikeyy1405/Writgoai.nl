@@ -132,6 +132,10 @@ export default function ConfigPanel({
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
                 <SelectItem value="blog-artikel">Blog artikel</SelectItem>
+                <SelectItem value="informatief">Informatief artikel</SelectItem>
+                <SelectItem value="beste-lijstje">Beste lijstje / Top lijst</SelectItem>
+                <SelectItem value="review">Product Review</SelectItem>
+                <SelectItem value="vergelijking">Vergelijking</SelectItem>
                 <SelectItem value="landingspagina">Landingspagina</SelectItem>
                 <SelectItem value="product-beschrijving">Product beschrijving</SelectItem>
                 <SelectItem value="about-us">About Us pagina</SelectItem>
