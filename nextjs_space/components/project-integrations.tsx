@@ -221,7 +221,7 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
                   placeholder={project?.wordpressPassword ? "••••••••" : ""}
                   className="bg-zinc-800 border-zinc-700 text-white text-xs sm:text-sm mt-1"
                 />
-                <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
                   {project?.wordpressPassword ? "Laat leeg om het huidige wachtwoord te behouden" : "Maak een application password aan in WordPress → Gebruikers → Profiel"}
                 </p>
               </div>
@@ -252,7 +252,7 @@ export default function ProjectIntegrations({ projectId }: ProjectIntegrationsPr
           ) : project?.wordpressUrl ? (
             <div className="text-xs sm:text-sm space-y-2">
               <p className="text-gray-400">Geconfigureerd voor:</p>
-              <p className="text-white font-medium break-all">{project.wordpressUrl}</p>
+              <p className="text-white font-medium break-words">{project.wordpressUrl}</p>
               <p className="text-green-400 text-xs">✓ Inloggegevens opgeslagen</p>
             </div>
           ) : (
