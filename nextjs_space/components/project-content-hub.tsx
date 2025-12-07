@@ -333,15 +333,15 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
         </TabsList>
 
         <TabsContent value="all">
-          <WordPressPostsList siteId={site.id} filter="all" />
+          <WordPressPostsList siteId={site.id} wordpressUrl={site.wordpressUrl} />
         </TabsContent>
 
         <TabsContent value="pending">
-          <WordPressPostsList siteId={site.id} filter="pending" />
+          <WordPressPostsList siteId={site.id} wordpressUrl={site.wordpressUrl} />
         </TabsContent>
 
         <TabsContent value="completed">
-          <WordPressPostsList siteId={site.id} filter="completed" />
+          <WordPressPostsList siteId={site.id} wordpressUrl={site.wordpressUrl} />
         </TabsContent>
 
         <TabsContent value="map">
