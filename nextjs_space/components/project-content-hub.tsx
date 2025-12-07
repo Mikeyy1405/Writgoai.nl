@@ -110,23 +110,16 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
           if (createResponse.ok) {
             const createData = await createResponse.json();
             if (createData.success && createData.site) {
-              // Use the full response data with defaults for missing fields
-              setSite({
-                ...createData.site,
-                lastSyncedAt: createData.site.lastSyncedAt || null,
-                authorityScore: createData.site.authorityScore || null,
-                niche: createData.site.niche || null,
-                totalArticles: createData.site.totalArticles || 0,
-                completedArticles: createData.site.completedArticles || 0,
-                createdAt: createData.site.createdAt || new Date().toISOString(),
-                projectId: projectId,
-              });
+              // API now returns complete site data with all required fields
+              setSite(createData.site);
+              console.log('[Content Hub] Successfully auto-created ContentHubSite from project WordPress config');
               toast.success('WordPress configuratie overgenomen van project instellingen');
             }
           } else {
             const errorData = await createResponse.json().catch(() => ({}));
             console.error('Failed to auto-create ContentHubSite from project WordPress config:', errorData);
-            toast.error('Kon WordPress configuratie niet overnemen. Probeer handmatig te verbinden.');
+            // Don't show error toast since this is silent auto-creation - user can still connect manually
+            console.log('[Content Hub] Auto-creation failed, user will see manual connection option');
           }
           
           // Reset the flag after the auto-creation attempt
