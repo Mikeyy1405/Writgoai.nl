@@ -280,7 +280,7 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
             </p>
             <div className="flex flex-col gap-3 items-center">
               <Button 
-                onClick={() => router.push(`/dashboard/client/projects/${projectId}?tab=integraties`)}
+                onClick={() => router.push(`/client-portal/projects/${projectId}?tab=integrations`)}
                 className="gap-2"
               >
                 <Settings className="h-4 w-4" />
