@@ -80,11 +80,11 @@ export async function GET() {
       wordpressPassword: project.wordpressPassword,
       wordpressCategory: project.wordpressCategory,
       wordpressAutoPublish: project.wordpressAutoPublish,
-      language: 'NL', // Default to NL for client projects
+      language: project.language || 'NL', // Use project's language setting
       niche: project.niche,
       targetAudience: project.targetAudience,
       brandVoice: project.brandVoice,
-      keywords: project.keywords || [],
+      keywords: Array.isArray(project.keywords) ? project.keywords : [],
       isActive: project.isActive,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
