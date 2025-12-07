@@ -64,8 +64,8 @@ export const baseNavItems: NavigationItem[] = [
   // Dashboard
   { label: 'Dashboard', href: '/client-portal', icon: LayoutDashboard },
   
-  // Content Hub - Simplified single entry point
-  { label: 'Content Hub', href: '/client-portal/content-hub', icon: Globe },
+  // Projecten - Content Hub is now integrated per-project
+  { label: 'Projecten', href: '/client-portal/projects', icon: FolderKanban },
   
   // AI Writer Studio - NEW
   { label: 'AI Writer', href: '/client-portal/ai-writer', icon: Sparkles },
