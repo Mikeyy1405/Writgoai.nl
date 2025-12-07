@@ -20,7 +20,6 @@ import {
   FolderKanban,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import WebsiteConnector from '@/app/client-portal/content-hub/components/website-connector';
 import TopicalMapView from '@/app/client-portal/content-hub/components/topical-map-view';
 import AutopilotSettings from '@/app/client-portal/content-hub/components/autopilot-settings';
 import BibliotheekView from '@/app/client-portal/content-hub/components/bibliotheek-view';
@@ -48,7 +47,6 @@ interface ProjectContentHubProps {
 export default function ProjectContentHub({ projectId, projectUrl }: ProjectContentHubProps) {
   const [site, setSite] = useState<ContentHubSite | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showConnector, setShowConnector] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [hasWordPressConfigured, setHasWordPressConfigured] = useState(false);
   const [autoCreating, setAutoCreating] = useState(false);
@@ -148,11 +146,7 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
     loadProjectSite();
   }, [projectId, loadProjectSite]);
 
-  const handleSiteConnected = (connectedSite: any) => {
-    loadProjectSite();
-    setShowConnector(false);
-    toast.success('Website succesvol verbonden!');
-  };
+
 
   const handleSyncExisting = async () => {
     if (!site || syncing || isSyncingRef.current) return;
@@ -272,36 +266,32 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
       );
     }
     
-    // No WordPress configuration found - show manual connection option
+    // No WordPress configuration found - direct user to configure it in project settings
     return (
       <div className="space-y-6">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Globe className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Content Strategy & Topical Map</h3>
+            <Settings className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold mb-2">WordPress Configuratie Vereist</h3>
             <p className="text-muted-foreground mb-4 text-center max-w-md">
-              Genereer een topical map en plan je content strategie. WordPress publicatie gebeurt via je Project instellingen.
+              Om AI-gegenereerde content te gebruiken, moet je eerst WordPress configureren in je Project instellingen.
             </p>
-            <div className="flex flex-col gap-2 items-center">
-              <Button onClick={() => setShowConnector(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Start Content Planning
+            <div className="flex flex-col gap-3 items-center">
+              <Button 
+                onClick={() => window.location.href = `/dashboard/client/projects/${projectId}?tab=integraties`}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Ga naar Project Instellingen
               </Button>
-              <p className="text-xs text-muted-foreground">
-                💡 Tip: Configureer WordPress eerst in je Project instellingen (Integraties tab)
-              </p>
+              <div className="text-xs text-muted-foreground text-center space-y-1">
+                <p>📍 Navigeer naar de <strong>Integraties</strong> tab</p>
+                <p>🔗 Vul je WordPress URL, gebruikersnaam en applicatie wachtwoord in</p>
+                <p>✅ Na configuratie kun je hier content genereren</p>
+              </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Website Connector Modal */}
-        {showConnector && (
-          <WebsiteConnector
-            onClose={() => setShowConnector(false)}
-            onSuccess={handleSiteConnected}
-            projectId={projectId}
-          />
-        )}
       </div>
     );
   }
@@ -468,15 +458,6 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
           <AutopilotSettings siteId={site.id} />
         </TabsContent>
       </Tabs>
-
-      {/* Website Connector Modal (for reconfiguration) */}
-      {showConnector && (
-        <WebsiteConnector
-          onClose={() => setShowConnector(false)}
-          onSuccess={handleSiteConnected}
-          projectId={projectId}
-        />
-      )}
     </div>
   );
 }
