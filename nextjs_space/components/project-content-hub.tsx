@@ -93,7 +93,7 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
         const project = projectData.project;
         
         // Check if project has WordPress credentials configured
-        const hasWpConfig = Boolean(project.wordpressUrl && project.wordpressUsername && project.wordpressPassword);
+        const hasWpConfig = Boolean(project.wordpressUrl && project.wordpressUsername && project.hasWordPressPassword);
         setHasWordPressConfigured(hasWpConfig);
         
         if (hasWpConfig) {
@@ -103,15 +103,10 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
           setAutoCreating(true);
           
           try {
-            const createResponse = await fetch('/api/content-hub/connect-wordpress', {
+            // Use server-side auto-create endpoint that has access to stored credentials
+            const createResponse = await fetch(`/api/client/projects/${projectId}/auto-create-content-hub`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                wordpressUrl: project.wordpressUrl,
-                username: project.wordpressUsername,
-                applicationPassword: project.wordpressPassword,
-                projectId: projectId,
-              }),
             });
             
             if (createResponse.ok) {
