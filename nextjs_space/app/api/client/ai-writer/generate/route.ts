@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
   * Vergelijking met alternatieven
   * Eindoordeel met score (uit 10)
 - Wees eerlijk en objectief
-- Gebruik praktijkvoorbeelden uit eigen "ervaring"
+- Gebruik praktijkvoorbeelden uit realistische scenario's
 - Geef duidelijk aan voor wie dit product wel/niet geschikt is
 - Sluit af met een koopadvies`,
 
