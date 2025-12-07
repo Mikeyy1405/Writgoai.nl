@@ -54,6 +54,8 @@ interface NavItem {
 // Dashboard & Overview
 const overviewItems: NavItem[] = [
   { label: 'Dashboard', href: '/client-portal', icon: <LayoutDashboard size={20} /> },
+  { label: 'Content Hub', href: '/client-portal/content-hub', icon: <Sparkles size={20} />, badge: 'Nieuw', badgeColor: 'green' },
+  { label: 'Projecten', href: '/client-portal/projects', icon: <Globe size={20} /> },
 ];
 
 // "Zelf Doen" - AI Tools (gratis te gebruiken)
