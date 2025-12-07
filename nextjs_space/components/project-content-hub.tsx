@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +46,7 @@ interface ProjectContentHubProps {
 }
 
 export default function ProjectContentHub({ projectId, projectUrl }: ProjectContentHubProps) {
+  const router = useRouter();
   const [site, setSite] = useState<ContentHubSite | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -278,7 +280,7 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
             </p>
             <div className="flex flex-col gap-3 items-center">
               <Button 
-                onClick={() => window.location.href = `/dashboard/client/projects/${projectId}?tab=integraties`}
+                onClick={() => router.push(`/dashboard/client/projects/${projectId}?tab=integraties`)}
                 className="gap-2"
               >
                 <Settings className="h-4 w-4" />
