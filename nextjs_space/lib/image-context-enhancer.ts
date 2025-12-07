@@ -41,18 +41,31 @@ export function extractEnhancedImageContext(
     Math.min(content.length, placeholderIndex + contextWindowAfter)
   );
 
-  // Extract the most recent heading (h1, h2, or h3)
+  // Extract the most recent heading (h1, h2, or h3) from BEFORE the image
   const headingMatches = contextBefore.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/gi);
   const heading = headingMatches && headingMatches.length > 0
     ? headingMatches[headingMatches.length - 1].replace(/<[^>]+>/g, '').trim()
     : null;
 
-  // Extract multiple paragraphs from after the image placeholder
-  const paragraphMatches = contextAfter.match(/<p[^>]*>([^<]+)<\/p>/gi) || [];
-  const paragraphs = paragraphMatches
-    .slice(0, maxParagraphs)
+  // Extract multiple paragraphs from BEFORE the image (the content leading up to it)
+  // This gives us the context about what the image should illustrate
+  const paragraphMatchesBefore = contextBefore.match(/<p[^>]*>([^<]+)<\/p>/gi) || [];
+  
+  // Take the LAST few paragraphs before the image (most relevant context)
+  const paragraphsBefore = paragraphMatchesBefore
+    .slice(-maxParagraphs) // Get last N paragraphs
     .map(p => p.replace(/<[^>]+>/g, '').trim())
     .filter(p => p.length > 20); // Filter out very short paragraphs
+
+  // Also extract paragraphs AFTER the image as additional context
+  const paragraphMatchesAfter = contextAfter.match(/<p[^>]*>([^<]+)<\/p>/gi) || [];
+  const paragraphsAfter = paragraphMatchesAfter
+    .slice(0, 1) // Get first paragraph after
+    .map(p => p.replace(/<[^>]+>/g, '').trim())
+    .filter(p => p.length > 20);
+
+  // Combine: prioritize paragraphs before (the context), optionally add one after
+  const paragraphs = [...paragraphsBefore, ...paragraphsAfter].slice(0, maxParagraphs);
 
   // Build full context string
   const fullContext = [
