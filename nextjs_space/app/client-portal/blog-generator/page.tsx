@@ -39,7 +39,9 @@ import {
   ListOrdered,
   Wand2,
   Edit3,
-  Settings2
+  Settings2,
+  CheckCircle2,
+  Globe
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BlogCanvas from '@/components/blog-canvas';
