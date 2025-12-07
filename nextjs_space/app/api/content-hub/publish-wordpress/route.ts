@@ -75,13 +75,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check WordPress configuration - prefer Project configuration over ContentHubSite
-    let wpSiteUrl = article.site.wordpressUrl;
-    let wpUsername = article.site.wordpressUsername;
-    let wpAppPassword = article.site.wordpressAppPassword;
-    let configSource = 'ContentHubSite';
+    // Check WordPress configuration - prefer Project configuration if complete
+    let wpSiteUrl: string | null = null;
+    let wpUsername: string | null = null;
+    let wpAppPassword: string | null = null;
+    let configSource = 'none';
     
-    // Prefer Project credentials if available (unified WordPress configuration)
+    // First, try to use Project credentials if available and complete (unified WordPress configuration)
     if (article.site.project) {
       const project = article.site.project;
       if (project.wordpressUrl && project.wordpressUsername && project.wordpressPassword) {
@@ -93,14 +93,14 @@ export async function POST(req: NextRequest) {
       }
     }
     
-    // Fallback to ContentHubSite configuration if Project doesn't have WordPress configured
+    // Fallback to ContentHubSite configuration if Project doesn't have complete WordPress configuration
     if (!wpSiteUrl || !wpUsername || !wpAppPassword) {
-      if (article.site.isConnected && article.site.wordpressAppPassword) {
-        console.log('[Content Hub] Falling back to ContentHubSite WordPress credentials');
+      if (article.site.isConnected && article.site.wordpressUrl && article.site.wordpressUsername && article.site.wordpressAppPassword) {
+        console.log('[Content Hub] Using ContentHubSite WordPress credentials (fallback)');
         wpSiteUrl = article.site.wordpressUrl;
         wpUsername = article.site.wordpressUsername;
         wpAppPassword = article.site.wordpressAppPassword;
-        configSource = 'ContentHubSite (fallback)';
+        configSource = 'ContentHubSite';
       }
     }
     
