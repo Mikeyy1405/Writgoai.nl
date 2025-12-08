@@ -8,7 +8,7 @@ import { deductCredits } from '@/lib/credits';
 // Lazy initialization to avoid build-time errors when env vars are not available
 function getOpenAIClient() {
   return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
   });
 }
 
