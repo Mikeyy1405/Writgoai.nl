@@ -7,6 +7,13 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
+    // Redirect old writer routes to Ultimate Writer
+    if (path === '/client-portal/blog-writer' || 
+        path === '/client-portal/ai-writer' || 
+        path === '/client-portal/content-writer') {
+      return NextResponse.redirect(new URL('/client-portal/ultimate-writer', req.url));
+    }
+
     // Admin-only routes - alleen voor info@writgo.nl
     if (path.startsWith('/admin') || path.startsWith('/superadmin')) {
       if (token?.email !== 'info@writgo.nl' && token?.role !== 'admin' && token?.role !== 'superadmin') {
@@ -30,5 +37,8 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/superadmin/:path*',
+    '/client-portal/blog-writer',
+    '/client-portal/ai-writer',
+    '/client-portal/content-writer',
   ],
 };
