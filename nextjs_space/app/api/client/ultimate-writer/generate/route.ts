@@ -115,11 +115,15 @@ export async function POST(request: NextRequest) {
             const searchQuery = `${config.primaryKeyword} ${config.topic}`.slice(0, 100);
             const bolProducts = await searchBolcomProducts(
               searchQuery,
-              config.bolProductCount,
-              project.bolcomClientId,
-              project.bolcomClientSecret
+              {
+                clientId: project.bolcomClientId,
+                clientSecret: project.bolcomClientSecret
+              },
+              {
+                resultsPerPage: config.bolProductCount
+              }
             );
-            config.bolProducts = bolProducts.slice(0, config.bolProductCount);
+            config.bolProducts = bolProducts.results.slice(0, config.bolProductCount);
             console.log(`✅ [Ultimate Writer] Found ${config.bolProducts.length} Bol.com products`);
           } catch (error) {
             console.error('⚠️ [Ultimate Writer] Bol.com search failed:', error);
