@@ -3,7 +3,6 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { stripe } from '@/lib/stripe';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 
@@ -35,24 +34,12 @@ export async function GET(req: Request) {
       client.subscriptionStatus === 'active' ||
       client.subscriptionStatus === 'trialing';
 
-    // Check if subscription will be canceled at period end
-    let cancelAtPeriodEnd = false;
-    if (client.subscriptionId) {
-      try {
-        const subscription = await stripe.subscriptions.retrieve(client.subscriptionId);
-        cancelAtPeriodEnd = subscription.cancel_at_period_end || false;
-      } catch (error) {
-        console.error('Error checking subscription:', error);
-      }
-    }
-
     return NextResponse.json({
       hasActiveSubscription,
       plan: client.subscriptionPlan,
       status: client.subscriptionStatus,
       monthlyCredits: client.monthlyCredits || 0,
       currentPeriodEnd: client.subscriptionEndDate,
-      cancelAtPeriodEnd,
     });
   } catch (error: any) {
     console.error('Get subscription error:', error);

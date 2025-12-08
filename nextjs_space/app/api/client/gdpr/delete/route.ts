@@ -80,24 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════════
-    // STAP 1: Annuleer actief Stripe abonnement
-    // ═══════════════════════════════════════════════════════
-
-    if (client.subscriptionId && stripe) {
-      try {
-        await stripe.subscriptions.cancel(client.subscriptionId);
-        log('info', 'Stripe subscription cancelled for GDPR deletion', {
-          clientId,
-          subscriptionId: client.subscriptionId,
-        });
-      } catch (error) {
-        console.error('Failed to cancel Stripe subscription:', error);
-        // Continue anyway - Stripe kan al geannuleerd zijn
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // STAP 2: Verwijder alle data (Cascade delete via Prisma)
+    // Verwijder alle data (Cascade delete via Prisma)
     // ═══════════════════════════════════════════════════════
 
     // Prisma verwijdert automatisch alle gerelateerde data via onDelete: Cascade

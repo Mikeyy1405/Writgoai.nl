@@ -2,14 +2,13 @@
 
 export const dynamic = "force-dynamic";
 /**
- * Cancel subscription
+ * Cancel subscription - Payment system migrated to Moneybird
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import Stripe from 'stripe';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
@@ -49,34 +48,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!stripe) {
-      return NextResponse.json(
-        { error: 'Payment system not configured' },
-        { status: 503 }
-      );
-    }
-
-    // Cancel subscription at period end (client keeps access until end of billing period)
-    const subscription = await stripe.subscriptions.update(
-      client.subscriptionId,
-      {
-        cancel_at_period_end: true
-      }
-    ) as any;
-
-    // Update client
-    await prisma.client.update({
-      where: { id: clientId },
-      data: {
-        subscriptionStatus: 'cancelled'
-      }
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Abonnement wordt geannuleerd aan het einde van de huidige periode',
-      endsAt: subscription.current_period_end
-    });
+    // Payment system being migrated to Moneybird
+    return NextResponse.json(
+      { 
+        error: 'Betalingssysteem wordt gemigreerd naar Moneybird. Probeer later opnieuw.',
+        migrating: true 
+      },
+      { status: 503 }
+    );
 
   } catch (error: any) {
     console.error('Cancel subscription error:', error);

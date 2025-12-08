@@ -58,83 +58,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-      include: {
-        managedServiceSubscription: true,
+    // Payment system being migrated to Moneybird
+    return NextResponse.json(
+      { 
+        error: 'Betalingssysteem wordt gemigreerd naar Moneybird. Probeer later opnieuw.',
+        migrating: true 
       },
-    });
-
-    if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-    }
-
-    if (client.managedServiceSubscription) {
-      return NextResponse.json(
-        { error: 'You already have an active subscription' },
-        { status: 400 }
-      );
-    }
-
-    const body = await req.json();
-    const {
-      projectId,
-      contentPiecesPerMonth,
-      socialPostsPerWeek,
-      platforms,
-      language,
-    } = body;
-
-    // Maak Stripe Subscription
-    const subscription = await getStripe().subscriptions.create({
-      customer: await getOrCreateStripeCustomer(client.email, client.name),
-      items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product: (await getStripe().products.create({
-              name: 'Writgo Managed Service AI',
-              description: 'Complete content & social media service - automatisch gegenereerd',
-            })).id,
-            unit_amount: 19900, // €199,00
-            recurring: {
-              interval: 'month',
-            },
-          },
-        },
-      ],
-      payment_behavior: 'default_incomplete',
-      payment_settings: {
-        save_default_payment_method: 'on_subscription',
-      },
-      expand: ['latest_invoice.payment_intent'],
-    });
-
-    const managedService = await prisma.managedServiceSubscription.create({
-      data: {
-        clientId: client.id,
-        projectId: projectId || null,
-        stripeSubscriptionId: subscription.id,
-        status: 'active',
-        contentPiecesPerMonth: contentPiecesPerMonth || 8,
-        socialPostsPerWeek: socialPostsPerWeek || 5,
-        platforms: platforms || [],
-        language: language || 'NL',
-      },
-      include: {
-        project: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    return NextResponse.json({
-      subscription: managedService,
-      paymentIntent: (subscription.latest_invoice as any)?.payment_intent,
-    });
+      { status: 503 }
+    );
   } catch (error) {
     console.error('[MANAGED_SERVICE_POST]', error);
     return NextResponse.json(
@@ -234,13 +165,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Cancel Stripe subscription
-    if (client.managedServiceSubscription.stripeSubscriptionId) {
-      await getStripe().subscriptions.cancel(
-        client.managedServiceSubscription.stripeSubscriptionId
-      );
-    }
-
+    // Cancel subscription (Stripe removed - Moneybird integration coming)
     await prisma.managedServiceSubscription.update({
       where: { id: client.managedServiceSubscription.id },
       data: {
@@ -256,22 +181,4 @@ export async function DELETE(req: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-async function getOrCreateStripeCustomer(email: string, name: string) {
-  const customers = await getStripe().customers.list({
-    email,
-    limit: 1,
-  });
-
-  if (customers.data.length > 0) {
-    return customers.data[0].id;
-  }
-
-  const customer = await getStripe().customers.create({
-    email,
-    name,
-  });
-
-  return customer.id;
 }
