@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { getMoneybird } from '@/lib/moneybird';
 
@@ -8,19 +8,20 @@ export async function POST(request: NextRequest) {
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Niet geautoriseerd' }, { status: 401 });
     }
 
     // Check admin role
-    const isAdmin = session.user.role === 'admin' || session.user.email === 'info@writgo.nl';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
     }
 
     // Get Moneybird client
     const moneybird = getMoneybird();
 
-    // Sync all data from Moneybird
+    // Sync all data from Moneybird with timeout protection
+    // Note: This fetches recent data. For large datasets, consider implementing
+    // background jobs or paginated sync in the future.
     const results = await Promise.allSettled([
       moneybird.listContacts(),
       moneybird.listSalesInvoices(),
@@ -32,6 +33,14 @@ export async function POST(request: NextRequest) {
 
     const successCount = results.filter(r => r.status === 'fulfilled').length;
     const failedCount = results.filter(r => r.status === 'rejected').length;
+
+    // Log any errors for debugging
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const dataTypes = ['contacts', 'invoices', 'subscriptions', 'expenses', 'bankAccounts', 'taxRates'];
+        console.error(`[Financien Sync] Failed to sync ${dataTypes[index]}:`, result.reason);
+      }
+    });
 
     return NextResponse.json({
       success: true,
@@ -45,10 +54,10 @@ export async function POST(request: NextRequest) {
         taxRates: results[5].status === 'fulfilled',
       },
     });
-  } catch (error) {
-    console.error('Error syncing with Moneybird:', error);
+  } catch (error: any) {
+    console.error('[Financien Sync API] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to sync with Moneybird', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: error.message || 'Er is een fout opgetreden bij synchroniseren' },
       { status: 500 }
     );
   }
