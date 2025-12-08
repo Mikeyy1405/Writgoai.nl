@@ -137,7 +137,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      content: generatedContent,
+      const deductResult = await deductCredits(
+  client.id, 
+  creditsNeeded, 
+  `Ultimate Writer: ${config.contentType} - ${config.topic}`,
+  { tool: 'ultimate_writer' }
+);
       sections,
       creditsUsed: creditsNeeded,
       creditsRemaining: deductResult.remainingCredits ?? client.credits - creditsNeeded,
