@@ -28,6 +28,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import ProjectSelector from '@/components/project-selector';
+import TopicSuggestions from './topic-suggestions';
 import type { UltimateWriterConfig } from '../page';
 
 interface ConfigPanelProps {
@@ -98,6 +99,12 @@ export default function ConfigPanel({
                 onChange={(e) => updateConfig({ topic: e.target.value })}
                 placeholder="Bijvoorbeeld: De voordelen van elektrische auto's"
                 className="bg-zinc-800 border-zinc-700 text-white min-h-[80px]"
+              />
+              
+              {/* AI Topic Suggestions */}
+              <TopicSuggestions
+                onSelect={(topic) => updateConfig({ topic })}
+                language={config.language}
               />
             </div>
 

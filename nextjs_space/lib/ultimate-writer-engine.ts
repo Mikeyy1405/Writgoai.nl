@@ -276,6 +276,7 @@ INSTRUCTIES:
 6. Gebruik opsommingen waar relevant
 7. Schrijf engaging en leesbare content
 ${config.includeTableOfContents ? '8. Begin met een inhoudsopgave in <div class="toc">...</div>' : ''}
+${config.includeFAQ ? '9. Eindig met een FAQ sectie met <h2>Veelgestelde Vragen</h2> en minimaal 5 vragen in <div class="faq-item">...</div>' : ''}
 
 OUTPUT FORMAT: Pure HTML content, geen wrappers, geen markdown.`;
 

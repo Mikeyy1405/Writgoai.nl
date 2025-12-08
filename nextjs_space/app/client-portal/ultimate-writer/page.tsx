@@ -128,6 +128,12 @@ export default function UltimateWriterPage() {
       currentStep: 'Initialiseren',
     });
 
+    // Setup timeout (5 minutes)
+    const timeoutId = setTimeout(() => {
+      toast.error('Generatie duurt te lang. Probeer het opnieuw met een korter artikel.');
+      setIsGenerating(false);
+    }, 300000);
+
     try {
       const response = await fetch('/api/client/ultimate-writer/generate', {
         method: 'POST',
@@ -185,15 +191,32 @@ export default function UltimateWriterPage() {
           }
         }
       }
+
+      clearTimeout(timeoutId);
     } catch (error: any) {
       console.error('Generation error:', error);
-      toast.error(error.message || 'Fout bij genereren van content');
+      
+      // More specific error messages
+      let errorMessage = 'Fout bij genereren van content';
+      if (error.message.includes('credits')) {
+        errorMessage = 'Onvoldoende credits. Koop extra credits om door te gaan.';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Generatie duurde te lang. Probeer een korter artikel.';
+      } else if (error.message.includes('Not authenticated')) {
+        errorMessage = 'Je sessie is verlopen. Log opnieuw in.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
       setProgress({
         phase: 'research',
         progress: 0,
         message: 'Fout opgetreden',
-        currentStep: error.message,
+        currentStep: errorMessage,
       });
+      
+      clearTimeout(timeoutId);
     } finally {
       setIsGenerating(false);
     }
