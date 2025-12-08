@@ -39,8 +39,7 @@ export const adminNavItems: AdminNavigationItem[] = [
     label: 'Financieel',
     icon: DollarSign,
     items: [
-      { label: 'Financiën Dashboard', href: '/financien', icon: BarChart3 },
-      { label: 'Oude Dashboard', href: '/admin/finance', icon: BarChart3 },
+      { label: 'Financiën', href: '/financien', icon: BarChart3 },
       { label: 'Facturen', href: '/admin/invoices', icon: Receipt },
       { label: 'Affiliate Payouts', href: '/admin/affiliate-payouts', icon: CreditCard },
     ],
