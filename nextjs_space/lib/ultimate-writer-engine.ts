@@ -98,12 +98,9 @@ export async function* generateContentStream(
     let researchData = '';
     if (config.webResearch) {
       const searchResults = await quickWebSearch(
-        `${config.primaryKeyword} ${config.topic}`,
-        3
+        `${config.primaryKeyword} ${config.topic}`
       );
-      researchData = searchResults
-        .map(r => `${r.title}\n${r.snippet}\nBron: ${r.url}`)
-        .join('\n\n');
+      researchData = searchResults;
     }
 
     yield { type: 'progress', data: {
