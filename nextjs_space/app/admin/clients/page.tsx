@@ -42,7 +42,8 @@ import {
   Coins,
   CheckCircle,
   XCircle,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -101,6 +102,20 @@ export default function ClientsManagement() {
   // Delete confirmation
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteClient, setDeleteClient] = useState<Client | null>(null);
+  
+  // Add client modal
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    companyName: '',
+    website: '',
+    subscriptionCredits: '0',
+    topUpCredits: '0',
+    isUnlimited: false,
+    subscriptionPlan: ''
+  });
   
   const [actionLoading, setActionLoading] = useState(false);
   
@@ -299,6 +314,46 @@ export default function ClientsManagement() {
     }
   }
   
+  function openAddModal() {
+    setAddForm({
+      name: '',
+      email: '',
+      password: '',
+      companyName: '',
+      website: '',
+      subscriptionCredits: '0',
+      topUpCredits: '0',
+      isUnlimited: false,
+      subscriptionPlan: ''
+    });
+    setAddModalOpen(true);
+  }
+  
+  async function handleAddSubmit() {
+    setActionLoading(true);
+    try {
+      const response = await fetch('/api/admin/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addForm)
+      });
+      
+      if (response.ok) {
+        toast.success('Klant succesvol aangemaakt');
+        setAddModalOpen(false);
+        loadClients();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Fout bij aanmaken klant');
+      }
+    } catch (error) {
+      console.error('Failed to create client:', error);
+      toast.error('Fout bij aanmaken klant');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -319,9 +374,15 @@ export default function ClientsManagement() {
             Beheer alle klanten, credits en instellingen
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin">Terug naar Dashboard</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={openAddModal} className="bg-green-600 hover:bg-green-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Nieuwe Klant
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/admin">Terug naar Dashboard</Link>
+          </Button>
+        </div>
       </div>
       
       <Card className="mb-6">
@@ -670,6 +731,126 @@ export default function ClientsManagement() {
             <Button variant="destructive" onClick={handleDelete} disabled={actionLoading}>
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Verwijderen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Client Modal */}
+      <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Nieuwe Klant Toevoegen</DialogTitle>
+            <DialogDescription>
+              Vul de gegevens in om een nieuwe klant aan te maken
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="add-name">Naam *</Label>
+                <Input
+                  id="add-name"
+                  value={addForm.name}
+                  onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-email">Email *</Label>
+                <Input
+                  id="add-email"
+                  type="email"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  placeholder="john@example.com"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-password">Wachtwoord *</Label>
+              <Input
+                id="add-password"
+                type="password"
+                value={addForm.password}
+                onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                placeholder="Minimaal 6 tekens"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="add-companyName">Bedrijfsnaam</Label>
+                <Input
+                  id="add-companyName"
+                  value={addForm.companyName}
+                  onChange={(e) => setAddForm({ ...addForm, companyName: e.target.value })}
+                  placeholder="Bedrijf BV"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-website">Website</Label>
+                <Input
+                  id="add-website"
+                  value={addForm.website}
+                  onChange={(e) => setAddForm({ ...addForm, website: e.target.value })}
+                  placeholder="https://example.com"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="add-subCredits">Subscription Credits</Label>
+                <Input
+                  id="add-subCredits"
+                  type="number"
+                  value={addForm.subscriptionCredits}
+                  onChange={(e) => setAddForm({ ...addForm, subscriptionCredits: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-topUpCredits">Top-up Credits</Label>
+                <Input
+                  id="add-topUpCredits"
+                  type="number"
+                  value={addForm.topUpCredits}
+                  onChange={(e) => setAddForm({ ...addForm, topUpCredits: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-plan">Abonnement Plan</Label>
+              <Select
+                value={addForm.subscriptionPlan}
+                onValueChange={(value) => setAddForm({ ...addForm, subscriptionPlan: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecteer plan (optioneel)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="starter">Starter</SelectItem>
+                  <SelectItem value="professional">Professional</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="add-unlimited"
+                checked={addForm.isUnlimited}
+                onChange={(e) => setAddForm({ ...addForm, isUnlimited: e.target.checked })}
+                className="h-4 w-4 rounded border-zinc-700"
+              />
+              <Label htmlFor="add-unlimited">Unlimited Credits</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddModalOpen(false)}>
+              Annuleren
+            </Button>
+            <Button onClick={handleAddSubmit} disabled={actionLoading}>
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Klant Aanmaken
             </Button>
           </DialogFooter>
         </DialogContent>

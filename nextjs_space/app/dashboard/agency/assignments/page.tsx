@@ -1,72 +1,25 @@
+/**
+ * Legacy Redirect: /dashboard/agency/assignments -> /admin/assignments
+ */
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import {
-  ClipboardList,
-  Plus,
-  Search,
-  Filter,
-  Calendar,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Play,
-  Eye,
-  Euro,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
 
-interface Assignment {
-  id: string;
-  clientId: string;
-  title: string;
-  description: string;
-  type: string;
-  status: string;
-  priority: string;
-  deadline: string | null;
-  budget: number | null;
-  finalPrice: number | null;
-  createdAt: string;
-  client: {
-    id: string;
-    name: string;
-    email: string;
-    companyName: string | null;
-  };
-}
-
-const statusOptions = [
-  { value: 'all', label: 'Alle' },
-  { value: 'open', label: 'Open' },
-  { value: 'in_progress', label: 'In Uitvoering' },
-  { value: 'review', label: 'Review' },
-  { value: 'completed', label: 'Voltooid' },
-  { value: 'cancelled', label: 'Geannuleerd' },
-];
-
-const typeOptions = [
-  { value: 'blog', label: '📝 Blog/Content', color: 'blue' },
-  { value: 'video', label: '🎬 Video', color: 'red' },
-  { value: 'chatbot', label: '🤖 Chatbot', color: 'purple' },
-  { value: 'automation', label: '⚙️ Automatisering', color: 'yellow' },
-  { value: 'website', label: '🌐 Website', color: 'green' },
-  { value: 'design', label: '🎨 Design', color: 'pink' },
-  { value: 'custom', label: '📋 Custom', color: 'gray' },
-];
-
-export default function AssignmentsPage() {
+export default function LegacyAssignmentsPage() {
   const router = useRouter();
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    fetchAssignments();
-  }, [statusFilter]);
+    router.replace('/admin/assignments');
+  }, [router]);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-black">
+      <p className="text-gray-400">Redirecting to Admin Portal...</p>
+    </div>
+  );
+}
 
   const fetchAssignments = async () => {
     try {

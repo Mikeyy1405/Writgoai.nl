@@ -133,7 +133,7 @@ export const adminOnlyItems: NavigationItem[] = [
   { label: 'Opdrachten', href: '/admin/assignments', icon: Package, adminOnly: true },
   
   // 📁 Projecten
-  { label: 'Projecten', href: '/dashboard/agency/projects', icon: FolderKanban, adminOnly: true },
+  { label: 'Projecten', href: '/admin/projects', icon: FolderKanban, adminOnly: true },
   
   // 💰 Financieel
   {
