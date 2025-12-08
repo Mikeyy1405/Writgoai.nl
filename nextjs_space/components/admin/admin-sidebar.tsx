@@ -14,7 +14,7 @@ import { adminNavItems, isAdminNavGroup, type AdminNavItem } from '@/lib/admin-n
 export function AdminSidebar() {
   const pathname = usePathname();
   const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({
-    'Financieel': false,
+    'Financieel': true,
     'Content': false,
   });
 

@@ -20,7 +20,7 @@ interface AdminMobileNavProps {
 export function AdminMobileNav({ isOpen, onClose }: AdminMobileNavProps) {
   const pathname = usePathname();
   const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({
-    'Financieel': false,
+    'Financieel': true,
     'Content': false,
   });
 

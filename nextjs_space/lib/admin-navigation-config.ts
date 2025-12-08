@@ -10,6 +10,11 @@ import {
   Mail,
   Settings,
   BarChart3,
+  Repeat,
+  ShoppingCart,
+  Landmark,
+  Calculator,
+  FileBarChart,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -39,8 +44,15 @@ export const adminNavItems: AdminNavigationItem[] = [
     label: 'Financieel',
     icon: DollarSign,
     items: [
-      { label: 'Financiën', href: '/financien', icon: BarChart3 },
-      { label: 'Facturen', href: '/admin/invoices', icon: Receipt },
+      { label: 'Dashboard', href: '/financien', icon: BarChart3 },
+      { label: 'Contacten', href: '/financien/contacten', icon: Users },
+      { label: 'Facturen', href: '/financien/facturen', icon: Receipt },
+      { label: 'Abonnementen', href: '/financien/abonnementen', icon: Repeat },
+      { label: 'Uitgaven', href: '/financien/uitgaven', icon: ShoppingCart },
+      { label: 'Bank', href: '/financien/bank', icon: Landmark },
+      { label: 'BTW', href: '/financien/btw', icon: Calculator },
+      { label: 'Rapporten', href: '/financien/rapporten', icon: FileBarChart },
+      { label: 'Oude Facturen', href: '/admin/invoices', icon: Receipt },
       { label: 'Affiliate Payouts', href: '/admin/affiliate-payouts', icon: CreditCard },
     ],
   },
