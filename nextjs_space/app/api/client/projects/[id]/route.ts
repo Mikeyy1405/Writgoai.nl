@@ -52,7 +52,14 @@ export async function GET(
       return NextResponse.json({ error: 'Project niet gevonden' }, { status: 404 });
     }
 
-    return NextResponse.json({ project });
+    // Add computed field to indicate if password exists without exposing actual password
+    return NextResponse.json({ 
+      project: {
+        ...project,
+        hasWordPressPassword: Boolean(project.wordpressPassword),
+        wordpressPassword: undefined // Don't expose the actual password
+      }
+    });
 
   } catch (error: any) {
     console.error('Error fetching project:', error);
