@@ -16,17 +16,17 @@ export default function PricingPage() {
 
   const packages = [
     {
-      id: 'starter',
-      name: 'Starter',
+      id: 'basis',
+      name: 'Basis',
       icon: Sparkles,
-      price: '€29',
+      price: '€49',
       period: '/ maand',
-      credits: 1000,
-      contentEstimate: '≈ 14 blogs of 8 videos',
+      credits: 2000,
+      contentEstimate: '≈ 28 blogs of 16 videos',
       description: 'Perfect voor starters',
       features: [
         'Alle AI modellen (GPT-4, Claude, Gemini)',
-        '1000 credits per maand',
+        '2000 credits per maand',
         'Alle tools: Blog, Video, Social, Code',
         'Content Library',
         'Keyword Research',
@@ -34,20 +34,19 @@ export default function PricingPage() {
         'Top-up credits mogelijk',
       ],
       popular: false,
-      priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || '',
     },
     {
-      id: 'pro',
-      name: 'Pro',
+      id: 'professional',
+      name: 'Professional',
       icon: Zap,
-      price: '€79',
+      price: '€99',
       period: '/ maand',
-      credits: 3000,
-      contentEstimate: '≈ 42 blogs of 25 videos',
+      credits: 6000,
+      contentEstimate: '≈ 84 blogs of 50 videos',
       description: 'Voor professionals',
       features: [
-        '✨ Alles van Starter',
-        '3000 credits per maand',
+        '✨ Alles van Basis',
+        '6000 credits per maand',
         'Priority support (< 4 uur)',
         'Advanced AI modellen',
         'Bulk content generatie',
@@ -55,36 +54,54 @@ export default function PricingPage() {
         'Analytics dashboard',
       ],
       popular: true,
-      priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || '',
     },
     {
-      id: 'enterprise',
-      name: 'Enterprise',
+      id: 'business',
+      name: 'Business',
       icon: Building2,
       price: '€199',
       period: '/ maand',
-      credits: 10000,
-      contentEstimate: '≈ 142 blogs of 83 videos',
-      description: 'Voor teams & agencies',
+      credits: 15000,
+      contentEstimate: '≈ 210 blogs of 125 videos',
+      description: 'Voor groeiende bedrijven',
       features: [
-        '✨ Alles van Pro',
-        '10.000 credits per maand',
+        '✨ Alles van Professional',
+        '15.000 credits per maand',
         'Multi-user accounts (tot 5 gebruikers)',
         'White-label optie',
         'Dedicated account manager',
         'Custom integraties',
         'Priority support (< 2 uur)',
+      ],
+      popular: false,
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      icon: Building2,
+      price: '€399',
+      period: '/ maand',
+      credits: 40000,
+      contentEstimate: '≈ 560 blogs of 330 videos',
+      description: 'Voor grote organisaties',
+      features: [
+        '✨ Alles van Business',
+        '40.000 credits per maand',
+        'Onbeperkt gebruikers',
+        'White-label optie',
+        'Dedicated account manager',
+        'Custom integraties',
+        'Priority support (< 1 uur)',
         '24/7 support',
       ],
       popular: false,
-      priceId: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID || '',
     },
   ];
 
   const handleSubscribe = async (planId: string) => {
     setLoading(planId);
     try {
-      const response = await fetch('/api/stripe/create-checkout', {
+      const response = await fetch('/api/moneybird/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId }),
@@ -96,12 +113,15 @@ export default function PricingPage() {
         throw new Error(data.error || 'Er ging iets mis');
       }
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.success) {
+        toast.success(data.message || 'Abonnement succesvol aangemaakt!');
+        setTimeout(() => {
+          router.push('/client-portal');
+        }, 2000);
       }
     } catch (error: any) {
-      console.error('Checkout error:', error);
-      toast.error(error.message || 'Er ging iets mis bij het starten van de checkout');
+      console.error('Subscription error:', error);
+      toast.error(error.message || 'Er ging iets mis bij het aanmaken van het abonnement');
     } finally {
       setLoading(null);
     }

@@ -74,7 +74,7 @@ export default function BuyCreditsPage() {
   const handleBuyCredits = async (packageId: string) => {
     setBuyingId(packageId);
     try {
-      const response = await fetch('/api/stripe/buy-credits', {
+      const response = await fetch('/api/moneybird/create-invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packageId }),
@@ -86,8 +86,11 @@ export default function BuyCreditsPage() {
         throw new Error(data.error || 'Er ging iets mis');
       }
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.success) {
+        toast.success(data.message || 'Factuur aangemaakt! Check je email voor de betaalinstructies.');
+        setTimeout(() => {
+          router.push('/client-portal');
+        }, 2000);
       }
     } catch (error: any) {
       console.error('Buy credits error:', error);
