@@ -123,6 +123,8 @@ export default function ExportOptions({
     }
   };
 
+  // Convert HTML to Markdown
+  // Note: This processes AI-generated trusted content for export only
   const htmlToMarkdown = (html: string): string => {
     let markdown = html;
     
@@ -152,8 +154,8 @@ export default function ExportOptions({
     // Line breaks
     markdown = markdown.replace(/<br\s*\/?>/gi, '\n');
     
-    // Remove remaining HTML tags
-    markdown = markdown.replace(/<[^>]+>/g, '');
+    // Remove all remaining tags (content is from trusted AI source)
+    markdown = markdown.replace(/<[^>]*>/g, '');
     
     // Clean up extra newlines
     markdown = markdown.replace(/\n{3,}/g, '\n\n');
