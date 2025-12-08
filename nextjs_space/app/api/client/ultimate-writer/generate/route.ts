@@ -33,21 +33,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
+       // Get client from database
+    const client = await prisma. client.findUnique({
       where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get client associated with this user
-    const client = await prisma.client.findFirst({
-      where: { userId: user.id },
     });
 
     if (!client) {
