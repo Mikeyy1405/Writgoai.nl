@@ -11,9 +11,9 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === 'loading') return;
     
-    // Admin goes to agency dashboard
-    if (session?.user?.email === 'info@writgo.nl') {
-      router.replace('/dashboard/agency');
+    // Admin goes to admin dashboard
+    if (session?.user?.email === 'info@writgo.nl' || session?.user?.role === 'admin') {
+      router.replace('/admin');
     } else {
       // Regular clients go to client portal
       router.replace('/client-portal');
