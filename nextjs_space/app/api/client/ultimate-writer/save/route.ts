@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { Language } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,16 +44,14 @@ export async function POST(request: NextRequest) {
         projectId: config.projectId || undefined,
         title,
         content,
-        metaDescription,
-        contentType: config.contentType,
-        language: config.language,
+        contentHtml: content,
+        metaDesc: metaDescription,
+        type: config.contentType,
+        language: config.language === 'nl' ? Language.NL : Language.EN,
         wordCount: stats.wordCount,
+        characterCount: stats.characterCount,
         keywords: [config.primaryKeyword, ...config.secondaryKeywords.split(',').map((k: string) => k.trim()).filter(Boolean)],
-        metadata: {
-          tone: config.tone,
-          stats,
-          config,
-        },
+        generatorType: 'ultimate-writer',
       },
     });
 
