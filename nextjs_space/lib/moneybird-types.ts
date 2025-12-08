@@ -190,3 +190,129 @@ export interface MoneybirdError {
   message?: string;
   details?: any;
 }
+
+// Purchase Invoices (Kosten/Inkoop Facturen)
+export interface PurchaseInvoice {
+  id: string;
+  contact_id: string;
+  state: 'draft' | 'open' | 'scheduled' | 'pending_payment' | 'late' | 'reminded' | 'paid';
+  invoice_id: string;
+  invoice_date: string;
+  due_date: string;
+  payment_conditions?: string;
+  total_price_excl_tax: string;
+  total_price_incl_tax: string;
+  total_unpaid: string;
+  reference?: string;
+  details_attributes: InvoiceDetail[];
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PurchaseInvoiceData {
+  contact_id: string;
+  invoice_date?: string;
+  due_date?: string;
+  reference?: string;
+  details_attributes: InvoiceDetail[];
+  prices_are_incl_tax?: boolean;
+  payment_conditions?: string;
+  currency?: string;
+}
+
+// Financial Mutations (Bank Transactions)
+export interface FinancialMutation {
+  id: string;
+  financial_account_id: string;
+  amount: string;
+  code: string;
+  date: string;
+  message: string;
+  contra_account_name?: string;
+  contra_account_number?: string;
+  state: 'pending' | 'processed';
+  financial_statement_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Financial Accounts (Bank Accounts)
+export interface FinancialAccount {
+  id: string;
+  name: string;
+  account_type: 'bank_account' | 'savings_account' | 'credit_card';
+  account_number?: string;
+  iban?: string;
+  bic?: string;
+  bank_name?: string;
+  balance?: string;
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Financial Statements (Reports)
+export interface FinancialStatement {
+  id: string;
+  financial_account_id: string;
+  start_date: string;
+  end_date: string;
+  statement_date: string;
+  starting_balance: string;
+  ending_balance: string;
+  total_debit: string;
+  total_credit: string;
+  imported_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Document for file uploads
+export interface Document {
+  id: string;
+  contact_id?: string;
+  filename: string;
+  content_type: string;
+  size: number;
+  url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DocumentUploadData {
+  contact_id?: string;
+  filename: string;
+  content_type: string;
+  file: Buffer | Blob;
+}
+
+// Balance Sheet (Balans)
+export interface BalanceSheet {
+  date: string;
+  assets: {
+    current_assets: number;
+    fixed_assets: number;
+    total_assets: number;
+  };
+  liabilities: {
+    current_liabilities: number;
+    long_term_liabilities: number;
+    equity: number;
+    total_liabilities_and_equity: number;
+  };
+}
+
+// Profit & Loss Statement (Winst & Verlies)
+export interface ProfitLossStatement {
+  start_date: string;
+  end_date: string;
+  revenue: number;
+  cost_of_sales: number;
+  gross_profit: number;
+  operating_expenses: number;
+  operating_profit: number;
+  other_income: number;
+  other_expenses: number;
+  net_profit: number;
+}
