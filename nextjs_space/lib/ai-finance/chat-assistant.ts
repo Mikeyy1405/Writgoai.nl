@@ -255,9 +255,15 @@ async function handleGrowthQuery(query: string): Promise<ChatResponse> {
  */
 async function handleClientQuery(query: string): Promise<ChatResponse> {
   if (query.includes('churn') || query.includes('risk') || query.includes('risico')) {
-    // This would require importing from revenue-predictor
+    const { predictChurnRisk } = await import('./revenue-predictor');
+    const predictions = await predictChurnRisk();
+    
+    const highRiskClients = predictions.filter(p => p.churnRisk === 'high');
+    
     return {
-      answer: 'Churn analyse wordt uitgevoerd. Ik kan klanten identificeren met verhoogd churn risico op basis van gebruik en betalingsgedrag.',
+      answer: `Gevonden: ${predictions.length} klanten met verhoogd churn risico. ${highRiskClients.length} klanten hebben hoog risico. Top risico's: ${predictions.slice(0, 3).map(p => `${p.clientName} (${p.riskScore}%)`).join(', ')}`,
+      data: predictions,
+      visualization: 'table',
       suggestions: [
         'Toon klanten met laag gebruik',
         'Welke klanten hebben betalingsachterstanden?',

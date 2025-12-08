@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export interface RevenueForeccast {
+export interface RevenueForecast {
   currentMRR: number;
   predictedMRR: number;
   growth: number;
@@ -71,7 +71,7 @@ export async function calculateMRR(): Promise<{
 /**
  * Predict future MRR based on trends
  */
-export async function predictMRR(monthsAhead: number = 3): Promise<RevenueForeccast[]> {
+export async function predictMRR(monthsAhead: number = 3): Promise<RevenueForecast[]> {
   // Get historical MRR data from invoices
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -116,7 +116,7 @@ export async function predictMRR(monthsAhead: number = 3): Promise<RevenueForecc
   const avgGrowth = calculateAverageGrowth(revenues);
   const currentMRR = revenues[revenues.length - 1];
 
-  const forecasts: RevenueForeccast[] = [];
+  const forecasts: RevenueForecast[] = [];
   
   for (let i = 1; i <= monthsAhead; i++) {
     const predictedMRR = currentMRR * Math.pow(1 + avgGrowth, i);

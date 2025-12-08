@@ -14,7 +14,7 @@ export {
   predictMRR,
   predictChurnRisk,
   getGrowthMetrics,
-  type RevenueForeccast,
+  type RevenueForecast,
   type ChurnPrediction,
 } from './revenue-predictor';
 

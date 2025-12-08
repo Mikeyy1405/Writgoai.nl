@@ -98,8 +98,14 @@ export async function sendPaymentReminders(): Promise<ReminderResult> {
         // Generate reminder message
         const message = await generatePaymentReminder(invoice.id, reminderType);
 
-        // In production, this would send an email
-        // For now, we'll just log and update the database
+        // TODO: Implement email sending functionality
+        // This should integrate with your email service (e.g., SendGrid, AWS SES, or nodemailer)
+        // Example implementation:
+        // await sendEmail({
+        //   to: invoice.client.email,
+        //   subject: `Betalingsherinnering ${invoice.invoiceNumber}`,
+        //   body: message,
+        // });
         console.log(`[Payment Reminders] Sending ${reminderType} reminder to ${invoice.client.name}`);
         console.log(`Subject: Betalingsherinnering ${invoice.invoiceNumber}`);
         console.log(`Message: ${message}`);
@@ -214,7 +220,8 @@ export async function sendSpecificReminder(
     // Generate message
     const message = await generatePaymentReminder(invoiceId, reminderType);
 
-    // In production, send email here
+    // TODO: Implement email sending functionality - integrate with your email service
+    // await sendEmail({ to: invoice.client.email, subject: `Betalingsherinnering ${invoice.invoiceNumber}`, body: message });
     console.log(`[Payment Reminder] Sending ${reminderType} reminder`);
     console.log(`To: ${invoice.client.email}`);
     console.log(`Subject: Betalingsherinnering ${invoice.invoiceNumber}`);
