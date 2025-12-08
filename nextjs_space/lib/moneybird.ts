@@ -64,7 +64,7 @@ export class MoneybirdClient {
       if (response.status === 429) {
         if (retryCount < MAX_RETRIES) {
           const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
-          const delay = retryAfter * 1000 || RETRY_DELAY_MS * Math.pow(2, retryCount);
+          const delay = retryAfter > 0 ? retryAfter * 1000 : RETRY_DELAY_MS * Math.pow(2, retryCount);
           
           console.log(`[Moneybird] Rate limited, retrying after ${delay}ms...`);
           await this.sleep(delay);

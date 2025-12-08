@@ -76,10 +76,11 @@ export async function POST(req: NextRequest) {
 
     if (!contact) {
       // Create new contact
+      const nameParts = client.name.split(' ');
       contact = await moneybird.createOrUpdateContact({
         company_name: client.companyName || client.name,
-        firstname: client.companyName ? '' : client.name.split(' ')[0],
-        lastname: client.companyName ? '' : client.name.split(' ').slice(1).join(' '),
+        firstname: client.companyName ? '' : nameParts[0] || '',
+        lastname: client.companyName ? '' : nameParts.slice(1).join(' ') || '',
         email: client.email,
         customer_id: client.id,
         send_invoices_to_email: client.email,
