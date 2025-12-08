@@ -4,34 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Users,
-  Package,
-  FolderKanban,
-  DollarSign,
-  Receipt,
-  CreditCard,
-  FileText,
-  Mail,
-  Settings,
   ChevronDown,
   ChevronUp,
   X,
   ExternalLink,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-interface NavGroup {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  items: NavItem[];
-}
+import { adminNavItems, isAdminNavGroup, type AdminNavItem } from '@/lib/admin-navigation-config';
 
 interface AdminMobileNavProps {
   isOpen: boolean;
@@ -52,30 +31,6 @@ export function AdminMobileNav({ isOpen, onClose }: AdminMobileNavProps) {
     }));
   };
 
-  const navItems: (NavItem | NavGroup)[] = [
-    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { label: 'Klanten', href: '/admin/clients', icon: Users },
-    { label: 'Opdrachten', href: '/admin/assignments', icon: Package },
-    { label: 'Projecten', href: '/admin/projects', icon: FolderKanban },
-    {
-      label: 'Financieel',
-      icon: DollarSign,
-      items: [
-        { label: 'Facturen', href: '/admin/invoices', icon: Receipt },
-        { label: 'Affiliate Payouts', href: '/admin/affiliate-payouts', icon: CreditCard },
-      ],
-    },
-    {
-      label: 'Content',
-      icon: FileText,
-      items: [
-        { label: 'Blog CMS', href: '/admin/blog', icon: FileText },
-        { label: 'Email Manager', href: '/admin/emails', icon: Mail },
-      ],
-    },
-    { label: 'Instellingen', href: '/admin/settings', icon: Settings },
-  ];
-
   const isActive = (href: string) => {
     if (href === '/admin') {
       return pathname === '/admin';
@@ -83,7 +38,7 @@ export function AdminMobileNav({ isOpen, onClose }: AdminMobileNavProps) {
     return pathname.startsWith(href);
   };
 
-  const isGroupActive = (items: NavItem[]) => {
+  const isGroupActive = (items: AdminNavItem[]) => {
     return items.some((item) => isActive(item.href));
   };
 
@@ -124,9 +79,9 @@ export function AdminMobileNav({ isOpen, onClose }: AdminMobileNavProps) {
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-              {navItems.map((item, index) => {
+              {adminNavItems.map((item, index) => {
                 // Check if it's a group
-                if ('items' in item) {
+                if (isAdminNavGroup(item)) {
                   const Icon = item.icon;
                   const isExpanded = expandedGroups[item.label];
                   const hasActiveItem = isGroupActive(item.items);

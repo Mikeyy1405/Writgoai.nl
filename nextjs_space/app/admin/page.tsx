@@ -180,7 +180,7 @@ export default function AdminDashboard() {
     },
     {
       title: 'Content',
-      value: stats?.totalContentGenerated || 127,
+      value: stats?.totalContentGenerated || 0,
       change: '+23 mnd',
       icon: FileText,
       borderColor: 'border-purple-500',
