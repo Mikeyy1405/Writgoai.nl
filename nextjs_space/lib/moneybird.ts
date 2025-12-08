@@ -522,6 +522,25 @@ export class MoneybirdClient {
       { method: 'GET' }
     );
   }
+
+  /**
+   * Get list of all subscriptions
+   */
+  async listSubscriptions(): Promise<any[]> {
+    return this.request<any[]>('/recurring_sales_invoices.json', {
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Get list of all contacts
+   */
+  async listContacts(query?: string): Promise<any[]> {
+    const endpoint = query
+      ? `/contacts.json?query=${encodeURIComponent(query)}`
+      : '/contacts.json';
+    return this.request<any[]>(endpoint, { method: 'GET' });
+  }
 }
 
 // Singleton instance
