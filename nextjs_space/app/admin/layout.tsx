@@ -3,14 +3,14 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { UnifiedLayout } from '@/components/dashboard/unified-layout';
-import { getNavItems, isUserAdmin } from '@/lib/navigation-config';
+import { AdminLayout } from '@/components/admin/admin-layout';
+import { isUserAdmin } from '@/lib/navigation-config';
 
-interface AdminLayoutProps {
+interface AdminLayoutPropsType {
   children: React.ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   const { data: session, status } = useSession() || {};
   const router = useRouter();
 
@@ -29,25 +29,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF9933]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35]"></div>
       </div>
     );
   }
 
-  // Check if user is admin
-  const isAdmin = isUserAdmin(session?.user?.email, session?.user?.role);
-  
-  // Get navigation items for admin
-  const navItems = getNavItems(isAdmin);
-
-  return (
-    <UnifiedLayout
-      navItems={navItems}
-      isAdmin={isAdmin}
-      headerTitle="Admin Portal"
-      headerDescription="Beheer klanten, projecten en content"
-    >
-      {children}
-    </UnifiedLayout>
-  );
+  return <AdminLayout>{children}</AdminLayout>;
 }
