@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
         relatedEntityId: report.id,
         relatedEntityType: 'vat_report',
         actionRequired: true,
-        actionUrl: '/admin/finance/btw',
+        actionUrl: '/financien/btw',
       },
     });
 

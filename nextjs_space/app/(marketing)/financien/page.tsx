@@ -245,13 +245,6 @@ export default function FinancienPage() {
             title="Rapporten"
             description="Winst & verlies, balans, cashflow"
           />
-
-          <QuickActionCard
-            href="/admin/finance"
-            icon={<FileText className="w-8 h-8 text-gray-400" />}
-            title="Oude Dashboard"
-            description="Legacy finance dashboard"
-          />
         </div>
 
         {/* Recent Activity */}

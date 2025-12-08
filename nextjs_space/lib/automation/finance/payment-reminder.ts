@@ -130,7 +130,7 @@ export async function sendPaymentReminders(): Promise<ReminderResult> {
               relatedEntityId: invoice.id,
               relatedEntityType: 'invoice',
               actionRequired: true,
-              actionUrl: `/admin/finance/clients/${invoice.client.id}/billing`,
+              actionUrl: `/financien/facturen`,
             },
           });
         }
@@ -284,7 +284,7 @@ export async function checkPaymentHealth(): Promise<void> {
               relatedEntityId: client.id,
               relatedEntityType: 'client',
               actionRequired: true,
-              actionUrl: `/admin/finance/clients/${client.id}/billing`,
+              actionUrl: `/financien/contacten`,
             },
           });
         }
