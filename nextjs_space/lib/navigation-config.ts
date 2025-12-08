@@ -70,8 +70,8 @@ export const baseNavItems: NavigationItem[] = [
   // Projecten - includes WordPress integration and content generation
   { label: 'Projecten', href: '/client-portal/projects', icon: FolderKanban },
   
-  // AI Writer Studio - NEW
-  { label: 'AI Writer', href: '/client-portal/ai-writer', icon: Sparkles },
+  // Ultimate Writer - ALL-IN-ONE
+  { label: 'Ultimate Writer', href: '/client-portal/ultimate-writer', icon: PenTool, badge: 'Nieuw' },
   
   // Social Media Suite - Single unified page
   { label: 'Social Media Suite', href: '/client-portal/social-media-suite', icon: Share2 },
