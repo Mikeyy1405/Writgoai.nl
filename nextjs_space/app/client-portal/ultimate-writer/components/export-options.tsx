@@ -206,7 +206,12 @@ export default function ExportOptions({
           {/* Download HTML */}
           <Button
             onClick={() => {
-              const filename = `${config.topic.slice(0, 30).replace(/[^a-z0-9]/gi, '-')}.html`;
+              const sanitizedTopic = config.topic
+                .slice(0, 30)
+                .replace(/[^a-z0-9]+/gi, '-')
+                .replace(/^-+|-+$/g, '')
+                .toLowerCase() || 'content';
+              const filename = `${sanitizedTopic}.html`;
               downloadFile(content, filename, 'text/html');
             }}
             className="bg-zinc-800 hover:bg-zinc-700 text-white h-auto py-4 flex-col gap-2"
@@ -218,7 +223,12 @@ export default function ExportOptions({
           {/* Download Markdown */}
           <Button
             onClick={() => {
-              const filename = `${config.topic.slice(0, 30).replace(/[^a-z0-9]/gi, '-')}.md`;
+              const sanitizedTopic = config.topic
+                .slice(0, 30)
+                .replace(/[^a-z0-9]+/gi, '-')
+                .replace(/^-+|-+$/g, '')
+                .toLowerCase() || 'content';
+              const filename = `${sanitizedTopic}.md`;
               downloadFile(htmlToMarkdown(content), filename, 'text/markdown');
             }}
             className="bg-zinc-800 hover:bg-zinc-700 text-white h-auto py-4 flex-col gap-2"

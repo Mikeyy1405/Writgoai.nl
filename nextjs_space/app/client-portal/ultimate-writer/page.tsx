@@ -173,8 +173,8 @@ export default function UltimateWriterPage() {
               } else if (data.type === 'content') {
                 setGeneratedContent(prev => prev + data.data);
               } else if (data.type === 'complete') {
-                setMetaDescription(data.metaDescription || '');
-                setContentStats(data.stats || contentStats);
+                setMetaDescription(data.data?.metaDescription || '');
+                setContentStats(data.data?.stats || contentStats);
                 setProgress({
                   phase: 'complete',
                   progress: 100,

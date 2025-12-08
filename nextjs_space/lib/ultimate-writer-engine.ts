@@ -180,17 +180,20 @@ export async function* generateContentStream(
       currentStep: 'Content is klaar',
     }};
 
-    yield {
-      type: 'complete',
-      metaDescription,
-      stats,
-    };
-
-    // Stream content in chunks
+    // Stream content in chunks first
     const chunks = optimizedContent.match(/.{1,500}/gs) || [];
     for (const chunk of chunks) {
       yield { type: 'content', data: chunk };
     }
+
+    // Send completion data
+    yield {
+      type: 'complete',
+      data: {
+        metaDescription,
+        stats,
+      },
+    };
 
   } catch (error) {
     console.error('Ultimate Writer Error:', error);
@@ -305,18 +308,29 @@ async function optimizeContent(content: string, config: UltimateWriterConfig): P
   // Add internal links
   if (config.includeInternalLinks && config.internalLinks && config.internalLinks.length > 0) {
     for (const link of config.internalLinks) {
-      // Find relevant anchor text in content
-      const titleWords = link.title.toLowerCase().split(' ');
-      for (const word of titleWords.slice(0, 3)) {
-        if (word.length > 4 && optimized.toLowerCase().includes(word)) {
-          const regex = new RegExp(`\\b${word}\\w*\\b`, 'i');
-          const match = optimized.match(regex);
-          if (match && !optimized.includes(`href="${link.url}"`)) {
-            optimized = optimized.replace(
-              match[0],
-              `<a href="${link.url}" class="internal-link">${match[0]}</a>`
+      // Skip if link already exists
+      if (optimized.includes(`href="${link.url}"`)) continue;
+      
+      // Try to find exact title match first (case insensitive)
+      const titleEscaped = link.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const exactMatch = new RegExp(`\\b${titleEscaped}\\b`, 'i');
+      
+      if (exactMatch.test(optimized)) {
+        // Replace first occurrence only
+        optimized = optimized.replace(exactMatch, (match) => 
+          `<a href="${link.url}" class="internal-link">${match}</a>`
+        );
+      } else {
+        // Try to match first 2-3 significant words from title
+        const titleWords = link.title.toLowerCase().split(' ').filter(w => w.length > 3);
+        if (titleWords.length > 0) {
+          const searchPhrase = titleWords.slice(0, Math.min(3, titleWords.length)).join('\\s+');
+          const phraseRegex = new RegExp(`\\b${searchPhrase}\\b`, 'i');
+          
+          if (phraseRegex.test(optimized)) {
+            optimized = optimized.replace(phraseRegex, (match) =>
+              `<a href="${link.url}" class="internal-link">${match}</a>`
             );
-            break;
           }
         }
       }
