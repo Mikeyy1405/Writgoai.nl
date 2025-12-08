@@ -25,3 +25,4 @@ out
 *.env.development
 *.env.production
 !.env.example
+*.backup
