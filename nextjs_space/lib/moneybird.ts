@@ -343,6 +343,185 @@ export class MoneybirdClient {
       method: 'GET',
     });
   }
+
+  // ===== PURCHASE INVOICES (EXPENSES) =====
+
+  /**
+   * Get all purchase invoices
+   */
+  async getPurchaseInvoices(params?: {
+    state?: string;
+    period?: string;
+  }): Promise<any[]> {
+    const queryParams = new URLSearchParams();
+    if (params?.state) queryParams.set('state', params.state);
+    if (params?.period) queryParams.set('period', params.period);
+    
+    const query = queryParams.toString();
+    return this.request<any[]>(
+      `/documents/purchase_invoices.json${query ? `?${query}` : ''}`,
+      { method: 'GET' }
+    );
+  }
+
+  /**
+   * Get a purchase invoice by ID
+   */
+  async getPurchaseInvoice(id: string): Promise<any> {
+    return this.request<any>(`/documents/purchase_invoices/${id}.json`, {
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Create a purchase invoice
+   */
+  async createPurchaseInvoice(data: any): Promise<any> {
+    return this.request<any>('/documents/purchase_invoices.json', {
+      method: 'POST',
+      body: JSON.stringify({ purchase_invoice: data }),
+    });
+  }
+
+  /**
+   * Update a purchase invoice
+   */
+  async updatePurchaseInvoice(id: string, data: any): Promise<any> {
+    return this.request<any>(`/documents/purchase_invoices/${id}.json`, {
+      method: 'PATCH',
+      body: JSON.stringify({ purchase_invoice: data }),
+    });
+  }
+
+  // ===== FINANCIAL ACCOUNTS (BANK ACCOUNTS) =====
+
+  /**
+   * Get all financial accounts
+   */
+  async getFinancialAccounts(): Promise<any[]> {
+    return this.request<any[]>('/financial_accounts.json', {
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Get a financial account by ID
+   */
+  async getFinancialAccount(id: string): Promise<any> {
+    return this.request<any>(`/financial_accounts/${id}.json`, {
+      method: 'GET',
+    });
+  }
+
+  // ===== FINANCIAL MUTATIONS (BANK TRANSACTIONS) =====
+
+  /**
+   * Get financial mutations (bank transactions) for an account
+   */
+  async getFinancialMutations(accountId: string, params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<any[]> {
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.set('start_date', params.startDate);
+    if (params?.endDate) queryParams.set('end_date', params.endDate);
+    
+    const query = queryParams.toString();
+    return this.request<any[]>(
+      `/financial_mutations.json?financial_account_id=${accountId}${query ? `&${query}` : ''}`,
+      { method: 'GET' }
+    );
+  }
+
+  /**
+   * Link a financial mutation to a booking (invoice/payment)
+   */
+  async linkFinancialMutation(mutationId: string, bookingType: string, bookingId: string): Promise<void> {
+    await this.request(`/financial_mutations/${mutationId}/link_booking.json`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        booking_type: bookingType,
+        booking_id: bookingId,
+      }),
+    });
+  }
+
+  // ===== FINANCIAL STATEMENTS =====
+
+  /**
+   * Get financial statements for an account
+   */
+  async getFinancialStatements(accountId: string): Promise<any[]> {
+    return this.request<any[]>(
+      `/financial_statements.json?financial_account_id=${accountId}`,
+      { method: 'GET' }
+    );
+  }
+
+  // ===== DOCUMENTS =====
+
+  /**
+   * Upload a document (e.g., invoice PDF)
+   */
+  async uploadDocument(file: Buffer, filename: string, contactId?: string): Promise<any> {
+    const formData = new FormData();
+    const blob = new Blob([file]);
+    formData.append('file', blob, filename);
+    if (contactId) formData.append('contact_id', contactId);
+
+    return this.request<any>('/documents.json', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        // Don't set Content-Type, let the browser set it with boundary
+      },
+      body: formData as any,
+    });
+  }
+
+  // ===== REPORTS & ANALYTICS =====
+
+  /**
+   * Get general ledger transactions for a period
+   */
+  async getGeneralLedgerTransactions(params: {
+    startDate: string;
+    endDate: string;
+    ledgerAccountId?: string;
+  }): Promise<any[]> {
+    const queryParams = new URLSearchParams({
+      start_date: params.startDate,
+      end_date: params.endDate,
+    });
+    if (params.ledgerAccountId) {
+      queryParams.set('ledger_account_id', params.ledgerAccountId);
+    }
+
+    return this.request<any[]>(
+      `/general_journal_documents.json?${queryParams.toString()}`,
+      { method: 'GET' }
+    );
+  }
+
+  /**
+   * Get list of all sales invoices with filters
+   */
+  async listSalesInvoices(params?: {
+    state?: string;
+    period?: string;
+    contactId?: string;
+  }): Promise<any[]> {
+    const queryParams = new URLSearchParams();
+    if (params?.state) queryParams.set('state', params.state);
+    if (params?.period) queryParams.set('period', params.period);
+    if (params?.contactId) queryParams.set('contact_id', params.contactId);
+    
+    const query = queryParams.toString();
+    return this.request<any[]>(
+      `/sales_invoices.json${query ? `?${query}` : ''}`,
+      { method: 'GET' }
+    );
+  }
 }
 
 // Singleton instance

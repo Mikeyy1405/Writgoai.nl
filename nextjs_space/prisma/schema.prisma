@@ -143,6 +143,7 @@ model Client {
   mailboxConnections                MailboxConnection[]
   emailAutoReplyConfigs             EmailAutoReplyConfig[]
   scheduledPosts                    ScheduledPost[]
+  purchaseInvoices                  PurchaseInvoice[]
 }
 
 model Project {
@@ -2668,4 +2669,164 @@ model AdminDashboardNote {
   createdAt DateTime @default(now())
   
   @@index([userId])
+}
+
+// ============================================
+// FINANCIAL MANAGEMENT MODELS
+// ============================================
+
+// Purchase Invoices (Expenses/Kosten)
+model PurchaseInvoice {
+  id                    String    @id @default(cuid())
+  clientId              String?   // Optional - can be company-wide expenses
+  moneybirdInvoiceId    String?   @unique
+  invoiceNumber         String
+  supplierName          String
+  supplierEmail         String?
+  description           String?   @db.Text
+  invoiceDate           DateTime
+  dueDate               DateTime?
+  paidDate              DateTime?
+  subtotal              Float     @default(0)
+  taxAmount             Float     @default(0)
+  total                 Float
+  status                String    @default("pending") // pending, paid, overdue, cancelled
+  category              String?   // hosting, software, marketing, etc.
+  categoryId            String?
+  notes                 String?   @db.Text
+  attachmentUrl         String?   // PDF or image of invoice
+  paymentMethod         String?
+  recurring             Boolean   @default(false)
+  recurringPeriod       String?   // monthly, quarterly, yearly
+  autoCategorizationAI  Json?     // AI categorization metadata
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  client                Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  expenseCategory       ExpenseCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([clientId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([invoiceDate])
+  @@index([supplierName])
+}
+
+// Expense Categories (Uitgaven Categorieën)
+model ExpenseCategory {
+  id                String            @id @default(cuid())
+  name              String            @unique
+  description       String?
+  taxDeductible     Boolean           @default(true)
+  vatPercentage     Float             @default(21)
+  moneybirdLedgerId String?
+  color             String?           // For UI visualization
+  icon              String?
+  aiKeywords        String[]          // Keywords for AI categorization
+  parentCategoryId  String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  purchaseInvoices  PurchaseInvoice[]
+  parentCategory    ExpenseCategory?  @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  subCategories     ExpenseCategory[] @relation("CategoryHierarchy")
+  bankTransactions  BankTransaction[]
+
+  @@index([name])
+  @@index([parentCategoryId])
+}
+
+// Bank Transactions (Bank Mutaties)
+model BankTransaction {
+  id                    String           @id @default(cuid())
+  moneybirdMutationId   String?          @unique
+  bankAccountId         String
+  transactionDate       DateTime
+  amount                Float
+  type                  String           // debit, credit
+  counterpartyName      String?
+  counterpartyAccount   String?
+  description           String?          @db.Text
+  reference             String?
+  matchedInvoiceId      String?          // Link to Invoice or PurchaseInvoice
+  matchedInvoiceType    String?          // "sales" or "purchase"
+  categoryId            String?
+  status                String           @default("unmatched") // matched, unmatched, ignored
+  autoMatched           Boolean          @default(false)
+  matchConfidence       Float?           // AI matching confidence score
+  notes                 String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  expenseCategory       ExpenseCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([bankAccountId])
+  @@index([transactionDate])
+  @@index([status])
+  @@index([matchedInvoiceId])
+  @@index([categoryId])
+}
+
+// Financial Alerts (Financiële Meldingen)
+model FinancialAlert {
+  id              String    @id @default(cuid())
+  type            String    // overdue_invoice, low_balance, high_expense, revenue_anomaly, payment_received
+  severity        String    @default("info") // info, warning, critical
+  title           String
+  message         String    @db.Text
+  relatedEntityId String?   // ID of invoice, transaction, etc.
+  relatedEntityType String? // invoice, transaction, client
+  actionRequired  Boolean   @default(false)
+  actionUrl       String?
+  dismissed       Boolean   @default(false)
+  dismissedAt     DateTime?
+  dismissedBy     String?
+  metadata        Json?     // Additional context data
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([type])
+  @@index([severity])
+  @@index([dismissed])
+  @@index([createdAt])
+}
+
+// VAT/BTW Reports (BTW Aangiftes)
+model VATReport {
+  id                    String    @id @default(cuid())
+  quarter               Int       // 1, 2, 3, 4
+  year                  Int
+  startDate             DateTime
+  endDate               DateTime
+  totalSalesExclVat     Float     @default(0)
+  totalSalesVat         Float     @default(0)
+  totalPurchasesExclVat Float     @default(0)
+  totalPurchasesVat     Float     @default(0)
+  vatToPay              Float     @default(0) // or to receive if negative
+  status                String    @default("draft") // draft, submitted, paid
+  submittedAt           DateTime?
+  paidAt                DateTime?
+  moneybirdReportId     String?
+  notes                 String?   @db.Text
+  reportData            Json?     // Detailed breakdown
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([year, quarter])
+  @@index([year])
+  @@index([quarter])
+  @@index([status])
+}
+
+// Financial Metrics Cache (Performance optimization)
+model FinancialMetric {
+  id          String   @id @default(cuid())
+  metricType  String   // mrr, arr, churn_rate, avg_revenue_per_client, etc.
+  period      String   // month, quarter, year
+  periodStart DateTime
+  periodEnd   DateTime
+  value       Float
+  metadata    Json?    // Additional breakdown data
+  calculatedAt DateTime @default(now())
+  
+  @@unique([metricType, periodStart, periodEnd])
+  @@index([metricType])
+  @@index([periodStart])
 }
