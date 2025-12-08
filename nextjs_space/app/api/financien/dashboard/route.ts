@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     );
 
     // Haal abonnementen op
-    const subscriptions = await moneybird.request<any[]>('/recurring_sales_invoices.json', { method: 'GET' });
+    const subscriptions = await moneybird.listSubscriptions();
     const activeSubscriptions = subscriptions.filter((sub: any) => sub.active);
 
     // Bereken MRR

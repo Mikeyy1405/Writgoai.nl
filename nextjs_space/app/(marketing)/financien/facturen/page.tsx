@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Receipt, Search, Plus, Send, CheckCircle, ArrowLeft, Filter, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function FacturenPage() {
+function FacturenContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -302,5 +302,20 @@ export default function FacturenPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FacturenPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen bg-[#0a0a0a] p-8">
+        <div className="animate-pulse space-y-6 max-w-7xl mx-auto">
+          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="h-96 bg-white/10 rounded-xl"></div>
+        </div>
+      </div>
+    }>
+      <FacturenContent />
+    </React.Suspense>
   );
 }

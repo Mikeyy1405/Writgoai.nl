@@ -20,10 +20,7 @@ export async function GET(req: NextRequest) {
     }
 
     const moneybird = getMoneybird();
-    const subscriptions = await moneybird.request<any[]>(
-      '/recurring_sales_invoices.json',
-      { method: 'GET' }
-    );
+    const subscriptions = await moneybird.listSubscriptions();
 
     // Bereken MRR per abonnement
     const enrichedSubscriptions = subscriptions.map((sub: any) => {

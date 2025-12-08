@@ -23,13 +23,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search');
 
     const moneybird = getMoneybird();
-    
-    let endpoint = '/contacts.json';
-    if (search) {
-      endpoint += `?query=${encodeURIComponent(search)}`;
-    }
-
-    const contacts = await moneybird.request<any[]>(endpoint, { method: 'GET' });
+    const contacts = await moneybird.listContacts(search || undefined);
 
     return NextResponse.json({ contacts });
   } catch (error: any) {
