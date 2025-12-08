@@ -2,25 +2,16 @@
 
 export const dynamic = "force-dynamic";
 /**
- * Create a subscription via Stripe
+ * Create a subscription - Payment system migrated to Moneybird
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import Stripe from 'stripe';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
-
-// Initialize Stripe
-let stripe: Stripe | null = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-11-17.clover'
-  });
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -85,50 +76,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if Stripe is configured
-    if (!stripe) {
-      return NextResponse.json(
-        { error: 'Payment system not configured' },
-        { status: 503 }
-      );
-    }
-
-    // For now, we'll create one-time products. 
-    // In production, you should create Stripe products/prices in dashboard and store stripePriceId
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer_email: client.email,
-      payment_method_types: ['card', 'ideal'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: `${plan.displayName} - Maandelijks`,
-              description: `${plan.monthlyCredits} credits per maand`
-            },
-            unit_amount: Math.round(plan.priceEur * 100), // Stripe expects cents
-            recurring: {
-              interval: 'month'
-            }
-          },
-          quantity: 1
-        }
-      ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://WritgoAI.nl'}/client-portal?subscription=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://WritgoAI.nl'}/client-portal?subscription=cancelled`,
-      metadata: {
-        clientId,
-        planName: plan.name,
-        monthlyCredits: plan.monthlyCredits.toString()
-      }
-    });
-
-    return NextResponse.json({
-      success: true,
-      checkoutUrl: session.url,
-      sessionId: session.id
-    });
+    // Payment system being migrated to Moneybird
+    return NextResponse.json(
+      { 
+        error: 'Betalingssysteem wordt gemigreerd naar Moneybird. Probeer later opnieuw.',
+        migrating: true 
+      },
+      { status: 503 }
+    );
 
   } catch (error: any) {
     console.error('Create subscription error:', error);

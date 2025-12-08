@@ -13,13 +13,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/logger';
-import Stripe from 'stripe';
-
-const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-11-17.clover'
-    })
-  : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,24 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════════
-    // STAP 1: Annuleer actief Stripe abonnement
-    // ═══════════════════════════════════════════════════════
-
-    if (client.subscriptionId && stripe) {
-      try {
-        await stripe.subscriptions.cancel(client.subscriptionId);
-        log('info', 'Stripe subscription cancelled for GDPR deletion', {
-          clientId,
-          subscriptionId: client.subscriptionId,
-        });
-      } catch (error) {
-        console.error('Failed to cancel Stripe subscription:', error);
-        // Continue anyway - Stripe kan al geannuleerd zijn
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // STAP 2: Verwijder alle data (Cascade delete via Prisma)
+    // STAP 1: Verwijder alle data (Cascade delete via Prisma)
     // ═══════════════════════════════════════════════════════
 
     // Prisma verwijdert automatisch alle gerelateerde data via onDelete: Cascade
