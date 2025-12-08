@@ -196,7 +196,7 @@ export async function* generateContentStream(
     console.error('Ultimate Writer Error:', error);
     yield {
       type: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      data: { error: error instanceof Error ? error.message : 'Unknown error' },
     };
   }
 }

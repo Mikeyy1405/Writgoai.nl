@@ -183,7 +183,7 @@ export default function UltimateWriterPage() {
                 });
                 toast.success('Content succesvol gegenereerd!');
               } else if (data.type === 'error') {
-                throw new Error(data.error);
+                throw new Error(data.data?.error || 'Unknown error');
               }
             } catch (e) {
               console.error('Error parsing SSE:', e);
