@@ -5,7 +5,7 @@ export function isNavItemActive(href: string, pathname: string | null): boolean 
   if (!pathname) return false;
   
   // For dashboard/portal home routes, exact match only
-  if (href === '/client-portal' || href === '/dashboard/agency') {
+  if (href === '/client-portal' || href === '/admin') {
     return pathname === href;
   }
   
