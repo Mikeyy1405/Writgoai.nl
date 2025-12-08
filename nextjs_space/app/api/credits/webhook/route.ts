@@ -8,6 +8,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Initialize Stripe
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-02-24.acacia'
+  });
+}
+
 export async function POST(request: NextRequest) {
   // Payment system being migrated to Moneybird
   // Return 200 to prevent webhook provider from retrying
