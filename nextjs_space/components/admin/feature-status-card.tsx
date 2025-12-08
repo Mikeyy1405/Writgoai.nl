@@ -18,19 +18,19 @@ interface FeatureStatusCardProps {
 const statusConfig = {
   working: {
     label: '✅ Volledig Werkend',
-    color: 'bg-green-500/20 text-green-400 border-green-500/30',
+    iconColor: 'text-green-400',
     badgeColor: 'bg-green-600 hover:bg-green-700',
     icon: CheckCircle,
   },
   partial: {
     label: '🔧 Gedeeltelijk Werkend',
-    color: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    iconColor: 'text-orange-400',
     badgeColor: 'bg-orange-600 hover:bg-orange-700',
     icon: AlertCircle,
   },
   development: {
     label: '🚧 In Ontwikkeling',
-    color: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+    iconColor: 'text-gray-400',
     badgeColor: 'bg-gray-600 hover:bg-gray-700',
     icon: Construction,
   },
@@ -52,9 +52,9 @@ export function FeatureStatusCard({
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div className={`p-3 rounded-xl bg-black/20 inline-flex`}>
-              <Icon className={`w-6 h-6 ${config.color.split(' ')[1]}`} />
+              <Icon className={`w-6 h-6 ${config.iconColor}`} />
             </div>
-            <StatusIcon className={`w-5 h-5 ${config.color.split(' ')[1]}`} />
+            <StatusIcon className={`w-5 h-5 ${config.iconColor}`} />
           </div>
           
           <h3 className="font-bold text-white mb-2 text-base">
