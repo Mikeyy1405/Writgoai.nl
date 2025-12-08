@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════════
-    // STAP 1: Verwijder alle data (Cascade delete via Prisma)
+    // Verwijder alle data (Cascade delete via Prisma)
     // ═══════════════════════════════════════════════════════
 
     // Prisma verwijdert automatisch alle gerelateerde data via onDelete: Cascade

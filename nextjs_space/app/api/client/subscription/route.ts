@@ -34,16 +34,12 @@ export async function GET(req: Request) {
       client.subscriptionStatus === 'active' ||
       client.subscriptionStatus === 'trialing';
 
-    // Stripe removed - cancelAtPeriodEnd check no longer available
-    const cancelAtPeriodEnd = false;
-
     return NextResponse.json({
       hasActiveSubscription,
       plan: client.subscriptionPlan,
       status: client.subscriptionStatus,
       monthlyCredits: client.monthlyCredits || 0,
       currentPeriodEnd: client.subscriptionEndDate,
-      cancelAtPeriodEnd,
     });
   } catch (error: any) {
     console.error('Get subscription error:', error);
