@@ -53,9 +53,12 @@ export async function GET(
     }
 
     // Add computed field to indicate if password exists without exposing actual password
+    // Explicitly include WordPress configuration fields for Content Hub detection
     return NextResponse.json({ 
       project: {
         ...project,
+        wordpressUrl: project.wordpressUrl,
+        wordpressUsername: project.wordpressUsername,
         hasWordPressPassword: Boolean(project.wordpressPassword),
         wordpressPassword: undefined // Don't expose the actual password
       }

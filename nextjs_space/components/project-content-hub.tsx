@@ -94,6 +94,12 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
         
         // Check if project has WordPress credentials configured
         const hasWpConfig = Boolean(project.wordpressUrl && project.wordpressUsername && project.hasWordPressPassword);
+        console.log('[Content Hub] WordPress config check:', {
+          wordpressUrl: project.wordpressUrl,
+          wordpressUsername: project.wordpressUsername,
+          hasWordPressPassword: project.hasWordPressPassword,
+          hasWpConfig
+        });
         setHasWordPressConfigured(hasWpConfig);
         
         if (hasWpConfig) {
@@ -219,73 +225,143 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
     );
   }
 
-  // No site connected yet
+  // No site connected yet - but show Content Hub interface anyway
   if (!site) {
     // If WordPress is already configured in project settings but ContentHubSite doesn't exist yet
-    if (hasWordPressConfigured) {
+    if (hasWordPressConfigured && !autoCreating) {
       return (
         <div className="space-y-6">
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              {autoCreating ? (
-                <>
-                  <Loader2 className="h-16 w-16 text-primary mb-4 animate-spin" />
-                  <h3 className="text-xl font-semibold mb-2">WordPress verbinding wordt opgezet...</h3>
-                  <p className="text-muted-foreground text-center max-w-md">
-                    Je WordPress configuratie wordt overgenomen van de Project instellingen.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">WordPress is al geconfigureerd</h3>
-                  <p className="text-muted-foreground mb-4 text-center max-w-md">
-                    Je WordPress verbinding is al ingesteld via de Integraties tab. Klik hieronder om de content planning te activeren.
-                  </p>
-                  <div className="flex flex-col gap-2 items-center">
-                    <Button 
-                      onClick={() => loadProjectSite()} 
-                      className="gap-2"
-                      disabled={autoCreating}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Activeer Content Planning
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      ✅ WordPress instellingen zijn al geconfigureerd in Integraties
-                    </p>
-                  </div>
-                </>
-              )}
+              <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">WordPress is al geconfigureerd</h3>
+              <p className="text-muted-foreground mb-4 text-center max-w-md">
+                Je WordPress verbinding is al ingesteld via de Integraties tab. Klik hieronder om de content planning te activeren.
+              </p>
+              <div className="flex flex-col gap-2 items-center">
+                <Button 
+                  onClick={() => loadProjectSite()} 
+                  className="gap-2"
+                  disabled={autoCreating}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Activeer Content Planning
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  ✅ WordPress instellingen zijn al geconfigureerd in Integraties
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
       );
     }
     
-    // No WordPress configuration found - direct user to configure it in project settings
+    if (autoCreating) {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-16 w-16 text-primary mb-4 animate-spin" />
+              <h3 className="text-xl font-semibold mb-2">WordPress verbinding wordt opgezet...</h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                Je WordPress configuratie wordt overgenomen van de Project instellingen.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    
+    // No WordPress configured - show Content Hub interface with setup instructions
     return (
       <div className="space-y-6">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Settings className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">WordPress Configuratie Vereist</h3>
-            <p className="text-muted-foreground mb-4 text-center max-w-md">
-              Om AI-gegenereerde content te gebruiken, moet je eerst WordPress configureren in je Project instellingen.
-            </p>
-            <div className="flex flex-col gap-3 items-center">
-              <Button 
-                onClick={() => router.push(`/client-portal/projects/${projectId}?tab=integrations`)}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                Ga naar Project Instellingen
-              </Button>
-              <div className="text-xs text-muted-foreground text-center space-y-1">
-                <p>📍 Navigeer naar de <strong>Integraties</strong> tab</p>
-                <p>🔗 Vul je WordPress URL, gebruikersnaam en applicatie wachtwoord in</p>
-                <p>✅ Na configuratie kun je hier content genereren</p>
+        {/* WordPress connection status banner */}
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
+            <div className="flex items-start gap-3">
+              <Settings className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-orange-900">WordPress niet verbonden</h3>
+                <p className="text-sm text-orange-700">
+                  Configureer WordPress in Project Instellingen om de Content Hub te gebruiken
+                </p>
               </div>
+            </div>
+            <Button 
+              onClick={() => router.push(`/client-portal/projects/${projectId}?tab=integrations`)}
+              variant="outline"
+              size="sm"
+              className="gap-2 border-orange-300 bg-white hover:bg-orange-100 w-full sm:w-auto"
+            >
+              <Settings className="h-4 w-4" />
+              Configureer WordPress
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Content Hub Preview - Show what's available once WordPress is connected */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Content Hub Functies
+            </CardTitle>
+            <CardDescription>
+              Zodra je WordPress hebt geconfigureerd, krijg je toegang tot deze krachtige functies:
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <FolderKanban className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Topical Map</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Maak gestructureerde content plannen gebaseerd op zoekwoordclusters en zoekintenties
+                </p>
+              </div>
+              
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Library className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Bibliotheek</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Beheer en organiseer al je AI-gegenereerde content op één centrale plek
+                </p>
+              </div>
+              
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Automatische Sync</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Synchroniseer bestaande WordPress content en houd alles automatisch up-to-date
+                </p>
+              </div>
+              
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Autopilot Mode</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Laat de AI automatisch content genereren en publiceren volgens jouw planning
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-900 mb-2">📝 WordPress Configuratie Vereist</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Ga naar <strong>Project Instellingen → Integraties</strong></li>
+                <li>• Vul je WordPress URL, gebruikersnaam en applicatie wachtwoord in</li>
+                <li>• Klik op "Inloggegevens opslaan"</li>
+                <li>• Kom terug naar Content Hub om te starten</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
