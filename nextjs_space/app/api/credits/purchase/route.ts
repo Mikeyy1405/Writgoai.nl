@@ -13,14 +13,6 @@ import jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
 
-// Initialize Stripe (alleen als key bestaat)
-let stripe: Stripe | null = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-02-24.acacia'
-  });
-}
-
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();

@@ -70,7 +70,15 @@ export default function ClientDashboard() {
     if (status === 'unauthenticated') {
       router.push('/inloggen');
     }
-  }, [status, router]);
+    
+    // Redirect admin users to admin dashboard
+    if (status === 'authenticated') {
+      const isAdmin = session?.user?.email === 'info@writgo.nl' || session?.user?.role === 'admin';
+      if (isAdmin) {
+        router.replace('/admin');
+      }
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
     if (status === 'authenticated') {
