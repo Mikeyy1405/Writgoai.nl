@@ -113,7 +113,7 @@ export default function AdminProjectsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
         <div className="mb-6">
-          <Link href="/dashboard/agency">
+          <Link href="/admin">
             <Button variant="ghost" size="sm" className="mb-4 text-gray-300 hover:text-white">
               <ArrowLeft className="h-4 w-4 mr-2" />
               <span className="text-sm sm:text-base">Terug naar dashboard</span>
@@ -126,7 +126,7 @@ export default function AdminProjectsPage() {
                 Beheer meerdere websites en WordPress sites
               </p>
             </div>
-            <Link href="/dashboard/agency/projects/new" className="w-full sm:w-auto">
+            <Link href="/admin/projects/new" className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 <span className="text-sm sm:text-base">Nieuw project</span>
@@ -186,7 +186,7 @@ export default function AdminProjectsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Link href={`/dashboard/agency/projects/${project.id}`}>
+                  <Link href={`/admin/projects/${project.id}`}>
                     <Button variant="default" size="sm" className="w-full text-sm">
                       <Eye className="h-4 w-4 mr-2" />
                       Project bekijken
@@ -194,7 +194,7 @@ export default function AdminProjectsPage() {
                   </Link>
                   
                   <div className="grid grid-cols-2 gap-2">
-                    <Link href={`/dashboard/agency/projects/${project.id}`}>
+                    <Link href={`/admin/projects/${project.id}`}>
                       <Button variant="outline" size="sm" className="w-full text-sm border-gray-600 text-gray-300 hover:bg-gray-700">
                         <Settings className="h-4 w-4 mr-2" />
                         Instellingen
@@ -222,7 +222,7 @@ export default function AdminProjectsPage() {
             <CardContent className="py-8 sm:py-12 text-center px-4">
               <Globe className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-3 sm:mb-4" />
               <p className="text-sm sm:text-base text-gray-400 mb-3 sm:mb-4">Nog geen projecten aangemaakt</p>
-              <Link href="/dashboard/agency/projects/new" className="inline-block w-full sm:w-auto">
+              <Link href="/admin/projects/new" className="inline-block w-full sm:w-auto">
                 <Button className="w-full sm:w-auto text-sm sm:text-base bg-orange-500 hover:bg-orange-600">
                   <Plus className="h-4 w-4 mr-2" />
                   Nieuw project aanmaken
