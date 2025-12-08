@@ -5,9 +5,12 @@ import { prisma } from '@/lib/db';
 import OpenAI from 'openai';
 import { deductCredits } from '@/lib/credits';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization to avoid build-time errors when env vars are not available
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 interface GenerateRequest {
   config: {
@@ -88,6 +91,7 @@ export async function POST(req: NextRequest) {
     const prompt = buildPrompt(config);
 
     // Generate content using OpenAI
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4-turbo-preview',
       messages: [
