@@ -34,8 +34,14 @@ export async function POST(req: NextRequest) {
     }
 
        // Get client from database
-    const client = await prisma. client.findUnique({
+    const client = await prisma.client.findUnique({
       where: { email: session.user.email },
+      select: {
+        id: true,
+        subscriptionCredits: true,
+        topUpCredits: true,
+        isUnlimited: true,
+      },
     });
 
     if (!client) {
@@ -63,13 +69,16 @@ export async function POST(req: NextRequest) {
       creditsNeeded = 15;
     }
 
+    // Calculate total available credits
+    const totalCredits = (client.subscriptionCredits || 0) + (client.topUpCredits || 0);
+
     // Check if client has enough credits
-    if (client.credits < creditsNeeded) {
+    if (!client.isUnlimited && totalCredits < creditsNeeded) {
       return NextResponse.json(
         { 
           error: 'Insufficient credits',
           creditsNeeded,
-          creditsAvailable: client.credits
+          creditsAvailable: totalCredits
         },
         { status: 402 }
       );
@@ -127,7 +136,7 @@ export async function POST(req: NextRequest) {
       success: true,
       sections,
       creditsUsed: creditsNeeded,
-      creditsRemaining: deductResult.remainingCredits ?? client.credits - creditsNeeded,
+      creditsRemaining: deductResult.newBalance ?? totalCredits - creditsNeeded,
     });
 
   } catch (error) {
