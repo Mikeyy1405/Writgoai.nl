@@ -1,186 +1,237 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import OpenAI from 'openai';
 import { deductCredits } from '@/lib/credits';
-import { searchBolcomProducts } from '@/lib/bolcom-api';
-import { findRelevantInternalLinks } from '@/lib/sitemap-loader';
-import { generateContentStream, type UltimateWriterConfig } from '@/lib/ultimate-writer-engine';
 
-export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
-export const runtime = 'nodejs';
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-/**
- * 🚀 ULTIMATE WRITER - GENERATE API
- * Stream-based content generation with all features
- */
+interface GenerateRequest {
+  config: {
+    contentType: string;
+    topic: string;
+    targetAudience?: string;
+    tone?: string;
+    length?: string;
+    keywords?: string[];
+    outline?: string;
+    additionalInstructions?: string;
+  };
+}
 
-const WORDS_PER_CREDIT = 500;
-
-export async function POST(request: NextRequest) {
-  console.log('🚀 [Ultimate Writer] Generate API called');
-
+export async function POST(req: NextRequest) {
   try {
-    // 1. Authentication
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    // 2. Parse request
-    const body = await request.json();
-    const config: UltimateWriterConfig = body;
-
-    console.log('📦 [Ultimate Writer] Configuration:', {
-      contentType: config.contentType,
-      topic: config.topic,
-      wordCount: config.wordCount,
-      projectId: config.projectId,
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
     });
 
-    // 3. Get client
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email! },
-      select: { id: true },
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get client associated with this user
+    const client = await prisma.client.findFirst({
+      where: { userId: user.id },
     });
 
     if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-    }
-
-    // 4. Get project data if project selected
-    if (config.projectId) {
-      const project = await prisma.project.findUnique({
-        where: { id: config.projectId },
-        select: {
-          id: true,
-          name: true,
-          websiteUrl: true,
-          brandVoice: true,
-          customInstructions: true,
-          sitemap: true,
-          importantPages: true,
-          bolcomEnabled: true,
-          bolcomAffiliateId: true,
-          bolcomClientId: true,
-          bolcomClientSecret: true,
-        },
-      });
-
-      if (project) {
-        config.project = project;
-
-        // Get internal links
-        if (config.includeInternalLinks && config.internalLinksCount > 0) {
-          const internalLinks: Array<{ title: string; url: string }> = [];
-
-          // Try importantPages first
-          if (project.importantPages && typeof project.importantPages === 'object') {
-            const pages = project.importantPages as any;
-            if (Array.isArray(pages)) {
-              internalLinks.push(
-                ...pages
-                  .filter((p: any) => p.title && p.url)
-                  .slice(0, config.internalLinksCount)
-                  .map((p: any) => ({ title: p.title, url: p.url }))
-              );
-            }
-          }
-
-          // If not enough, try sitemap
-          if (internalLinks.length < config.internalLinksCount && project.sitemap) {
-            const sitemap = project.sitemap as any;
-            if (Array.isArray(sitemap.urls)) {
-              const additionalLinks = sitemap.urls
-                .filter((url: any) => url.title && url.loc)
-                .slice(0, config.internalLinksCount - internalLinks.length)
-                .map((url: any) => ({ title: url.title || url.loc, url: url.loc }));
-              internalLinks.push(...additionalLinks);
-            }
-          }
-
-          config.internalLinks = internalLinks;
-        }
-
-        // Get Bol.com products
-        if (
-          config.includeBolProducts &&
-          config.bolProductCount > 0 &&
-          project.bolcomEnabled &&
-          project.bolcomClientId &&
-          project.bolcomClientSecret
-        ) {
-          try {
-            const searchQuery = `${config.primaryKeyword} ${config.topic}`.slice(0, 100);
-            const bolProducts = await searchBolcomProducts(
-              searchQuery,
-              {
-                clientId: project.bolcomClientId,
-                clientSecret: project.bolcomClientSecret
-              },
-              {
-                resultsPerPage: config.bolProductCount
-              }
-            );
-            config.bolProducts = bolProducts.results.slice(0, config.bolProductCount);
-            console.log(`✅ [Ultimate Writer] Found ${config.bolProducts.length} Bol.com products`);
-          } catch (error) {
-            console.error('⚠️ [Ultimate Writer] Bol.com search failed:', error);
-            config.bolProducts = [];
-          }
-        }
-      }
-    }
-
-    // 5. Calculate and deduct credits
-    const creditsNeeded = Math.ceil(config.wordCount / WORDS_PER_CREDIT);
-    console.log(`💰 [Ultimate Writer] Credits needed: ${creditsNeeded}`);
-
-    const deductResult = await deductCredits(client.id, creditsNeeded);
-    if (!deductResult.success) {
       return NextResponse.json(
-        { error: 'Onvoldoende credits. Je hebt minimaal ' + creditsNeeded + ' credits nodig.' },
+        { error: 'Client not found' },
+        { status: 404 }
+      );
+    }
+
+    const body: GenerateRequest = await req.json();
+    const { config } = body;
+
+    if (!config?.contentType || !config?.topic) {
+      return NextResponse.json(
+        { error: 'Content type and topic are required' },
+        { status: 400 }
+      );
+    }
+
+    // Calculate credits needed based on length
+    let creditsNeeded = 5; // Default for short content
+    if (config.length === 'medium') {
+      creditsNeeded = 10;
+    } else if (config.length === 'long') {
+      creditsNeeded = 15;
+    }
+
+    // Check if client has enough credits
+    if (client.credits < creditsNeeded) {
+      return NextResponse.json(
+        { 
+          error: 'Insufficient credits',
+          creditsNeeded,
+          creditsAvailable: client.credits
+        },
         { status: 402 }
       );
     }
 
-    // 6. Create streaming response
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Generate content with streaming
-          for await (const chunk of generateContentStream(config)) {
-            const data = `data: ${JSON.stringify(chunk)}\n\n`;
-            controller.enqueue(encoder.encode(data));
-          }
+    // Build the prompt
+    const prompt = buildPrompt(config);
 
-          controller.close();
-        } catch (error) {
-          console.error('❌ [Ultimate Writer] Stream error:', error);
-          const errorData = `data: ${JSON.stringify({
-            type: 'error',
-            error: error instanceof Error ? error.message : 'Generation failed',
-          })}\n\n`;
-          controller.enqueue(encoder.encode(errorData));
-          controller.close();
-        }
-      },
+    // Generate content using OpenAI
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert content writer who creates high-quality, engaging content tailored to specific audiences and purposes. You follow instructions carefully and produce well-structured, informative content.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: getMaxTokens(config.length),
     });
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
+    const generatedContent = completion.choices[0]?.message?.content;
+
+    if (!generatedContent) {
+      return NextResponse.json(
+        { error: 'Failed to generate content' },
+        { status: 500 }
+      );
+    }
+
+    // Parse the generated content to extract sections
+    const sections = parseGeneratedContent(generatedContent, config.contentType);
+
+    // Deduct credits AFTER successful generation
+    const deductResult = await deductCredits(
+      client.id, 
+      creditsNeeded, 
+      `Ultimate Writer: ${config.contentType} - ${config.topic}`,
+      {
+        tool: 'ultimate_writer'
+      }
+    );
+
+    if (!deductResult.success) {
+      console.error('Failed to deduct credits:', deductResult.error);
+      // Note: Content was already generated, so we'll return it anyway
+      // but log the error for investigation
+    }
+
+    return NextResponse.json({
+      success: true,
+      content: generatedContent,
+      sections,
+      creditsUsed: creditsNeeded,
+      creditsRemaining: deductResult.remainingCredits ?? client.credits - creditsNeeded,
     });
-  } catch (error: any) {
-    console.error('❌ [Ultimate Writer] Error:', error);
+
+  } catch (error) {
+    console.error('Error generating content:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to generate content' },
+      { 
+        error: 'Failed to generate content',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
+}
+
+function buildPrompt(config: GenerateRequest['config']): string {
+  let prompt = `Create a ${config.contentType} about "${config.topic}".`;
+
+  if (config.targetAudience) {
+    prompt += ` The target audience is: ${config.targetAudience}.`;
+  }
+
+  if (config.tone) {
+    prompt += ` Use a ${config.tone} tone.`;
+  }
+
+  if (config.length) {
+    const lengthDescriptions = {
+      short: '500-800 words',
+      medium: '1000-1500 words',
+      long: '2000+ words',
+    };
+    prompt += ` The content should be approximately ${lengthDescriptions[config.length as keyof typeof lengthDescriptions] || 'medium length'}.`;
+  }
+
+  if (config.keywords && config.keywords.length > 0) {
+    prompt += ` Include these keywords naturally: ${config.keywords.join(', ')}.`;
+  }
+
+  if (config.outline) {
+    prompt += ` Follow this outline or structure: ${config.outline}.`;
+  }
+
+  if (config.additionalInstructions) {
+    prompt += ` Additional instructions: ${config.additionalInstructions}.`;
+  }
+
+  prompt += '\n\nPlease structure the content with clear headings and sections. Make it engaging, informative, and well-organized.';
+
+  return prompt;
+}
+
+function getMaxTokens(length?: string): number {
+  const tokenLimits = {
+    short: 1500,
+    medium: 3000,
+    long: 4000,
+  };
+  return tokenLimits[length as keyof typeof tokenLimits] || 3000;
+}
+
+function parseGeneratedContent(content: string, contentType: string) {
+  // Split content into sections based on headers (lines starting with # or ##)
+  const lines = content.split('\n');
+  const sections: Array<{ title: string; content: string }> = [];
+  let currentSection: { title: string; content: string } | null = null;
+
+  for (const line of lines) {
+    // Check if line is a header
+    if (line.match(/^#{1,3}\s+/)) {
+      // Save previous section if exists
+      if (currentSection) {
+        sections.push(currentSection);
+      }
+      // Start new section
+      const title = line.replace(/^#{1,3}\s+/, '').trim();
+      currentSection = { title, content: '' };
+    } else if (currentSection) {
+      // Add line to current section
+      currentSection.content += line + '\n';
+    } else {
+      // Content before first header - create intro section
+      if (!currentSection) {
+        currentSection = { title: 'Introduction', content: line + '\n' };
+      }
+    }
+  }
+
+  // Add the last section
+  if (currentSection) {
+    sections.push(currentSection);
+  }
+
+  return sections.length > 0 ? sections : [{ title: contentType, content }];
 }
