@@ -94,12 +94,14 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
         
         // Check if project has WordPress credentials configured
         const hasWpConfig = Boolean(project.wordpressUrl && project.wordpressUsername && project.hasWordPressPassword);
-        console.log('[Content Hub] WordPress config check:', {
-          wordpressUrl: project.wordpressUrl,
-          wordpressUsername: project.wordpressUsername,
-          hasWordPressPassword: project.hasWordPressPassword,
-          hasWpConfig
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Content Hub] WordPress config check:', {
+            wordpressUrl: project.wordpressUrl,
+            wordpressUsername: project.wordpressUsername,
+            hasWordPressPassword: project.hasWordPressPassword,
+            hasWpConfig
+          });
+        }
         setHasWordPressConfigured(hasWpConfig);
         
         if (hasWpConfig) {
