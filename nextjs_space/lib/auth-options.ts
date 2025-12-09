@@ -5,6 +5,9 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
+// Admin emails that should get admin privileges
+const adminEmails = ['info@writgoai.nl', 'info@writgo.nl'];
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -54,8 +57,8 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (isPasswordValid) {
-            // Special handling for info@WritgoAI.nl - give admin role
-            const role = client.email === 'info@WritgoAI.nl' ? 'admin' : 'client';
+            // Special handling for admin emails - give admin role
+            const role = adminEmails.includes(client.email.toLowerCase()) ? 'admin' : 'client';
             
             return {
               id: client.id,
@@ -137,8 +140,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Ongeldige inloggegevens');
         }
 
-        // Special handling for info@WritgoAI.nl - give admin role
-        const role = client.email === 'info@WritgoAI.nl' ? 'admin' : 'client';
+        // Special handling for admin emails - give admin role
+        const role = adminEmails.includes(client.email.toLowerCase()) ? 'admin' : 'client';
 
         return {
           id: client.id,
