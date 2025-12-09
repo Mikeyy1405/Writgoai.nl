@@ -84,5 +84,7 @@ export function getPublicUrl(s3Key: string): string {
   } else if (s3BucketName) {
     return `https://${s3BucketName}.s3.${s3Region}.amazonaws.com/${s3Key}`;
   }
-  return s3Key;
+  
+  // If neither CDN nor S3 bucket is configured, throw an error
+  throw new Error('S3 configuration missing: AWS_BUCKET_NAME or CDN_DOMAIN environment variable must be set');
 }

@@ -5,6 +5,35 @@ import { prisma } from '@/lib/db';
 
 export const maxDuration = 60;
 
+// Helper function to handle Prisma errors
+function handlePrismaError(error: unknown, context: string): NextResponse | null {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const prismaError = error as { code: string; meta?: any };
+    
+    // P2021: Table does not exist
+    if (prismaError.code === 'P2021') {
+      console.error(`[Branding API] Database table does not exist. Run: npx prisma db push`);
+      return NextResponse.json(
+        { error: 'Database tabel ontbreekt. Voer database migratie uit.' },
+        { status: 500 }
+      );
+    }
+    
+    // P1001: Can't reach database server
+    if (prismaError.code === 'P1001') {
+      console.error('[Branding API] Cannot connect to database');
+      return NextResponse.json(
+        { error: 'Kan geen verbinding maken met de database' },
+        { status: 500 }
+      );
+    }
+    
+    console.error('[Branding API] Prisma error code:', prismaError.code);
+  }
+  
+  return null;
+}
+
 // GET - Fetch brand settings (admin only)
 export async function GET() {
   try {
@@ -38,29 +67,9 @@ export async function GET() {
   } catch (error) {
     console.error('[Branding API] Failed to fetch brand settings:', error);
     
-    // Check if this is a Prisma error
-    if (error && typeof error === 'object' && 'code' in error) {
-      const prismaError = error as { code: string; meta?: any };
-      
-      // P2021: Table does not exist
-      if (prismaError.code === 'P2021') {
-        console.error('[Branding API] Database table does not exist. Run: npx prisma db push');
-        return NextResponse.json(
-          { error: 'Database tabel ontbreekt. Voer database migratie uit.' },
-          { status: 500 }
-        );
-      }
-      
-      // P1001: Can't reach database server
-      if (prismaError.code === 'P1001') {
-        console.error('[Branding API] Cannot connect to database');
-        return NextResponse.json(
-          { error: 'Kan geen verbinding maken met de database' },
-          { status: 500 }
-        );
-      }
-      
-      console.error('[Branding API] Prisma error code:', prismaError.code);
+    const prismaErrorResponse = handlePrismaError(error, 'fetch');
+    if (prismaErrorResponse) {
+      return prismaErrorResponse;
     }
     
     return NextResponse.json(
@@ -147,29 +156,9 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     console.error('[Branding API] Failed to update brand settings:', error);
     
-    // Check if this is a Prisma error
-    if (error && typeof error === 'object' && 'code' in error) {
-      const prismaError = error as { code: string; meta?: any };
-      
-      // P2021: Table does not exist
-      if (prismaError.code === 'P2021') {
-        console.error('[Branding API] Database table does not exist. Run: npx prisma db push');
-        return NextResponse.json(
-          { error: 'Database tabel ontbreekt. Voer database migratie uit.' },
-          { status: 500 }
-        );
-      }
-      
-      // P1001: Can't reach database server
-      if (prismaError.code === 'P1001') {
-        console.error('[Branding API] Cannot connect to database');
-        return NextResponse.json(
-          { error: 'Kan geen verbinding maken met de database' },
-          { status: 500 }
-        );
-      }
-      
-      console.error('[Branding API] Prisma error code:', prismaError.code);
+    const prismaErrorResponse = handlePrismaError(error, 'update');
+    if (prismaErrorResponse) {
+      return prismaErrorResponse;
     }
     
     return NextResponse.json(
