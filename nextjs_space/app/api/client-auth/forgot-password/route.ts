@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { rateLimiters } from '@/lib/rate-limiter';
-import { sendPasswordResetEmail } from '@/lib/password-reset-email';
 import { log, logError } from '@/lib/logger';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 
 export async function POST(request: NextRequest) {
@@ -33,56 +31,52 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if user exists in Client or User table
+    // Check if user exists in Client or User table (for logging purposes only)
     const [client, user] = await Promise.all([
-      prisma.client.findUnique({ 
-        where: { email: normalizedEmail },
-        select: { id: true, email: true, name: true }
-      }),
-      prisma.user.findUnique({ 
-        where: { email: normalizedEmail },
-        select: { id: true, email: true, name: true }
-      }),
+      supabaseAdmin
+        .from('Client')
+        .select('id, email, name')
+        .eq('email', normalizedEmail)
+        .single()
+        .then(({ data }) => data),
+      supabaseAdmin
+        .from('User')
+        .select('id, email, name')
+        .eq('email', normalizedEmail)
+        .single()
+        .then(({ data }) => data),
     ]);
 
     const userExists = client || user;
 
     if (userExists) {
-      // Generate secure random token (32 bytes = 64 hex characters)
-      const resetToken = crypto.randomBytes(32).toString('hex');
-      
-      // Token expires in 1 hour
-      const expires = new Date();
-      expires.setHours(expires.getHours() + 1);
+      // Use Supabase Auth to send password reset email
+      const redirectUrl = process.env.NEXTAUTH_URL 
+        ? `${process.env.NEXTAUTH_URL}/wachtwoord-resetten`
+        : 'https://writgoai.nl/wachtwoord-resetten';
 
-      // Store token in database
-      await prisma.passwordResetToken.create({
-        data: {
-          email: normalizedEmail,
-          token: resetToken,
-          expires,
-        },
-      });
-
-      // Get the base URL for the reset link
-      const baseUrl = process.env.NEXTAUTH_URL || 'https://writgoai.nl';
-      const resetLink = `${baseUrl}/wachtwoord-resetten?token=${resetToken}`;
-
-      // Send password reset email
       try {
-        await sendPasswordResetEmail({
-          to: normalizedEmail,
-          name: userExists.name || 'daar',
-          resetLink,
-        });
+        const { error } = await supabaseAdmin.auth.resetPasswordForEmail(
+          normalizedEmail,
+          {
+            redirectTo: redirectUrl,
+          }
+        );
 
-        log('info', 'Password reset email sent', {
-          email: normalizedEmail,
-          expiresAt: expires.toISOString(),
-        });
+        if (error) {
+          logError(error as Error, {
+            context: 'Supabase password reset failed',
+            email: normalizedEmail,
+          });
+          // Continue anyway - don't reveal if email sending failed
+        } else {
+          log('info', 'Password reset email sent via Supabase', {
+            email: normalizedEmail,
+          });
+        }
       } catch (emailError) {
         logError(emailError as Error, {
-          context: 'Failed to send password reset email',
+          context: 'Failed to send password reset email via Supabase',
           email: normalizedEmail,
         });
         // Continue anyway - don't reveal if email sending failed
