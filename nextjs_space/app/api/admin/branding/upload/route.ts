@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { uploadFile, getPublicUrl } from '@/lib/s3';
 
+// Next.js route configuration - max execution time in seconds
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
@@ -16,31 +17,44 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    const type = formData.get('type') as string; // 'logo', 'favicon', etc.
+    const type = formData.get('type') as string; // 'logo', 'logoLight', 'logoDark', etc.
 
     if (!file) {
       return NextResponse.json({ error: 'Geen bestand gevonden' }, { status: 400 });
     }
 
-    // Validate file type - only images allowed
-    if (!file.type.startsWith('image/')) {
+    // Validate file type - only specific image formats allowed
+    const allowedMimeTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml'
+    ];
+    
+    if (!allowedMimeTypes.includes(file.type)) {
       return NextResponse.json({ 
-        error: 'Alleen afbeeldingen zijn toegestaan' 
+        error: 'Alleen PNG, JPEG, GIF, WebP en SVG afbeeldingen zijn toegestaan' 
       }, { status: 400 });
     }
 
-    // Validate file size (max 10MB for branding assets)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
+    // Validate file size (max 5MB for database storage)
+    // Note: Base64 encoding adds ~33% overhead, so actual DB storage will be ~6.7MB
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ 
-        error: 'Bestand is te groot. Maximaal 10MB toegestaan.' 
+        error: 'Bestand is te groot. Maximaal 5MB toegestaan voor database opslag.' 
       }, { status: 400 });
     }
 
     console.log('[Branding Upload] Uploading file:', file.name, 'Size:', file.size, 'Type:', type);
 
-    // Convert file to buffer
+    // Convert file to Base64 data URL
     const buffer = Buffer.from(await file.arrayBuffer());
+    const base64 = buffer.toString('base64');
+    
+    // Use validated MIME type (already checked against whitelist above)
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
     // Generate S3 key with timestamp and type
     const timestamp = Date.now();

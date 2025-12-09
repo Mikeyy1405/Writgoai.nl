@@ -2839,16 +2839,16 @@ model BrandSettings {
   companyName           String   @default("WritgoAI")
   tagline               String?  @default("Content die scoort")
   
-  // Logos
-  logoUrl               String?  // Main logo (transparent background)
-  logoLightUrl          String?  // Logo for dark backgrounds
-  logoDarkUrl           String?  // Logo for light backgrounds
-  logoIconUrl           String?  // Square icon/favicon version
+  // Logos - gebruik @db.Text voor Base64 opslag
+  logoUrl               String?  @db.Text // Main logo (transparent background)
+  logoLightUrl          String?  @db.Text // Logo for dark backgrounds
+  logoDarkUrl           String?  @db.Text // Logo for light backgrounds
+  logoIconUrl           String?  @db.Text // Square icon/favicon version
   
   // Favicon
-  faviconUrl            String?  // 32x32 favicon
-  favicon192Url         String?  // 192x192 for PWA
-  favicon512Url         String?  // 512x512 for PWA
+  faviconUrl            String?  @db.Text // 32x32 favicon
+  favicon192Url         String?  @db.Text // 192x192 for PWA
+  favicon512Url         String?  @db.Text // 512x512 for PWA
   
   // Colors
   primaryColor          String   @default("#FF6B35")   // Orange
