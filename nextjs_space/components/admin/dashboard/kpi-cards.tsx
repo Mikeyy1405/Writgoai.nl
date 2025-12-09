@@ -29,7 +29,7 @@ export function KPICards({ data }: KPICardsProps) {
       icon: Users,
       iconBg: 'bg-blue-500/20',
       iconColor: 'text-blue-400',
-      trend: data.activeSubscriptions > 0 ? `+${Math.round((data.activeSubscriptions / data.totalClients) * 100)}%` : null,
+      trend: data.totalClients > 0 && data.activeSubscriptions > 0 ? `+${Math.round((data.activeSubscriptions / data.totalClients) * 100)}%` : null,
       trendUp: true,
     },
     {
@@ -55,7 +55,7 @@ export function KPICards({ data }: KPICardsProps) {
     {
       title: 'Openstaand',
       value: `€${data.outstandingInvoices.toLocaleString('nl-NL')}`,
-      subtitle: `4 facturen`,
+      subtitle: `openstaande facturen`,
       icon: FileText,
       iconBg: 'bg-yellow-500/20',
       iconColor: 'text-yellow-400',
@@ -65,7 +65,7 @@ export function KPICards({ data }: KPICardsProps) {
     {
       title: 'Te Laat',
       value: `€${data.overdueInvoices.toLocaleString('nl-NL')}`,
-      subtitle: `2 facturen`,
+      subtitle: `te late facturen`,
       icon: AlertTriangle,
       iconBg: 'bg-red-500/20',
       iconColor: 'text-red-400',

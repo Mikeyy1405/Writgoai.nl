@@ -292,12 +292,16 @@ export async function GET() {
 
     for (const inv of recentPaidInvoices) {
       const contact = contacts.find((c: any) => c.id === inv.contact_id);
+      const clientName = contact?.company_name || 
+        (contact?.firstname || contact?.lastname 
+          ? `${contact.firstname || ''} ${contact.lastname || ''}`.trim() 
+          : 'Onbekend');
       recentActivity.push({
         type: 'invoice_paid',
         description: `Factuur #${inv.invoice_id} betaald`,
         amount: parseFloat(inv.total_price_excl_tax || '0'),
         date: inv.updated_at || inv.created_at,
-        client: contact?.company_name || contact?.firstname + ' ' + contact?.lastname || 'Onbekend',
+        client: clientName,
       });
     }
 
@@ -311,12 +315,16 @@ export async function GET() {
 
     for (const sub of recentSubscriptions) {
       const contact = contacts.find((c: any) => c.id === sub.contact_id);
+      const clientName = contact?.company_name || 
+        (contact?.firstname || contact?.lastname 
+          ? `${contact.firstname || ''} ${contact.lastname || ''}`.trim() 
+          : 'Onbekend');
       recentActivity.push({
         type: 'subscription_created',
         description: `Nieuw abonnement gestart`,
         amount: parseFloat(sub.total_price_excl_tax || '0'),
         date: sub.created_at,
-        client: contact?.company_name || contact?.firstname + ' ' + contact?.lastname || 'Onbekend',
+        client: clientName,
       });
     }
 
@@ -333,8 +341,12 @@ export async function GET() {
       if (inv.state === 'paid') {
         const contact = contacts.find((c: any) => c.id === inv.contact_id);
         if (contact) {
+          const clientName = contact.company_name || 
+            (contact.firstname || contact.lastname 
+              ? `${contact.firstname || ''} ${contact.lastname || ''}`.trim() 
+              : 'Onbekend');
           const existing = clientRevenue.get(inv.contact_id) || {
-            name: contact.company_name || contact.firstname + ' ' + contact.lastname,
+            name: clientName,
             email: contact.email || '',
             revenue: 0,
             count: 0,
@@ -363,10 +375,9 @@ export async function GET() {
     const draftInvoices = salesInvoices.filter((inv: any) => inv.state === 'draft').length;
     const overdueCount = salesInvoices.filter((inv: any) => inv.state === 'late').length;
 
-    const subscriptionsRenewingToday = subscriptions.filter((sub: any) => {
-      // Simple check - in real scenario you'd check next_invoice_date or similar
-      return sub.active;
-    }).length;
+    // Count subscriptions that might renew today (this is a simplified check)
+    // In a real scenario, Moneybird API would provide next_invoice_date
+    const subscriptionsRenewingToday = 0; // Placeholder - would need Moneybird's next_invoice_date field
 
     const revenueToday = salesInvoices
       .filter((inv: any) => {
