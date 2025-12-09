@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { log, logError } from '@/lib/logger';
 
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {

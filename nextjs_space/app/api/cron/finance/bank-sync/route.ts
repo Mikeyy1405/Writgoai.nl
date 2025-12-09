@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getMoneybird } from '@/lib/moneybird';
 
-const prisma = new PrismaClient();
 
 /**
  * POST /api/cron/finance/bank-sync

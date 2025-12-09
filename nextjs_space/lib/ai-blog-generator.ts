@@ -78,8 +78,7 @@ export async function generateBlogAutomatically(
     let customInstructions: string | null = null;
     if (options.clientId) {
       try {
-        const { PrismaClient } = await import('@prisma/client');
-        const prisma = new PrismaClient();
+        const { supabaseAdmin: prisma } = await import('@/lib/supabase');
         
         const projects = await prisma.project.findMany({
           where: { clientId: options.clientId },

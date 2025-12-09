@@ -4,10 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import { addAICaptions } from '@/lib/vadoo';
 
-const prisma = new PrismaClient();
 
 /**
  * Add AI Captions to an existing video

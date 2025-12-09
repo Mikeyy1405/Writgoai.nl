@@ -2,14 +2,12 @@
 // Client login API
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { withRateLimit } from '@/lib/rate-limiter';
 import { validateInput, loginSchema } from '@/lib/validation';
 import { log, logFailedLogin, logError } from '@/lib/logger';
 
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {

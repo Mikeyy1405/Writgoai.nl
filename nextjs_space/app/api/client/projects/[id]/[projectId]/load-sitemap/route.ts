@@ -4,10 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import { updateProjectSitemap } from '@/lib/sitemap-loader';
 
-const prisma = new PrismaClient();
 
 export async function POST(
   req: NextRequest,

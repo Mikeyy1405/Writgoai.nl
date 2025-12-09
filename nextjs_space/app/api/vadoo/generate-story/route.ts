@@ -4,10 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import { createAIVideo } from '@/lib/vadoo';
 
-const prisma = new PrismaClient();
 
 /**
  * Generate AI Story Video

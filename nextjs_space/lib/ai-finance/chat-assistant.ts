@@ -1,11 +1,9 @@
 // AI-powered financial chat assistant for natural language queries
 
-import { PrismaClient } from '@prisma/client';
 import { calculateMRR, predictMRR, getGrowthMetrics } from './revenue-predictor';
 import { getExpenseInsights } from './expense-analyzer';
 import { getInvoicePatterns, predictLatePayments } from './invoice-analyzer';
 
-const prisma = new PrismaClient();
 
 export interface ChatResponse {
   answer: string;

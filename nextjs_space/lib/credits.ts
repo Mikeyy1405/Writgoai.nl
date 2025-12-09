@@ -8,10 +8,8 @@
  * nog credit checks. Admins en superadmins worden altijd doorgelaten.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { trackUsage } from './usage-tracking';
 
-const prisma = new PrismaClient();
 
 // Constants
 export const UNLIMITED_CREDITS = 999999;

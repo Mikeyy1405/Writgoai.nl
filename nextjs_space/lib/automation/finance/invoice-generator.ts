@@ -1,9 +1,7 @@
 // Automated invoice generation for monthly subscriptions
 
-import { PrismaClient } from '@prisma/client';
 import { getMoneybird } from '@/lib/moneybird';
 
-const prisma = new PrismaClient();
 
 export interface InvoiceGenerationResult {
   success: boolean;

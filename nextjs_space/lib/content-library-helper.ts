@@ -6,8 +6,10 @@
  * met slimme duplicate detection
  */
 
-import { prisma } from '@/lib/db';
-import { Language } from '@prisma/client';
+import { supabaseAdmin as prisma } from '@/lib/supabase';
+
+// Language type definition (from Supabase schema)
+export type Language = 'NL' | 'EN' | 'DE' | 'ES' | 'FR' | 'IT' | 'PT' | 'PL' | 'SV' | 'DA';
 
 export interface ContentToSave {
   clientId: string;

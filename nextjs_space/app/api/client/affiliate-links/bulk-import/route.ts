@@ -4,10 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import aimlAPI from '@/lib/aiml-api';
 
-const prisma = new PrismaClient();
 
 // Analyze URL and generate title
 async function analyzeUrl(url: string): Promise<{ title: string; description: string; category: string }> {

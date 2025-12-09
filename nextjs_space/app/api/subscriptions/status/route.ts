@@ -6,11 +6,9 @@ export const dynamic = "force-dynamic";
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
 
 export async function GET(request: NextRequest) {

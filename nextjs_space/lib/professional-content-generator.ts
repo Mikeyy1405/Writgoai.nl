@@ -6,7 +6,6 @@
  * - Video: Real videos via Abacus.AI (DeepAgent)
  */
 
-import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 import { generateAbacusVideo, DEFAULT_VIDEO_OPTIONS, type AbacusVideoResponse } from './abacus-video';
 import { performWebResearch, type ResearchResult } from './web-research';
@@ -14,7 +13,6 @@ import { getPixabayImagesForArticle } from './pixabay-api';
 import { getBannedWordsInstructions, removeBannedWords, isContentValid } from './banned-words';
 import { addYouTubeToContent } from './youtube-search';
 
-const prisma = new PrismaClient();
 
 function getOpenAI() {
   // Use AI/ML API with access to all models

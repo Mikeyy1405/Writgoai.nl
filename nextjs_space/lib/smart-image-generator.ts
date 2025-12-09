@@ -8,9 +8,7 @@
 
 import { generateImage, IMAGE_MODELS } from './aiml-api';
 import { searchFreeStockImages, downloadImageToBuffer, type StockImageResult } from './free-stock-images';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 export interface SmartImageOptions {
   prompt: string;

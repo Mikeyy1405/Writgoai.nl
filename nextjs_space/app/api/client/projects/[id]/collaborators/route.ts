@@ -1,11 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
 
 const inviteSchema = z.object({
   email: z.string().email('Ongeldig email adres'),

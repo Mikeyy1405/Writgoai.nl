@@ -1,8 +1,6 @@
 // AI-powered expense analyzer for categorization, trends, and savings opportunities
 
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 export interface ExpenseAnalysis {
   categorization: {

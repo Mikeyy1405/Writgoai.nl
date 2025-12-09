@@ -6,10 +6,8 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin as prisma } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   try {

@@ -1,9 +1,7 @@
 // Automated payment reminder system
 
-import { PrismaClient } from '@prisma/client';
 import { predictLatePayments, generatePaymentReminder } from '@/lib/ai-finance';
 
-const prisma = new PrismaClient();
 
 export interface ReminderResult {
   success: boolean;

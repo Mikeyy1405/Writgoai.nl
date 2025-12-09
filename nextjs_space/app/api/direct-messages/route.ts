@@ -8,9 +8,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 // GET: Haal berichten op
 export async function GET(request: NextRequest) {

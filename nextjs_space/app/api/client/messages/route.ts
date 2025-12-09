@@ -6,9 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 // POST: Voeg een message toe aan een conversation
 export async function POST(request: NextRequest) {
