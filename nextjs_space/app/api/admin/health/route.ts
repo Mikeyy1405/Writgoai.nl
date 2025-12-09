@@ -69,12 +69,8 @@ export async function GET() {
           checks.services.moneybird = {
             status: 'configured',
             message: 'Moneybird API configuratie OK',
+            note: 'Actual API connectivity test skipped to avoid rate limits',
           };
-
-          // Optionally test actual API connectivity (commented out to avoid rate limits)
-          // const contacts = await moneybird.listContacts();
-          // checks.services.moneybird.status = 'healthy';
-          // checks.services.moneybird.message = 'Moneybird API verbinding OK';
         } catch (error) {
           checks.overall = 'degraded';
           checks.services.moneybird = {

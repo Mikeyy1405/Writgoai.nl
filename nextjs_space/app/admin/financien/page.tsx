@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-// Timeout constants
-const API_TIMEOUT_MS = 15000; // 15 seconds for Moneybird API calls
+import { API_TIMEOUTS } from '@/lib/api-timeout';
 import {
   DollarSign,
   TrendingUp,
@@ -73,7 +71,7 @@ export default function FinancienPage() {
 
       // Fetch with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUTS.MONEYBIRD_API);
 
       const res = await fetch('/api/financien/dashboard', {
         signal: controller.signal,

@@ -6,9 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/admin-layout';
 import { isUserAdmin } from '@/lib/navigation-config';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
-
-// Timeout constants
-const AUTH_TIMEOUT_MS = 10000; // 10 seconds for authentication check
+import { API_TIMEOUTS } from '@/lib/api-timeout';
 
 interface AdminLayoutPropsType {
   children: React.ReactNode;
@@ -22,14 +20,12 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   const isMountedRef = useRef(true);
 
   useEffect(() => {
-    isMountedRef.current = true;
-
     // Set a timeout for authentication check
     const authTimeout = setTimeout(() => {
       if (isMountedRef.current && status === 'loading') {
         setAuthError('Authenticatie duurt langer dan verwacht. Probeer de pagina te verversen.');
       }
-    }, AUTH_TIMEOUT_MS);
+    }, API_TIMEOUTS.AUTH_CHECK);
 
     try {
       if (status === 'unauthenticated') {

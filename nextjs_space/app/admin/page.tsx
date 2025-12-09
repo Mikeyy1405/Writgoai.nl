@@ -6,9 +6,6 @@ import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
-// Timeout constants
-const API_TIMEOUT_MS = 10000; // 10 seconds for admin stats API
 import {
   Loader2,
   Activity,
@@ -23,6 +20,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
+import { API_TIMEOUTS } from '@/lib/api-timeout';
 
 interface AdminStats {
   totalClients: number;
@@ -95,7 +93,7 @@ export default function AdminDashboard() {
 
       // Fetch admin stats with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUTS.ADMIN_STATS);
 
       const statsRes = await fetch('/api/admin/stats', {
         signal: controller.signal,

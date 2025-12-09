@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma as db } from '@/lib/db';
+import { withTimeout, API_TIMEOUTS } from '@/lib/api-timeout';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,15 +13,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     // Check session with timeout
-    let sessionTimeoutId: NodeJS.Timeout;
-    const session = await Promise.race([
+    const session = await withTimeout(
       getServerSession(authOptions),
-      new Promise((_, reject) => {
-        sessionTimeoutId = setTimeout(() => reject(new Error('Session check timeout')), 5000);
-      })
-    ]).finally(() => {
-      if (sessionTimeoutId) clearTimeout(sessionTimeoutId);
-    }).catch((error) => {
+      API_TIMEOUTS.SESSION_CHECK,
+      'Session check timeout'
+    ).catch((error) => {
       console.error('Session check failed:', error);
       return null;
     });
