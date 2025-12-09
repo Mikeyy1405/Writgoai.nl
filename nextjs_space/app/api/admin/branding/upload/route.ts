@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
+import { uploadFile, getPublicUrl } from '@/lib/s3';
 
 // Next.js route configuration - max execution time in seconds
 export const maxDuration = 60;
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('[Branding Upload] Processing file:', file.name, 'Size:', file.size, 'Type:', type);
+    console.log('[Branding Upload] Uploading file:', file.name, 'Size:', file.size, 'Type:', type);
 
     // Convert file to Base64 data URL
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -55,11 +56,23 @@ export async function POST(req: NextRequest) {
     // Use validated MIME type (already checked against whitelist above)
     const dataUrl = `data:${file.type};base64,${base64}`;
 
-    console.log('[Branding Upload] File converted to Base64, length:', dataUrl.length);
+    // Generate S3 key with timestamp and type
+    const timestamp = Date.now();
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const s3Key = `branding/${type}/${timestamp}-${sanitizedName}`;
+
+    // Upload to S3
+    const cloudStoragePath = await uploadFile(buffer, s3Key, file.type);
+
+    // Convert S3 key to full public URL
+    const publicUrl = getPublicUrl(cloudStoragePath);
+
+    console.log('[Branding Upload] File uploaded successfully:', publicUrl);
 
     return NextResponse.json({
       success: true,
-      url: dataUrl,
+      url: publicUrl,
+      key: cloudStoragePath,
       fileName: file.name,
       fileType: file.type,
       fileSize: file.size,
@@ -69,7 +82,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[Branding Upload] Error:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Upload mislukt' 
+      error: error instanceof Error ? error.message : 'Upload mislukt. Controleer de S3 configuratie.' 
     }, { status: 500 });
   }
 }

@@ -16,12 +16,6 @@ const nextConfig = {
   images: { unoptimized: true },
   async redirects() {
     return [
-      // Financiën routes
-      {
-        source: '/financien/:path*',
-        destination: '/admin/financien/:path*',
-        permanent: true,
-      },
       // Writer routes - redirect to ultimate-writer
       {
         source: '/client-portal/ai-writer',
