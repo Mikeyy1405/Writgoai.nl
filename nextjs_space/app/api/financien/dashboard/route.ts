@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { getMoneybird } from '@/lib/moneybird';
 import { prisma } from '@/lib/db';
+import { withTimeout, API_TIMEOUTS } from '@/lib/api-timeout';
 
 /**
  * GET /api/financien/dashboard
@@ -20,10 +21,39 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
     }
 
-    const moneybird = getMoneybird();
+    // Try to get Moneybird client with proper error handling
+    let moneybird;
+    try {
+      moneybird = getMoneybird();
+    } catch (error) {
+      console.error('[Financien Dashboard] Moneybird configuration error:', error);
+      return NextResponse.json(
+        { 
+          error: 'Moneybird API is niet correct geconfigureerd. Controleer je omgevingsvariabelen.',
+          details: error instanceof Error ? error.message : 'Configuration error'
+        },
+        { status: 500 }
+      );
+    }
 
-    // Haal alle facturen op uit Moneybird
-    const salesInvoices = await moneybird.listSalesInvoices();
+    // Haal alle facturen op uit Moneybird with timeout and error handling
+    let salesInvoices;
+    try {
+      salesInvoices = await withTimeout(
+        moneybird.listSalesInvoices(),
+        API_TIMEOUTS.MONEYBIRD_API,
+        'Moneybird API timeout'
+      );
+    } catch (error) {
+      console.error('[Financien Dashboard] Error fetching sales invoices:', error);
+      return NextResponse.json(
+        { 
+          error: 'Kon facturen niet ophalen van Moneybird',
+          details: error instanceof Error ? error.message : 'API error'
+        },
+        { status: 500 }
+      );
+    }
 
     // Bereken KPIs
     const paidInvoices = salesInvoices.filter((inv: any) => inv.state === 'paid');
@@ -41,9 +71,21 @@ export async function GET(req: NextRequest) {
       sum + parseFloat(inv.total_unpaid || '0'), 0
     );
 
-    // Haal abonnementen op
-    const subscriptions = await moneybird.listSubscriptions();
-    const activeSubscriptions = subscriptions.filter((sub: any) => sub.active);
+    // Haal abonnementen op with error handling
+    let subscriptions;
+    let activeSubscriptions = [];
+    try {
+      subscriptions = await withTimeout(
+        moneybird.listSubscriptions(),
+        API_TIMEOUTS.MONEYBIRD_API,
+        'Moneybird API timeout'
+      );
+      activeSubscriptions = subscriptions.filter((sub: any) => sub.active);
+    } catch (error) {
+      console.error('[Financien Dashboard] Error fetching subscriptions:', error);
+      // Continue with empty subscriptions instead of failing completely
+      subscriptions = [];
+    }
 
     // Bereken MRR
     const mrr = activeSubscriptions.reduce((sum: number, sub: any) => {
