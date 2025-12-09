@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 
+// Next.js route configuration - max execution time in seconds
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
@@ -21,14 +22,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Geen bestand gevonden' }, { status: 400 });
     }
 
-    // Validate file type - only images allowed
-    if (!file.type.startsWith('image/')) {
+    // Validate file type - only specific image formats allowed
+    const allowedMimeTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml'
+    ];
+    
+    if (!allowedMimeTypes.includes(file.type)) {
       return NextResponse.json({ 
-        error: 'Alleen afbeeldingen zijn toegestaan' 
+        error: 'Alleen PNG, JPEG, GIF, WebP en SVG afbeeldingen zijn toegestaan' 
       }, { status: 400 });
     }
 
     // Validate file size (max 5MB for database storage)
+    // Note: Base64 encoding adds ~33% overhead, so actual DB storage will be ~6.7MB
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       return NextResponse.json({ 

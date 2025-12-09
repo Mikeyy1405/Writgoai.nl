@@ -1,7 +1,10 @@
 -- AlterTable: Change logo URL fields to TEXT type for Base64 storage
 -- This migration updates BrandSettings logo fields to support large Base64 strings
+-- Migration is atomic - either all changes succeed or none do
 
--- Update logoUrl to TEXT type
+BEGIN;
+
+-- Update logoUrl to TEXT type (safe conversion from VARCHAR to TEXT)
 ALTER TABLE "BrandSettings" ALTER COLUMN "logoUrl" TYPE TEXT;
 
 -- Update logoLightUrl to TEXT type
@@ -21,3 +24,5 @@ ALTER TABLE "BrandSettings" ALTER COLUMN "favicon192Url" TYPE TEXT;
 
 -- Update favicon512Url to TEXT type
 ALTER TABLE "BrandSettings" ALTER COLUMN "favicon512Url" TYPE TEXT;
+
+COMMIT;
