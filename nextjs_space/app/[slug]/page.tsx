@@ -102,8 +102,9 @@ async function getPost(slug: string): Promise<BlogPost | null> {
     .from('BlogPost')
     .update({ views: (post.views || 0) + 1 })
     .eq('id', post.id)
-    .then(() => {})
-    .catch((err) => console.error('Error incrementing views:', err));
+    .then(({ error }) => {
+      if (error) console.error('Error incrementing views:', error);
+    });
 
   // Convert Date fields to ISO strings for client component compatibility
   return {

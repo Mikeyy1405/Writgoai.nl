@@ -6,7 +6,7 @@
  * met slimme duplicate detection
  */
 
-import { supabaseAdmin as prisma } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 // Language type definition (from Supabase schema)
 export type Language = 'NL' | 'EN' | 'DE' | 'ES' | 'FR' | 'IT' | 'PT' | 'PL' | 'SV' | 'DA';

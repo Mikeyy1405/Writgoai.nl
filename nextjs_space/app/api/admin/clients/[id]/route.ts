@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = "force-dynamic";
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { supabaseAdmin as prisma } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 // GET single client details

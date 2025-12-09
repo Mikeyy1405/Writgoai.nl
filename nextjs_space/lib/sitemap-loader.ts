@@ -3,7 +3,7 @@
  * Sitemap Loader - Laadt en parsed WordPress sitemap voor interne links
  */
 
-import { supabaseAdmin as prisma } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 export interface SitemapPage {
   url: string;

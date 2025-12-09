@@ -9,5 +9,5 @@ export const db = supabaseAdmin
 export { supabase }
 
 // For backwards compatibility with existing code that uses 'prisma'
-// This will be gradually phased out as we migrate all queries
-export const prisma = db
+// Re-export from prisma-compat which provides proper typing
+export { prisma } from './prisma-compat'
