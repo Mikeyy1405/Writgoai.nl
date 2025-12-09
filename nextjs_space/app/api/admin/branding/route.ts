@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 export const maxDuration = 60;
 
 // Helper function to handle Prisma errors
-function handlePrismaError(error: unknown, context: string): NextResponse | null {
+function handlePrismaError(error: unknown): NextResponse | null {
   if (error && typeof error === 'object' && 'code' in error) {
     const prismaError = error as { code: string; meta?: any };
     
@@ -67,7 +67,7 @@ export async function GET() {
   } catch (error) {
     console.error('[Branding API] Failed to fetch brand settings:', error);
     
-    const prismaErrorResponse = handlePrismaError(error, 'fetch');
+    const prismaErrorResponse = handlePrismaError(error);
     if (prismaErrorResponse) {
       return prismaErrorResponse;
     }
@@ -156,7 +156,7 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     console.error('[Branding API] Failed to update brand settings:', error);
     
-    const prismaErrorResponse = handlePrismaError(error, 'update');
+    const prismaErrorResponse = handlePrismaError(error);
     if (prismaErrorResponse) {
       return prismaErrorResponse;
     }
