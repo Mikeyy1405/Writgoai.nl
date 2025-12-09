@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { log, logError } from '@/lib/logger';
+import { prisma } from '@/lib/db';
 
 
 export async function POST(request: NextRequest) {

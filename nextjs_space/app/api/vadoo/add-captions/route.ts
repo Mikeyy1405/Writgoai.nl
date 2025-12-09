@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { addAICaptions } from '@/lib/vadoo';
+import { prisma } from '@/lib/db';
 
 
 /**

@@ -8,6 +8,7 @@ import { validateInput, signupSchema } from '@/lib/validation';
 import { log, logError } from '@/lib/logger';
 import { sendAdminNotification } from '@/lib/notification-helper';
 import { sendWelcomeEmail, sendOnboardingEmail } from '@/lib/email';
+import { prisma } from '@/lib/db';
 
 
 export async function POST(request: NextRequest) {

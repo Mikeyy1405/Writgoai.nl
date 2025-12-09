@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import aimlAPI from '@/lib/aiml-api';
+import { prisma } from '@/lib/db';
 
 
 // Analyze URL and generate title

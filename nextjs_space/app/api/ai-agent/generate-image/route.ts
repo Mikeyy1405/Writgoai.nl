@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { generateImage, IMAGE_MODELS } from '@/lib/aiml-api';
 import { deductCredits, getClientCredits } from '@/lib/credits';
+import { prisma } from '@/lib/db';
 
 // Afbeelding modellen met kwaliteit en prijzen
 const IMAGE_MODEL_OPTIONS = [

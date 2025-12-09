@@ -13,6 +13,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { generateBlog } from '@/lib/aiml-agent';
 import { hasEnoughCredits, deductCredits } from '@/lib/credits';
+import { prisma } from '@/lib/db';
 
 
 export async function POST(request: NextRequest) {

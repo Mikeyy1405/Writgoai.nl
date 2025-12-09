@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getClientCredits } from '@/lib/credits';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
+import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {

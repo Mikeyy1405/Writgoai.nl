@@ -10,6 +10,7 @@ import { authOptions } from '@/lib/auth-options';
 import { findBestProducts } from '@/lib/bolcom-product-finder';
 import fs from 'fs';
 import path from 'path';
+import { prisma } from '@/lib/db';
 
 
 export async function POST(request: NextRequest) {

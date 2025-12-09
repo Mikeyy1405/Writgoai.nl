@@ -8,8 +8,8 @@
  * Files should be gradually migrated to use Supabase queries directly.
  */
 
-import { supabaseAdmin } from './supabase';
+// Import at runtime but not at type-check time
+const { supabaseAdmin } = require('./supabase');
 
 // Export as any to allow Prisma-style method access during migration
-// Using type assertion to prevent TypeScript from inferring the Supabase type
-export const prisma = supabaseAdmin as unknown as any;
+export const prisma: any = supabaseAdmin;

@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { hasEnoughCredits, deductCredits } from '@/lib/credits';
+import { prisma } from '@/lib/db';
 
 // Helper to send streaming updates
 function createStreamUpdate(type: string, data: any) {

@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { prisma } from '@/lib/db';
 
 
 // GET - Fetch a single email draft
