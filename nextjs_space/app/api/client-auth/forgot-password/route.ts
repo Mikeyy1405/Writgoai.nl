@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { rateLimiters } from '@/lib/rate-limiter';
 import { log, logError } from '@/lib/logger';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if user exists in Client or User table (for logging purposes only)
+    // Check if user exists in Client or User table
     const [client, user] = await Promise.all([
       supabaseAdmin
         .from('Client')
@@ -50,6 +51,35 @@ export async function POST(request: NextRequest) {
     const userExists = client || user;
 
     if (userExists) {
+      // Ensure user exists in Supabase Auth (create if doesn't exist)
+      // This allows us to use Supabase Auth's email system
+      try {
+        // Try to get the user from Supabase Auth
+        const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+        const authUserExists = authUsers?.users?.find(u => u.email === normalizedEmail);
+
+        if (!authUserExists) {
+          // Create a placeholder user in Supabase Auth with a random password
+          // This user will be used only for password reset emails
+          const randomPassword = crypto.randomBytes(32).toString('hex');
+          await supabaseAdmin.auth.admin.createUser({
+            email: normalizedEmail,
+            password: randomPassword,
+            email_confirm: true, // Auto-confirm email
+          });
+          
+          log('info', 'Created Supabase Auth user for password reset', {
+            email: normalizedEmail,
+          });
+        }
+      } catch (authError) {
+        logError(authError as Error, {
+          context: 'Failed to ensure Supabase Auth user exists',
+          email: normalizedEmail,
+        });
+        // Continue anyway
+      }
+
       // Use Supabase Auth to send password reset email
       const redirectUrl = process.env.NEXTAUTH_URL 
         ? `${process.env.NEXTAUTH_URL}/wachtwoord-resetten`

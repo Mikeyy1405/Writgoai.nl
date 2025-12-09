@@ -106,6 +106,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Also update the password in Supabase Auth to keep them in sync
+    try {
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const authUser = authUsers?.users?.find(u => u.email === userEmail);
+
+      if (authUser) {
+        await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+          password: password, // Supabase Auth will hash this automatically
+        });
+
+        log('info', 'Updated password in Supabase Auth', {
+          email: userEmail,
+        });
+      }
+    } catch (authError) {
+      logError(authError as Error, {
+        context: 'Failed to update Supabase Auth password',
+        email: userEmail,
+      });
+      // Don't fail the request - the main database password was updated
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Je wachtwoord is succesvol gewijzigd. Je kunt nu inloggen met je nieuwe wachtwoord.',
