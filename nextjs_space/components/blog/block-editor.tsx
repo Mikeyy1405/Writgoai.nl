@@ -203,12 +203,22 @@ export function BlockEditor({ content, onChange, placeholder, onImageUpload }: B
       const { extractYouTubeId, extractVimeoId } = require('@/lib/blog-utils');
       let embedHtml = '';
       
-      if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+      // Only proceed if URL starts with proper protocol and domain
+      const urlLower = videoUrl.toLowerCase();
+      if (urlLower.startsWith('https://www.youtube.com/') || 
+          urlLower.startsWith('https://youtube.com/') || 
+          urlLower.startsWith('https://youtu.be/') ||
+          urlLower.startsWith('http://www.youtube.com/') || 
+          urlLower.startsWith('http://youtube.com/') || 
+          urlLower.startsWith('http://youtu.be/')) {
         const videoId = extractYouTubeId(videoUrl);
         if (videoId) {
           embedHtml = `<div class="video-wrapper my-4"><iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
         }
-      } else if (videoUrl.includes('vimeo.com')) {
+      } else if (urlLower.startsWith('https://vimeo.com/') || 
+                 urlLower.startsWith('http://vimeo.com/') ||
+                 urlLower.startsWith('https://www.vimeo.com/') || 
+                 urlLower.startsWith('http://www.vimeo.com/')) {
         const videoId = extractVimeoId(videoUrl);
         if (videoId) {
           embedHtml = `<div class="video-wrapper my-4"><iframe width="100%" height="400" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
@@ -221,7 +231,7 @@ export function BlockEditor({ content, onChange, placeholder, onImageUpload }: B
         setShowVideoInput(false);
         toast.success('Video toegevoegd!');
       } else {
-        toast.error('Ongeldige video URL');
+        toast.error('Ongeldige video URL. Gebruik een volledige YouTube of Vimeo URL.');
       }
     }
   };

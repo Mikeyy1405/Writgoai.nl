@@ -100,6 +100,8 @@ export function SEOPanel({ data, onChange }: SEOPanelProps) {
     const metaDesc = data.metaDescription;
     
     // Extract text from HTML
+    // Note: stripHtmlTags is a basic implementation. For user-generated HTML,
+    // consider using a proper HTML sanitizer library.
     const textContent = stripHtmlTags(content, Number.MAX_SAFE_INTEGER);
     const words = textContent.split(/\s+/).filter(Boolean);
     const wordCount = words.length;

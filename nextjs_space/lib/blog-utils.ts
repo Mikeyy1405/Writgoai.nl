@@ -63,23 +63,31 @@ export function escapeRegex(str: string): string {
 
 /**
  * Strip HTML tags from content (basic, for short descriptions)
- * For security-critical uses, use a proper HTML sanitizer
+ * 
+ * SECURITY NOTE: This function is NOT for sanitizing user-generated content.
+ * It's only used for extracting text from admin-created blog content for:
+ * 1. SEO analysis (word counting, readability)
+ * 2. RSS feed descriptions
+ * 
+ * The blog content is created by authenticated admins only, not by untrusted users.
+ * For sanitizing untrusted user input, use a proper HTML sanitizer library like DOMPurify.
  */
 export function stripHtmlTags(html: string, maxLength: number = 500): string {
-  // Remove script and style tags completely
-  let text = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+  // Remove script and style tags completely (including content)
+  // Using a more complete regex that handles various whitespace patterns
+  let text = html.replace(/<script[\s\S]*?<\/script\s*>/gi, '');
+  text = text.replace(/<style[\s\S]*?<\/style\s*>/gi, '');
   
   // Remove all other HTML tags
   text = text.replace(/<[^>]+>/g, ' ');
   
-  // Decode common HTML entities
+  // Decode common HTML entities in a safe order (decode & last to avoid double-decoding)
   text = text.replace(/&nbsp;/g, ' ');
-  text = text.replace(/&amp;/g, '&');
   text = text.replace(/&lt;/g, '<');
   text = text.replace(/&gt;/g, '>');
   text = text.replace(/&quot;/g, '"');
   text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&amp;/g, '&'); // Decode & last to prevent double-decoding
   
   // Collapse multiple spaces
   text = text.replace(/\s+/g, ' ').trim();
