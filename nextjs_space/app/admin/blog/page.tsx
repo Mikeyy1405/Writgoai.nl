@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, Sparkles, Save, X, Globe } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Sparkles, Save, X, Globe, FileEdit, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface BlogPost {
@@ -162,6 +162,11 @@ export default function AdminBlogPage() {
   };
 
   const handleEdit = (post: BlogPost) => {
+    // Navigate to new editor
+    router.push(`/admin/blog/editor?id=${post.id}`);
+  };
+
+  const handleEditLegacy = (post: BlogPost) => {
     setEditingPost(post);
     setFormData({
       title: post.title,
@@ -278,17 +283,27 @@ export default function AdminBlogPage() {
             </p>
           </div>
           {!showForm && (
-            <Button
-              onClick={() => {
-                setShowForm(true);
-                setEditingPost(null);
-                resetForm();
-              }}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nieuwe Post
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => router.push('/admin/blog/editor')}
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+              >
+                <FileEdit className="w-4 h-4 mr-2" />
+                Nieuw Artikel (Geavanceerd)
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowForm(true);
+                  setEditingPost(null);
+                  resetForm();
+                }}
+                variant="outline"
+                className="border-gray-700 text-gray-300 hover:bg-gray-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Snelle Post
+              </Button>
+            </div>
           )}
         </div>
 
@@ -672,8 +687,10 @@ export default function AdminBlogPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEdit(post)}
+                        className="text-orange-600 hover:text-orange-700 hover:border-orange-500"
+                        title="Bewerken in geavanceerde editor"
                       >
-                        <Edit className="w-4 h-4" />
+                        <FileEdit className="w-4 h-4" />
                       </Button>
                       <Button
                         size="sm"
