@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { supabaseAdmin as prisma } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 

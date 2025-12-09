@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { rateLimiters } from '@/lib/rate-limiter';
 import { sendPasswordResetEmail } from '@/lib/password-reset-email';
 import { log, logError } from '@/lib/logger';
+import { prisma } from '@/lib/db';
 
 
 export async function POST(request: NextRequest) {

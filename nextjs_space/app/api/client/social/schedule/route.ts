@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-import { Prisma } from '@/lib/supabase';
 
 /**
  * POST /api/client/social/schedule
@@ -116,8 +115,8 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Build where clause with proper typing
-    const where: Prisma.ScheduledPostWhereInput = {
+    // Build where clause
+    const where: any = {
       clientId: client.id,
     };
 

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { prisma } from '@/lib/db';
 
 
 const inviteSchema = z.object({

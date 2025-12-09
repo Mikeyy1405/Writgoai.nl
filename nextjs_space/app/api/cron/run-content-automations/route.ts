@@ -9,6 +9,7 @@ import {
   generateBlogContent,
 } from '@/lib/seo-automated-workflow';
 import { publishToWordPress } from '@/lib/wordpress-publisher';
+import { prisma } from '@/lib/db';
 
 
 export const dynamic = 'force-dynamic';

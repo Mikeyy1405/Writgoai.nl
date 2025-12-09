@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { quickProductSearch } from '@/lib/bolcom-product-finder';
+import { prisma } from '@/lib/db';
 
 
 export async function POST(request: NextRequest) {

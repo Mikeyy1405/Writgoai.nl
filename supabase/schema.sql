@@ -289,6 +289,36 @@ CREATE TABLE "PasswordResetToken" (
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- BlogPost table (for public blog posts)
+CREATE TABLE "BlogPost" (
+  "id" TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+  "title" TEXT NOT NULL,
+  "slug" TEXT UNIQUE NOT NULL,
+  "excerpt" TEXT NOT NULL,
+  "content" TEXT NOT NULL,
+  "featuredImage" TEXT,
+  "metaTitle" TEXT,
+  "metaDescription" TEXT,
+  "focusKeyword" TEXT,
+  "category" TEXT NOT NULL DEFAULT 'AI & Content Marketing',
+  "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
+  "status" TEXT NOT NULL DEFAULT 'draft',
+  "publishedAt" TIMESTAMP(3),
+  "scheduledFor" TIMESTAMP(3),
+  "authorId" TEXT,
+  "authorName" TEXT NOT NULL DEFAULT 'WritgoAI Team',
+  "views" INTEGER NOT NULL DEFAULT 0,
+  "readingTimeMinutes" INTEGER NOT NULL DEFAULT 5,
+  "language" "Language" NOT NULL DEFAULT 'NL',
+  "internalLinks" INTEGER NOT NULL DEFAULT 0,
+  "externalLinks" INTEGER NOT NULL DEFAULT 0,
+  "wordCount" INTEGER NOT NULL DEFAULT 0,
+  "lastAnalyzed" TIMESTAMP(3),
+  "searchConsoleData" JSONB,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ============================================
 -- INDEXES
 -- ============================================
@@ -314,6 +344,11 @@ CREATE INDEX "CreditTransaction_createdAt_idx" ON "CreditTransaction"("createdAt
 CREATE INDEX "CreditTransaction_type_idx" ON "CreditTransaction"("type");
 CREATE INDEX "PasswordResetToken_email_idx" ON "PasswordResetToken"("email");
 CREATE INDEX "PasswordResetToken_token_idx" ON "PasswordResetToken"("token");
+CREATE INDEX "BlogPost_slug_idx" ON "BlogPost"("slug");
+CREATE INDEX "BlogPost_status_idx" ON "BlogPost"("status");
+CREATE INDEX "BlogPost_category_idx" ON "BlogPost"("category");
+CREATE INDEX "BlogPost_publishedAt_idx" ON "BlogPost"("publishedAt");
+CREATE INDEX "BlogPost_createdAt_idx" ON "BlogPost"("createdAt");
 
 -- ============================================
 -- FUNCTIONS FOR UPDATED_AT TRIGGER
@@ -344,6 +379,9 @@ CREATE TRIGGER update_video_updated_at BEFORE UPDATE ON "Video"
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_savedcontent_updated_at BEFORE UPDATE ON "SavedContent"
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_blogpost_updated_at BEFORE UPDATE ON "BlogPost"
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================

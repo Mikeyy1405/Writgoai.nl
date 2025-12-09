@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { chatCompletion } from '@/lib/aiml-api';
 import { MODEL_CATEGORIES } from '@/lib/smart-model-router';
+import { prisma } from '@/lib/db';
 
 
 export async function POST(request: NextRequest) {

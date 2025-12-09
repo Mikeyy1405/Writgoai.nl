@@ -1,5 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
 
 
 // Force dynamic rendering for this API route

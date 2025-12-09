@@ -8,6 +8,7 @@
 
 import { NextResponse } from 'next/server';
 import { generateContentPlan } from '@/lib/content-plan-generator';
+import { prisma } from '@/lib/db';
 
 
 export const dynamic = 'force-dynamic';

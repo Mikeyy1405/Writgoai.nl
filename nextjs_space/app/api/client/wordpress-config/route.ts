@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { publishToWordPress } from '@/lib/wordpress-publisher';
+import { prisma } from '@/lib/db';
 
 
 // Get WordPress config

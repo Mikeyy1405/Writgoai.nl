@@ -12,6 +12,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import fs from 'fs';
 import path from 'path';
+import { prisma } from '@/lib/db';
 
 
 // Load Late.dev API key from secrets

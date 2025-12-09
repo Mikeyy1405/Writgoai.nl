@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
 
 
 // POST: Voeg een message toe aan een conversation

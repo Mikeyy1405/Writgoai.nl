@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { generateCustomVideo } from '@/lib/custom-video-generator';
+import { prisma } from '@/lib/db';
 
 
 export async function POST(req: NextRequest) {

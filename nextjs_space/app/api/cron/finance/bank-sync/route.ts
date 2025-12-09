@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMoneybird } from '@/lib/moneybird';
+import { prisma } from '@/lib/db';
 
 
 /**
