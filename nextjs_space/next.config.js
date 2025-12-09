@@ -118,11 +118,6 @@ const nextConfig = {
         destination: '/client-portal/content-hub',
         permanent: false,
       },
-      {
-        source: '/client-portal/content-library',
-        destination: '/client-portal/content-hub',
-        permanent: false,
-      },
     ];
   },
 };
