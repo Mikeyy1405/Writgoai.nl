@@ -1,15 +1,14 @@
 
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 
 // Admin emails that should get admin privileges
 const adminEmails = ['info@writgoai.nl', 'info@writgo.nl'];
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // Note: PrismaAdapter removed - using Supabase with custom callbacks
   providers: [
     // Universal Login Provider - checks both User and Client tables
     CredentialsProvider({
@@ -25,9 +24,11 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Check if admin user (info@WritgoAI.nl or other users in User table)
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const { data: user } = await supabaseAdmin
+          .from('User')
+          .select('*')
+          .eq('email', credentials.email)
+          .single();
 
         if (user && user.password) {
           const isPasswordValid = await bcrypt.compare(
@@ -46,9 +47,11 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Check if client user
-        const client = await prisma.client.findUnique({
-          where: { email: credentials.email },
-        });
+        const { data: client } = await supabaseAdmin
+          .from('Client')
+          .select('*')
+          .eq('email', credentials.email)
+          .single();
 
         if (client && client.password) {
           const isPasswordValid = await bcrypt.compare(
@@ -85,9 +88,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email en wachtwoord zijn verplicht');
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const { data: user } = await supabaseAdmin
+          .from('User')
+          .select('*')
+          .eq('email', credentials.email)
+          .single();
 
         if (!user || !user.password) {
           throw new Error('Ongeldige inloggegevens');
@@ -123,9 +128,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email en wachtwoord zijn verplicht');
         }
 
-        const client = await prisma.client.findUnique({
-          where: { email: credentials.email },
-        });
+        const { data: client } = await supabaseAdmin
+          .from('Client')
+          .select('*')
+          .eq('email', credentials.email)
+          .single();
 
         if (!client || !client.password) {
           throw new Error('Ongeldige inloggegevens');

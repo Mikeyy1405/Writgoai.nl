@@ -1,38 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export const maxDuration = 60;
-
-// Helper function to handle Prisma errors
-function handlePrismaError(error: unknown): NextResponse | null {
-  if (error && typeof error === 'object' && 'code' in error) {
-    const prismaError = error as { code: string; meta?: any };
-    
-    // P2021: Table does not exist
-    if (prismaError.code === 'P2021') {
-      console.error(`[Branding API] Database table does not exist. Run: npx prisma db push`);
-      return NextResponse.json(
-        { error: 'Database tabel ontbreekt. Voer database migratie uit.' },
-        { status: 500 }
-      );
-    }
-    
-    // P1001: Can't reach database server
-    if (prismaError.code === 'P1001') {
-      console.error('[Branding API] Cannot connect to database');
-      return NextResponse.json(
-        { error: 'Kan geen verbinding maken met de database' },
-        { status: 500 }
-      );
-    }
-    
-    console.error('[Branding API] Prisma error code:', prismaError.code);
-  }
-  
-  return null;
-}
 
 // GET - Fetch brand settings (admin only)
 export async function GET() {
@@ -44,14 +15,17 @@ export async function GET() {
       return NextResponse.json({ error: 'Niet geautoriseerd' }, { status: 401 });
     }
 
-    let brandSettings = await prisma.brandSettings.findUnique({
-      where: { id: 'default' },
-    });
+    let { data: brandSettings, error: fetchError } = await supabaseAdmin
+      .from('BrandSettings')
+      .select('*')
+      .eq('id', 'default')
+      .single();
 
     // If no settings exist, create default
-    if (!brandSettings) {
-      brandSettings = await prisma.brandSettings.create({
-        data: {
+    if (!brandSettings && !fetchError) {
+      const { data: newSettings, error: createError } = await supabaseAdmin
+        .from('BrandSettings')
+        .insert({
           id: 'default',
           companyName: 'WritgoAI',
           tagline: 'Content die scoort',
@@ -59,18 +33,23 @@ export async function GET() {
           primaryColor: '#FF6B35',
           secondaryColor: '#0B3C5D',
           accentColor: '#FF9933',
-        },
-      });
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        throw createError;
+      }
+      brandSettings = newSettings;
+    }
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      throw fetchError;
     }
 
     return NextResponse.json(brandSettings);
   } catch (error) {
     console.error('[Branding API] Failed to fetch brand settings:', error);
-    
-    const prismaErrorResponse = handlePrismaError(error);
-    if (prismaErrorResponse) {
-      return prismaErrorResponse;
-    }
     
     return NextResponse.json(
       { error: 'Er is een fout opgetreden bij het ophalen van de branding instellingen' },
@@ -100,66 +79,45 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Primary en secondary kleuren zijn verplicht' }, { status: 400 });
     }
 
-    // Update or create brand settings
-    const brandSettings = await prisma.brandSettings.upsert({
-      where: { id: 'default' },
-      update: {
-        companyName: data.companyName,
-        tagline: data.tagline || null,
-        logoUrl: data.logoUrl || null,
-        logoLightUrl: data.logoLightUrl || null,
-        logoDarkUrl: data.logoDarkUrl || null,
-        logoIconUrl: data.logoIconUrl || null,
-        faviconUrl: data.faviconUrl || null,
-        favicon192Url: data.favicon192Url || null,
-        favicon512Url: data.favicon512Url || null,
-        primaryColor: data.primaryColor,
-        secondaryColor: data.secondaryColor,
-        accentColor: data.accentColor || null,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address || null,
-        linkedinUrl: data.linkedinUrl || null,
-        twitterUrl: data.twitterUrl || null,
-        facebookUrl: data.facebookUrl || null,
-        instagramUrl: data.instagramUrl || null,
-        defaultMetaTitle: data.defaultMetaTitle || null,
-        defaultMetaDescription: data.defaultMetaDescription || null,
-      },
-      create: {
-        id: 'default',
-        companyName: data.companyName,
-        tagline: data.tagline || null,
-        logoUrl: data.logoUrl || null,
-        logoLightUrl: data.logoLightUrl || null,
-        logoDarkUrl: data.logoDarkUrl || null,
-        logoIconUrl: data.logoIconUrl || null,
-        faviconUrl: data.faviconUrl || null,
-        favicon192Url: data.favicon192Url || null,
-        favicon512Url: data.favicon512Url || null,
-        primaryColor: data.primaryColor,
-        secondaryColor: data.secondaryColor,
-        accentColor: data.accentColor || null,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address || null,
-        linkedinUrl: data.linkedinUrl || null,
-        twitterUrl: data.twitterUrl || null,
-        facebookUrl: data.facebookUrl || null,
-        instagramUrl: data.instagramUrl || null,
-        defaultMetaTitle: data.defaultMetaTitle || null,
-        defaultMetaDescription: data.defaultMetaDescription || null,
-      },
-    });
+    // Update or create brand settings using upsert
+    const settingsData = {
+      id: 'default',
+      companyName: data.companyName,
+      tagline: data.tagline || null,
+      logoUrl: data.logoUrl || null,
+      logoLightUrl: data.logoLightUrl || null,
+      logoDarkUrl: data.logoDarkUrl || null,
+      logoIconUrl: data.logoIconUrl || null,
+      faviconUrl: data.faviconUrl || null,
+      favicon192Url: data.favicon192Url || null,
+      favicon512Url: data.favicon512Url || null,
+      primaryColor: data.primaryColor,
+      secondaryColor: data.secondaryColor,
+      accentColor: data.accentColor || null,
+      email: data.email || null,
+      phone: data.phone || null,
+      address: data.address || null,
+      linkedinUrl: data.linkedinUrl || null,
+      twitterUrl: data.twitterUrl || null,
+      facebookUrl: data.facebookUrl || null,
+      instagramUrl: data.instagramUrl || null,
+      defaultMetaTitle: data.defaultMetaTitle || null,
+      defaultMetaDescription: data.defaultMetaDescription || null,
+    };
+
+    const { data: brandSettings, error: upsertError } = await supabaseAdmin
+      .from('BrandSettings')
+      .upsert(settingsData, { onConflict: 'id' })
+      .select()
+      .single();
+
+    if (upsertError) {
+      throw upsertError;
+    }
 
     return NextResponse.json(brandSettings);
   } catch (error) {
     console.error('[Branding API] Failed to update brand settings:', error);
-    
-    const prismaErrorResponse = handlePrismaError(error);
-    if (prismaErrorResponse) {
-      return prismaErrorResponse;
-    }
     
     return NextResponse.json(
       { error: 'Er is een fout opgetreden bij het bijwerken van de branding instellingen' },
