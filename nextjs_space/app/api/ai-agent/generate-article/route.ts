@@ -11,11 +11,9 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import { generateBlog } from '@/lib/aiml-agent';
 import { hasEnoughCredits, deductCredits } from '@/lib/credits';
 
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {

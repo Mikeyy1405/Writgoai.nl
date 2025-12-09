@@ -267,8 +267,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Save to database
-        const { PrismaClient } = await import('@prisma/client');
-        const prisma = new PrismaClient();
+        const { supabaseAdmin: prisma } = await import('@/lib/supabase');
         
         try {
           await prisma.video.create({

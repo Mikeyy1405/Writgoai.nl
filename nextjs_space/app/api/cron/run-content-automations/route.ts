@@ -1,6 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import {
   analyzeWebsite,
   performSERPAnalysis,
@@ -11,7 +10,6 @@ import {
 } from '@/lib/seo-automated-workflow';
 import { publishToWordPress } from '@/lib/wordpress-publisher';
 
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max

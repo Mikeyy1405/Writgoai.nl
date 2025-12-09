@@ -2,10 +2,8 @@
 // Nieuwe dagelijkse content generator met DALL-E 3 afbeeldingen
 // Genereert: 1 blog + 1 social post + 1 reel script per dag
 
-import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 
-const prisma = new PrismaClient();
 
 function getOpenAI() {
   // Use AI/ML API with access to all models

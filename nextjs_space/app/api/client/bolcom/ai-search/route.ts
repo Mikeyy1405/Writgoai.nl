@@ -7,12 +7,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import { findBestProducts } from '@/lib/bolcom-product-finder';
 import fs from 'fs';
 import path from 'path';
 
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {

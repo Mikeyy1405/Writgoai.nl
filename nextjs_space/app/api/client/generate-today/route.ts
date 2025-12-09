@@ -2,10 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import { generateDailyContentForClient } from '@/lib/professional-content-generator';
 
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes timeout

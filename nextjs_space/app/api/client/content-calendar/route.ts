@@ -8,10 +8,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import { generateContentCalendar } from '@/lib/content-calendar-generator';
 
-const prisma = new PrismaClient();
 
 /**
  * GET - Haal alle artikel ideeën op

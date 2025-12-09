@@ -6,9 +6,7 @@
  */
 
 import winston from 'winston';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 // Winston logger configuratie
 const logger = winston.createLogger({

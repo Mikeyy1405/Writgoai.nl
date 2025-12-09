@@ -1,9 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 // GET - Fetch all email drafts for the logged-in client
 export async function GET(req: Request) {

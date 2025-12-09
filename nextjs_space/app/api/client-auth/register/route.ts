@@ -2,7 +2,6 @@
 // Client registratie API
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { withRateLimit } from '@/lib/rate-limiter';
 import { validateInput, signupSchema } from '@/lib/validation';
@@ -10,7 +9,6 @@ import { log, logError } from '@/lib/logger';
 import { sendAdminNotification } from '@/lib/notification-helper';
 import { sendWelcomeEmail, sendOnboardingEmail } from '@/lib/email';
 
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {

@@ -4,12 +4,10 @@
  * Automatically inserts affiliate links when specific product names are mentioned
  */
 
-import { PrismaClient } from '@prisma/client';
 import { quickProductSearch, type EnrichedProduct } from './bolcom-product-finder';
 import { generateAffiliateDisplayHTML, type ProductData } from './affiliate-display-html';
 import type { BolcomCredentials } from './bolcom-api';
 
-const prisma = new PrismaClient();
 
 export interface AutoLinkOptions {
   projectId: string;

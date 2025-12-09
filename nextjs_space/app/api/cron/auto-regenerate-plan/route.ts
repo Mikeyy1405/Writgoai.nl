@@ -7,10 +7,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { generateContentPlan } from '@/lib/content-plan-generator';
 
-const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes

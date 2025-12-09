@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-import { Language } from '@prisma/client';
+import { Language } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 

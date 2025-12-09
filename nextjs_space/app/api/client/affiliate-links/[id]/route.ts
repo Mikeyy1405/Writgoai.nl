@@ -4,10 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import aimlAPI from '@/lib/aiml-api';
 
-const prisma = new PrismaClient();
 
 // Generate keywords from URL and title
 async function generateKeywords(url: string, title: string, category: string): Promise<string[]> {

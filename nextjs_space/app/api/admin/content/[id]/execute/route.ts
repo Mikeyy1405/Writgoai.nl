@@ -1,9 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { generateDailyContentForClient } from '@/lib/professional-content-generator';
 
-const prisma = new PrismaClient();
 
 export const maxDuration = 300; // 5 minutes
 

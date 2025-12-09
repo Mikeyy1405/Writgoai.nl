@@ -2,11 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { PrismaClient } from '@prisma/client';
 import { chatCompletion } from '@/lib/aiml-api';
 import { MODEL_CATEGORIES } from '@/lib/smart-model-router';
 
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
