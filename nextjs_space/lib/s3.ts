@@ -73,3 +73,16 @@ export async function renameFile(oldKey: string, newKey: string): Promise<string
   // In production, you might want to implement copy + delete
   return oldKey;
 }
+
+export function getPublicUrl(s3Key: string): string {
+  const s3BucketName = process.env.AWS_S3_BUCKET_NAME || process.env.S3_BUCKET_NAME || process.env.AWS_BUCKET_NAME;
+  const s3Region = process.env.AWS_REGION || process.env.S3_REGION || 'eu-west-1';
+  const cdnDomain = process.env.CDN_DOMAIN || process.env.CLOUDFRONT_DOMAIN;
+  
+  if (cdnDomain) {
+    return `https://${cdnDomain}/${s3Key}`;
+  } else if (s3BucketName) {
+    return `https://${s3BucketName}.s3.${s3Region}.amazonaws.com/${s3Key}`;
+  }
+  return s3Key;
+}
