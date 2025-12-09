@@ -175,7 +175,7 @@ export default function ContactenPage() {
                     </td>
                     <td className="px-6 py-4">
                       <Link
-                        href={`/financien/facturen?contactId=${contact.id}`}
+                        href={`/admin/financien/facturen?contactId=${contact.id}`}
                         className="text-[#ff6b35] hover:text-[#ff8555] text-sm"
                       >
                         Bekijk facturen
