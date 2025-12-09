@@ -1,6 +1,12 @@
 -- AlterTable: Change logo URL fields to TEXT type for Base64 storage
 -- This migration updates BrandSettings logo fields to support large Base64 strings
 -- Migration is atomic - either all changes succeed or none do
+--
+-- ROLLBACK PLAN (if needed):
+-- This migration converts VARCHAR to TEXT which is safe and lossless.
+-- To rollback, you would need to convert TEXT back to VARCHAR, but this may
+-- truncate data if any Base64 strings exceed VARCHAR limits.
+-- Recommended: Keep as TEXT or restore from backup if rollback is required.
 
 BEGIN;
 

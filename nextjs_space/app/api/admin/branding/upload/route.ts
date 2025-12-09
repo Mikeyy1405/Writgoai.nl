@@ -26,7 +26,6 @@ export async function POST(req: NextRequest) {
     const allowedMimeTypes = [
       'image/png',
       'image/jpeg',
-      'image/jpg',
       'image/gif',
       'image/webp',
       'image/svg+xml'
@@ -40,8 +39,8 @@ export async function POST(req: NextRequest) {
 
     // Validate file size (max 5MB for database storage)
     // Note: Base64 encoding adds ~33% overhead, so actual DB storage will be ~6.7MB
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ 
         error: 'Bestand is te groot. Maximaal 5MB toegestaan voor database opslag.' 
       }, { status: 400 });
@@ -52,6 +51,8 @@ export async function POST(req: NextRequest) {
     // Convert file to Base64 data URL
     const buffer = Buffer.from(await file.arrayBuffer());
     const base64 = buffer.toString('base64');
+    
+    // Use validated MIME type (already checked against whitelist above)
     const dataUrl = `data:${file.type};base64,${base64}`;
 
     console.log('[Branding Upload] File converted to Base64, length:', dataUrl.length);
