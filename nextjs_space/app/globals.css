@@ -3,6 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Brand Colors - Can be dynamically overridden by BrandProvider */
+:root {
+  --brand-primary-color: #FF6B35;
+  --brand-secondary-color: #0B3C5D;
+  --brand-accent-color: #FF9933;
+}
+
 @layer utilities {
   @keyframes shimmer {
     0% {

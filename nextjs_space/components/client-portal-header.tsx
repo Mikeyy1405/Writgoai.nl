@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 export function ClientPortalHeader() {
   const { data: session } = useSession() || {};
@@ -57,15 +58,7 @@ export function ClientPortalHeader() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/client-portal" className="flex items-center">
-              <div className="flex flex-col">
-                <span className="text-xl font-bold tracking-tight">
-                  <span className="text-white">Writgo</span>
-                  <span className="text-[#FF6B35]">Media</span>
-                </span>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider -mt-1 hidden sm:block">
-                  Omnipresence Content Platform
-                </p>
-              </div>
+              <BrandLogo variant="full" size="md" showTagline={false} />
             </Link>
 
             {/* Desktop Navigation */}

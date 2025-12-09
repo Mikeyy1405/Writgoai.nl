@@ -6,10 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Loader2, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -51,15 +51,7 @@ export default function ForgotPasswordPage() {
 
       {/* Logo bovenaan */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="relative w-96 h-28">
-          <Image
-            src="/writgo-media-logo.png"
-            alt="Writgo Media"
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
+        <BrandLogo variant="full" size="xl" />
       </div>
 
       {/* Card */}

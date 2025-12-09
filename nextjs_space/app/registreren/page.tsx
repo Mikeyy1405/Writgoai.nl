@@ -4,13 +4,13 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Sparkles, Gift, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 function RegisterForm() {
   const router = useRouter();
@@ -99,15 +99,7 @@ function RegisterForm() {
 
       {/* Logo bovenaan */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="relative w-96 h-28">
-          <Image
-            src="/writgo-media-logo.png"
-            alt="Writgo Media"
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
+        <BrandLogo variant="full" size="xl" />
       </div>
 
       {/* Registration Card */}

@@ -1,16 +1,8 @@
-export function Logo({ size = 'md', showText = true }: { size?: 'sm' | 'md' | 'lg'; showText?: boolean }) {
-  const textSizeClasses = {
-    sm: 'text-sm',
-    md: 'text-lg',
-    lg: 'text-2xl',
-  };
+import { BrandLogo } from '@/components/brand/brand-logo';
 
-  return (
-    <div className="flex items-center">
-      <span className={`font-bold tracking-tight ${textSizeClasses[size]}`}>
-        <span className="text-white">Writgo</span>
-        <span className="text-[#FF6B35]">Media</span>
-      </span>
-    </div>
-  );
+export function Logo({ size = 'md', showText = true }: { size?: 'sm' | 'md' | 'lg'; showText?: boolean }) {
+  // Map the size parameter to BrandLogo size
+  const brandLogoSize = size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'md';
+  
+  return <BrandLogo variant={showText ? 'full' : 'text'} size={brandLogoSize} />;
 }

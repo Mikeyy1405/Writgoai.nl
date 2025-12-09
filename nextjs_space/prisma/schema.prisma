@@ -2830,3 +2830,46 @@ model FinancialMetric {
   @@index([metricType])
   @@index([periodStart])
 }
+
+// Brand Settings (Central Branding Configuration)
+model BrandSettings {
+  id                    String   @id @default("default")
+  
+  // Basic info
+  companyName           String   @default("WritgoAI")
+  tagline               String?  @default("Content die scoort")
+  
+  // Logos
+  logoUrl               String?  // Main logo (transparent background)
+  logoLightUrl          String?  // Logo for dark backgrounds
+  logoDarkUrl           String?  // Logo for light backgrounds
+  logoIconUrl           String?  // Square icon/favicon version
+  
+  // Favicon
+  faviconUrl            String?  // 32x32 favicon
+  favicon192Url         String?  // 192x192 for PWA
+  favicon512Url         String?  // 512x512 for PWA
+  
+  // Colors
+  primaryColor          String   @default("#FF6B35")   // Orange
+  secondaryColor        String   @default("#0B3C5D")   // Dark blue
+  accentColor           String?  @default("#FF9933")   // Light orange
+  
+  // Contact info
+  email                 String?
+  phone                 String?
+  address               String?
+  
+  // Social media
+  linkedinUrl           String?
+  twitterUrl            String?
+  facebookUrl           String?
+  instagramUrl          String?
+  
+  // SEO defaults
+  defaultMetaTitle      String?
+  defaultMetaDescription String?
+  
+  // Timestamps
+  updatedAt             DateTime @updatedAt
+}
