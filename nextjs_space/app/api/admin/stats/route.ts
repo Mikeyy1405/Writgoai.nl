@@ -11,7 +11,17 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    // Check session with timeout
+    const session = await Promise.race([
+      getServerSession(authOptions),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Session check timeout')), 5000)
+      )
+    ]).catch((error) => {
+      console.error('Session check failed:', error);
+      return null;
+    });
+
     if (!session || (session.user.role !== 'admin' && session.user.role !== 'superadmin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -105,26 +115,36 @@ export async function GET() {
 
     return NextResponse.json({
       stats: {
-        totalClients,
-        activeSubscriptions,
-        pendingFeedback,
-        unreadMessages,
-        unreadSupport,
-        totalContentGenerated,
+        totalClients: totalClients || 0,
+        activeSubscriptions: activeSubscriptions || 0,
+        pendingFeedback: pendingFeedback || 0,
+        unreadMessages: unreadMessages || 0,
+        unreadSupport: unreadSupport || 0,
+        totalContentGenerated: totalContentGenerated || 0,
         creditsUsedThisMonth: Math.abs(creditsUsedThisMonth._sum.amount || 0),
         revenueThisMonth: revenueThisMonth._sum.priceEur || 0,
-        pendingPayouts,
+        pendingPayouts: pendingPayouts || 0,
         pendingPayoutAmount: pendingPayoutAmount._sum.amount || 0
       },
       recentActivities: {
-        recentClients,
-        recentFeedback
+        recentClients: recentClients || [],
+        recentFeedback: recentFeedback || []
       }
     });
   } catch (error) {
-    console.error('Error fetching admin stats:', error);
+    console.error('[Admin Stats API] Error:', error);
+    
+    // Return a more descriptive error
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Er is een onbekende fout opgetreden';
+    
     return NextResponse.json(
-      { error: 'Failed to fetch stats' },
+      { 
+        error: 'Failed to fetch stats',
+        details: errorMessage,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

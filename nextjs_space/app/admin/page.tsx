@@ -90,14 +90,31 @@ export default function AdminDashboard() {
       setLoading(true);
       setError(null);
 
-      // Fetch admin stats
-      const statsRes = await fetch('/api/admin/stats');
+      // Fetch admin stats with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const statsRes = await fetch('/api/admin/stats', {
+        signal: controller.signal,
+      }).catch((err) => {
+        if (err.name === 'AbortError') {
+          throw new Error('De server reageert niet. Probeer het later opnieuw.');
+        }
+        throw err;
+      });
+
+      clearTimeout(timeoutId);
+
       if (!statsRes.ok) {
-        throw new Error('Failed to fetch stats');
+        const errorData = await statsRes.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || `Server error: ${statsRes.status}`
+        );
       }
+
       const data = await statsRes.json();
 
-      // Set stats
+      // Set stats with safe defaults
       setStats({
         totalClients: data.stats?.totalClients || 0,
         activeSubscriptions: data.stats?.activeSubscriptions || 0,
@@ -113,9 +130,23 @@ export default function AdminDashboard() {
         data.recentActivities || { recentClients: [], recentFeedback: [] }
       );
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching admin dashboard data:', error);
+      
+      // Set default empty data so page still works
+      setStats({
+        totalClients: 0,
+        activeSubscriptions: 0,
+        creditsUsedThisMonth: 0,
+        revenueThisMonth: 0,
+        unreadMessages: 0,
+        unreadSupport: 0,
+        pendingFeedback: 0,
+        totalContentGenerated: 0,
+      });
+      setActivities({ recentClients: [], recentFeedback: [] });
+
       setError(
-        error instanceof Error ? error.message : 'Er is een fout opgetreden'
+        error instanceof Error ? error.message : 'Er is een fout opgetreden bij het laden van dashboard data'
       );
     } finally {
       setLoading(false);

@@ -46,6 +46,7 @@ export default function FinancienPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
@@ -64,13 +65,67 @@ export default function FinancienPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const res = await fetch('/api/financien/dashboard');
-      if (!res.ok) throw new Error('Failed to fetch dashboard data');
+      setLoading(true);
+      setError(null);
+
+      // Fetch with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      const res = await fetch('/api/financien/dashboard', {
+        signal: controller.signal,
+      }).catch((err) => {
+        if (err.name === 'AbortError') {
+          throw new Error('De Moneybird API reageert niet. Probeer het later opnieuw.');
+        }
+        throw err;
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        
+        // Check for specific Moneybird configuration errors
+        if (errorData.error?.includes('configuration') || 
+            errorData.error?.includes('access token') ||
+            errorData.error?.includes('administration')) {
+          throw new Error('Moneybird is niet correct geconfigureerd. Controleer je API instellingen.');
+        }
+        
+        throw new Error(errorData.error || `Server error: ${res.status}`);
+      }
+
       const data = await res.json();
       setDashboardData(data);
+      setError(null);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast.error('Kon dashboard data niet laden');
+      console.error('Error fetching financial dashboard data:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Kon dashboard data niet laden';
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
+
+      // Set empty fallback data so the page still renders
+      setDashboardData({
+        overview: {
+          mrr: 0,
+          arr: 0,
+          activeSubscriptions: 0,
+          totalRevenue: 0,
+          outstandingInvoices: 0,
+          outstandingAmount: 0,
+          monthlyRevenue: 0,
+          monthlyExpenses: 0,
+          netProfit: 0,
+          lateInvoices: 0,
+        },
+        recentInvoices: [],
+        recentExpenses: [],
+        alerts: [],
+      });
     } finally {
       setLoading(false);
     }
@@ -91,10 +146,47 @@ export default function FinancienPage() {
     );
   }
 
+  // Show error state with retry option
+  if (error && !loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] p-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white/5 border border-red-500/30 rounded-xl p-8 text-center">
+            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Fout bij laden van financiële data
+            </h2>
+            <p className="text-gray-400 mb-6">{error}</p>
+            <div className="space-y-3">
+              <button
+                onClick={fetchDashboardData}
+                className="px-6 py-3 bg-[#ff6b35] hover:bg-[#ff8555] text-white rounded-lg flex items-center gap-2 mx-auto transition-colors"
+              >
+                <RefreshCcw className="w-4 h-4" />
+                Opnieuw proberen
+              </button>
+              <p className="text-gray-500 text-sm">
+                Controleer of Moneybird correct is geconfigureerd en probeer het opnieuw.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!dashboardData) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8 flex items-center justify-center">
-        <p className="text-gray-400">Geen data beschikbaar</p>
+        <div className="text-center">
+          <p className="text-gray-400 mb-4">Geen data beschikbaar</p>
+          <button
+            onClick={fetchDashboardData}
+            className="px-4 py-2 bg-[#ff6b35] hover:bg-[#ff8555] text-white rounded-lg"
+          >
+            Data laden
+          </button>
+        </div>
       </div>
     );
   }
@@ -104,6 +196,28 @@ export default function FinancienPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-8">
       <div className="max-w-7xl mx-auto">
+        {/* Warning banner if using fallback data */}
+        {dashboardData && 
+         dashboardData.overview.mrr === 0 && 
+         dashboardData.overview.totalRevenue === 0 && 
+         dashboardData.recentInvoices.length === 0 && (
+          <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-400" />
+            <div className="flex-1">
+              <p className="text-white font-medium">Waarschuwing: Geen financiële data beschikbaar</p>
+              <p className="text-gray-400 text-sm">
+                De verbinding met Moneybird kon niet worden gemaakt. Controleer je API configuratie.
+              </p>
+            </div>
+            <button
+              onClick={fetchDashboardData}
+              className="px-3 py-1.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded text-sm transition-colors"
+            >
+              Opnieuw proberen
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
