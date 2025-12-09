@@ -14,9 +14,9 @@ export default withAuth(
       return NextResponse.redirect(new URL('/client-portal/ultimate-writer', req.url));
     }
 
-    // Admin-only routes - alleen voor info@writgo.nl
+    // Admin-only routes
     if (path.startsWith('/admin') || path.startsWith('/superadmin')) {
-      if (token?.email !== 'info@writgo.nl' && token?.role !== 'admin' && token?.role !== 'superadmin') {
+      if (token?.role !== 'admin' && token?.role !== 'superadmin') {
         return NextResponse.redirect(new URL('/client-portal', req.url));
       }
     }
