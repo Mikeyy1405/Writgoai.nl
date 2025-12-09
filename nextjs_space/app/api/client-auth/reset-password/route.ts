@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { accessToken, password, email } = body;
+    const { accessToken, password } = body;
 
     // Validate password
     if (!password || typeof password !== 'string' || password.length < 6) {
@@ -52,20 +52,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Update password in Client or User table
-    const [client, user] = await Promise.all([
+    const [clientResult, userResult] = await Promise.all([
       supabaseAdmin
         .from('Client')
         .select('id')
         .eq('email', userEmail)
-        .single()
-        .then(({ data }) => data),
+        .single(),
       supabaseAdmin
         .from('User')
         .select('id')
         .eq('email', userEmail)
-        .single()
-        .then(({ data }) => data),
+        .single(),
     ]);
+
+    const client = clientResult.data;
+    const user = userResult.data;
 
     if (client) {
       const { error: updateError } = await supabaseAdmin
@@ -107,19 +108,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Also update the password in Supabase Auth to keep them in sync
+    // Use the supabaseUser.id from the validated token (more efficient than searching)
     try {
-      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const authUser = authUsers?.users?.find(u => u.email === userEmail);
+      await supabaseAdmin.auth.admin.updateUserById(supabaseUser.id, {
+        password: password, // Supabase Auth will hash this automatically
+      });
 
-      if (authUser) {
-        await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
-          password: password, // Supabase Auth will hash this automatically
-        });
-
-        log('info', 'Updated password in Supabase Auth', {
-          email: userEmail,
-        });
-      }
+      log('info', 'Updated password in Supabase Auth', {
+        email: userEmail,
+      });
     } catch (authError) {
       logError(authError as Error, {
         context: 'Failed to update Supabase Auth password',

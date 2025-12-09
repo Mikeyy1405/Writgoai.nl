@@ -33,20 +33,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists in Client or User table
-    const [client, user] = await Promise.all([
+    const [clientResult, userResult] = await Promise.all([
       supabaseAdmin
         .from('Client')
         .select('id, email, name')
         .eq('email', normalizedEmail)
-        .single()
-        .then(({ data }) => data),
+        .single(),
       supabaseAdmin
         .from('User')
         .select('id, email, name')
         .eq('email', normalizedEmail)
-        .single()
-        .then(({ data }) => data),
+        .single(),
     ]);
+
+    const client = clientResult.data;
+    const user = userResult.data;
 
     const userExists = client || user;
 
@@ -54,30 +55,27 @@ export async function POST(request: NextRequest) {
       // Ensure user exists in Supabase Auth (create if doesn't exist)
       // This allows us to use Supabase Auth's email system
       try {
-        // Try to get the user from Supabase Auth
-        const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
-        const authUserExists = authUsers?.users?.find(u => u.email === normalizedEmail);
+        // Try to create user - if they already exist, this will fail silently
+        // This is more efficient than checking first
+        const randomPassword = crypto.randomBytes(32).toString('hex');
+        const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: normalizedEmail,
+          password: randomPassword,
+          email_confirm: true, // Auto-confirm email
+        });
 
-        if (!authUserExists) {
-          // Create a placeholder user in Supabase Auth with a random password
-          // This user will be used only for password reset emails
-          const randomPassword = crypto.randomBytes(32).toString('hex');
-          await supabaseAdmin.auth.admin.createUser({
-            email: normalizedEmail,
-            password: randomPassword,
-            email_confirm: true, // Auto-confirm email
-          });
-          
+        if (createData?.user) {
           log('info', 'Created Supabase Auth user for password reset', {
             email: normalizedEmail,
           });
         }
+        // If error indicates user already exists, that's fine - we can still send reset email
       } catch (authError) {
         logError(authError as Error, {
           context: 'Failed to ensure Supabase Auth user exists',
           email: normalizedEmail,
         });
-        // Continue anyway
+        // Continue anyway - user might already exist
       }
 
       // Use Supabase Auth to send password reset email
