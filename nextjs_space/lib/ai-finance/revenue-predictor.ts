@@ -1,3 +1,4 @@
+import { prisma } from '../db';
 // AI-powered revenue prediction and forecasting
 
 

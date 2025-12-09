@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { hasEnoughCredits, deductCredits } from '@/lib/credits';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 
 // Helper to send streaming updates
 function createStreamUpdate(type: string, data: any) {
@@ -268,26 +268,24 @@ export async function POST(request: NextRequest) {
         }
 
         // Save to database
-        const { supabaseAdmin: prisma } = await import('@/lib/supabase');
-        
-        try {
-          await prisma.video.create({
-            data: {
-              vid: `${provider}_${generationId || Date.now()}`,
-              topic: prompt.substring(0, 100),
-              script: prompt,
-              language: 'Dutch',
-              voiceId: 'AI Generated',
-              style: style,
-              duration: duration.toString(),
-              status: 'completed',
-              videoUrl: videoUrl!,
-              thumbnailUrl: thumbnailUrl,
-              clientId: clientId || 'anonymous',
-            },
+        const { error: dbError } = await supabaseAdmin
+          .from('video')
+          .insert({
+            vid: `${provider}_${generationId || Date.now()}`,
+            topic: prompt.substring(0, 100),
+            script: prompt,
+            language: 'Dutch',
+            voiceId: 'AI Generated',
+            style: style,
+            duration: duration.toString(),
+            status: 'completed',
+            videoUrl: videoUrl!,
+            thumbnailUrl: thumbnailUrl,
+            clientId: clientId || 'anonymous',
           });
-        } finally {
-          await prisma.$disconnect();
+        
+        if (dbError) {
+          console.error('Database error:', dbError);
         }
 
         controller.enqueue(encoder.encode(createStreamUpdate('complete', {

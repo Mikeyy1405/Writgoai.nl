@@ -1,4 +1,3 @@
-
 /**
  * 🤖 WritgoAI DeepAgent - Native AIML Tool Calling
  * 
@@ -1546,7 +1545,6 @@ export async function scanWebsite(url: string | undefined, clientId: string | un
 
     // Import website scanner directly
     const { scanWebsite: scanWebsiteDirect } = await import('./website-scanner');
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       // If no URL provided, get from client profile
@@ -1644,7 +1642,6 @@ export async function generateBlog(
     // 🆕 GEBRUIK NIEUWE ADVANCED SEO WRITER
     // ═══════════════════════════════════════════════════════════
     
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       // Get client info
@@ -1869,7 +1866,6 @@ ${result.content}
       const scanResult = await scanWebsite(topic, clientId);
       
       // Extract onderwerp uit de scan
-      const { supabaseAdmin: prisma } = await import('@/lib/supabase');
       
       try {
         const client = await prisma.client.findUnique({
@@ -1973,7 +1969,6 @@ ${result.content}
     console.log(`📝 Blog genereren: ${topic} (${wordCount} woorden)`);
 
     // Import blog generator directly
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       // Get website URL from client
@@ -2377,7 +2372,6 @@ export async function generateVideo(args: any, clientId: string | undefined): Pr
 
     // Import story video generator
     const { generateScenesWithAI, generateStoryVideo } = await import('./ai-story-video-generator');
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       console.log('🎬 Generating AI story scenes with AI...');
@@ -3860,7 +3854,6 @@ export async function wordpressPublish(
     console.log(`📝 WordPress publiceren: ${title}`);
 
     // Import WordPress service
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     const { publishToWordPress } = await import('./wordpress-publisher');
     
     try {
@@ -4035,7 +4028,6 @@ export async function socialMediaPost(
     console.log(`📱 Social media posten naar: ${platforms.join(', ')}`);
 
     // Import Late.dev service
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       // Get client Late.dev config
@@ -4114,7 +4106,6 @@ export async function createContentPlan(
     console.log(`📅 Content planning genereren${focusArea ? ` voor: ${focusArea}` : ''}`);
 
     // TODO: Implement full content planning with ContentPlan model
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       // Get client data
@@ -4196,7 +4187,6 @@ export async function executeContentPlan(
 
     console.log(`⚡ Content plan uitvoeren${planId ? ` (ID: ${planId})` : ' (laatste plan)'}`);
 
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       // Get content plan from client
@@ -4361,7 +4351,6 @@ export async function manageTask(
 
     console.log(`📋 Task ${action}: ${taskId || title}`);
 
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       // TODO: Implement full task management with Task model
@@ -4423,7 +4412,6 @@ export async function checkCredits(
 
     console.log(`💰 Credits checken (threshold: ${warnThreshold})`);
 
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       const client = await prisma.client.findUnique({
@@ -4491,7 +4479,6 @@ export async function sendNotification(
 
     console.log(`📧 Notificatie sturen: ${subject} (${type})`);
 
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       const client = await prisma.client.findUnique({
@@ -4544,7 +4531,6 @@ export async function analyzePerformance(
 
     console.log(`📊 Performance analyse: ${timePeriod}`);
 
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       // Calculate date range
@@ -4665,7 +4651,6 @@ export async function scheduleAutomation(
 
     console.log(`⏰ Automation inplannen: ${frequency} - ${contentTypes.join(', ')}`);
 
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
     
     try {
       const client = await prisma.client.findUnique({

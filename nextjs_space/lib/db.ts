@@ -6,8 +6,8 @@ import { supabase, supabaseAdmin } from './supabase'
 // - Use 'db' for server-side operations that need admin privileges
 // - Use 'supabase' for client-side operations (respects RLS)
 export const db = supabaseAdmin
-export { supabase }
+export { supabase, supabaseAdmin }
 
-// For backwards compatibility with existing code that uses 'prisma'
-// Re-export from prisma-compat which provides proper typing
-export { prisma } from './prisma-compat'
+// Temporary Prisma compatibility layer for gradual migration
+// This should be removed once all files are converted to use Supabase directly
+export { prisma } from './prisma-shim'

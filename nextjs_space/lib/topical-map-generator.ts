@@ -1,3 +1,4 @@
+import { prisma } from './db';
 
 /**
  * 🚀 VOLLEDIG GEAUTOMATISEERDE TOPICAL MAP GENERATOR

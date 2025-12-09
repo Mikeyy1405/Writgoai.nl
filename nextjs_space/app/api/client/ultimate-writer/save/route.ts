@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-import type { Language } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +46,7 @@ export async function POST(request: NextRequest) {
         contentHtml: content,
         metaDesc: metaDescription,
         type: config.contentType,
-        language: config.language === 'nl' ? Language.NL : Language.EN,
+        language: config.language === 'nl' ? 'nl' : 'en',
         wordCount: stats.wordCount,
         characterCount: stats.characterCount,
         keywords: [config.primaryKeyword, ...config.secondaryKeywords.split(',').map((k: string) => k.trim()).filter(Boolean)],

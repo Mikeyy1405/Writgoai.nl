@@ -1,3 +1,4 @@
+import { prisma } from '../../db';
 // Automated invoice generation for monthly subscriptions
 
 import { getMoneybird } from '@/lib/moneybird';

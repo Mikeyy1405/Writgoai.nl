@@ -1,3 +1,4 @@
+import { prisma } from './db';
 
 // Nieuwe dagelijkse content generator met DALL-E 3 afbeeldingen
 // Genereert: 1 blog + 1 social post + 1 reel script per dag

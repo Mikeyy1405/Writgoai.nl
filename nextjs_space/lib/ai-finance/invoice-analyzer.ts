@@ -1,3 +1,4 @@
+import { prisma } from '../db';
 // AI-powered invoice pattern analysis and payment behavior prediction
 
 

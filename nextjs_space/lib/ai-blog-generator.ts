@@ -1,3 +1,4 @@
+import { prisma } from '@/lib/db';
 
 /**
  * 🚀 PROFESSIONAL SEO BLOG GENERATOR v3.0 - AIML API POWERED
@@ -78,7 +79,6 @@ export async function generateBlogAutomatically(
     let customInstructions: string | null = null;
     if (options.clientId) {
       try {
-        const { supabaseAdmin: prisma } = await import('@/lib/supabase');
         
         const projects = await prisma.project.findMany({
           where: { clientId: options.clientId },

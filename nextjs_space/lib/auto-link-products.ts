@@ -1,3 +1,4 @@
+import { prisma } from './db';
 
 /**
  * Auto-Link Products System

@@ -1,3 +1,4 @@
+import { prisma } from './db';
 /**
  * Credit System - Nu alleen Usage Tracking (Pay-as-you-go model)
  * 
