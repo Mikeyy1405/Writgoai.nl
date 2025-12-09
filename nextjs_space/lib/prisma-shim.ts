@@ -280,8 +280,24 @@ export const prisma = new Proxy({} as any, {
         
         // Basic count support
         if (_count) {
-          const count = await prisma[tableName].count({ where });
-          return { _count: count };
+          let query = supabaseAdmin.from(tableName).select('*', { count: 'exact', head: true });
+          
+          // Apply where conditions
+          if (where) {
+            Object.entries(where).forEach(([key, value]) => {
+              if (value !== null && value !== undefined) {
+                query = query.eq(key, value);
+              }
+            });
+          }
+          
+          const { count, error } = await query;
+          
+          if (error) {
+            throw error;
+          }
+          
+          return { _count: count || 0 };
         }
         
         throw new Error('aggregate() is not fully implemented in Prisma shim. Please convert to use Supabase RPC or direct queries.');

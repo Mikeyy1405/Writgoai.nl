@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     const clientId = session.user.id;
     
-    // Fetch credits and subscription info
+    // Fetch credits and subscription info using Prisma shim
     const client = await prisma.client.findUnique({
       where: { id: clientId },
       select: {
