@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/admin-layout';
 import { isUserAdmin } from '@/lib/navigation-config';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
+
+// Timeout constants
+const AUTH_TIMEOUT_MS = 10000; // 10 seconds for authentication check
 
 interface AdminLayoutPropsType {
   children: React.ReactNode;
@@ -16,16 +19,17 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   const router = useRouter();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    isMountedRef.current = true;
 
     // Set a timeout for authentication check
     const authTimeout = setTimeout(() => {
-      if (status === 'loading') {
+      if (isMountedRef.current && status === 'loading') {
         setAuthError('Authenticatie duurt langer dan verwacht. Probeer de pagina te verversen.');
       }
-    }, 10000); // 10 seconds
+    }, AUTH_TIMEOUT_MS);
 
     try {
       if (status === 'unauthenticated') {
@@ -59,6 +63,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
     }
 
     return () => {
+      isMountedRef.current = false;
       clearTimeout(authTimeout);
     };
   }, [status, session, router]);

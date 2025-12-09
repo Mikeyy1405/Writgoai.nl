@@ -38,12 +38,15 @@ export async function GET(req: NextRequest) {
     // Haal alle facturen op uit Moneybird with timeout and error handling
     let salesInvoices;
     try {
+      let timeoutId: NodeJS.Timeout;
       salesInvoices = await Promise.race([
         moneybird.listSalesInvoices(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Moneybird API timeout')), 10000)
-        )
-      ]);
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Moneybird API timeout')), 10000);
+        })
+      ]).finally(() => {
+        if (timeoutId) clearTimeout(timeoutId);
+      });
     } catch (error) {
       console.error('[Financien Dashboard] Error fetching sales invoices:', error);
       return NextResponse.json(
@@ -75,12 +78,15 @@ export async function GET(req: NextRequest) {
     let subscriptions;
     let activeSubscriptions = [];
     try {
+      let timeoutId: NodeJS.Timeout;
       subscriptions = await Promise.race([
         moneybird.listSubscriptions(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Moneybird API timeout')), 10000)
-        )
-      ]);
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Moneybird API timeout')), 10000);
+        })
+      ]).finally(() => {
+        if (timeoutId) clearTimeout(timeoutId);
+      });
       activeSubscriptions = subscriptions.filter((sub: any) => sub.active);
     } catch (error) {
       console.error('[Financien Dashboard] Error fetching subscriptions:', error);

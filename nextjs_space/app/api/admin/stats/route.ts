@@ -12,12 +12,15 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     // Check session with timeout
+    let sessionTimeoutId: NodeJS.Timeout;
     const session = await Promise.race([
       getServerSession(authOptions),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session check timeout')), 5000)
-      )
-    ]).catch((error) => {
+      new Promise((_, reject) => {
+        sessionTimeoutId = setTimeout(() => reject(new Error('Session check timeout')), 5000);
+      })
+    ]).finally(() => {
+      if (sessionTimeoutId) clearTimeout(sessionTimeoutId);
+    }).catch((error) => {
       console.error('Session check failed:', error);
       return null;
     });
