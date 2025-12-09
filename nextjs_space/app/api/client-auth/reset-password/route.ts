@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { log, logError } from '@/lib/logger';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, password } = body;
+    const { accessToken, password } = body;
 
-    // Validate input
-    if (!token || typeof token !== 'string') {
-      return NextResponse.json(
-        { error: 'Ongeldige reset token' },
-        { status: 400 }
-      );
-    }
-
+    // Validate password
     if (!password || typeof password !== 'string' || password.length < 6) {
       return NextResponse.json(
         { error: 'Wachtwoord moet minimaal 6 tekens bevatten' },
@@ -24,33 +17,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find the token in the database
-    const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
-    });
-
-    if (!resetToken) {
-      log('warn', 'Invalid password reset token used');
+    // Validate access token
+    if (!accessToken || typeof accessToken !== 'string') {
       return NextResponse.json(
-        { error: 'Ongeldige of verlopen reset link. Vraag een nieuwe aan.' },
+        { error: 'Ongeldige reset token' },
         { status: 400 }
       );
     }
 
-    // Check if token has expired
-    if (new Date() > resetToken.expires) {
-      // Delete expired token
-      await prisma.passwordResetToken.delete({
-        where: { id: resetToken.id },
+    // Validate the session using the access token from Supabase
+    const { data: { user: supabaseUser }, error: sessionError } = await supabaseAdmin.auth.getUser(accessToken);
+
+    if (sessionError || !supabaseUser) {
+      log('warn', 'Invalid or expired password reset token', {
+        error: sessionError?.message,
       });
-      
-      log('warn', 'Expired password reset token used', {
-        email: resetToken.email,
-        expiredAt: resetToken.expires.toISOString(),
-      });
-      
       return NextResponse.json(
-        { error: 'Deze reset link is verlopen. Vraag een nieuwe aan.' },
+        { error: 'Ongeldige of verlopen reset link. Vraag een nieuwe aan.' },
         { status: 400 }
       );
     }
@@ -58,58 +41,89 @@ export async function POST(request: NextRequest) {
     // Hash the new password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Get the email from the Supabase user
+    const userEmail = supabaseUser.email;
+
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: 'Geen email gevonden in reset token' },
+        { status: 400 }
+      );
+    }
+
     // Update password in Client or User table
-    const [client, user] = await Promise.all([
-      prisma.client.findUnique({ 
-        where: { email: resetToken.email },
-        select: { id: true }
-      }),
-      prisma.user.findUnique({ 
-        where: { email: resetToken.email },
-        select: { id: true }
-      }),
+    const [clientResult, userResult] = await Promise.all([
+      supabaseAdmin
+        .from('Client')
+        .select('id')
+        .eq('email', userEmail)
+        .single(),
+      supabaseAdmin
+        .from('User')
+        .select('id')
+        .eq('email', userEmail)
+        .single(),
     ]);
 
+    const client = clientResult.data;
+    const user = userResult.data;
+
     if (client) {
-      await prisma.client.update({
-        where: { id: client.id },
-        data: { password: hashedPassword },
-      });
-      
-      log('info', 'Client password reset successfully', {
+      const { error: updateError } = await supabaseAdmin
+        .from('Client')
+        .update({ password: hashedPassword })
+        .eq('id', client.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      log('info', 'Client password reset successfully via Supabase', {
         clientId: client.id,
-        email: resetToken.email,
+        email: userEmail,
       });
     } else if (user) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { password: hashedPassword },
-      });
-      
-      log('info', 'User password reset successfully', {
+      const { error: updateError } = await supabaseAdmin
+        .from('User')
+        .update({ password: hashedPassword })
+        .eq('id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      log('info', 'User password reset successfully via Supabase', {
         userId: user.id,
-        email: resetToken.email,
+        email: userEmail,
       });
     } else {
-      // User no longer exists
-      await prisma.passwordResetToken.delete({
-        where: { id: resetToken.id },
-      });
-      
       log('warn', 'Password reset attempted for non-existent user', {
-        email: resetToken.email,
+        email: userEmail,
       });
-      
+
       return NextResponse.json(
         { error: 'Gebruiker niet gevonden' },
         { status: 404 }
       );
     }
 
-    // Delete the used token (single-use)
-    await prisma.passwordResetToken.delete({
-      where: { id: resetToken.id },
-    });
+    // Also update the password in Supabase Auth to keep them in sync
+    // Use the supabaseUser.id from the validated token (more efficient than searching)
+    try {
+      await supabaseAdmin.auth.admin.updateUserById(supabaseUser.id, {
+        password: password, // Supabase Auth will hash this automatically
+      });
+
+      log('info', 'Updated password in Supabase Auth', {
+        email: userEmail,
+      });
+    } catch (authError) {
+      logError(authError as Error, {
+        context: 'Failed to update Supabase Auth password',
+        email: userEmail,
+      });
+      // Don't fail the request - the main database password was updated
+    }
 
     return NextResponse.json({
       success: true,
@@ -119,7 +133,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logError(error as Error, { endpoint: '/api/client-auth/reset-password' });
     console.error('Reset password error:', error);
-    
+
     return NextResponse.json(
       { error: 'Er is een fout opgetreden. Probeer het later opnieuw.' },
       { status: 500 }

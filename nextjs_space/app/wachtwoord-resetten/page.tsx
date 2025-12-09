@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [token, setToken] = useState('');
+  const [accessToken, setAccessToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,13 +22,24 @@ function ResetPasswordForm() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const tokenParam = searchParams?.get('token');
-    if (tokenParam) {
-      setToken(tokenParam);
+    // Supabase sends the access_token in the URL hash after email verification
+    // Format: #access_token=xxx&refresh_token=yyy&type=recovery
+    const hash = window.location.hash;
+    
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get('access_token');
+      const type = params.get('type');
+      
+      if (token && type === 'recovery') {
+        setAccessToken(token);
+      } else {
+        setError('Geen geldige reset link. Vraag een nieuwe aan.');
+      }
     } else {
-      setError('Geen geldige reset token gevonden');
+      setError('Geen geldige reset link. Vraag een nieuwe aan.');
     }
-  }, [searchParams]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +65,7 @@ function ResetPasswordForm() {
       const res = await fetch('/api/client-auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ accessToken, password }),
       });
 
       const data = await res.json();
@@ -74,7 +85,7 @@ function ResetPasswordForm() {
     }
   };
 
-  if (!token && !error) {
+  if (!accessToken && !error) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[#FF9933] animate-spin" />
