@@ -5,6 +5,35 @@ import { prisma } from '@/lib/db';
 
 export const maxDuration = 60;
 
+// Helper function to handle Prisma errors
+function handlePrismaError(error: unknown): NextResponse | null {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const prismaError = error as { code: string; meta?: any };
+    
+    // P2021: Table does not exist
+    if (prismaError.code === 'P2021') {
+      console.error(`[Branding API] Database table does not exist. Run: npx prisma db push`);
+      return NextResponse.json(
+        { error: 'Database tabel ontbreekt. Voer database migratie uit.' },
+        { status: 500 }
+      );
+    }
+    
+    // P1001: Can't reach database server
+    if (prismaError.code === 'P1001') {
+      console.error('[Branding API] Cannot connect to database');
+      return NextResponse.json(
+        { error: 'Kan geen verbinding maken met de database' },
+        { status: 500 }
+      );
+    }
+    
+    console.error('[Branding API] Prisma error code:', prismaError.code);
+  }
+  
+  return null;
+}
+
 // GET - Fetch brand settings (admin only)
 export async function GET() {
   try {
@@ -36,7 +65,13 @@ export async function GET() {
 
     return NextResponse.json(brandSettings);
   } catch (error) {
-    console.error('Failed to fetch brand settings:', error);
+    console.error('[Branding API] Failed to fetch brand settings:', error);
+    
+    const prismaErrorResponse = handlePrismaError(error);
+    if (prismaErrorResponse) {
+      return prismaErrorResponse;
+    }
+    
     return NextResponse.json(
       { error: 'Er is een fout opgetreden bij het ophalen van de branding instellingen' },
       { status: 500 }
@@ -119,7 +154,13 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(brandSettings);
   } catch (error) {
-    console.error('Failed to update brand settings:', error);
+    console.error('[Branding API] Failed to update brand settings:', error);
+    
+    const prismaErrorResponse = handlePrismaError(error);
+    if (prismaErrorResponse) {
+      return prismaErrorResponse;
+    }
+    
     return NextResponse.json(
       { error: 'Er is een fout opgetreden bij het bijwerken van de branding instellingen' },
       { status: 500 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { uploadFile } from '@/lib/s3';
+import { uploadFile, getPublicUrl } from '@/lib/s3';
 
 export const maxDuration = 60;
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('Uploading branding file:', file.name, 'Size:', file.size, 'Type:', type);
+    console.log('[Branding Upload] Uploading file:', file.name, 'Size:', file.size, 'Type:', type);
 
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -48,13 +48,17 @@ export async function POST(req: NextRequest) {
     const s3Key = `branding/${type}/${timestamp}-${sanitizedName}`;
 
     // Upload to S3
-    const cloudStoragePath = await uploadFile(buffer, s3Key);
+    const cloudStoragePath = await uploadFile(buffer, s3Key, file.type);
 
-    console.log('Branding file uploaded successfully:', cloudStoragePath);
+    // Convert S3 key to full public URL
+    const publicUrl = getPublicUrl(cloudStoragePath);
+
+    console.log('[Branding Upload] File uploaded successfully:', publicUrl);
 
     return NextResponse.json({
       success: true,
-      url: cloudStoragePath,
+      url: publicUrl,
+      key: cloudStoragePath,
       fileName: file.name,
       fileType: file.type,
       fileSize: file.size,
@@ -62,9 +66,9 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Branding file upload error:', error);
+    console.error('[Branding Upload] Error:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Upload mislukt' 
+      error: error instanceof Error ? error.message : 'Upload mislukt. Controleer de S3 configuratie.' 
     }, { status: 500 });
   }
 }
