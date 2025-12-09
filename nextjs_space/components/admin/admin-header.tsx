@@ -2,6 +2,7 @@
 
 import { Bell, Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 interface AdminHeaderProps {
   onMobileMenuToggle?: () => void;
@@ -23,10 +24,9 @@ export function AdminHeader({ onMobileMenuToggle, unreadCount = 0 }: AdminHeader
         </button>
 
         {/* Brand on mobile */}
-        <div className="lg:hidden">
-          <h1 className="text-lg font-bold text-white">
-            <span className="text-[#FF6B35]">WritGo</span> Admin
-          </h1>
+        <div className="lg:hidden flex items-center gap-2">
+          <BrandLogo variant="text" size="sm" />
+          <span className="text-gray-400 text-sm">Admin</span>
         </div>
 
         {/* User info */}

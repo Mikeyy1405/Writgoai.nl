@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Mail, MapPin, Phone, FileText, Shield, Building2 } from 'lucide-react';
-import Image from 'next/image';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 export default function PublicFooter() {
   return (
@@ -13,15 +13,7 @@ export default function PublicFooter() {
           {/* Over Ons */}
           <div>
             <div className="mb-4">
-              <div className="relative w-44 h-14">
-                <Image
-                  src="/writgo-media-logo.png"
-                  alt="Writgo Media Logo"
-                  fill
-                  className="object-contain object-left"
-                  priority
-                />
-              </div>
+              <BrandLogo variant="full" size="md" />
             </div>
             <p className="text-gray-400 text-sm mb-4">
               AI-gedreven content automatisering voor moderne bedrijven. 

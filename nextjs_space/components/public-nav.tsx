@@ -7,9 +7,9 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, LogIn, BookOpen, Users, Mail, Home, LayoutDashboard } from 'lucide-react';
-import Image from 'next/image';
 import LanguageSwitcher from '@/components/language-switcher';
 import { useLanguage } from '@/lib/i18n/context';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 export default function PublicNav() {
   const { data: session } = useSession() || {};
@@ -50,14 +50,8 @@ export default function PublicNav() {
         <div className="flex items-center justify-between h-24 sm:h-28 md:h-32">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="relative w-80 h-20 sm:w-96 sm:h-24 md:w-[28rem] md:h-28">
-              <Image
-                src="/writgo-media-logo.png"
-                alt="Writgo Media Logo"
-                fill
-                className="object-contain transition-transform group-hover:scale-105"
-                priority
-              />
+            <div className="transition-transform group-hover:scale-105">
+              <BrandLogo variant="full" size="xl" />
             </div>
           </Link>
 
