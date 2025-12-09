@@ -92,13 +92,15 @@ export function SEOPanel({ data, onChange }: SEOPanelProps) {
   };
 
   const performAdvancedSEOAnalysis = (data: SEOData): SEOAnalysis => {
+    const { countKeywordOccurrences, calculateFleschScore, stripHtmlTags } = require('@/lib/blog-utils');
+    
     const title = data.metaTitle || data.title;
     const content = data.content;
     const keyword = data.focusKeyword.toLowerCase();
     const metaDesc = data.metaDescription;
     
     // Extract text from HTML
-    const textContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const textContent = stripHtmlTags(content, Number.MAX_SAFE_INTEGER);
     const words = textContent.split(/\s+/).filter(Boolean);
     const wordCount = words.length;
     
@@ -159,7 +161,7 @@ export function SEOPanel({ data, onChange }: SEOPanelProps) {
 
     // Keyword Density
     if (keyword) {
-      const keywordCount = (textContent.toLowerCase().match(new RegExp('\\b' + keyword + '\\b', 'g')) || []).length;
+      const keywordCount = countKeywordOccurrences(textContent, keyword);
       const density = (keywordCount / wordCount) * 100;
       
       if (density >= 0.5 && density <= 2.5) {
@@ -213,16 +215,13 @@ export function SEOPanel({ data, onChange }: SEOPanelProps) {
     totalScore += checks.contentLength.score;
     checkCount++;
 
-    // Readability Score (Flesch Reading Ease approximation)
-    const sentences = textContent.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const sentenceCount = sentences.length;
-    const syllables = words.reduce((count, word) => count + countSyllables(word), 0);
-    const avgWordsPerSentence = wordCount / sentenceCount;
-    const avgSyllablesPerWord = syllables / wordCount;
-    const fleschScore = 206.835 - 1.015 * avgWordsPerSentence - 84.6 * avgSyllablesPerWord;
+    // Readability Score (Flesch Reading Ease)
+    // Note: This algorithm is calibrated for English. For Dutch content, the scores
+    // may be somewhat inaccurate but still provide useful relative guidance.
+    const fleschScore = calculateFleschScore(textContent);
     
     if (fleschScore >= 60) {
-      checks.readabilityScore = { score: 100, message: `Goed leesbaar (score: ${Math.round(fleschScore)})`, status: 'good', tip: 'Je content is makkelijk te lezen voor de meeste mensen.' };
+      checks.readabilityScore = { score: 100, message: `Goed leesbaar (score: ${Math.round(fleschScore)})`, status: 'good', tip: 'Je content is makkelijk te lezen voor de meeste mensen. Let op: score is gebaseerd op Engels algoritme.' };
     } else if (fleschScore >= 50) {
       checks.readabilityScore = { score: 70, message: `Redelijk leesbaar (score: ${Math.round(fleschScore)})`, status: 'warning', tip: 'Gebruik kortere zinnen en simplere woorden voor betere leesbaarheid.' };
     } else {
@@ -325,14 +324,7 @@ export function SEOPanel({ data, onChange }: SEOPanelProps) {
     };
   };
 
-  const countSyllables = (word: string): number => {
-    word = word.toLowerCase();
-    if (word.length <= 3) return 1;
-    word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
-    word = word.replace(/^y/, '');
-    const syllables = word.match(/[aeiouy]{1,2}/g);
-    return syllables ? syllables.length : 1;
-  };
+
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-500';

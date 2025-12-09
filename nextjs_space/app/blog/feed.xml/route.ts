@@ -27,10 +27,8 @@ export async function GET() {
       take: 50, // Last 50 posts
     });
 
-    // Strip HTML tags from content for description
-    const stripHtml = (html: string) => {
-      return html.replace(/<[^>]*>/g, '').substring(0, 500);
-    };
+    // Import safe HTML stripping utility
+    const { stripHtmlTags } = await import('@/lib/blog-utils');
 
     // Generate RSS feed XML
     const rss = `<?xml version="1.0" encoding="UTF-8"?>
@@ -52,7 +50,7 @@ ${posts
       <title><![CDATA[${post.title}]]></title>
       <link>https://writgo.nl/${post.slug}</link>
       <guid isPermaLink="true">https://writgo.nl/${post.slug}</guid>
-      <description><![CDATA[${post.excerpt || stripHtml(post.content)}]]></description>
+      <description><![CDATA[${post.excerpt || stripHtmlTags(post.content, 500)}]]></description>
       <content:encoded><![CDATA[${post.content}]]></content:encoded>
       <dc:creator><![CDATA[${post.authorName}]]></dc:creator>
       <category><![CDATA[${post.category}]]></category>

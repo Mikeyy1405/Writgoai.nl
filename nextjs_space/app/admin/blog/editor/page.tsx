@@ -76,12 +76,8 @@ export default function BlogEditorPage() {
   // Auto-generate slug from title
   useEffect(() => {
     if (!postId && formData.title && !formData.slug) {
-      const slug = formData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .substring(0, 50);
+      const { generateSlug } = require('@/lib/blog-utils');
+      const slug = generateSlug(formData.title);
       setFormData((prev) => ({ ...prev, slug }));
     }
   }, [formData.title, postId]);

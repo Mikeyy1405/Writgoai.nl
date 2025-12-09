@@ -200,15 +200,16 @@ export function BlockEditor({ content, onChange, placeholder, onImageUpload }: B
   const addVideo = () => {
     if (videoUrl) {
       // Extract video ID and create embed HTML
+      const { extractYouTubeId, extractVimeoId } = require('@/lib/blog-utils');
       let embedHtml = '';
       
       if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-        const videoId = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1];
+        const videoId = extractYouTubeId(videoUrl);
         if (videoId) {
           embedHtml = `<div class="video-wrapper my-4"><iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
         }
       } else if (videoUrl.includes('vimeo.com')) {
-        const videoId = videoUrl.match(/vimeo\.com\/(\d+)/)?.[1];
+        const videoId = extractVimeoId(videoUrl);
         if (videoId) {
           embedHtml = `<div class="video-wrapper my-4"><iframe width="100%" height="400" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
         }
