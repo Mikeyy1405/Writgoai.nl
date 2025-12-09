@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { uploadFile } from '@/lib/s3';
 
 export const maxDuration = 60;
 
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    const type = formData.get('type') as string; // 'logo', 'favicon', etc.
+    const type = formData.get('type') as string; // 'logo', 'logoLight', 'logoDark', etc.
 
     if (!file) {
       return NextResponse.json({ error: 'Geen bestand gevonden' }, { status: 400 });
@@ -29,32 +28,26 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validate file size (max 10MB for branding assets)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validate file size (max 5MB for database storage)
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       return NextResponse.json({ 
-        error: 'Bestand is te groot. Maximaal 10MB toegestaan.' 
+        error: 'Bestand is te groot. Maximaal 5MB toegestaan voor database opslag.' 
       }, { status: 400 });
     }
 
-    console.log('Uploading branding file:', file.name, 'Size:', file.size, 'Type:', type);
+    console.log('[Branding Upload] Processing file:', file.name, 'Size:', file.size, 'Type:', type);
 
-    // Convert file to buffer
+    // Convert file to Base64 data URL
     const buffer = Buffer.from(await file.arrayBuffer());
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
-    // Generate S3 key with timestamp and type
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const s3Key = `branding/${type}/${timestamp}-${sanitizedName}`;
-
-    // Upload to S3
-    const cloudStoragePath = await uploadFile(buffer, s3Key);
-
-    console.log('Branding file uploaded successfully:', cloudStoragePath);
+    console.log('[Branding Upload] File converted to Base64, length:', dataUrl.length);
 
     return NextResponse.json({
       success: true,
-      url: cloudStoragePath,
+      url: dataUrl,
       fileName: file.name,
       fileType: file.type,
       fileSize: file.size,
@@ -62,7 +55,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Branding file upload error:', error);
+    console.error('[Branding Upload] Error:', error);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Upload mislukt' 
     }, { status: 500 });
