@@ -250,6 +250,7 @@ export function SEOPanel({ data, onChange }: SEOPanelProps) {
     checkCount++;
 
     // Sentence Length
+    const sentences = textContent.split(/[.!?]+/).filter(s => s.trim().length > 0);
     const longSentences = sentences.filter(s => s.split(/\s+/).length > 20);
     if (longSentences.length === 0) {
       checks.sentenceLength = { score: 100, message: 'Zin lengtes zijn goed', status: 'good', tip: 'Je zinnen zijn kort en krachtig.' };
