@@ -11,7 +11,7 @@ import { Calendar, Clock, Eye, ArrowLeft } from 'lucide-react';
 import BlogTableOfContents from '@/components/blog-table-of-contents';
 import BlogShareButton from '@/components/blog-share-button';
 import BlogFeaturedImage from '@/components/blog-featured-image';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 interface BlogPost {
   id: string;
@@ -37,25 +37,12 @@ export async function generateMetadata({
 }: { 
   params: { slug: string } 
 }): Promise<Metadata> {
-  const post = await prisma.blogPost.findFirst({
-    where: {
-      slug: params.slug,
-      status: 'published',
-    },
-    select: {
-      title: true,
-      slug: true,
-      excerpt: true,
-      metaTitle: true,
-      metaDescription: true,
-      focusKeyword: true,
-      featuredImage: true,
-      publishedAt: true,
-      authorName: true,
-      category: true,
-      tags: true,
-    },
-  });
+  const { data: post } = await supabaseAdmin
+    .from('BlogPost')
+    .select('title, slug, excerpt, metaTitle, metaDescription, focusKeyword, featuredImage, publishedAt, authorName, category, tags')
+    .eq('slug', params.slug)
+    .eq('status', 'published')
+    .single();
 
   if (!post) {
     return {
@@ -77,7 +64,7 @@ export async function generateMetadata({
       description,
       type: 'article',
       url,
-      publishedTime: post.publishedAt?.toISOString() || new Date().toISOString(),
+      publishedTime: post.publishedAt ? new Date(post.publishedAt).toISOString() : new Date().toISOString(),
       authors: [post.authorName],
       section: post.category,
       tags: post.tags || [],
@@ -99,29 +86,29 @@ export async function generateMetadata({
 
 // ✅ Fetch post on server side
 async function getPost(slug: string): Promise<BlogPost | null> {
-  const post = await prisma.blogPost.findFirst({
-    where: {
-      slug,
-      status: 'published',
-    },
-  });
+  const { data: post } = await supabaseAdmin
+    .from('BlogPost')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .single();
 
   if (!post) {
     return null;
   }
 
   // Increment views asynchronously
-  prisma.blogPost
-    .update({
-      where: { id: post.id },
-      data: { views: { increment: 1 } },
-    })
+  supabaseAdmin
+    .from('BlogPost')
+    .update({ views: (post.views || 0) + 1 })
+    .eq('id', post.id)
+    .then(() => {})
     .catch((err) => console.error('Error incrementing views:', err));
 
   // Convert Date fields to ISO strings for client component compatibility
   return {
     ...post,
-    publishedAt: post.publishedAt?.toISOString() || new Date().toISOString(),
+    publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : new Date().toISOString(),
     tags: post.tags || [],
   } as BlogPost;
 }

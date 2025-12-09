@@ -10,3 +10,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Server-side Supabase client with service role for admin operations (bypasses RLS)
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
+
+// Language type definition (from Supabase schema)
+export type Language = 'NL' | 'EN' | 'DE' | 'ES' | 'FR' | 'IT' | 'PT' | 'PL' | 'SV' | 'DA';

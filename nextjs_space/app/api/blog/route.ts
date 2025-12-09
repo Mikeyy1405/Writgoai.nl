@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 // GET - Publieke blog posts ophalen
 export async function GET(request: NextRequest) {
@@ -11,51 +11,42 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
 
-    const where: any = {
-      status: 'published',
-      publishedAt: { not: null },
-    };
+    // Build query
+    let query = supabaseAdmin
+      .from('BlogPost')
+      .select('id, title, slug, excerpt, featuredImage, category, tags, publishedAt, readingTimeMinutes, views', { count: 'exact' })
+      .eq('status', 'published')
+      .not('publishedAt', 'is', null);
 
     if (category && category !== 'all') {
-      where.category = category;
+      query = query.eq('category', category);
     }
 
     if (tag) {
-      where.tags = { has: tag };
+      query = query.contains('tags', [tag]);
     }
 
-    const [posts, total] = await Promise.all([
-      prisma.blogPost.findMany({
-        where,
-        orderBy: { publishedAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          excerpt: true,
-          featuredImage: true,
-          category: true,
-          tags: true,
-          publishedAt: true,
-          readingTimeMinutes: true,
-          views: true,
-        },
-      }),
-      prisma.blogPost.count({ where }),
-    ]);
+    // Apply pagination
+    query = query
+      .order('publishedAt', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1);
+
+    const { data: posts, count: total, error } = await query;
+
+    if (error) {
+      throw error;
+    }
 
     console.log(`[Public API] Found ${total} published blog posts in database`);
-    console.log(`[Public API] Returning ${posts.length} posts for page ${page}`);
+    console.log(`[Public API] Returning ${posts?.length || 0} posts for page ${page}`);
 
     return NextResponse.json({
-      posts,
+      posts: posts || [],
       pagination: {
-        total,
+        total: total || 0,
         page,
         limit,
-        pages: Math.ceil(total / limit),
+        pages: Math.ceil((total || 0) / limit),
       },
     });
   } catch (error) {
