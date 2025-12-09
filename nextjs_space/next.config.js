@@ -41,6 +41,11 @@ const nextConfig = {
         destination: '/client-portal/content-hub',
         permanent: false,
       },
+      {
+        source: '/financien/:path*',
+        destination: '/admin/financien/:path*',
+        permanent: true,
+      },
     ];
   },
 };

@@ -52,7 +52,7 @@ export default function FinancienPage() {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (session?.user?.role !== 'admin') {
-      router.push('/dashboard');
+      router.push('/admin');
     }
   }, [status, session, router]);
 
@@ -196,28 +196,28 @@ export default function FinancienPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <QuickActionCard
-            href="/financien/contacten"
+            href="/admin/financien/contacten"
             icon={<Users className="w-8 h-8 text-blue-400" />}
             title="Contacten"
             description="Beheer klanten en leveranciers"
           />
 
           <QuickActionCard
-            href="/financien/facturen"
+            href="/admin/financien/facturen"
             icon={<Receipt className="w-8 h-8 text-green-400" />}
             title="Verkoopfacturen"
             description="Maak en verstuur facturen"
           />
 
           <QuickActionCard
-            href="/financien/abonnementen"
+            href="/admin/financien/abonnementen"
             icon={<Repeat className="w-8 h-8 text-purple-400" />}
             title="Abonnementen"
             description="Beheer terugkerende omzet"
           />
 
           <QuickActionCard
-            href="/financien/uitgaven"
+            href="/admin/financien/uitgaven"
             icon={<ShoppingCart className="w-8 h-8 text-red-400" />}
             title="Uitgaven"
             description="Registreer en categoriseer kosten"
@@ -226,21 +226,21 @@ export default function FinancienPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <QuickActionCard
-            href="/financien/bank"
+            href="/admin/financien/bank"
             icon={<Landmark className="w-8 h-8 text-indigo-400" />}
             title="Banktransacties"
             description="Koppel transacties aan facturen"
           />
 
           <QuickActionCard
-            href="/financien/btw"
+            href="/admin/financien/btw"
             icon={<Calendar className="w-8 h-8 text-yellow-400" />}
             title="BTW Overzicht"
             description="Bereken en dien BTW in"
           />
 
           <QuickActionCard
-            href="/financien/rapporten"
+            href="/admin/financien/rapporten"
             icon={<FileBarChart className="w-8 h-8 text-pink-400" />}
             title="Rapporten"
             description="Winst & verlies, balans, cashflow"
@@ -254,7 +254,7 @@ export default function FinancienPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-white">Recente Facturen</h2>
               <Link
-                href="/financien/facturen"
+                href="/admin/financien/facturen"
                 className="text-sm text-[#ff6b35] hover:text-[#ff8555] flex items-center gap-1"
               >
                 Bekijk alle
@@ -301,7 +301,7 @@ export default function FinancienPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-white">Recente Uitgaven</h2>
               <Link
-                href="/financien/uitgaven"
+                href="/admin/financien/uitgaven"
                 className="text-sm text-[#ff6b35] hover:text-[#ff8555] flex items-center gap-1"
               >
                 Bekijk alle
