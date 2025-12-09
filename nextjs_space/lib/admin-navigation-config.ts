@@ -53,7 +53,6 @@ export const adminNavItems: AdminNavigationItem[] = [
       { label: 'Bank', href: '/admin/financien/bank', icon: Landmark },
       { label: 'BTW', href: '/admin/financien/btw', icon: Calculator },
       { label: 'Rapporten', href: '/admin/financien/rapporten', icon: FileBarChart },
-      { label: 'Oude Facturen', href: '/admin/invoices', icon: Receipt },
       { label: 'Affiliate Payouts', href: '/admin/affiliate-payouts', icon: CreditCard },
     ],
   },
