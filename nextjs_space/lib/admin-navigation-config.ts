@@ -9,7 +9,6 @@ import {
   FileText,
   Mail,
   Settings,
-  BarChart3,
   Repeat,
   ShoppingCart,
   Landmark,
@@ -35,18 +34,17 @@ export type AdminNavigationItem = AdminNavItem | AdminNavGroup;
 /**
  * Admin-only navigation items
  * This configuration is used by both desktop and mobile admin navigation
+ * Alle financiële data komt uit Moneybird
  */
 export const adminNavItems: AdminNavigationItem[] = [
-  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { label: 'Klanten', href: '/admin/clients', icon: Users },
+  { label: 'Dashboard', href: '/admin/financien', icon: LayoutDashboard },
+  { label: 'Klanten', href: '/admin/financien/contacten', icon: Users },
   { label: 'Opdrachten', href: '/admin/assignments', icon: Package },
   { label: 'Projecten', href: '/admin/projects', icon: FolderKanban },
   {
     label: 'Financieel',
     icon: DollarSign,
     items: [
-      { label: 'Dashboard', href: '/admin/financien', icon: BarChart3 },
-      { label: 'Contacten', href: '/admin/financien/contacten', icon: Users },
       { label: 'Facturen', href: '/admin/financien/facturen', icon: Receipt },
       { label: 'Abonnementen', href: '/admin/financien/abonnementen', icon: Repeat },
       { label: 'Uitgaven', href: '/admin/financien/uitgaven', icon: ShoppingCart },
