@@ -1,3 +1,4 @@
+import { prisma } from '../db';
 // AI-powered expense analyzer for categorization, trends, and savings opportunities
 
 

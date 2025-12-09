@@ -1,3 +1,4 @@
+import { prisma } from './db';
 
 export interface WordPressConfig {
   siteUrl: string;

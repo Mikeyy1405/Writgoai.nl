@@ -1,3 +1,4 @@
+import { prisma } from './db';
 
 /**
  * Professional Content Generator v4

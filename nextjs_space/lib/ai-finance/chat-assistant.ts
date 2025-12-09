@@ -1,3 +1,4 @@
+import { prisma } from '../db';
 // AI-powered financial chat assistant for natural language queries
 
 import { calculateMRR, predictMRR, getGrowthMetrics } from './revenue-predictor';

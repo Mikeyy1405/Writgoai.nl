@@ -1,3 +1,4 @@
+import { prisma } from './db';
 
 /**
  * SEO Automated Workflow Library

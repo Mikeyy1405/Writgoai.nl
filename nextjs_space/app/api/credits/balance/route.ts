@@ -26,8 +26,6 @@ export async function GET(request: NextRequest) {
     const clientId = session.user.id;
     
     // Fetch credits and subscription info
-    const { supabaseAdmin: prisma } = await import('@/lib/supabase');
-    
     const client = await prisma.client.findUnique({
       where: { id: clientId },
       select: {

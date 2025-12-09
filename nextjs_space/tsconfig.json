@@ -19,7 +19,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "suppressImplicitAnyIndexErrors": true,
+    "ignoreDeprecations": "5.0",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "plugins": [
@@ -41,7 +41,8 @@
     ".build/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "scripts"
   ],
   "ts-node": {
     "transpileOnly": true

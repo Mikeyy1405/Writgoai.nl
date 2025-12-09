@@ -1,3 +1,4 @@
+import { prisma } from '../../db';
 // Automated payment reminder system
 
 import { predictLatePayments, generatePaymentReminder } from '@/lib/ai-finance';

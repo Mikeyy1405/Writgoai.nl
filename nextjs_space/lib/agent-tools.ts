@@ -1,3 +1,4 @@
+import { prisma } from './db';
 
 // 🛠️ WritgoAI DeepAgent Tools System
 // Geïnspireerd door Abacus.AI DeepAgent
