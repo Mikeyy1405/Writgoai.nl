@@ -15,6 +15,7 @@ import {
   Landmark,
   Calculator,
   FileBarChart,
+  Palette,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -64,6 +65,7 @@ export const adminNavItems: AdminNavigationItem[] = [
       { label: 'Email Manager', href: '/admin/emails', icon: Mail },
     ],
   },
+  { label: 'Branding', href: '/admin/branding', icon: Palette },
   { label: 'Instellingen', href: '/admin/settings', icon: Settings },
 ];
 
