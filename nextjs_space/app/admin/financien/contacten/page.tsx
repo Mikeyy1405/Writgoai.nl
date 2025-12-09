@@ -19,7 +19,7 @@ export default function ContactenPage() {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (session?.user?.role !== 'admin') {
-      router.push('/dashboard');
+      router.push('/admin');
     }
   }, [status, session, router]);
 
@@ -68,7 +68,7 @@ export default function ContactenPage() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Link
-            href="/financien"
+            href="/admin/financien"
             className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
