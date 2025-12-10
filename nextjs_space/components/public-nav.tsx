@@ -28,8 +28,10 @@ export default function PublicNav() {
 
   const navItems = [
     { href: '/', label: t('nav.home'), icon: Home },
-    { href: '/blog', label: t('nav.blog'), icon: BookOpen },
+    { href: '/hoe-het-werkt', label: 'Hoe Het Werkt', icon: BookOpen },
+    { href: '/prijzen', label: 'Prijzen', icon: Users },
     { href: '/over-ons', label: t('nav.about'), icon: Users },
+    { href: '/blog', label: t('nav.blog'), icon: BookOpen },
     { href: '/contact', label: t('nav.contact'), icon: Mail },
   ];
 

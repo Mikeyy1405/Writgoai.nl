@@ -374,34 +374,34 @@ export default function HomePage() {
           <div className="text-center space-y-8">
             {/* Main heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in leading-tight">
-              DOMINEER GOOGLE & SOCIAL MEDIA
+              100% AUTONOME AI CONTENT MARKETING
               <br />
               <span className="text-writgo-primary">
-                ZONDER ER TIJD AAN TE BESTEDEN
+                SEO + SOCIAL MEDIA + VIDEO
               </span>
             </h1>
 
             {/* Subheading */}
             <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto animate-fade-in">
-              AI-gedreven omnipresence voor lokale dienstverleners.
+              Volledig Geautomatiseerd, Zonder Meetings
               <br className="hidden sm:block" />
-              Vanaf €197/maand. Volledig geautomatiseerd.
+              Vanaf €197/maand voor lokale dienstverleners
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in">
-              <a href="#pakketten">
+              <Link href="/registreren">
                 <Button size="lg" className="btn-gradient-orange text-white px-8 h-12 text-lg font-semibold group border-0">
                   Start Nu
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
-              </a>
-              <a href="#demo">
+              </Link>
+              <Link href="/prijzen">
                 <Button size="lg" variant="outline" className="border-pearl-white text-pearl-white hover:bg-white/10 px-8 h-12 text-lg font-semibold group">
-                  <Play className="mr-2 w-5 h-5" />
-                  Bekijk Demo (3 min)
+                  Bekijk Pakketten
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-              </a>
+              </Link>
             </div>
 
             {/* Trust indicators */}

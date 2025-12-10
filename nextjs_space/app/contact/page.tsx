@@ -15,8 +15,11 @@ export default function ContactPage() {
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Contact
           </h1>
-          <p className="text-xl text-gray-300">
+          <p className="text-xl text-gray-300 mb-2">
             We helpen je graag verder met je vragen
+          </p>
+          <p className="text-lg text-orange-400 font-semibold">
+            💬 Geen sales calls - wij doen het anders
           </p>
         </div>
 
