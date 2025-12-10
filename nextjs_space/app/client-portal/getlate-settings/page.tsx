@@ -109,7 +109,7 @@ export default function GetlateSettingsPage() {
       const data = await response.json();
       
       if (response.ok) {
-        toast.success('Getlate succesvol ingesteld!');
+        toast.success('Social media connecties succesvol ingesteld!');
         loadProjectConfig(selectedProjectId);
       } else {
         toast.error(data.error || 'Setup gefaald');
@@ -263,12 +263,12 @@ export default function GetlateSettingsPage() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">
-          {language === 'nl' ? 'Getlate Social Media Scheduling' : 'Getlate Social Media Scheduling'}
+          {language === 'nl' ? 'Social Media Koppelingen' : 'Social Media Connections'}
         </h1>
         <p className="text-gray-600">
           {language === 'nl' 
-            ? 'Beheer je social media planning via Getlate.dev - Plan posts op 10 platforms' 
-            : 'Manage your social media scheduling via Getlate.dev - Schedule posts on 10 platforms'}
+            ? 'Beheer je social media platforms - Plan posts op 10 verschillende kanalen' 
+            : 'Manage your social media platforms - Schedule posts on 10 different channels'}
         </p>
       </div>
 
@@ -328,8 +328,8 @@ export default function GetlateSettingsPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800 mb-3">
                 {language === 'nl' 
-                  ? 'Getlate is nog niet ingesteld voor dit project. Klik op de knop hieronder om te starten.' 
-                  : 'Getlate is not yet set up for this project. Click the button below to get started.'}
+                  ? 'Social media connecties zijn nog niet ingesteld voor dit project. Klik op de knop hieronder om te starten.' 
+                  : 'Social media connections are not yet set up for this project. Click the button below to get started.'}
               </p>
               <Button
                 onClick={handleSetup}
@@ -344,7 +344,7 @@ export default function GetlateSettingsPage() {
                 ) : (
                   <>
                     <Settings className="h-4 w-4 mr-2" />
-                    {language === 'nl' ? 'Getlate Instellen' : 'Setup Getlate'}
+                    {language === 'nl' ? 'Social Media Instellen' : 'Setup Social Media'}
                   </>
                 )}
               </Button>

@@ -90,9 +90,9 @@ export default function PrivacyPage() {
                 Wij delen uw gegevens alleen met:
               </p>
               <ul className="list-disc pl-6 mb-4 space-y-2">
-                <li><strong className="text-white">AI API providers</strong> (AIML API) - voor AI functionaliteit</li>
+                <li><strong className="text-white">AI dienstverleners</strong> - voor AI functionaliteit en voice generatie</li>
                 <li><strong className="text-white">Stripe</strong> - voor betalingsverwerking</li>
-                <li><strong className="text-white">ElevenLabs</strong> - voor voice generatie</li>
+                <li><strong className="text-white">Externe partners</strong> - voor specifieke technische diensten</li>
               </ul>
               <p className="mb-4">
                 Wij verkopen of verhuren uw persoonlijke gegevens <strong className="text-orange-500">nooit</strong> aan derden.

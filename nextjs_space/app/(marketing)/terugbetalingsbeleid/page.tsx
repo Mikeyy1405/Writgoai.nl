@@ -81,9 +81,9 @@ export default function TerugbetalingsbeleidPage() {
                 2.2 Operationele kosten
               </h3>
               <p className="mb-4">
-                Voor elke AI generatie maken wij reële kosten bij externe API providers 
-                (AIML API, ElevenLabs, etc.). Deze kosten worden door ons betaald zodra u 
-                onze dienst gebruikt, ongeacht of u tevreden bent met het resultaat.
+                Voor elke AI generatie maken wij reële kosten bij externe AI dienstverleners. 
+                Deze kosten worden door ons betaald zodra u onze dienst gebruikt, 
+                ongeacht of u tevreden bent met het resultaat.
               </p>
 
               <h3 className="text-xl font-semibold text-gray-200 mt-6 mb-3">
