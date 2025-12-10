@@ -6,10 +6,13 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Validate environment variables
 if (!supabaseUrl) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL')
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL - Set this in your .env file or environment variables')
 }
 if (!supabaseAnonKey) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  console.error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY - Set this in your .env file or environment variables')
+}
+if (!supabaseServiceRoleKey) {
+  console.error('Missing SUPABASE_SERVICE_ROLE_KEY - Set this in your .env file or environment variables (required for admin operations)')
 }
 
 // Singleton instances
@@ -29,7 +32,7 @@ export const supabase: SupabaseClient = (() => {
     })
   }
   if (!supabaseInstance) {
-    throw new Error('Supabase client could not be initialized. Please check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.')
+    throw new Error('Failed to initialize Supabase client. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set.')
   }
   return supabaseInstance
 })()
@@ -45,7 +48,7 @@ export const supabaseAdmin: SupabaseClient = (() => {
     })
   }
   if (!supabaseAdminInstance) {
-    throw new Error('Supabase admin client could not be initialized. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.')
+    throw new Error('Failed to initialize Supabase admin client. Check that NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.')
   }
   return supabaseAdminInstance
 })()
