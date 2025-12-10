@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminNavItems, isAdminNavGroup, type AdminNavItem } from '@/lib/admin-navigation-config';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -39,11 +40,10 @@ export function AdminSidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-black border-r border-zinc-800 min-h-screen sticky top-0">
       {/* Logo */}
-      <div className="p-6 border-b border-zinc-800">
-        <h1 className="text-xl font-bold text-white">
-          <span className="text-[#FF6B35]">WritGo</span> Admin
-        </h1>
-      </div>
+      <Link href="/admin" className="p-6 border-b border-zinc-800 block hover:bg-zinc-900/50 transition-colors">
+        <BrandLogo variant="full" size="md" />
+        <span className="text-xs text-zinc-500 mt-2 block">Admin Portal</span>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

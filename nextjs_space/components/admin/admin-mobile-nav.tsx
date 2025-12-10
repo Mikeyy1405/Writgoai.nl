@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminNavItems, isAdminNavGroup, type AdminNavItem } from '@/lib/admin-navigation-config';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 interface AdminMobileNavProps {
   isOpen: boolean;
@@ -66,9 +67,10 @@ export function AdminMobileNav({ isOpen, onClose }: AdminMobileNavProps) {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-zinc-800">
-              <h1 className="text-xl font-bold text-white">
-                <span className="text-[#FF6B35]">WritGo</span> Admin
-              </h1>
+              <div>
+                <BrandLogo variant="full" size="md" />
+                <span className="text-xs text-zinc-500 mt-1 block">Admin Portal</span>
+              </div>
               <button
                 onClick={onClose}
                 className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
