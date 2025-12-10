@@ -27,18 +27,18 @@ export interface BrandSettings {
 }
 
 const defaultBrandSettings: BrandSettings = {
-  companyName: 'WritgoAI',
-  tagline: 'Content die scoort',
-  logoUrl: '/writgo-media-logo.png',
+  companyName: 'Writgo Media',
+  tagline: 'AI-First Omnipresence Content Agency',
+  logoUrl: 'https://computerstartgids.nl/wp-content/uploads/2025/12/Writgo-Media-logo-4.png',
   logoLightUrl: null,
   logoDarkUrl: null,
   logoIconUrl: null,
   faviconUrl: null,
   favicon192Url: null,
   favicon512Url: null,
-  primaryColor: '#FF6B35',
+  primaryColor: '#FF9933',
   secondaryColor: '#0B3C5D',
-  accentColor: '#FF9933',
+  accentColor: '#FF6B35',
   email: null,
   phone: null,
   address: null,

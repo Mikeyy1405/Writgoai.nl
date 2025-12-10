@@ -154,14 +154,13 @@ export default function HomePage() {
       name: 'INSTAPPER',
       price: '€197',
       period: '/maand',
-      description: 'Perfect voor: Starters, budget-bewust',
+      description: 'Ideaal voor: Starters, kleine budgetten',
       features: [
-        '✅ 2 SEO Blog Articles (1.500w)',
-        '✅ 8 LinkedIn Posts',
-        '✅ 8 Instagram Posts',
+        '✅ 2 SEO Artikelen (800-1200 woorden)',
+        '✅ 16 Social Media Posts',
         '✅ 4 Faceless video\'s',
-        '❌ Google Mijn Bedrijf',
-        '❌ X/Twitter',
+        '✅ Platform flexibiliteit',
+        '✅ Automatische posting',
       ],
       popular: false,
     },
@@ -169,14 +168,13 @@ export default function HomePage() {
       name: 'STARTER',
       price: '€297',
       period: '/maand',
-      description: 'Perfect voor: Groeiende bedrijven',
+      description: 'Ideaal voor: SEO autoriteit opbouwen',
       features: [
-        '✅ 1 Pillar + 2 Cluster Articles',
-        '✅ 8 LinkedIn Posts',
-        '✅ 8 Instagram Posts',
+        '✅ 1 Pillar + 2 Cluster Artikelen',
+        '✅ 16 Social Media Posts',
         '✅ 4 Faceless video\'s',
-        '❌ Google Mijn Bedrijf',
-        '❌ X/Twitter',
+        '✅ Pillar-Cluster strategie',
+        '✅ Automatische posting',
       ],
       popular: false,
     },
@@ -184,14 +182,13 @@ export default function HomePage() {
       name: 'GROEI',
       price: '€497',
       period: '/maand',
-      description: 'Perfect voor: Gevestigde bedrijven',
+      description: 'Ideaal voor: Ambitieuze ondernemers',
       features: [
-        '✅ 1 Pillar + 3 Cluster Articles',
-        '✅ 12 LinkedIn Posts',
-        '✅ 12 Instagram Posts',
+        '✅ 1 Pillar + 3 Cluster Artikelen',
+        '✅ 24 Social Media Posts',
         '✅ 8 Faceless video\'s',
-        '✅ 4 Google Mijn Bedrijf Posts',
-        '❌ X/Twitter',
+        '✅ Pillar-Cluster strategie',
+        '✅ Priority support',
       ],
       popular: true,
     },
@@ -199,14 +196,13 @@ export default function HomePage() {
       name: 'DOMINANT',
       price: '€797',
       period: '/maand',
-      description: 'Perfect voor: Premium / Multi-locatie',
+      description: 'Ideaal voor: Marktleiders',
       features: [
-        '✅ 2 Pillar + 4 Cluster Articles',
-        '✅ 16 LinkedIn Posts',
-        '✅ 16 Instagram Posts',
+        '✅ 2 Pillar + 4 Cluster Artikelen',
+        '✅ 40 Social Media Posts',
         '✅ 12 Faceless video\'s',
-        '✅ 8 Google Mijn Bedrijf Posts',
-        '✅ 12 X/Twitter Posts',
+        '✅ Advanced strategie',
+        '✅ Dedicated account manager',
       ],
       popular: false,
     },
@@ -374,34 +370,34 @@ export default function HomePage() {
           <div className="text-center space-y-8">
             {/* Main heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in leading-tight">
-              DOMINEER GOOGLE & SOCIAL MEDIA
+              100% AUTONOME AI CONTENT MARKETING
               <br />
               <span className="text-writgo-primary">
-                ZONDER ER TIJD AAN TE BESTEDEN
+                SEO + SOCIAL MEDIA + VIDEO
               </span>
             </h1>
 
             {/* Subheading */}
             <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto animate-fade-in">
-              AI-gedreven omnipresence voor lokale dienstverleners.
+              Volledig Geautomatiseerd, Zonder Meetings
               <br className="hidden sm:block" />
-              Vanaf €197/maand. Volledig geautomatiseerd.
+              Vanaf €197/maand voor lokale dienstverleners
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in">
-              <a href="#pakketten">
+              <Link href="/registreren">
                 <Button size="lg" className="btn-gradient-orange text-white px-8 h-12 text-lg font-semibold group border-0">
                   Start Nu
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
-              </a>
-              <a href="#demo">
+              </Link>
+              <Link href="/prijzen">
                 <Button size="lg" variant="outline" className="border-pearl-white text-pearl-white hover:bg-white/10 px-8 h-12 text-lg font-semibold group">
-                  <Play className="mr-2 w-5 h-5" />
-                  Bekijk Demo (3 min)
+                  Bekijk Pakketten
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-              </a>
+              </Link>
             </div>
 
             {/* Trust indicators */}

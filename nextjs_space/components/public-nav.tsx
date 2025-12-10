@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, LogIn, BookOpen, Users, Mail, Home, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LogIn, BookOpen, Users, Mail, Home, LayoutDashboard, DollarSign, Play } from 'lucide-react';
 import LanguageSwitcher from '@/components/language-switcher';
 import { useLanguage } from '@/lib/i18n/context';
 import { BrandLogo } from '@/components/brand/brand-logo';
@@ -28,8 +28,10 @@ export default function PublicNav() {
 
   const navItems = [
     { href: '/', label: t('nav.home'), icon: Home },
-    { href: '/blog', label: t('nav.blog'), icon: BookOpen },
+    { href: '/hoe-het-werkt', label: 'Hoe Het Werkt', icon: Play },
+    { href: '/prijzen', label: 'Prijzen', icon: DollarSign },
     { href: '/over-ons', label: t('nav.about'), icon: Users },
+    { href: '/blog', label: t('nav.blog'), icon: BookOpen },
     { href: '/contact', label: t('nav.contact'), icon: Mail },
   ];
 

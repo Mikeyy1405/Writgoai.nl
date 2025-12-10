@@ -1,42 +1,74 @@
-
 'use client';
 
-import { Users, Target, Zap, Award, Heart, Rocket } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import PublicNav from '@/components/public-nav';
 import PublicFooter from '@/components/public-footer';
+import { 
+  Zap, Award, TrendingUp, Shield, Globe, Sliders, 
+  Target, CheckCircle2, Sparkles
+} from 'lucide-react';
 
 export default function OverOnsPage() {
-  const values = [
+  const coreValues = [
     {
-      icon: <Zap className="w-8 h-8" />,
+      icon: Zap,
+      title: 'Autonomie',
+      description: 'Marketing hoeft niet complex te zijn. Wij nemen alles uit handen zodat jij je kunt focussen op je vak.',
+    },
+    {
+      icon: Sparkles,
       title: 'Innovatie',
-      description: 'We blijven vooroplopen met de nieuwste AI-technologieën',
+      description: 'Altijd de nieuwste AI-technologie. 400+ modellen die continu worden geoptimaliseerd.',
     },
     {
-      icon: <Heart className="w-8 h-8" />,
-      title: 'Kwaliteit',
-      description: 'Alleen de beste content voor jouw doelgroep',
+      icon: TrendingUp,
+      title: 'Toegankelijkheid',
+      description: 'Premium marketing voor iedereen. Vanaf €197/maand, zonder lange contracten.',
     },
     {
-      icon: <Target className="w-8 h-8" />,
-      title: 'Resultaat',
-      description: 'Meetbare groei in traffic en conversies',
+      icon: Target,
+      title: 'Resultaatgerichtheid',
+      description: 'Data drijft onze beslissingen. Meetbare groei in traffic, rankings en engagement.',
     },
     {
-      icon: <Users className="w-8 h-8" />,
-      title: 'Samenwerking',
-      description: 'Jouw succes is ons succes',
+      icon: Globe,
+      title: 'Nederlandse Focus',
+      description: 'Wij begrijpen de Nederlandse markt. SEO, tone-of-voice en platforms specifiek voor Nederland.',
+    },
+    {
+      icon: Sliders,
+      title: 'Platform Flexibiliteit',
+      description: 'De klant bepaalt waar ze zichtbaar willen zijn. LinkedIn only? Prima. Alle 8 platforms? Ook goed.',
     },
   ];
 
   const stats = [
-    { value: '10.000+', label: 'Artikelen gegenereerd' },
-    { value: '500+', label: 'Tevreden klanten' },
-    { value: '99%', label: 'Klanttevredenheid' },
-    { value: '24/7', label: 'Beschikbaar' },
+    { value: '400+', label: 'AI Modellen' },
+    { value: '8', label: 'Jaar Ervaring' },
+    { value: '47+', label: 'Lokale Dienstverleners' },
+    { value: '100%', label: 'Autonoom' },
+  ];
+
+  const expertise = [
+    {
+      title: '8 jaar ervaring in SEO',
+      description: 'Van affiliate marketing tot Google rankings. We weten wat werkt.',
+    },
+    {
+      title: 'Track record in rankings',
+      description: 'Meerdere #1 posities in competitieve niches.',
+    },
+    {
+      title: '400+ AI modellen',
+      description: 'Eigen AI platform met de nieuwste technologie.',
+    },
+    {
+      title: 'Nederlandse markt',
+      description: 'Specifiek gebouwd voor lokale dienstverleners in Nederland.',
+    },
   ];
 
   return (
@@ -44,119 +76,129 @@ export default function OverOnsPage() {
       <PublicNav />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center space-x-2 bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-2 mb-6">
-            <Award className="w-4 h-4 text-orange-500" />
-            <span className="text-orange-500 font-semibold text-sm">
-              #1 AI Content Platform Nederland
-            </span>
-          </div>
-          
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-6xl mx-auto">
+          <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
+            Over Writgo.nl
+          </Badge>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
-            Wij zijn{' '}
-            <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-              Writgo Media
-            </span>
+            AI-First Omnipresence Marketing
+            <br />
+            <span className="text-orange-500">voor Lokale Dienstverleners</span>
           </h1>
-          
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            De toonaangevende AI-gedreven content automatisering platform dat ondernemers 
-            en marketeers helpt om hun online aanwezigheid te maximaliseren met 
-            hoogwaardige, SEO-geoptimaliseerde content.
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Wij maken professionele omnipresence marketing toegankelijk voor iedere lokale ondernemer
           </p>
         </div>
       </section>
 
-      {/* Mission Section */}
+      {/* Missie Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-orange-500/20 p-8 sm:p-12">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-                  Onze Missie
-                </h2>
-                <p className="text-gray-300 text-lg leading-relaxed mb-6">
-                  Bij Writgo Media geloven we dat content creatie niet moeilijk hoeft te zijn. 
-                  Onze missie is om geavanceerde AI-technologie toegankelijk te maken voor 
-                  iedereen, zodat jij je kunt focussen op wat echt belangrijk is: het 
-                  groeien van je business.
-                </p>
-                <p className="text-gray-300 text-lg leading-relaxed">
-                  We combineren state-of-the-art AI met deep learning modellen om content 
-                  te genereren die niet alleen SEO-vriendelijk is, maar ook authentiek en 
-                  waardevol voor je doelgroep.
-                </p>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-20 blur-3xl rounded-full" />
-                <div className="relative bg-gray-900/80 border border-orange-500/30 rounded-2xl p-8">
-                  <Rocket className="w-16 h-16 text-orange-500 mb-4" />
-                  <h3 className="text-2xl font-bold text-white mb-4">
-                    Waarom Writgo Media?
-                  </h3>
-                  <ul className="space-y-3 text-gray-300">
-                    <li className="flex items-start">
-                      <span className="text-orange-500 mr-2">✓</span>
-                      <span>100% Nederlands geoptimaliseerde content</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-orange-500 mr-2">✓</span>
-                      <span>SEO-proof artikelen van 2500+ woorden</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-orange-500 mr-2">✓</span>
-                      <span>Directe WordPress integratie</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-orange-500 mr-2">✓</span>
-                      <span>AI-gegenereerde afbeeldingen</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-orange-500 mr-2">✓</span>
-                      <span>Automatische content planning</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-gradient-to-br from-orange-900/20 to-gray-900/50 border-orange-500/30 p-8 sm:p-12">
+            <div className="text-center">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+                Onze Missie
+              </h2>
+              <p className="text-xl text-gray-300 leading-relaxed">
+                "Wij maken professionele omnipresence marketing toegankelijk voor iedere lokale 
+                ondernemer in Nederland, volledig autonoom en AI-gedreven, zodat zij zich kunnen 
+                focussen op waar ze goed in zijn: hun vak."
+              </p>
             </div>
           </Card>
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      {/* Visie Section */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-gray-800/50 border-gray-700 p-8 sm:p-12">
+            <div className="text-center">
+              <Award className="w-16 h-16 text-orange-500 mx-auto mb-6" />
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+                Onze Visie
+              </h2>
+              <p className="text-xl text-gray-300 leading-relaxed">
+                "Writgo.nl is de #1 autonome content partner voor lokale dienstverleners in Nederland."
+              </p>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Core Values Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900/50">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
+              Kernwaarden
+            </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Onze Kernwaarden
+              Waar Wij Voor Staan
             </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Deze principes vormen de basis van alles wat we doen
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Deze 6 principes vormen de basis van alles wat we doen
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((value, index) => (
-              <Card
-                key={index}
-                className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-orange-500/20 p-6 hover:border-orange-500/40 transition-all hover:scale-105"
-              >
-                <div className="text-orange-500 mb-4">{value.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-2">{value.title}</h3>
-                <p className="text-gray-300">{value.description}</p>
-              </Card>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {coreValues.map((value, index) => {
+              const Icon = value.icon;
+              return (
+                <Card
+                  key={index}
+                  className="bg-gray-800/50 border-gray-700 hover:border-orange-500/40 transition-all duration-300 hover:scale-105"
+                >
+                  <CardContent className="p-8">
+                    <Icon className="w-12 h-12 text-orange-500 mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-3">{value.title}</h3>
+                    <p className="text-gray-300">{value.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Achtergrond Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
+              Achtergrond
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Expertise & Ervaring
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Gebouwd door experts met jarenlange ervaring in SEO en AI
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            {expertise.map((item, index) => (
+              <Card
+                key={index}
+                className="bg-gray-800/50 border-gray-700 hover:border-orange-500/40 transition-all"
+              >
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-4">
+                    <CheckCircle2 className="w-6 h-6 text-orange-500 flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
+                      <p className="text-gray-300">{item.description}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Stats Grid */}
           <Card className="bg-gradient-to-br from-orange-900/20 to-gray-900/50 border-orange-500/30 p-8 sm:p-12">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
                   <div className="text-4xl sm:text-5xl font-bold text-orange-500 mb-2">
@@ -170,30 +212,107 @@ export default function OverOnsPage() {
         </div>
       </section>
 
+      {/* Why Different Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Waarom Writgo.nl Anders Is
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Traditionele bureaus vs. Writgo.nl
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Traditional Agencies */}
+            <Card className="bg-red-900/10 border-red-500/30">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold text-red-400 mb-6">Traditionele Bureaus</h3>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-red-400">✗</span>
+                    <span>€2.500-€4.500 per maand</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-red-400">✗</span>
+                    <span>Eindeloze meetings en calls</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-red-400">✗</span>
+                    <span>Lange contracten (12 maanden)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-red-400">✗</span>
+                    <span>Feedback rondes en wachttijden</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-red-400">✗</span>
+                    <span>Onduidelijke ROI</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Writgo.nl */}
+            <Card className="bg-green-900/10 border-green-500/30">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold text-green-400 mb-6">Writgo.nl</h3>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-green-400">✓</span>
+                    <span>€197-€797 per maand</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-green-400">✓</span>
+                    <span>Geen calls, geen meetings</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-green-400">✓</span>
+                    <span>Maandelijks opzegbaar</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-green-400">✓</span>
+                    <span>100% autonoom, geen feedback nodig</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-gray-300">
+                    <span className="text-green-400">✓</span>
+                    <span>Real-time dashboard met metrics</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-            Klaar om je content strategie te automatiseren?
-          </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Sluit je aan bij honderden tevreden klanten en ervaar de kracht van AI
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/inloggen">
-              <Button className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-lg px-8 py-6">
-                Start Nu Gratis
-              </Button>
-            </Link>
-            <Link href="/contact">
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto border-orange-500 text-orange-500 hover:bg-orange-500/10 font-semibold text-lg px-8 py-6"
-              >
-                Neem Contact Op
-              </Button>
-            </Link>
-          </div>
+        <div className="max-w-4xl mx-auto">
+          <Card className="relative overflow-hidden border-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/80 to-orange-600/80" />
+            <CardContent className="p-12 text-center relative z-10">
+              <Sparkles className="w-12 h-12 text-white mx-auto mb-6" />
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                Klaar om te beginnen?
+              </h2>
+              <p className="text-lg text-white/90 mb-8">
+                Sluit je aan bij 47+ lokale dienstverleners die al hun content automatiseren
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/prijzen">
+                  <Button size="lg" className="bg-white text-orange-600 hover:bg-gray-100 px-8 h-12 text-lg font-semibold border-0">
+                    Bekijk Pakketten
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 h-12 text-lg font-semibold">
+                    Neem Contact Op
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
