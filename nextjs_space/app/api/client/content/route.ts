@@ -12,6 +12,11 @@ import { ContentType, ContentStatus } from '@/lib/supabase/database.types';
 
 export const dynamic = 'force-dynamic';
 
+// Constants for pagination limits
+const MIN_LIMIT = 1;
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 50;
+
 /**
  * GET /api/client/content
  * Get content deliveries for the logged-in client
@@ -39,7 +44,7 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const type = searchParams.get('type') as ContentType | null;
     const status = searchParams.get('status') as ContentStatus | null;
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const limit = parseInt(searchParams.get('limit') || DEFAULT_LIMIT.toString(), 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     // Validate parameters
@@ -57,9 +62,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (limit < 1 || limit > 100) {
+    if (limit < MIN_LIMIT || limit > MAX_LIMIT) {
       return NextResponse.json(
-        { error: 'Limit must be between 1 and 100' },
+        { error: `Limit must be between ${MIN_LIMIT} and ${MAX_LIMIT}` },
         { status: 400 }
       );
     }

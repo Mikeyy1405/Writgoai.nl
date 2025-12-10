@@ -54,23 +54,22 @@ export default function ClientDashboardPage() {
 
       // Fetch all dashboard data in parallel
       const [subscriptionRes, statsRes, platformsRes] = await Promise.all([
-        fetch('/api/client/subscription').catch(() => null),
+        fetch('/api/client/subscription').catch(() => ({ ok: false, json: async () => null })),
         fetch('/api/client/stats'),
         fetch('/api/client/platforms'),
       ]);
 
-      const stats = await statsRes.json();
-      const platforms = await platformsRes.json();
-      
-      let subscription = null;
-      if (subscriptionRes && subscriptionRes.ok) {
-        subscription = await subscriptionRes.json();
-      }
+      // Parse responses
+      const [subscription, stats, platforms] = await Promise.all([
+        subscriptionRes.ok ? subscriptionRes.json() : Promise.resolve(null),
+        statsRes.json(),
+        platformsRes.json(),
+      ]);
 
       setDashboardData({
         subscription: subscription?.subscription || null,
-        stats: stats.stats || {},
-        platforms: platforms.platforms || [],
+        stats: stats?.stats || {},
+        platforms: platforms?.platforms || [],
       });
     } catch (err) {
       console.error('Error fetching dashboard data:', err);

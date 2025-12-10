@@ -285,12 +285,13 @@ export async function getDashboardStats(
     .eq('client_id', clientId)
     .gte('created_at', monthStart.toISOString());
 
-  // Get total impressions and engagements
+  // Get total impressions and engagements using SQL aggregation
   const { data: metricsData } = await supabase
     .from('content_deliveries')
     .select('impressions, engagements')
     .eq('client_id', clientId);
 
+  // Aggregate in JavaScript since Supabase doesn't support direct SUM() in select
   const totalImpressions = metricsData?.reduce((sum, item) => sum + (item.impressions || 0), 0) || 0;
   const totalEngagements = metricsData?.reduce((sum, item) => sum + (item.engagements || 0), 0) || 0;
 
@@ -312,30 +313,34 @@ export async function getDashboardStats(
   };
 
   if (subscription) {
-    // Calculate remaining content
-    const { count: usedPillar } = await supabase
-      .from('content_deliveries')
-      .select('*', { count: 'exact', head: true })
-      .eq('subscription_id', subscription.id)
-      .eq('content_type', 'pillar');
-
-    const { count: usedCluster } = await supabase
-      .from('content_deliveries')
-      .select('*', { count: 'exact', head: true })
-      .eq('subscription_id', subscription.id)
-      .eq('content_type', 'cluster');
-
-    const { count: usedSocial } = await supabase
-      .from('content_deliveries')
-      .select('*', { count: 'exact', head: true })
-      .eq('subscription_id', subscription.id)
-      .eq('content_type', 'social');
-
-    const { count: usedVideos } = await supabase
-      .from('content_deliveries')
-      .select('*', { count: 'exact', head: true })
-      .eq('subscription_id', subscription.id)
-      .eq('content_type', 'video');
+    // Calculate remaining content - execute queries in parallel for better performance
+    const [
+      { count: usedPillar },
+      { count: usedCluster },
+      { count: usedSocial },
+      { count: usedVideos },
+    ] = await Promise.all([
+      supabase
+        .from('content_deliveries')
+        .select('*', { count: 'exact', head: true })
+        .eq('subscription_id', subscription.id)
+        .eq('content_type', 'pillar'),
+      supabase
+        .from('content_deliveries')
+        .select('*', { count: 'exact', head: true })
+        .eq('subscription_id', subscription.id)
+        .eq('content_type', 'cluster'),
+      supabase
+        .from('content_deliveries')
+        .select('*', { count: 'exact', head: true })
+        .eq('subscription_id', subscription.id)
+        .eq('content_type', 'social'),
+      supabase
+        .from('content_deliveries')
+        .select('*', { count: 'exact', head: true })
+        .eq('subscription_id', subscription.id)
+        .eq('content_type', 'video'),
+    ]);
 
     stats.package_info = {
       type: subscription.package_type,
