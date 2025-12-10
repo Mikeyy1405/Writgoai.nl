@@ -1,6 +1,6 @@
 ⚠️ TEMPORARY LOGO PLACEHOLDER
 
-The file 'writgo-media-logo-transparent.png' is currently using 'writgoai-logo-new.png' as a temporary placeholder.
+The file 'writgo-media-logo-transparent.png' is currently using an existing logo as a temporary placeholder.
 
 REQUIRED ACTION:
 Please replace 'writgo-media-logo-transparent.png' with the actual new transparent Writgo Media logo 
