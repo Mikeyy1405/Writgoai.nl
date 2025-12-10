@@ -19,6 +19,7 @@ import {
   Star,
   Euro
 } from 'lucide-react';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 // Import tab components
 import ClientsManagement from '@/components/admin/clients-management';
@@ -63,15 +64,32 @@ function DashboardContent() {
     }
   }, [status, session, router]);
 
+  const getDefaultStats = (): AdminStats => ({
+    totalClients: 0,
+    activeSubscriptions: 0,
+    pendingFeedback: 0,
+    unreadMessages: 0,
+    unreadSupport: 0,
+    totalContentGenerated: 0,
+    creditsUsedThisMonth: 0,
+    revenueThisMonth: 0,
+    pendingPayouts: 0,
+    pendingPayoutAmount: 0,
+  });
+
   async function loadStats() {
     try {
       const response = await fetch('/api/admin/stats');
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
+      } else {
+        console.error('Stats API returned error:', response.status);
+        setStats(getDefaultStats());
       }
     } catch (error) {
       console.error('Failed to load stats:', error);
+      setStats(getDefaultStats());
     } finally {
       setLoading(false);
     }
@@ -91,12 +109,10 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-black to-[#FF6B35] rounded-lg flex items-center justify-center">
-                <Activity className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">WritgoAI Admin Portal</h1>
+            <div className="flex items-center gap-4">
+              <BrandLogo variant="full" size="lg" />
+              <div className="border-l border-zinc-700 pl-4">
+                <h1 className="text-2xl font-bold text-white">Admin Portal</h1>
                 <p className="text-gray-400">Volledig beheer over klanten, content, berichten & meer</p>
               </div>
             </div>
