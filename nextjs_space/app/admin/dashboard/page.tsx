@@ -70,9 +70,37 @@ function DashboardContent() {
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
+      } else {
+        console.error('Stats API returned error:', response.status);
+        // Set default stats if API fails
+        setStats({
+          totalClients: 0,
+          activeSubscriptions: 0,
+          pendingFeedback: 0,
+          unreadMessages: 0,
+          unreadSupport: 0,
+          totalContentGenerated: 0,
+          creditsUsedThisMonth: 0,
+          revenueThisMonth: 0,
+          pendingPayouts: 0,
+          pendingPayoutAmount: 0,
+        });
       }
     } catch (error) {
       console.error('Failed to load stats:', error);
+      // Set default stats if fetch fails
+      setStats({
+        totalClients: 0,
+        activeSubscriptions: 0,
+        pendingFeedback: 0,
+        unreadMessages: 0,
+        unreadSupport: 0,
+        totalContentGenerated: 0,
+        creditsUsedThisMonth: 0,
+        revenueThisMonth: 0,
+        pendingPayouts: 0,
+        pendingPayoutAmount: 0,
+      });
     } finally {
       setLoading(false);
     }
