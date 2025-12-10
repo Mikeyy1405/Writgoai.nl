@@ -160,7 +160,7 @@ export default function HomePage() {
         '✅ 2 SEO Blog Articles (1.500w)',
         '✅ 8 LinkedIn Posts',
         '✅ 8 Instagram Posts',
-        '✅ 4 Faceless Video\'s',
+        '✅ 4 Faceless video\'s',
         '❌ Google Mijn Bedrijf',
         '❌ X/Twitter',
       ],
@@ -175,7 +175,7 @@ export default function HomePage() {
         '✅ 1 Pillar + 2 Cluster Articles',
         '✅ 8 LinkedIn Posts',
         '✅ 8 Instagram Posts',
-        '✅ 4 Faceless Video\'s',
+        '✅ 4 Faceless video\'s',
         '❌ Google Mijn Bedrijf',
         '❌ X/Twitter',
       ],
@@ -190,7 +190,7 @@ export default function HomePage() {
         '✅ 1 Pillar + 3 Cluster Articles',
         '✅ 12 LinkedIn Posts',
         '✅ 12 Instagram Posts',
-        '✅ 8 Faceless Video\'s',
+        '✅ 8 Faceless video\'s',
         '✅ 4 Google Mijn Bedrijf Posts',
         '❌ X/Twitter',
       ],
@@ -205,7 +205,7 @@ export default function HomePage() {
         '✅ 2 Pillar + 4 Cluster Articles',
         '✅ 16 LinkedIn Posts',
         '✅ 16 Instagram Posts',
-        '✅ 12 Faceless Video\'s',
+        '✅ 12 Faceless video\'s',
         '✅ 8 Google Mijn Bedrijf Posts',
         '✅ 12 X/Twitter Posts',
       ],
@@ -382,10 +382,10 @@ export default function HomePage() {
             {/* Logo with Social Media Icons */}
             <div className="flex flex-col items-center gap-3 animate-fade-in">
               <div className="text-center">
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-1">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight mb-1">
                   <span className="text-white">Writgo </span>
                   <span className="text-writgo-primary">Media</span>
-                </h1>
+                </div>
                 <p className="text-writgo-primary font-bold text-lg">#OMNIPRESENCE</p>
               </div>
               
@@ -400,13 +400,13 @@ export default function HomePage() {
             </div>
 
             {/* Main heading */}
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in leading-tight">
               DOMINEER GOOGLE & SOCIAL MEDIA
               <br />
               <span className="text-writgo-primary">
                 ZONDER ER TIJD AAN TE BESTEDEN
               </span>
-            </h2>
+            </h1>
 
             {/* Subheading */}
             <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto animate-fade-in">
