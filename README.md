@@ -1,201 +1,248 @@
-# WritGo - AI Content & SEO Platform
+# WritgoAI - AI Content Medewerker Platform
 
-🚀 Een krachtig AI-aangedreven content en SEO platform gebouwd met Next.js
+🚀 **Een krachtig AI-aangedreven content en SEO platform voor geautomatiseerde content creatie**
 
-## 🌟 Features
+WritgoAI is een professioneel platform dat bedrijven helpt met het automatisch genereren van hoogwaardige, SEO-geoptimaliseerde content. Van strategische contentplannen tot complete blogs, video's en social media posts - alles geautomatiseerd met geavanceerde AI.
+
+## 🌟 Belangrijkste Features
 
 ### Content Generatie
-- **Site Planner**: Genereer complete contentplannen met 100+ pagina's (homepage, pillar pages, clusters, blogs)
-- **Content Generator**: Creëer SEO-geoptimaliseerde content met streaming progress tracking
-- **Blog Generator**: Schrijf complete blogs met metadata, social media posts en afbeeldingen
-- **Auto Content**: Automatische content generatie met project-specifieke integratie
+- **Autopilot Mode**: Volledig geautomatiseerde content generatie op schema
+- **Blog Generator**: Complete, SEO-geoptimaliseerde blogs met metadata en afbeeldingen
+- **Content Hub**: Centraal beheer van al uw gegenereerde content
+- **Video Generator**: AI-gegenereerde video's met voice-over en beelden
+- **Social Media Suite**: Geautomatiseerde social media posts voor meerdere platformen
 
-### AI-Modellen
-- **Claude 4.5 Sonnet** via AIML API voor content planning en generatie
-- **Meerdere Image Models**: Nano-banana, Flux, Stable Diffusion (2-18 credits per afbeelding)
-- Streaming responses voor real-time feedback
-- Kostenefficiënte model selectie
-
-### SEO & Optimalisatie
-- Automatische interne links (contextual integration)
-- Bol.com affiliate integratie met dynamische product search
-- Meta descriptions, social media tags
-- Keyword optimalisatie
+### AI & Automatisering
+- **Smart Content Planning**: Geautomatiseerde keyword research en contentplannen
+- **Multi-Project Support**: Beheer meerdere websites/projecten vanuit één dashboard
+- **Intelligent Scheduling**: Automatische planning en publicatie van content
+- **Affiliate Integratie**: Automatische product-linking met Bol.com en TradeTracker
 
 ### Admin & Client Portals
-- Volledig gescheiden admin en client dashboards
-- Credit management systeem
-- Project management
-- Content library met versioning
-- User management met rollen
+- **Gescheiden Dashboards**: Admin en client interfaces
+- **Credit Management**: Flexibel credit-based pricing systeem
+- **WordPress Integratie**: Directe publicatie naar WordPress sites
+- **White-label Oplossing**: Fully managed service voor klanten
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 14.2.28 (Pages Router)
-- **Database**: PostgreSQL met Prisma ORM
-- **Authentication**: NextAuth.js
-- **Styling**: Tailwind CSS + Radix UI components
-- **AI Integration**: AIML API (Claude, image models)
-- **API Integratie**: Bol.com Partner API
+- **Framework**: Next.js 14 (App Router)
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: NextAuth.js + Supabase Auth
+- **Styling**: Tailwind CSS + Radix UI
+- **AI**: Claude 4.5 (via AIML API), OpenAI, Custom Models
+- **Deployment**: Render.com
+- **Image Generation**: Flux, Stable Diffusion, Nano-banana
 
-## 📦 Installatie
+## 📦 Snelstart
+
+### Vereisten
+- Node.js 18+ en npm/yarn
+- Supabase account
+- AIML API key (voor Claude AI)
+
+### Installatie
 
 ```bash
 # Clone de repository
-git clone <your-repo-url>
-cd writgo_planning_app/nextjs_space
+git clone https://github.com/your-org/Writgoai.nl.git
+cd Writgoai.nl
+
+# Navigeer naar de applicatie folder
+cd nextjs_space
 
 # Installeer dependencies
+npm install
+# of
 yarn install
 
-# Setup environment variabelen
+# Kopieer environment variabelen
 cp .env.example .env
-# Vul .env in met je credentials
 
-# Run database migrations
-yarn prisma generate
-yarn prisma migrate deploy
-
-# Seed de database (optioneel)
-yarn prisma db seed
+# Vul .env in met jouw credentials (zie docs/setup/ENV_SETUP_INSTRUCTIES.md)
 
 # Start development server
+npm run dev
+# of
 yarn dev
 ```
 
-## 🔐 Environment Variabelen
-
-Creëer een `.env` file met de volgende variabelen:
-
-```env
-# Database
-DATABASE_URL="postgresql://..."
-
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-secret-here"
-
-# AIML API
-AIML_API_KEY="your-aiml-key"
-AIML_API_BASE_URL="https://api.aimlapi.com/v1"
-
-# Bol.com (optioneel)
-BOLCOM_CLIENT_ID="your-client-id"
-BOLCOM_CLIENT_SECRET="your-client-secret"
-
-# AWS S3 (file uploads)
-AWS_BUCKET_NAME="your-bucket"
-AWS_FOLDER_PREFIX="uploads/"
-```
-
-## 🚀 Deployment
-
-De app is gedeployed op [writgoai.nl](https://writgoai.nl)
-
-### Deployment Checklist
-1. ✅ Database migrations uitgevoerd
-2. ✅ Environment variabelen geconfigureerd
-3. ✅ Build succesvol (`yarn build`)
-4. ✅ Health checks passed
+De applicatie is nu beschikbaar op `http://localhost:3000`
 
 ## 📁 Project Structuur
 
 ```
-writgo_planning_app/
-├── nextjs_space/
-│   ├── app/                    # Next.js App Directory
-│   │   ├── api/               # API routes
-│   │   │   ├── admin/         # Admin endpoints
-│   │   │   └── client/        # Client endpoints
-│   │   ├── admin-portal/      # Admin dashboard pages
-│   │   ├── client-portal/     # Client dashboard pages
-│   │   └── components/        # Shared components
-│   ├── lib/                   # Utility functions
-│   │   ├── ai/               # AI integration helpers
-│   │   ├── bolcom-api.ts     # Bol.com API client
-│   │   ├── credits.ts        # Credit management
-│   │   └── smart-image-generator.ts
-│   ├── prisma/               # Database schema & migrations
-│   └── public/               # Static assets
-└── README.md
+Writgoai.nl/
+├── nextjs_space/           # Hoofdapplicatie (Next.js 14)
+│   ├── app/               # Next.js App Router
+│   │   ├── api/          # API routes
+│   │   ├── admin-portal/ # Admin dashboard
+│   │   └── client-portal/# Client dashboard
+│   ├── components/        # React componenten
+│   ├── lib/              # Utilities en helpers
+│   ├── public/           # Static assets
+│   └── types/            # TypeScript types
+│
+├── docs/                  # Documentatie
+│   ├── setup/            # Setup & installatie guides
+│   ├── features/         # Feature documentatie
+│   │   ├── autopilot/   # Autopilot feature
+│   │   ├── content-hub/ # Content Hub
+│   │   ├── blog-generator/
+│   │   ├── video-generator/
+│   │   ├── social-media/
+│   │   └── affiliate/   # Affiliate systeem
+│   ├── admin/           # Admin dashboard docs
+│   ├── api/             # API documentatie
+│   ├── migrations/      # Database migraties
+│   ├── security/        # Security summaries
+│   └── archive/         # Oude documentatie
+│
+├── scripts/              # Utility scripts
+├── lib/                  # Gedeelde libraries
+├── supabase/            # Supabase configuratie
+├── render.yaml          # Render deployment config
+└── README.md            # Dit bestand
 ```
 
-## 🎯 Key Workflows
+## 📚 Documentatie
 
-### 1. Site Planning
-1. Client selecteert project en keywords
-2. AI genereert 100+ pagina's (homepage, pillars, clusters, blogs)
-3. Plan wordt opgeslagen met metadata
-4. Client kan plan downloaden als JSON
+Uitgebreide documentatie is beschikbaar in de `docs/` folder:
 
-### 2. Content Generatie
-1. Client selecteert project en content type
-2. Kiest opties: afbeeldingen, interne links, affiliate links
-3. AI genereert content met streaming progress
-4. Content wordt opgeslagen in Content Library
-5. Klant kan content bewerken en publiceren
+### Setup & Configuratie
+- [Environment Setup](docs/setup/ENV_SETUP_INSTRUCTIES.md) - Complete environment variabelen setup
+- [Supabase Quick Start](docs/setup/SUPABASE_QUICK_START.md) - Database setup
+- [Render Deployment](docs/setup/RENDER_DEPLOYMENT.md) - Production deployment
 
-### 3. Bol.com Affiliate Integratie
-1. System zoekt automatisch relevante producten
-2. Gebruikt project credentials voor API calls
-3. Fallback naar preferred products bij API failure
-4. Producten worden contextual in content geïntegreerd
+### Features
+- [Autopilot Documentatie](docs/features/autopilot/) - Automatische content generatie
+- [Content Hub Guide](docs/features/content-hub/) - Content management
+- [Blog Generator](docs/features/blog-generator/) - Blog creation workflow
+- [Video Generator](docs/features/video-generator/) - AI video creation
+- [Social Media Suite](docs/features/social-media/) - Social media automation
+- [Affiliate Systeem](docs/features/affiliate/) - Product integratie
+
+### Admin & API
+- [Admin Dashboard](docs/admin/) - Admin portal documentatie
+- [API Documentatie](docs/api/) - API endpoints en integratie
+
+## 🚀 Deployment
+
+De applicatie is geoptimaliseerd voor deployment op Render.com.
+
+### Deployment Checklist
+1. ✅ Supabase database geconfigureerd
+2. ✅ Environment variabelen ingesteld
+3. ✅ `render.yaml` geconfigureerd
+4. ✅ Build succesvol (`npm run build`)
+5. ✅ Database migraties uitgevoerd
+
+Zie [Render Deployment Guide](docs/setup/RENDER_DEPLOYMENT.md) voor gedetailleerde instructies.
+
+## 🔐 Environment Variabelen
+
+Belangrijkste environment variabelen:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-here
+
+# AI APIs
+AIML_API_KEY=your-aiml-key
+ABACUSAI_API_KEY=your-abacus-key
+
+# Optioneel
+BOLCOM_CLIENT_ID=your-bol-client-id
+BOLCOM_CLIENT_SECRET=your-bol-secret
+```
+
+Zie [ENV_SETUP_INSTRUCTIES.md](docs/setup/ENV_SETUP_INSTRUCTIES.md) voor alle variabelen.
 
 ## 🔧 Development
 
 ```bash
 # Development server
-yarn dev
+npm run dev
 
 # Build voor productie
-yarn build
+npm run build
 
 # Start productie server
-yarn start
+npm run start
 
-# Database commands
-yarn prisma studio          # Open database GUI
-yarn prisma generate        # Generate Prisma Client
-yarn prisma migrate dev     # Create new migration
+# Linting
+npm run lint
 ```
 
-## 📝 Recent Updates
+## 🎯 Gebruik
 
-- ✅ Unified Content Specialist & Blog Generator
-- ✅ Site Planner met 100+ items garantie
-- ✅ Contextual internal links (inline in text)
-- ✅ Dynamic Bol.com product search & integration
-- ✅ Streaming progress tracking voor alle generators
-- ✅ Cost-optimized image generation (nano-banana default)
-- ✅ Robust error handling & validation
-- ✅ Auto-save functionaliteit
-- ✅ Credit deduction tracking
+### Voor Admins
+1. Log in op `/admin-portal`
+2. Beheer clients en projecten
+3. Monitor content generatie
+4. Beheer credits en facturering
+
+### Voor Clients
+1. Log in op `/client-portal`
+2. Selecteer project
+3. Start content generatie (manueel of autopilot)
+4. Beheer gegenereerde content
+5. Publiceer naar WordPress
+
+## 📊 Features Roadmap
+
+- ✅ Autopilot mode met scheduling
+- ✅ Multi-project support
+- ✅ WordPress integratie
+- ✅ Affiliate product linking
+- ✅ Video generatie
+- ✅ Social media posts
+- 🔄 Email marketing integratie (in ontwikkeling)
+- 🔄 Advanced analytics dashboard
+- 📋 Multi-language support (gepland)
+- 📋 API voor third-party integraties (gepland)
 
 ## 🐛 Troubleshooting
 
-### Build Errors
-- Check database connection in `.env`
-- Run `yarn prisma generate` na schema changes
-- Clear `.next` en `.build` cache folders
+### Common Issues
 
-### API Errors
-- Verify AIML API key is valid
-- Check Bol.com credentials voor affiliate links
-- Review API rate limits
+**Build Errors**
+- Check Supabase connection in `.env`
+- Clear `.next` cache: `rm -rf .next`
+- Reinstall dependencies: `rm -rf node_modules && npm install`
 
-### Image Generation
-- Default model: nano-banana (2 credits)
-- Validate cost before generation
-- Check AWS S3 credentials voor upload
+**Authentication Issues**
+- Verify `NEXTAUTH_SECRET` is set
+- Check Supabase auth configuration
+- Clear browser cookies
+
+**API Errors**
+- Verify API keys zijn geldig
+- Check API rate limits
+- Review logs in Supabase dashboard
+
+Voor meer hulp, zie de [troubleshooting guides](docs/) in de documentatie.
 
 ## 📄 License
 
-Proprietary - WritGo Platform
+Proprietary - WritgoAI Platform
 
-## 👥 Contact
+© 2024 WritgoAI. Alle rechten voorbehouden.
 
-Voor vragen of support, neem contact op via [support email]
+## 👥 Support & Contact
+
+Voor vragen, bug reports, of feature requests:
+- 📧 Email: support@writgoai.nl
+- 📖 Documentatie: Zie `docs/` folder
+- 🐛 Issues: GitHub Issues
 
 ---
 
-**Built with ❤️ using Next.js, Claude AI, and modern web technologies**
+**Gebouwd met ❤️ met Next.js, Claude AI, Supabase en moderne web technologieën**
