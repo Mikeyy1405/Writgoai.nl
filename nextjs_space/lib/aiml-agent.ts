@@ -10,14 +10,30 @@ import OpenAI from 'openai';
 import { getBannedWordsInstructions, BANNED_WORDS } from './banned-words';
 
 // AIML API configuratie volgens officiële docs
-const AIML_API_KEY = process.env.AIML_API_KEY || '';
 const AIML_API_BASE = 'https://api.aimlapi.com/v1';
 
-// OpenAI SDK client met AIML base URL (volgens AIML docs)
-const aimlClient = new OpenAI({
-  apiKey: AIML_API_KEY,
-  baseURL: AIML_API_BASE,
-});
+// Lazy-loaded OpenAI SDK client with AIML base URL
+let aimlClient: OpenAI | null = null;
+
+/**
+ * Get or create the AIML client instance
+ * This function uses lazy loading to avoid crashes during module initialization
+ */
+function getAIMLClient(): OpenAI {
+  if (!aimlClient) {
+    const AIML_API_KEY = process.env.AIML_API_KEY;
+    
+    if (!AIML_API_KEY) {
+      throw new Error('AIML_API_KEY niet ingesteld!');
+    }
+    
+    aimlClient = new OpenAI({
+      apiKey: AIML_API_KEY,
+      baseURL: AIML_API_BASE,
+    });
+  }
+  return aimlClient;
+}
 
 // 🎯 COMPLETE MODEL DATABASE - Alle AIML Text/Chat Models
 // Bron: https://docs.aimlapi.com/api-references/text-models-llm
@@ -555,13 +571,12 @@ async function callAIMLAPI(options: {
   temperature: number;
   max_tokens: number;
 }): Promise<string> {
-  if (!AIML_API_KEY) {
-    throw new Error('AIML_API_KEY niet geconfigureerd');
-  }
-
   try {
+    // Get the AIML client (lazy loaded with error handling)
+    const client = getAIMLClient();
+    
     // Gebruik OpenAI SDK zoals beschreven in AIML docs
-    const completion = await aimlClient.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: options.model,
       messages: options.messages,
       temperature: options.temperature,
@@ -658,8 +673,11 @@ export async function realTimeWebSearch(query: string, options?: {
   console.log(`🌐 REAL-TIME WEB SEARCH: "${query}"`);
   
   try {
+    // Get the AIML client (lazy loaded with error handling)
+    const client = getAIMLClient();
+    
     // Gebruik Perplexity Sonar Pro voor beste real-time search
-    const completion = await aimlClient.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: AVAILABLE_MODELS.PERPLEXITY_SONAR_PRO, // Perplexity Sonar Pro met web search
       messages: [
         {
@@ -700,7 +718,8 @@ export async function realTimeWebSearch(query: string, options?: {
     // Fallback naar AIML bagoodex search model
     try {
       console.log('🔄 Fallback naar bagoodex search model...');
-      const completion = await aimlClient.chat.completions.create({
+      const client = getAIMLClient();
+      const completion = await client.chat.completions.create({
         model: AVAILABLE_MODELS.BAGOODEX_SEARCH,
         messages: [
           {
