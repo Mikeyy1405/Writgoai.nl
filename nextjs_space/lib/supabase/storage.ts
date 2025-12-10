@@ -43,18 +43,28 @@ export async function uploadBrandingFile(
  * @param fileUrl - Public URL of the file to delete
  */
 export async function deleteBrandingFile(fileUrl: string): Promise<void> {
-  // Extract file path from URL
-  const urlParts = fileUrl.split(`/storage/v1/object/public/${BRANDING_BUCKET}/`);
-  if (urlParts.length < 2) return;
-  
-  const filePath = urlParts[1];
-  
-  const { error } = await supabaseAdmin.storage
-    .from(BRANDING_BUCKET)
-    .remove([filePath]);
+  try {
+    // Parse the URL and extract the file path
+    const url = new URL(fileUrl);
+    const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/branding\/(.+)/);
+    
+    if (!pathMatch || !pathMatch[1]) {
+      console.warn('[Storage] Could not extract file path from URL:', fileUrl);
+      return;
+    }
+    
+    const filePath = pathMatch[1];
+    
+    const { error } = await supabaseAdmin.storage
+      .from(BRANDING_BUCKET)
+      .remove([filePath]);
 
-  if (error) {
-    console.error('[Storage] Delete error:', error);
-    // Don't throw - file might already be deleted
+    if (error) {
+      console.error('[Storage] Delete error:', error);
+      // Don't throw - file might already be deleted
+    }
+  } catch (err) {
+    console.error('[Storage] Invalid URL format:', fileUrl, err);
+    // Don't throw - invalid URL should not break the flow
   }
 }

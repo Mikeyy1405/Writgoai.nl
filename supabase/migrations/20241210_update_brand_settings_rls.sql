@@ -16,8 +16,20 @@ CREATE POLICY "Public read access for brand settings" ON "BrandSettings"
 
 -- Allow admins to update brand settings
 CREATE POLICY "Admin update access for brand settings" ON "BrandSettings"
-  FOR UPDATE USING (true);
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM "User" 
+      WHERE id = auth.uid()::text 
+      AND role IN ('admin', 'superadmin')
+    )
+  );
 
 -- Allow admins to insert brand settings
 CREATE POLICY "Admin insert access for brand settings" ON "BrandSettings"
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM "User" 
+      WHERE id = auth.uid()::text 
+      AND role IN ('admin', 'superadmin')
+    )
+  );

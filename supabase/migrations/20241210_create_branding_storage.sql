@@ -21,6 +21,11 @@ CREATE POLICY "Admin upload access for branding" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'branding' 
     AND auth.role() = 'authenticated'
+    AND EXISTS (
+      SELECT 1 FROM "User" 
+      WHERE id = auth.uid()::text 
+      AND role IN ('admin', 'superadmin')
+    )
   );
 
 -- Allow authenticated admins to update branding files
@@ -28,6 +33,11 @@ CREATE POLICY "Admin update access for branding" ON storage.objects
   FOR UPDATE USING (
     bucket_id = 'branding'
     AND auth.role() = 'authenticated'
+    AND EXISTS (
+      SELECT 1 FROM "User" 
+      WHERE id = auth.uid()::text 
+      AND role IN ('admin', 'superadmin')
+    )
   );
 
 -- Allow authenticated admins to delete branding files
@@ -35,4 +45,9 @@ CREATE POLICY "Admin delete access for branding" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'branding'
     AND auth.role() = 'authenticated'
+    AND EXISTS (
+      SELECT 1 FROM "User" 
+      WHERE id = auth.uid()::text 
+      AND role IN ('admin', 'superadmin')
+    )
   );

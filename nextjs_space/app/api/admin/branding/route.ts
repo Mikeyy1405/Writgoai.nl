@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { supabaseAdmin } from '@/lib/supabase';
+import { DEFAULT_BRAND_SETTINGS } from '@/lib/constants/branding';
 
 export const maxDuration = 60;
 
@@ -27,12 +28,7 @@ export async function GET() {
         .from('BrandSettings')
         .insert({
           id: 'default',
-          companyName: 'Writgo Media',
-          tagline: 'AI-First Omnipresence Content Agency',
-          logoUrl: '/writgo-media-logo-transparent.png',
-          primaryColor: '#FF5722',
-          secondaryColor: '#2196F3',
-          accentColor: '#FF9800',
+          ...DEFAULT_BRAND_SETTINGS,
         })
         .select()
         .single();
