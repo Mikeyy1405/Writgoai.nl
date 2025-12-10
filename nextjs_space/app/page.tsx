@@ -133,7 +133,7 @@ export default function HomePage() {
       number: '3',
       title: 'Content Wordt Gemaakt',
       time: 'automatisch',
-      description: 'SEO artikelen, social posts, video\'s. Alles in jouw stijl en branche. Geoptimaliseerd voor resultaat.',
+      description: 'SEO artikelen, social posts, video's. Alles in jouw stijl en branche. Geoptimaliseerd voor resultaat.',
     },
     {
       number: '4',
@@ -153,7 +153,7 @@ export default function HomePage() {
         '✅ 2 SEO Blog Articles (1.500w)',
         '✅ 8 LinkedIn Posts',
         '✅ 8 Instagram Posts',
-        '✅ 4 Faceless Video\'s',
+        '✅ 4 Faceless Video's',
         '❌ Google Mijn Bedrijf',
         '❌ X/Twitter',
       ],
@@ -168,7 +168,7 @@ export default function HomePage() {
         '✅ 1 Pillar + 2 Cluster Articles',
         '✅ 8 LinkedIn Posts',
         '✅ 8 Instagram Posts',
-        '✅ 4 Faceless Video\'s',
+        '✅ 4 Faceless Video's',
         '❌ Google Mijn Bedrijf',
         '❌ X/Twitter',
       ],
@@ -183,7 +183,7 @@ export default function HomePage() {
         '✅ 1 Pillar + 3 Cluster Articles',
         '✅ 12 LinkedIn Posts',
         '✅ 12 Instagram Posts',
-        '✅ 8 Faceless Video\'s',
+        '✅ 8 Faceless Video's',
         '✅ 4 Google Mijn Bedrijf Posts',
         '❌ X/Twitter',
       ],
@@ -198,7 +198,7 @@ export default function HomePage() {
         '✅ 2 Pillar + 4 Cluster Articles',
         '✅ 16 LinkedIn Posts',
         '✅ 16 Instagram Posts',
-        '✅ 12 Faceless Video\'s',
+        '✅ 12 Faceless Video's',
         '✅ 8 Google Mijn Bedrijf Posts',
         '✅ 12 X/Twitter Posts',
       ],
@@ -848,6 +848,7 @@ export default function HomePage() {
 
           <div className="border-t border-border-dark pt-8 text-center text-text-muted text-sm">
             <p>&copy; 2025 Writgo Media - AI-Powered Omnipresence voor Lokale Dienstverleners</p>
+            {/* TODO: Replace with actual KvK and BTW numbers before production deployment */}
             <p className="mt-2 text-xs">KvK: [nummer] | BTW: [nummer]</p>
           </div>
         </div>
