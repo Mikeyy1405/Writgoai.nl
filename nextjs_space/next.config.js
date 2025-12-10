@@ -15,12 +15,8 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'computerstartgids.nl',
-      },
-    ],
+    // Local images only now
+    remotePatterns: [],
   },
   async redirects() {
     return [

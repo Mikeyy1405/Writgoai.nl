@@ -103,7 +103,7 @@ function ResetPasswordForm() {
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10">
         <div className="relative w-96 h-28">
           <Image
-            src="https://computerstartgids.nl/wp-content/uploads/2025/12/Writgo-Media-logo-4.png"
+            src="/writgo-media-logo-transparent.png"
             alt="Writgo Media"
             fill
             className="object-contain"
