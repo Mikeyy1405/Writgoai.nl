@@ -28,7 +28,10 @@ export const supabase: SupabaseClient = (() => {
       }
     })
   }
-  return supabaseInstance!
+  if (!supabaseInstance) {
+    throw new Error('Supabase client could not be initialized. Please check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.')
+  }
+  return supabaseInstance
 })()
 
 // Server-side Supabase admin client (singleton)
@@ -41,7 +44,10 @@ export const supabaseAdmin: SupabaseClient = (() => {
       }
     })
   }
-  return supabaseAdminInstance!
+  if (!supabaseAdminInstance) {
+    throw new Error('Supabase admin client could not be initialized. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.')
+  }
+  return supabaseAdminInstance
 })()
 
 export type Language = 'NL' | 'EN' | 'DE' | 'ES' | 'FR' | 'IT' | 'PT' | 'PL' | 'SV' | 'DA';
