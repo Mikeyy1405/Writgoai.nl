@@ -217,7 +217,7 @@ export default function HomePage() {
       icon: <Bot className="w-8 h-8" />,
       title: '🤖 400+ AI Modellen',
       description: 'GPT-4, Claude, Gemini, Llama, Mistral',
-      details: 'Beste model per taak automatisch gekozen via eigen AIML API integratie',
+      details: 'Beste model per taak automatisch gekozen via onze slimme AI technologie',
     },
     {
       icon: <Calendar className="w-8 h-8" />,
@@ -362,7 +362,7 @@ export default function HomePage() {
       <PublicNav />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center">
+      <section className="relative overflow-hidden pt-40 pb-20 px-4 sm:px-6 lg:px-8 text-center">
         {/* Animated background with gradient orbs */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-writgo-primary/20 rounded-full blur-3xl animate-pulse" />
