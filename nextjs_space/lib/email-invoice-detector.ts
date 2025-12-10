@@ -267,7 +267,8 @@ async function createMoneybirdInvoice(invoiceData: {
   description: string;
 }): Promise<string> {
   // Import Moneybird module
-  const { createPurchaseInvoice } = await import('./moneybird');
+  const { getMoneybird } = await import('./moneybird');
+  const moneybirdClient = getMoneybird();
 
   // Validate required configuration
   const taxRateId = process.env.MONEYBIRD_TAX_RATE_21_ID;
@@ -292,6 +293,6 @@ async function createMoneybirdInvoice(invoiceData: {
     ],
   };
 
-  const result = await createPurchaseInvoice(invoice);
+  const result = await moneybirdClient.createPurchaseInvoice(invoice);
   return result.id;
 }
