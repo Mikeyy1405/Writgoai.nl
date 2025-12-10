@@ -16,41 +16,43 @@ interface SocialMediaData {
   recentPosts: Array<{
     id: string;
     content: string;
-    platform: string;
+    platforms: string[];
     scheduledFor: string;
   }>;
 }
 
-export function SocialMediaWidget() {
-  const [loading, setLoading] = useState(true);
+interface SocialMediaWidgetProps {
+  initialData?: {
+    scheduledPosts: number;
+    recentPosts: Array<any>;
+  };
+  onRefresh?: () => void;
+}
+
+export function SocialMediaWidget({ initialData, onRefresh }: SocialMediaWidgetProps) {
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<SocialMediaData | null>(null);
+  const [accountsData, setAccountsData] = useState<Array<any>>([]);
 
   useEffect(() => {
-    fetchData();
+    fetchAccounts();
   }, []);
 
-  const fetchData = async () => {
+  const fetchAccounts = async () => {
     try {
-      setLoading(true);
-      setError(null);
       const response = await fetch('/api/client/latedev/accounts');
       
       if (!response.ok) {
-        throw new Error('Kon social media data niet laden');
+        console.error('Could not fetch accounts');
+        setAccountsData([]);
+        return;
       }
 
       const result = await response.json();
-      
-      // Transform the data
-      // Note: scheduledPosts and recentPosts will be available when Late.dev API provides them
-      setData({
-        accounts: result.accounts || [],
-        scheduledPosts: result.scheduledPosts || 0,
-        recentPosts: result.recentPosts || [],
-      });
+      setAccountsData(result.accounts || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
+      console.error('Error fetching accounts:', err);
+      setAccountsData([]);
     } finally {
       setLoading(false);
     }
@@ -73,30 +75,8 @@ export function SocialMediaWidget() {
     );
   }
 
-  if (error || !data) {
-    return (
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            📱 Social Media (Late.dev)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-            <p className="text-sm text-zinc-400 mb-4">
-              Verbind je social media accounts om te beginnen
-            </p>
-            <Link href="/admin/content">
-              <Button className="bg-[#FF6B35] hover:bg-[#FF8555]" size="sm">
-                Accounts verbinden
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const scheduledPosts = initialData?.scheduledPosts || 0;
+  const accounts = accountsData;
 
   const getPlatformEmoji = (platform: string) => {
     const platformLower = platform.toLowerCase();
@@ -115,7 +95,7 @@ export function SocialMediaWidget() {
           <span className="flex items-center gap-2">
             📱 Social Media (Late.dev)
           </span>
-          <Link href="/admin/content">
+          <Link href="/admin/distribution">
             <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
               <ExternalLink className="w-4 h-4" />
             </Button>
@@ -127,13 +107,13 @@ export function SocialMediaWidget() {
           {/* Connected accounts */}
           <div>
             <p className="text-xs text-zinc-500 mb-2">Verbonden accounts</p>
-            {data.accounts.length === 0 ? (
+            {accounts.length === 0 ? (
               <div className="text-center py-4 text-zinc-500 text-sm">
                 Geen accounts verbonden
               </div>
             ) : (
               <div className="space-y-2">
-                {data.accounts.map((account) => (
+                {accounts.slice(0, 3).map((account) => (
                   <div
                     key={account.id}
                     className="flex items-center gap-3 p-2 bg-zinc-950 rounded-lg"
@@ -143,6 +123,7 @@ export function SocialMediaWidget() {
                       <p className="text-xs text-white truncate">{account.username}</p>
                       <p className="text-xs text-zinc-600">{account.platform}</p>
                     </div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full" title="Verbonden" />
                   </div>
                 ))}
               </div>
@@ -157,7 +138,7 @@ export function SocialMediaWidget() {
                 <span className="text-xs text-zinc-500">Gepland</span>
               </div>
               <p className="text-lg font-bold text-white">
-                {data.scheduledPosts}
+                {scheduledPosts}
               </p>
               <p className="text-xs text-zinc-600">posts</p>
             </div>
@@ -167,14 +148,14 @@ export function SocialMediaWidget() {
                 <span className="text-xs text-zinc-500">Accounts</span>
               </div>
               <p className="text-lg font-bold text-white">
-                {data.accounts.length}
+                {accounts.length}
               </p>
               <p className="text-xs text-zinc-600">verbonden</p>
             </div>
           </div>
 
           {/* Quick post button */}
-          <Link href="/admin/content">
+          <Link href="/admin/distribution">
             <Button className="w-full bg-[#FF6B35] hover:bg-[#FF8555] text-white">
               Plan nieuwe post
             </Button>

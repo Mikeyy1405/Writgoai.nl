@@ -18,11 +18,23 @@ import { EmailInboxWidget } from '@/components/admin/dashboard/email-inbox-widge
 import { formatDistanceToNow } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
-// Placeholder values for features not yet integrated
-const PLACEHOLDER_VALUES = {
-  unreadEmails: 0, // Will be populated when email API is integrated
-  scheduledPosts: 0, // Will be populated when social media scheduling API is integrated
-};
+interface WidgetsData {
+  emails: {
+    unread: number;
+    recent: Array<any>;
+  };
+  socialMedia: {
+    scheduledPosts: number;
+    recentPosts: Array<any>;
+  };
+  content: {
+    generatedToday: number;
+    pending: number;
+    published: number;
+    recent: Array<any>;
+  };
+  platforms: Array<any>;
+}
 
 interface DashboardData {
   kpis: {
@@ -84,6 +96,7 @@ export default function AdminDashboard() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
+  const [widgetsData, setWidgetsData] = useState<WidgetsData | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const hasFetchedRef = useRef(false);
 
@@ -128,17 +141,36 @@ export default function AdminDashboard() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/admin/dashboard-stats');
+      // Fetch both dashboard stats and widgets data in parallel
+      const [dashboardResponse, widgetsResponse] = await Promise.all([
+        fetch('/api/admin/dashboard-stats'),
+        fetch('/api/admin/dashboard-widgets'),
+      ]);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      if (!dashboardResponse.ok) {
+        const errorData = await dashboardResponse.json().catch(() => ({}));
         throw new Error(
-          errorData.error || errorData.details || `Server error: ${response.status}`
+          errorData.error || errorData.details || `Server error: ${dashboardResponse.status}`
         );
       }
 
-      const dashboardData = await response.json();
+      const dashboardData = await dashboardResponse.json();
       setData(dashboardData);
+
+      // Widgets data might fail independently
+      if (widgetsResponse.ok) {
+        const widgetsDataResult = await widgetsResponse.json();
+        setWidgetsData(widgetsDataResult);
+      } else {
+        console.error('Failed to fetch widgets data');
+        setWidgetsData({
+          emails: { unread: 0, recent: [] },
+          socialMedia: { scheduledPosts: 0, recentPosts: [] },
+          content: { generatedToday: 0, pending: 0, published: 0, recent: [] },
+          platforms: [],
+        });
+      }
+
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -283,10 +315,10 @@ export default function AdminDashboard() {
       {/* KPI Cards Row */}
       <CommandCenterKPIs
         data={{
-          unreadEmails: PLACEHOLDER_VALUES.unreadEmails,
+          unreadEmails: widgetsData?.emails.unread || 0,
           mrr: data.kpis.mrr,
-          pendingContent: data.charts.invoiceStatus.draft || 0,
-          scheduledPosts: PLACEHOLDER_VALUES.scheduledPosts,
+          pendingContent: widgetsData?.content.pending || data.charts.invoiceStatus.draft || 0,
+          scheduledPosts: widgetsData?.socialMedia.scheduledPosts || 0,
         }}
       />
 
@@ -317,14 +349,23 @@ export default function AdminDashboard() {
         <MoneybirdWidget />
 
         {/* Social Media Widget */}
-        <SocialMediaWidget />
+        <SocialMediaWidget 
+          initialData={widgetsData?.socialMedia}
+          onRefresh={fetchData}
+        />
 
         {/* Content Widget */}
-        <ContentWidget />
+        <ContentWidget 
+          initialData={widgetsData?.content}
+          onRefresh={fetchData}
+        />
       </div>
 
       {/* Email Inbox Preview */}
-      <EmailInboxWidget />
+      <EmailInboxWidget 
+        initialData={widgetsData?.emails}
+        onRefresh={fetchData}
+      />
     </div>
   );
 }
