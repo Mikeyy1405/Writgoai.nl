@@ -29,29 +29,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get email and thread context
-    const email = await prisma.email.findUnique({
+    // Get email from InboxEmail
+    const email = await prisma.inboxEmail.findUnique({
       where: { id: emailId },
-      include: {
-        thread: {
-          include: {
-            emails: {
-              orderBy: { receivedAt: 'asc' },
-              take: 5, // Last 5 emails for context
-            },
-          },
-        },
-      },
     });
 
     if (!email) {
       return NextResponse.json({ error: 'Email not found' }, { status: 404 });
     }
 
-    // Build context for AI
-    const conversationHistory = email.thread.emails
-      .map(e => `From: ${e.from}\nSubject: ${e.subject}\n${e.textBody || ''}`)
-      .join('\n\n---\n\n');
+    // Get thread context if available
+    let conversationHistory = '';
+    if (email.threadId) {
+      const thread = await prisma.emailThread.findUnique({
+        where: { id: email.threadId },
+      });
+      
+      const threadEmails = await prisma.inboxEmail.findMany({
+        where: { threadId: email.threadId },
+        orderBy: { receivedAt: 'asc' },
+        take: 5,
+      });
+      
+      conversationHistory = threadEmails
+        .map(e => `From: ${e.from}\nSubject: ${e.subject}\n${e.textBody || ''}`)
+        .join('\n\n---\n\n');
+    }
 
     const toneInstruction = tone === 'professional' 
       ? 'professional en formeel' 
@@ -96,12 +99,12 @@ Schrijf een ${toneInstruction} antwoord. Houd het beknopt maar volledig. Onderte
 
     const aiReply = response.choices[0].message.content;
 
-    // Save draft to database
-    await prisma.email.update({
+    // Save draft as suggested reply
+    await prisma.inboxEmail.update({
       where: { id: emailId },
       data: {
-        aiDraft: aiReply,
-        aiDraftCreatedAt: new Date(),
+        aiSuggestedReply: aiReply,
+        analyzedAt: new Date(),
       },
     });
 

@@ -19,12 +19,14 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('[Admin] Manually triggering email fetch...');
-    const count = await fetchNewEmails();
+    
+    // Use the new sync function instead
+    const { syncAllMailboxes } = await import('@/lib/email-mailbox-sync');
+    await syncAllMailboxes();
 
     return NextResponse.json({
       success: true,
-      message: `Successfully fetched ${count} new emails`,
-      count,
+      message: 'Email sync completed',
     });
   } catch (error: any) {
     console.error('[Admin] Error fetching emails:', error);
