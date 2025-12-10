@@ -105,6 +105,17 @@ export default function AdminDashboard() {
     }
   }, [status, session, router]);
 
+  // Set up auto-refresh every 30 seconds for real-time updates
+  useEffect(() => {
+    if (!data) return;
+
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [data]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
