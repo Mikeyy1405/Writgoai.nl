@@ -275,6 +275,8 @@ export async function syncMailbox(
       }
 
       // Decrypt password
+      // WARNING: Base64 is NOT secure encryption! Replace with proper decryption in production
+      // TODO: Implement proper password decryption using crypto module or secrets manager
       const password = mailbox.password 
         ? Buffer.from(mailbox.password, 'base64').toString('utf-8')
         : mailbox.accessToken || '';
@@ -294,7 +296,10 @@ export async function syncMailbox(
         user: mailbox.email,
         password,
         tls: mailbox.imapTls !== false,
-        tlsOptions: { rejectUnauthorized: false },
+        tlsOptions: { 
+          // SECURITY: Only disable in development/testing. Enable for production!
+          rejectUnauthorized: process.env.NODE_ENV === 'production' 
+        },
       };
 
       // Connect to IMAP

@@ -269,6 +269,12 @@ async function createMoneybirdInvoice(invoiceData: {
   // Import Moneybird module
   const { createPurchaseInvoice } = await import('./moneybird');
 
+  // Validate required configuration
+  const taxRateId = process.env.MONEYBIRD_TAX_RATE_21_ID;
+  if (!taxRateId) {
+    throw new Error('MONEYBIRD_TAX_RATE_21_ID environment variable is not configured');
+  }
+
   // Prepare invoice data for Moneybird
   const invoice = {
     contact_name: invoiceData.vendor,
@@ -281,7 +287,7 @@ async function createMoneybirdInvoice(invoiceData: {
       {
         description: invoiceData.description,
         amount: invoiceData.amount ? `${invoiceData.amount}` : '0',
-        tax_rate_id: process.env.MONEYBIRD_TAX_RATE_21_ID || '', // 21% BTW
+        tax_rate_id: taxRateId, // 21% BTW
       },
     ],
   };

@@ -181,7 +181,8 @@ export async function processInboxEmail(
         aiPriority: analysis.priority,
         aiSuggestedReply: analysis.suggestedReply,
         analyzedAt: new Date(),
-        creditsUsed: 5,
+        // Credits used for AI analysis (should be configurable)
+        creditsUsed: parseInt(process.env.EMAIL_AI_ANALYSIS_CREDITS || '5'),
       },
     });
 
@@ -249,24 +250,43 @@ export async function syncAllMailboxes(): Promise<void> {
 
 /**
  * Encrypt password for storage
- * WARNING: This is a basic implementation. In production, use:
- * - Node.js crypto module with AES-256-GCM
- * - AWS KMS or similar key management service
- * - Or store passwords in a secure vault like HashiCorp Vault
+ * 
+ * SECURITY WARNING: This is a TEMPORARY implementation for development only!
+ * Base64 encoding provides ZERO security - it's just encoding, not encryption.
+ * 
+ * For production, implement proper encryption:
+ * 1. Use Node.js crypto module with AES-256-GCM
+ * 2. Store encryption keys in AWS KMS, Azure Key Vault, or Google Cloud KMS
+ * 3. Or use HashiCorp Vault for centralized secrets management
+ * 4. Never commit encryption keys to version control
+ * 
+ * Example with Node.js crypto:
+ * ```typescript
+ * import crypto from 'crypto';
+ * const algorithm = 'aes-256-gcm';
+ * const key = crypto.scryptSync(process.env.ENCRYPTION_KEY, 'salt', 32);
+ * const iv = crypto.randomBytes(16);
+ * const cipher = crypto.createCipheriv(algorithm, key, iv);
+ * ```
  */
 export function encryptPassword(password: string): string {
-  // TODO: Implement proper encryption before production
-  // For now, using base64 encoding (NOT SECURE - FOR DEVELOPMENT ONLY)
+  // TODO: CRITICAL - Implement proper encryption before production deployment
+  // For now, using base64 encoding (NOT SECURE - FOR DEVELOPMENT/TESTING ONLY)
+  if (process.env.NODE_ENV === 'production') {
+    console.error('🚨 CRITICAL SECURITY WARNING: Base64 password encoding is being used in production!');
+  }
   console.warn('⚠️  WARNING: Using insecure password storage. Implement proper encryption before production!');
   return Buffer.from(password).toString('base64');
 }
 
 /**
  * Decrypt password from storage
- * WARNING: This matches the basic encryption above
+ * 
+ * SECURITY WARNING: This matches the basic encoding above
+ * See encryptPassword() for proper implementation guidelines
  */
 export function decryptPassword(encrypted: string): string {
-  // TODO: Implement proper decryption before production
+  // TODO: CRITICAL - Implement proper decryption before production deployment
   return Buffer.from(encrypted, 'base64').toString('utf-8');
 }
 

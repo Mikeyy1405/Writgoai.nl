@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS "MailboxConnection" (
   "smtpTls" BOOLEAN DEFAULT true,
   
   -- Authentication (encrypted)
-  "password" TEXT, -- Base64 encoded for IMAP (should use proper encryption in production)
+  -- WARNING: Base64 is NOT encryption! Use proper encryption (AES-256-GCM) or a secrets management system in production
+  "password" TEXT, -- TEMP: Base64 encoded for IMAP - MUST be replaced with proper encryption
   "accessToken" TEXT, -- For OAuth providers
   "refreshToken" TEXT, -- For OAuth providers
   "tokenExpiry" TIMESTAMP(3), -- For OAuth providers
