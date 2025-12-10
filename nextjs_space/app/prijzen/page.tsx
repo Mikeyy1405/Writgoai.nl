@@ -1,290 +1,355 @@
-
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Sparkles, Zap, Building2 } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { CreditCalculator } from '@/components/credit-calculator';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PublicNav from '@/components/public-nav';
+import PublicFooter from '@/components/public-footer';
+import { Check, Star, Linkedin, Instagram, Facebook, Twitter, Video, Globe, Youtube, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 
-export default function PricingPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState<string | null>(null);
+export default function PrijzenPage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const packages = [
     {
-      id: 'basis',
-      name: 'Basis',
-      icon: Sparkles,
-      price: '€49',
-      period: '/ maand',
-      credits: 2000,
-      contentEstimate: '≈ 28 blogs of 16 videos',
-      description: 'Perfect voor starters',
+      name: 'INSTAPPER',
+      price: '€197',
+      period: '/maand',
+      description: 'Ideaal voor: Starters, kleine budgetten',
       features: [
-        'Alle AI modellen (GPT-4, Claude, Gemini)',
-        '2000 credits per maand',
-        'Alle tools: Blog, Video, Social, Code',
-        'Content Library',
-        'Keyword Research',
-        'Email support',
-        'Top-up credits mogelijk',
+        '2 SEO Artikelen (800-1200 woorden)',
+        '16 Social Media Posts (op jouw gekozen platforms)',
+        '4 Faceless Videos (30-60 sec)',
+        'Automatische posting op ALLE verbonden accounts',
+        'Platform flexibiliteit: verbind 1, 2, 5 of 10 accounts',
+        'Maandelijks opzegbaar',
       ],
       popular: false,
     },
     {
-      id: 'professional',
-      name: 'Professional',
-      icon: Zap,
-      price: '€99',
-      period: '/ maand',
-      credits: 6000,
-      contentEstimate: '≈ 84 blogs of 50 videos',
-      description: 'Voor professionals',
+      name: 'STARTER',
+      price: '€297',
+      period: '/maand',
+      description: 'Ideaal voor: Bedrijven die SEO autoriteit willen bouwen',
       features: [
-        '✨ Alles van Basis',
-        '6000 credits per maand',
-        'Priority support (< 4 uur)',
-        'Advanced AI modellen',
-        'Bulk content generatie',
-        'Social media automation',
-        'Analytics dashboard',
+        '1 Pillar Artikel (2000+ woorden)',
+        '2 Cluster Artikelen (800-1200 woorden)',
+        '16 Social Media Posts',
+        '4 Faceless Videos',
+        'Pillar-Cluster SEO strategie',
+        'Automatische posting op ALLE platforms',
+        'Maandelijks opzegbaar',
+      ],
+      popular: false,
+    },
+    {
+      name: 'GROEI',
+      price: '€497',
+      period: '/maand',
+      description: 'Ideaal voor: Ambitieuze ondernemers',
+      features: [
+        '1 Pillar Artikel (2000+ woorden)',
+        '3 Cluster Artikelen',
+        '24 Social Media Posts (~6 per week)',
+        '8 Faceless Videos (2 per week)',
+        'Pillar-Cluster SEO strategie',
+        'Automatische posting op ALLE platforms',
+        'Priority support',
+        'Maandelijks opzegbaar',
       ],
       popular: true,
     },
     {
-      id: 'business',
-      name: 'Business',
-      icon: Building2,
-      price: '€199',
-      period: '/ maand',
-      credits: 15000,
-      contentEstimate: '≈ 210 blogs of 125 videos',
-      description: 'Voor groeiende bedrijven',
+      name: 'DOMINANT',
+      price: '€797',
+      period: '/maand',
+      description: 'Ideaal voor: Marktleiders',
       features: [
-        '✨ Alles van Professional',
-        '15.000 credits per maand',
-        'Multi-user accounts (tot 5 gebruikers)',
-        'White-label optie',
-        'Dedicated account manager',
-        'Custom integraties',
-        'Priority support (< 2 uur)',
-      ],
-      popular: false,
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      icon: Building2,
-      price: '€399',
-      period: '/ maand',
-      credits: 40000,
-      contentEstimate: '≈ 560 blogs of 330 videos',
-      description: 'Voor grote organisaties',
-      features: [
-        '✨ Alles van Business',
-        '40.000 credits per maand',
-        'Onbeperkt gebruikers',
-        'White-label optie',
-        'Dedicated account manager',
-        'Custom integraties',
-        'Priority support (< 1 uur)',
-        '24/7 support',
+        '2 Pillar Artikelen (2000+ woorden)',
+        '4 Cluster Artikelen',
+        '40 Social Media Posts',
+        '12 Faceless Videos (3 per week)',
+        'Advanced Pillar-Cluster strategie',
+        'Automatische posting op ALLE platforms',
+        'Priority support + dedicated account manager',
+        'Maandelijks opzegbaar',
       ],
       popular: false,
     },
   ];
 
-  const handleSubscribe = async (planId: string) => {
-    setLoading(planId);
-    try {
-      const response = await fetch('/api/moneybird/create-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId }),
-      });
+  const platforms = [
+    { name: 'LinkedIn', icon: Linkedin, color: 'text-blue-500' },
+    { name: 'Instagram', icon: Instagram, color: 'text-pink-500' },
+    { name: 'Facebook', icon: Facebook, color: 'text-blue-600' },
+    { name: 'Twitter/X', icon: Twitter, color: 'text-sky-500' },
+    { name: 'TikTok', icon: Video, color: 'text-black' },
+    { name: 'Pinterest', icon: TrendingUp, color: 'text-red-500' },
+    { name: 'Google My Business', icon: Globe, color: 'text-orange-500' },
+    { name: 'YouTube', icon: Youtube, color: 'text-red-600' },
+  ];
 
-      const data = await response.json();
+  const faqs = [
+    {
+      question: 'Wat als ik alleen LinkedIn wil?',
+      answer: 'Geen probleem! Je kunt zelf bepalen welke platforms je wilt verbinden. Verbind alleen LinkedIn als dat is waar je zichtbaar wilt zijn. De content wordt automatisch aangepast voor het platform dat je kiest.',
+    },
+    {
+      question: 'Kan ik later upgraden?',
+      answer: 'Ja, je kunt op elk moment upgraden naar een hoger pakket. Het verschil wordt automatisch verrekend en je krijgt direct toegang tot de extra content.',
+    },
+    {
+      question: 'Hoe werkt de onboarding?',
+      answer: 'Na je aankoop vul je een eenmalig vragenformulier in (15 minuten) over je bedrijf, diensten, doelgroep en tone of voice. Daarna verbind je je social media accounts via Getlate.dev en wij regelen de rest.',
+    },
+    {
+      question: 'Wat is het verschil tussen Pillar en Cluster artikelen?',
+      answer: 'Een Pillar artikel is een uitgebreide gids (2000+ woorden) over een hoofdonderwerp. Cluster artikelen zijn kortere artikelen (800-1200 woorden) over specifieke subtopics die linken naar het Pillar artikel. Deze strategie helpt je om Google te domineren voor jouw onderwerp.',
+    },
+    {
+      question: 'Kan ik maandelijks opzeggen?',
+      answer: 'Ja, alle pakketten zijn maandelijks opzegbaar. Geen lange contracten, geen gedoe. Opzeggen kan tot de 15e van de maand.',
+    },
+    {
+      question: 'Werkt het echt 100% autonoom?',
+      answer: 'Ja! Na de onboarding (15 minuten) doen wij alles. Geen calls, geen meetings, geen feedback rondes. Je kunt wel in je dashboard meekijken en wijzigingen aanvragen als je dat wilt.',
+    },
+    {
+      question: 'Moet ik content goedkeuren voordat het live gaat?',
+      answer: 'Nee, standaard publiceren wij automatisch. Je kunt content wel 24 uur vooraf bekijken in je dashboard en wijzigingen aanvragen via chat als je dat wilt.',
+    },
+    {
+      question: 'Wat krijg ik voor mijn geld vergeleken met traditionele bureaus?',
+      answer: 'Traditionele bureaus rekenen €2.500-€4.500/maand voor vergelijkbare diensten, plus eindeloze meetings. Bij Writgo.nl betaal je €197-€797/maand en heb je GEEN meetings, GEEN calls, en GEEN gedoe. Alles is 100% autonoom.',
+    },
+  ];
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Er ging iets mis');
-      }
-
-      if (data.success) {
-        toast.success(data.message || 'Abonnement succesvol aangemaakt!');
-        setTimeout(() => {
-          router.push('/client-portal');
-        }, 2000);
-      }
-    } catch (error: any) {
-      console.error('Subscription error:', error);
-      toast.error(error.message || 'Er ging iets mis bij het aanmaken van het abonnement');
-    } finally {
-      setLoading(null);
-    }
-  };
+  const comparisonFeatures = [
+    { feature: 'SEO Artikelen per maand', instapper: '2', starter: '3 (1 Pillar + 2 Cluster)', groei: '4 (1 Pillar + 3 Cluster)', dominant: '6 (2 Pillar + 4 Cluster)' },
+    { feature: 'Social Media Posts', instapper: '16', starter: '16', groei: '24', dominant: '40' },
+    { feature: 'Faceless Videos', instapper: '4', starter: '4', groei: '8', dominant: '12' },
+    { feature: 'Platform Flexibiliteit', instapper: '✓', starter: '✓', groei: '✓', dominant: '✓' },
+    { feature: 'Automatische Posting', instapper: '✓', starter: '✓', groei: '✓', dominant: '✓' },
+    { feature: 'Pillar-Cluster Strategie', instapper: '—', starter: '✓', groei: '✓', dominant: '✓' },
+    { feature: 'Priority Support', instapper: '—', starter: '—', groei: '✓', dominant: '✓' },
+    { feature: 'Dedicated Account Manager', instapper: '—', starter: '—', groei: '—', dominant: '✓' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {/* Header */}
-      <div className="bg-black/30 border-b border-gray-700/50 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/">
-            <h1 className="text-2xl font-extrabold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent cursor-pointer">
-              WritgoAI
-            </h1>
-          </Link>
-          <div className="flex gap-4">
-            <Link href="/client-login">
-              <Button variant="outline" className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10">
-                Inloggen
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      <PublicNav />
 
       {/* Hero Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-6xl text-center">
-          <div className="inline-flex items-center gap-2 bg-orange-500/20 text-orange-400 px-4 py-2 rounded-full font-semibold mb-8 border border-orange-500/30">
-            💳 Simpel & Transparant
-          </div>
-          <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6">
-            Kies je plan
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-6xl mx-auto">
+          <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
+            Transparante Prijzen
+          </Badge>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+            Eenvoudige, Transparante Prijzen
           </h1>
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Start gratis, upgrade wanneer je wilt. Geen verborgen kosten.
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-2">
+            Kies het pakket dat bij jouw ambitie past
+          </p>
+          <p className="text-lg text-gray-400">
+            Maandelijks opzegbaar • Geen setup kosten • 30 dagen garantie
           </p>
         </div>
       </section>
 
       {/* Pricing Cards */}
-      <section className="pb-20 px-4">
-        <div className="container mx-auto max-w-7xl">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {packages.map((pkg) => {
-              const Icon = pkg.icon;
-              return (
-                <Card
-                  key={pkg.id}
-                  className={`relative bg-gray-800/50 border-2 backdrop-blur-sm ${
-                    pkg.popular
-                      ? 'border-orange-500 shadow-[0_20px_40px_rgba(255,107,53,0.3)]'
-                      : 'border-gray-700'
-                  }`}
-                >
-                  {pkg.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                        🔥 Meest Gekozen
-                      </div>
-                    </div>
-                  )}
-                  <CardHeader className="text-center pb-6">
-                    <div className="flex justify-center mb-4">
-                      <div className={`p-3 rounded-full ${pkg.popular ? 'bg-orange-500/20' : 'bg-gray-700/50'}`}>
-                        <Icon className={`w-8 h-8 ${pkg.popular ? 'text-orange-400' : 'text-gray-400'}`} />
-                      </div>
-                    </div>
-                    <CardDescription className="text-gray-400 text-sm mb-2">{pkg.description}</CardDescription>
-                    <CardTitle className="text-3xl text-white mb-4">{pkg.name}</CardTitle>
-                    <div className="flex items-end justify-center gap-1 mb-2">
-                      <span className="text-5xl font-extrabold text-white">{pkg.price}</span>
-                      <span className="text-gray-400 mb-2">{pkg.period}</span>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-gray-700">
-                      <div className="text-2xl font-bold text-orange-400 mb-1">
-                        {pkg.credits} credits/maand
-                      </div>
-                      <div className="text-sm text-gray-400">{pkg.contentEstimate}</div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3 mb-8">
-                      {pkg.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-300 text-sm">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
+      <section className="pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {packages.map((pkg, index) => (
+              <Card
+                key={index}
+                className={`relative bg-gray-800/50 backdrop-blur-sm border-2 transition-all duration-300 ${
+                  pkg.popular
+                    ? 'border-orange-500 scale-105 shadow-2xl shadow-orange-500/30'
+                    : 'border-gray-700 hover:border-orange-500/40'
+                }`}
+              >
+                {pkg.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-orange-500 text-white font-bold border-0">
+                      ⭐ BESTSELLER
+                    </Badge>
+                  </div>
+                )}
+                <CardHeader className="text-center pb-6">
+                  <CardTitle className="text-2xl text-white mb-2">{pkg.name}</CardTitle>
+                  <div className="flex items-baseline justify-center gap-1 mb-2">
+                    <span className="text-4xl font-bold text-orange-500">{pkg.price}</span>
+                    <span className="text-gray-400">{pkg.period}</span>
+                  </div>
+                  <p className="text-sm text-gray-400 italic">{pkg.description}</p>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3 mb-8">
+                    {pkg.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <Check className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-300 text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/registreren">
                     <Button
-                      onClick={() => handleSubscribe(pkg.id)}
-                      disabled={loading !== null}
                       className={`w-full ${
                         pkg.popular
-                          ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white'
+                          ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0'
                           : 'bg-gray-700 hover:bg-gray-600 text-white'
                       }`}
                     >
-                      {loading === pkg.id ? 'Laden...' : `Start ${pkg.name}`} →
+                      Start met {pkg.name}
                     </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Credit Calculator */}
-          <div className="mt-16">
-            <CreditCalculator />
-          </div>
-
-          {/* Trial Banner */}
-          <div className="mt-16 text-center">
-            <div className="max-w-3xl mx-auto bg-gradient-to-r from-orange-500/20 to-orange-600/20 backdrop-blur-sm border border-orange-500/30 rounded-2xl p-8">
-              <div className="text-4xl mb-4">🎁</div>
-              <h3 className="text-2xl font-bold text-white mb-3">Start met 1000 Gratis Credits!</h3>
-              <p className="text-gray-300 mb-6">
-                Bij registratie krijg je 1000 credits cadeau. Daarmee kun je al <strong className="text-orange-400">14 blogs</strong> of <strong className="text-orange-400">8 videos</strong> maken - helemaal gratis!
-              </p>
-              <Link href="/client-register">
-                <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-lg px-8 py-6">
-                  Gratis Starten →
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* Info Section */}
-          <div className="mt-12 text-center">
-            <div className="max-w-3xl mx-auto bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8">
-              <h3 className="text-2xl font-bold text-white mb-4">Hoe werken credits?</h3>
-              <div className="grid md:grid-cols-3 gap-6 text-left">
-                <div>
-                  <div className="text-orange-400 font-bold mb-2">📝 Blog artikel</div>
-                  <div className="text-gray-400 text-sm">70 credits per artikel (inclusief research en afbeeldingen)</div>
-                </div>
-                <div>
-                  <div className="text-orange-400 font-bold mb-2">🎬 Video generatie</div>
-                  <div className="text-gray-400 text-sm">120 credits per video (inclusief voiceover en muziek)</div>
-                </div>
-                <div>
-                  <div className="text-orange-400 font-bold mb-2">📱 Social media post</div>
-                  <div className="text-gray-400 text-sm">20 credits per post</div>
-                </div>
-              </div>
-            </div>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-black/30 border-t border-gray-700/50 text-white py-12 px-4 text-center backdrop-blur-sm">
-        <div className="container mx-auto">
-          <p className="mb-4">
-            Vragen? Mail naar{' '}
-            <a href="mailto:info@WritgoAI.nl" className="text-orange-400 font-semibold hover:underline">
-              info@WritgoAI.nl
-            </a>
-          </p>
-          <p className="text-gray-400 text-sm">© 2025 WritgoAI. Alle rechten voorbehouden.</p>
+      {/* Comparison Table */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Vergelijk Alle Pakketten
+            </h2>
+            <p className="text-xl text-gray-300">
+              Bekijk alle features in één overzicht
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700">
+              <thead>
+                <tr className="border-b border-gray-700">
+                  <th className="px-6 py-4 text-left text-white font-semibold">Feature</th>
+                  <th className="px-6 py-4 text-center text-white font-semibold">INSTAPPER</th>
+                  <th className="px-6 py-4 text-center text-white font-semibold">STARTER</th>
+                  <th className="px-6 py-4 text-center text-white font-semibold bg-orange-500/10">GROEI</th>
+                  <th className="px-6 py-4 text-center text-white font-semibold">DOMINANT</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonFeatures.map((row, index) => (
+                  <tr key={index} className="border-b border-gray-700/50">
+                    <td className="px-6 py-4 text-gray-300">{row.feature}</td>
+                    <td className="px-6 py-4 text-center text-gray-300">{row.instapper}</td>
+                    <td className="px-6 py-4 text-center text-gray-300">{row.starter}</td>
+                    <td className="px-6 py-4 text-center text-gray-300 bg-orange-500/5">{row.groei}</td>
+                    <td className="px-6 py-4 text-center text-gray-300">{row.dominant}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </footer>
+      </section>
+
+      {/* Supported Platforms */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900/50">
+        <div className="max-w-6xl mx-auto text-center">
+          <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
+            Platform Flexibiliteit
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Ondersteunde Platforms
+          </h2>
+          <p className="text-xl text-gray-300 mb-12">
+            Kies zelf waar je zichtbaar wilt zijn. Verbind één platform of alle acht.
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {platforms.map((platform, index) => {
+              const Icon = platform.icon;
+              return (
+                <Card key={index} className="bg-gray-800/50 border-gray-700 hover:border-orange-500/40 transition-all p-6 text-center">
+                  <Icon className={`w-12 h-12 mx-auto mb-3 ${platform.color}`} />
+                  <p className="text-white font-semibold">{platform.name}</p>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
+              Veelgestelde Vragen
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Heb je nog vragen?
+            </h2>
+            <p className="text-xl text-gray-300">
+              We beantwoorden de meest gestelde vragen over onze pakketten
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <Card
+                key={index}
+                className="bg-gray-800/50 border-gray-700 hover:border-orange-500/40 transition-all cursor-pointer"
+                onClick={() => setOpenFaq(openFaq === index ? null : index)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-semibold text-white mb-2 flex-1">
+                      {faq.question}
+                    </h3>
+                    {openFaq === index ? (
+                      <ChevronUp className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    )}
+                  </div>
+                  {openFaq === index && (
+                    <p className="text-gray-300 mt-2">{faq.answer}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <Card className="relative overflow-hidden border-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/80 to-orange-600/80" />
+            <CardContent className="p-12 text-center relative z-10">
+              <Star className="w-12 h-12 text-white mx-auto mb-6" />
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                Klaar om overal zichtbaar te zijn?
+              </h2>
+              <p className="text-lg text-white/90 mb-8">
+                Start vandaag en laat AI jouw content marketing overnemen
+              </p>
+              <Link href="/registreren">
+                <Button size="lg" className="bg-white text-orange-600 hover:bg-gray-100 px-8 h-12 text-lg font-semibold border-0">
+                  Start Nu →
+                </Button>
+              </Link>
+              <p className="text-sm text-white/80 mt-4">
+                ✅ Maandelijks opzegbaar • ✅ Geen setup kosten • ✅ 30 dagen garantie
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <PublicFooter />
     </div>
   );
 }
