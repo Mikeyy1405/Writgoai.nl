@@ -70,7 +70,7 @@ export function BrandLogo({
     }
 
     // Default logo
-    return brand.logoUrl || '/writgo-media-logo.png';
+    return brand.logoUrl || 'https://computerstartgids.nl/wp-content/uploads/2025/12/Writgo-Media-logo-4.png';
   };
 
   // Text-only variant (fallback if no logo is set)

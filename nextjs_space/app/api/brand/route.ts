@@ -27,14 +27,18 @@ export async function GET() {
       brandSettings = await prisma.brandSettings.create({
         data: {
           id: 'default',
-          companyName: 'WritgoAI',
-          tagline: 'Content die scoort',
-          logoUrl: '/writgo-media-logo.png',
-          primaryColor: '#FF6B35',
+          companyName: 'Writgo Media',
+          tagline: 'AI-First Omnipresence Content Agency',
+          logoUrl: 'https://computerstartgids.nl/wp-content/uploads/2025/12/Writgo-Media-logo-4.png',
+          primaryColor: '#FF9933',
           secondaryColor: '#0B3C5D',
-          accentColor: '#FF9933',
+          accentColor: '#FF6B35',
         },
       });
+      
+      // Clear cache to ensure fresh settings
+      cachedBrandSettings = null;
+      cacheTime = 0;
     }
 
     // Update cache
@@ -48,18 +52,18 @@ export async function GET() {
     // Return default settings if database fails
     return NextResponse.json({
       id: 'default',
-      companyName: 'WritgoAI',
-      tagline: 'Content die scoort',
-      logoUrl: '/writgo-media-logo.png',
+      companyName: 'Writgo Media',
+      tagline: 'AI-First Omnipresence Content Agency',
+      logoUrl: 'https://computerstartgids.nl/wp-content/uploads/2025/12/Writgo-Media-logo-4.png',
       logoLightUrl: null,
       logoDarkUrl: null,
       logoIconUrl: null,
       faviconUrl: null,
       favicon192Url: null,
       favicon512Url: null,
-      primaryColor: '#FF6B35',
+      primaryColor: '#FF9933',
       secondaryColor: '#0B3C5D',
-      accentColor: '#FF9933',
+      accentColor: '#FF6B35',
       email: null,
       phone: null,
       address: null,

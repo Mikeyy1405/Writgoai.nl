@@ -27,12 +27,12 @@ export async function GET() {
         .from('BrandSettings')
         .insert({
           id: 'default',
-          companyName: 'WritgoAI',
-          tagline: 'Content die scoort',
-          logoUrl: '/writgo-media-logo.png',
-          primaryColor: '#FF6B35',
+          companyName: 'Writgo Media',
+          tagline: 'AI-First Omnipresence Content Agency',
+          logoUrl: 'https://computerstartgids.nl/wp-content/uploads/2025/12/Writgo-Media-logo-4.png',
+          primaryColor: '#FF9933',
           secondaryColor: '#0B3C5D',
-          accentColor: '#FF9933',
+          accentColor: '#FF6B35',
         })
         .select()
         .single();
