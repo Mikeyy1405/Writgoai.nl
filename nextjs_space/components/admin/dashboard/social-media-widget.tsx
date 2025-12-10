@@ -6,12 +6,14 @@ import { Calendar, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+interface Account {
+  id: string;
+  platform: string;
+  username: string;
+}
+
 interface SocialMediaData {
-  accounts: Array<{
-    id: string;
-    platform: string;
-    username: string;
-  }>;
+  accounts: Account[];
   scheduledPosts: number;
   recentPosts: Array<{
     id: string;
@@ -24,7 +26,13 @@ interface SocialMediaData {
 interface SocialMediaWidgetProps {
   initialData?: {
     scheduledPosts: number;
-    recentPosts: Array<any>;
+    recentPosts: Array<{
+      id: string;
+      platforms: string[];
+      scheduledFor: string;
+      content: string;
+      status: string;
+    }>;
   };
   onRefresh?: () => void;
 }
@@ -32,7 +40,7 @@ interface SocialMediaWidgetProps {
 export function SocialMediaWidget({ initialData, onRefresh }: SocialMediaWidgetProps) {
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [accountsData, setAccountsData] = useState<Array<any>>([]);
+  const [accountsData, setAccountsData] = useState<Account[]>([]);
 
   useEffect(() => {
     fetchAccounts();

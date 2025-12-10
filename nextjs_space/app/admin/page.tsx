@@ -21,19 +21,44 @@ import { nl } from 'date-fns/locale';
 interface WidgetsData {
   emails: {
     unread: number;
-    recent: Array<any>;
+    recent: Array<{
+      id: string;
+      from: string;
+      fromName: string;
+      subject: string;
+      preview: string;
+      receivedAt: string;
+      isRead: boolean;
+    }>;
   };
   socialMedia: {
     scheduledPosts: number;
-    recentPosts: Array<any>;
+    recentPosts: Array<{
+      id: string;
+      platforms: string[];
+      scheduledFor: string;
+      content: string;
+      status: string;
+    }>;
   };
   content: {
     generatedToday: number;
     pending: number;
     published: number;
-    recent: Array<any>;
+    recent: Array<{
+      id: string;
+      title: string;
+      type: string;
+      clientName: string;
+      status: string;
+      createdAt: string;
+    }>;
   };
-  platforms: Array<any>;
+  platforms: Array<{
+    id: string;
+    platform: string;
+    username: string;
+  }>;
 }
 
 interface DashboardData {
