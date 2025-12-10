@@ -41,28 +41,40 @@ export async function syncMailbox(mailboxId: string): Promise<{
       }
     }
 
-    // TODO: IMPLEMENT ACTUAL IMAP/SMTP SYNC BEFORE PRODUCTION
-    // This is a placeholder. Production implementation should:
-    // 1. Connect to IMAP server using imap-simple or nodemailer
-    // 2. Fetch new emails since lastSyncAt
-    // 3. Parse email content with mailparser
-    // 4. Store emails in InboxEmail table
-    // 5. Trigger AI analysis for new emails
+    // Use real IMAP sync implementation
+    const { syncMailbox: syncWithIMAP } = await import('./email-imap-sync');
+    const result = await syncWithIMAP(mailboxId);
     
-    console.warn('⚠️  WARNING: IMAP sync not implemented. This is a placeholder.');
-    console.log(`[Mailbox Sync] Would sync mailbox ${mailbox.email}...`);
+    if (result.success) {
+      newEmailsCount = result.newEmails;
+      
+      // Process new emails with AI analysis
+      if (newEmailsCount > 0) {
+        const newEmails = await prisma.inboxEmail.findMany({
+          where: {
+            mailboxId,
+            analyzedAt: null,
+          },
+          orderBy: {
+            receivedAt: 'desc',
+          },
+          take: 10, // Process up to 10 at a time
+        });
 
-    // Update last sync time
-    await prisma.mailboxConnection.update({
-      where: { id: mailboxId },
-      data: {
-        lastSyncAt: new Date(),
-      },
-    });
+        for (const email of newEmails) {
+          try {
+            await processInboxEmail(email.id, mailbox.clientId);
+          } catch (error) {
+            console.error(`[Mailbox Sync] Error processing email ${email.id}:`, error);
+          }
+        }
+      }
+    }
 
     return {
-      success: true,
+      success: result.success,
       newEmails: newEmailsCount,
+      error: result.error,
     };
   } catch (error: any) {
     console.error('[Mailbox Sync] Error:', error);
@@ -151,12 +163,13 @@ export async function processInboxEmail(
     }
 
     // Analyze with AI
-    const analysis = await analyzeEmailWithAI(
-      email.body,
-      email.subject,
-      email.from,
-      clientId
-    );
+    const { analyzeEmail } = await import('./email-ai-analyzer');
+    const analysis = await analyzeEmail({
+      from: email.from,
+      subject: email.subject,
+      body: email.textBody || email.htmlBody || '',
+      attachments: email.attachments ? Object.keys(email.attachments as any) : [],
+    });
 
     // Update email with AI analysis
     await prisma.inboxEmail.update({
@@ -168,9 +181,16 @@ export async function processInboxEmail(
         aiPriority: analysis.priority,
         aiSuggestedReply: analysis.suggestedReply,
         analyzedAt: new Date(),
-        creditsUsed: 5,
+        // Credits used for AI analysis (should be configurable)
+        creditsUsed: parseInt(process.env.EMAIL_AI_ANALYSIS_CREDITS || '5'),
       },
     });
+
+    // Check for invoices and process with Moneybird
+    if (analysis.isInvoice) {
+      const { detectAndProcessInvoice } = await import('./email-invoice-detector');
+      await detectAndProcessInvoice(email as any);
+    }
 
     // Check if auto-reply should be sent
     const config = await prisma.emailAutoReplyConfig.findFirst({
@@ -230,24 +250,43 @@ export async function syncAllMailboxes(): Promise<void> {
 
 /**
  * Encrypt password for storage
- * WARNING: This is a basic implementation. In production, use:
- * - Node.js crypto module with AES-256-GCM
- * - AWS KMS or similar key management service
- * - Or store passwords in a secure vault like HashiCorp Vault
+ * 
+ * SECURITY WARNING: This is a TEMPORARY implementation for development only!
+ * Base64 encoding provides ZERO security - it's just encoding, not encryption.
+ * 
+ * For production, implement proper encryption:
+ * 1. Use Node.js crypto module with AES-256-GCM
+ * 2. Store encryption keys in AWS KMS, Azure Key Vault, or Google Cloud KMS
+ * 3. Or use HashiCorp Vault for centralized secrets management
+ * 4. Never commit encryption keys to version control
+ * 
+ * Example with Node.js crypto:
+ * ```typescript
+ * import crypto from 'crypto';
+ * const algorithm = 'aes-256-gcm';
+ * const key = crypto.scryptSync(process.env.ENCRYPTION_KEY, 'salt', 32);
+ * const iv = crypto.randomBytes(16);
+ * const cipher = crypto.createCipheriv(algorithm, key, iv);
+ * ```
  */
 export function encryptPassword(password: string): string {
-  // TODO: Implement proper encryption before production
-  // For now, using base64 encoding (NOT SECURE - FOR DEVELOPMENT ONLY)
+  // TODO: CRITICAL - Implement proper encryption before production deployment
+  // For now, using base64 encoding (NOT SECURE - FOR DEVELOPMENT/TESTING ONLY)
+  if (process.env.NODE_ENV === 'production') {
+    console.error('🚨 CRITICAL SECURITY WARNING: Base64 password encoding is being used in production!');
+  }
   console.warn('⚠️  WARNING: Using insecure password storage. Implement proper encryption before production!');
   return Buffer.from(password).toString('base64');
 }
 
 /**
  * Decrypt password from storage
- * WARNING: This matches the basic encryption above
+ * 
+ * SECURITY WARNING: This matches the basic encoding above
+ * See encryptPassword() for proper implementation guidelines
  */
 export function decryptPassword(encrypted: string): string {
-  // TODO: Implement proper decryption before production
+  // TODO: CRITICAL - Implement proper decryption before production deployment
   return Buffer.from(encrypted, 'base64').toString('utf-8');
 }
 

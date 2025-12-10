@@ -1,13 +1,12 @@
-
 /**
- * Fetch New Emails API
- * Manually trigger fetching new emails from the server
+ * Manual Email Sync API
+ * POST /api/admin/emails/sync - Trigger immediate sync of all mailboxes
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { fetchNewEmails } from '@/lib/email-service';
+import { syncAllMailboxes } from '@/lib/email-mailbox-sync';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,10 +17,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('[Admin] Manually triggering email fetch...');
+    console.log('[Admin] Manual sync triggered');
     
-    // Use the new sync function instead
-    const { syncAllMailboxes } = await import('@/lib/email-mailbox-sync');
+    // Trigger sync of all mailboxes
     await syncAllMailboxes();
 
     return NextResponse.json({
@@ -29,9 +27,9 @@ export async function POST(req: NextRequest) {
       message: 'Email sync completed',
     });
   } catch (error: any) {
-    console.error('[Admin] Error fetching emails:', error);
+    console.error('[Admin] Error syncing emails:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch emails' },
+      { error: error.message || 'Failed to sync emails' },
       { status: 500 }
     );
   }

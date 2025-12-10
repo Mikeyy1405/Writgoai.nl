@@ -584,6 +584,43 @@ async function callAIMLAPI(options: {
 }
 
 /**
+ * Simple helper function to call AIML agent with a prompt string
+ * This is a convenience wrapper around callAIMLAPI for simple use cases
+ * 
+ * @param prompt - The text prompt to send to the AI model
+ * @param options - Optional configuration object
+ * @param options.model - Model to use (default: GPT_4O_MINI)
+ * @param options.temperature - Creativity/randomness (0-1, default: 0.7)
+ * @param options.maxTokens - Maximum tokens in response (default: 2000)
+ * @returns Promise resolving to the AI-generated response string
+ */
+export async function callAIMLAgent(
+  prompt: string,
+  options?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number; // Note: camelCase for public API, converted to snake_case for internal API
+  }
+): Promise<string> {
+  // Convert prompt to ChatMessage format
+  const messages: ChatMessage[] = [
+    {
+      role: 'user',
+      content: prompt
+    }
+  ];
+
+  // Call internal API with defaults
+  // Note: maxTokens (camelCase) is mapped to max_tokens (snake_case) for the internal API
+  return callAIMLAPI({
+    model: options?.model || AVAILABLE_MODELS.GPT_4O_MINI,
+    messages,
+    temperature: options?.temperature ?? 0.7,
+    max_tokens: options?.maxTokens ?? 2000
+  });
+}
+
+/**
  * Legacy functie voor backwards compatibility
  * DEPRECATED: Gebruik smartModelRouter() in plaats hiervan
  */
@@ -1827,6 +1864,7 @@ export default {
   generateSocialMedia,
   generateVideoScript,
   agentExecute,
+  callAIMLAgent,
   
   // 📚 Legacy (backwards compatibility)
   aimlChatCompletion,
