@@ -584,6 +584,35 @@ async function callAIMLAPI(options: {
 }
 
 /**
+ * Simple helper function to call AIML agent with a prompt string
+ * This is a convenience wrapper around callAIMLAPI for simple use cases
+ */
+export async function callAIMLAgent(
+  prompt: string,
+  options?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+  }
+): Promise<string> {
+  // Convert prompt to ChatMessage format
+  const messages: ChatMessage[] = [
+    {
+      role: 'user',
+      content: prompt
+    }
+  ];
+
+  // Call internal API with defaults
+  return callAIMLAPI({
+    model: options?.model || AVAILABLE_MODELS.GPT_4O_MINI,
+    messages,
+    temperature: options?.temperature ?? 0.7,
+    max_tokens: options?.maxTokens ?? 2000
+  });
+}
+
+/**
  * Legacy functie voor backwards compatibility
  * DEPRECATED: Gebruik smartModelRouter() in plaats hiervan
  */
@@ -1827,6 +1856,7 @@ export default {
   generateSocialMedia,
   generateVideoScript,
   agentExecute,
+  callAIMLAgent,
   
   // 📚 Legacy (backwards compatibility)
   aimlChatCompletion,
