@@ -18,6 +18,12 @@ import { EmailInboxWidget } from '@/components/admin/dashboard/email-inbox-widge
 import { formatDistanceToNow } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
+// Placeholder values for features not yet integrated
+const PLACEHOLDER_VALUES = {
+  unreadEmails: 0, // Will be populated when email API is integrated
+  scheduledPosts: 0, // Will be populated when social media scheduling API is integrated
+};
+
 interface DashboardData {
   kpis: {
     totalClients: number;
@@ -107,14 +113,15 @@ export default function AdminDashboard() {
 
   // Set up auto-refresh every 30 seconds for real-time updates
   useEffect(() => {
-    if (!data) return;
+    if (!hasFetchedRef.current) return;
 
     const interval = setInterval(() => {
       fetchData();
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -276,10 +283,10 @@ export default function AdminDashboard() {
       {/* KPI Cards Row */}
       <CommandCenterKPIs
         data={{
-          unreadEmails: 0, // TODO: Get from email API when available
+          unreadEmails: PLACEHOLDER_VALUES.unreadEmails,
           mrr: data.kpis.mrr,
           pendingContent: data.charts.invoiceStatus.draft || 0,
-          scheduledPosts: 0, // TODO: Get from social media API when available
+          scheduledPosts: PLACEHOLDER_VALUES.scheduledPosts,
         }}
       />
 

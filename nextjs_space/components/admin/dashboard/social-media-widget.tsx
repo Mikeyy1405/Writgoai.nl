@@ -43,10 +43,11 @@ export function SocialMediaWidget() {
       const result = await response.json();
       
       // Transform the data
+      // Note: scheduledPosts and recentPosts will be available when Late.dev API provides them
       setData({
         accounts: result.accounts || [],
-        scheduledPosts: 0, // TODO: Get from API when available
-        recentPosts: [], // TODO: Get from API when available
+        scheduledPosts: result.scheduledPosts || 0,
+        recentPosts: result.recentPosts || [],
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');

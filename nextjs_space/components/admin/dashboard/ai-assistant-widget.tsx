@@ -15,6 +15,13 @@ export function AIAssistantWidget() {
     'Bekijk openstaande facturen',
   ];
 
+  const handleSendMessage = () => {
+    if (!message.trim()) return;
+    // TODO: Implement AI chat with AIML API
+    console.log('Send message:', message);
+    setMessage('');
+  };
+
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader>
@@ -35,19 +42,13 @@ export function AIAssistantWidget() {
               className="flex-1 px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#FF6B35]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  // TODO: Implement AI chat
-                  console.log('Send message:', message);
-                  setMessage('');
+                  handleSendMessage();
                 }
               }}
             />
             <Button 
               className="bg-[#FF6B35] hover:bg-[#FF8555]"
-              onClick={() => {
-                // TODO: Implement AI chat
-                console.log('Send message:', message);
-                setMessage('');
-              }}
+              onClick={handleSendMessage}
             >
               <Send className="w-4 h-4" />
             </Button>
