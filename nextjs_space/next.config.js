@@ -13,7 +13,15 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  images: { unoptimized: true },
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'computerstartgids.nl',
+      },
+    ],
+  },
   async redirects() {
     return [
       // Writer routes - redirect to ultimate-writer
