@@ -6,13 +6,15 @@ import { useSession } from 'next-auth/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, RefreshCw, Settings } from 'lucide-react';
-import { KPICards } from '@/components/admin/dashboard/kpi-cards';
-import { RevenueChart } from '@/components/admin/dashboard/revenue-chart';
-import { ClientGrowthChart } from '@/components/admin/dashboard/client-growth-chart';
-import { InvoiceStatusChart } from '@/components/admin/dashboard/invoice-status-chart';
+import { CommandCenterKPIs } from '@/components/admin/dashboard/command-center-kpis';
+import { AIAssistantWidget } from '@/components/admin/dashboard/ai-assistant-widget';
 import { ActivityFeed } from '@/components/admin/dashboard/activity-feed';
-import { TopClients } from '@/components/admin/dashboard/top-clients';
-import { TodayWidget } from '@/components/admin/dashboard/today-widget';
+import { TodoWidget } from '@/components/admin/dashboard/todo-widget';
+import { QuickActionsWidget } from '@/components/admin/dashboard/quick-actions-widget';
+import { MoneybirdWidget } from '@/components/admin/dashboard/moneybird-widget';
+import { SocialMediaWidget } from '@/components/admin/dashboard/social-media-widget';
+import { ContentWidget } from '@/components/admin/dashboard/content-widget';
+import { EmailInboxWidget } from '@/components/admin/dashboard/email-inbox-widget';
 import { formatDistanceToNow } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
@@ -144,7 +146,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#FF6B35] mx-auto mb-4" />
-          <p className="text-zinc-400">Dashboard laden...</p>
+          <p className="text-zinc-400">Command Center laden...</p>
         </div>
       </div>
     );
@@ -186,16 +188,53 @@ export default function AdminDashboard() {
     );
   }
 
+  // Generate todos from dashboard data
+  const todos = [
+    ...(data.today.invoicesToSend > 0
+      ? [
+          {
+            id: 'invoices-to-send',
+            title: `${data.today.invoicesToSend} concept facturen versturen`,
+            type: 'Financiën',
+            priority: 'high' as const,
+            completed: false,
+          },
+        ]
+      : []),
+    ...(data.today.overdueInvoices > 0
+      ? [
+          {
+            id: 'overdue-invoices',
+            title: `${data.today.overdueInvoices} te late facturen opvolgen`,
+            type: 'Financiën',
+            priority: 'high' as const,
+            completed: false,
+          },
+        ]
+      : []),
+    ...(data.kpis.outstandingInvoices > 0
+      ? [
+          {
+            id: 'outstanding-invoices',
+            title: 'Openstaande facturen controleren',
+            type: 'Financiën',
+            priority: 'medium' as const,
+            completed: false,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <div className="space-y-6 pb-8">
-      {/* Welcome Header */}
-      <div className="flex items-start justify-between">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
-            WritGo Admin Dashboard
+            🚀 WritgoAI Command Center
           </h1>
           <p className="text-zinc-400 mt-2">
-            Welkom terug! Hier is je overzicht voor vandaag.
+            Welkom terug, {session?.user?.name || 'Admin'}! Hier is je overzicht voor vandaag.
           </p>
           {lastUpdated && (
             <p className="text-xs text-zinc-500 mt-1">
@@ -213,37 +252,61 @@ export default function AdminDashboard() {
             <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
             Sync
           </Button>
-          <Button className="bg-zinc-800 hover:bg-zinc-700 text-white">
+          <Button 
+            onClick={() => router.push('/admin/settings')}
+            className="bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
             <Settings className="w-4 h-4 mr-2" />
             Settings
           </Button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <KPICards data={data.kpis} />
+      {/* KPI Cards Row */}
+      <CommandCenterKPIs
+        data={{
+          unreadEmails: 0, // TODO: Get from email API when available
+          mrr: data.kpis.mrr,
+          pendingContent: data.charts.invoiceStatus.draft || 0,
+          scheduledPosts: 0, // TODO: Get from social media API when available
+        }}
+      />
 
-      {/* First Row: Revenue Chart + Today Widget */}
+      {/* Main Content Area (2 columns) */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Left Column (60%) */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* AI Assistant Widget */}
+          <AIAssistantWidget />
+
+          {/* Activity Feed */}
+          <ActivityFeed activities={data.recentActivity} />
+        </div>
+
+        {/* Right Column (40%) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Todo Widget */}
+          <TodoWidget todos={todos} />
+
+          {/* Quick Actions */}
+          <QuickActionsWidget />
+        </div>
+      </div>
+
+      {/* Integration Widgets Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <RevenueChart data={data.charts.revenueByMonth} />
-        </div>
-        <div>
-          <TodayWidget data={data.today} />
-        </div>
+        {/* Moneybird Widget */}
+        <MoneybirdWidget />
+
+        {/* Social Media Widget */}
+        <SocialMediaWidget />
+
+        {/* Content Widget */}
+        <ContentWidget />
       </div>
 
-      {/* Second Row: Activity Feed + Top Clients */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ActivityFeed activities={data.recentActivity} />
-        <TopClients clients={data.topClients} />
-      </div>
-
-      {/* Third Row: Client Growth + Invoice Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ClientGrowthChart data={data.charts.clientGrowth} />
-        <InvoiceStatusChart data={data.charts.invoiceStatus} />
-      </div>
+      {/* Email Inbox Preview */}
+      <EmailInboxWidget />
     </div>
   );
 }
