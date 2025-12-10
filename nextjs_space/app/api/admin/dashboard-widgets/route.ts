@@ -139,15 +139,8 @@ async function getDistributionData() {
 async function getPlatformsData() {
   // Get connected platforms data from latedev accounts
   // This would need to be fetched from the Late.dev API or a database table
-  // For now, return empty array as placeholder
-  try {
-    // Try to fetch from database if there's a connected_platforms table
-    // Otherwise return empty array
-    return [];
-  } catch (error) {
-    console.error('[Dashboard Widgets] Error fetching platforms:', error);
-    return [];
-  }
+  // For now, return empty array as placeholder until platform integration is complete
+  return [];
 }
 
 async function getContentData() {

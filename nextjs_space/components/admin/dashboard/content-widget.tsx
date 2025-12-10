@@ -97,7 +97,7 @@ export function ContentWidget({ initialData, onRefresh }: ContentWidgetProps) {
       status: item.status,
       source: 'content' as const,
     })),
-    ...recentBlogPosts.slice(0, 3).map(post => ({
+    ...recentBlogPosts.map(post => ({
       id: post.id,
       title: post.title,
       type: 'blog',

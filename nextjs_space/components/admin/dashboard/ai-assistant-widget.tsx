@@ -43,25 +43,23 @@ export function AIAssistantWidget() {
     
     const messageLower = message.toLowerCase();
     
-    // Simple routing logic based on keywords
-    if (messageLower.includes('blog') || messageLower.includes('artikel') || messageLower.includes('schrij')) {
-      toast.success('Navigeer naar artikeleditor...');
-      router.push('/admin/blog/editor');
-    } else if (messageLower.includes('statistiek') || messageLower.includes('stats') || messageLower.includes('cijfers')) {
-      toast.success('Navigeer naar dashboard...');
-      router.push('/admin/dashboard');
-    } else if (messageLower.includes('klant') || messageLower.includes('client')) {
-      toast.success('Navigeer naar klanten...');
-      router.push('/admin/clients');
-    } else if (messageLower.includes('plan') || messageLower.includes('social') || messageLower.includes('distributie')) {
-      toast.success('Navigeer naar distributie centrum...');
-      router.push('/admin/distribution');
-    } else if (messageLower.includes('email') || messageLower.includes('mail')) {
-      toast.success('Navigeer naar emails...');
-      router.push('/admin/emails');
-    } else if (messageLower.includes('factuur') || messageLower.includes('invoice')) {
-      toast.success('Navigeer naar financiën...');
-      router.push('/admin/financien');
+    // Keyword-based routing map
+    const routingMap = [
+      { keywords: ['blog', 'artikel', 'schrij'], route: '/admin/blog/editor', label: 'artikeleditor' },
+      { keywords: ['statistiek', 'stats', 'cijfers'], route: '/admin/dashboard', label: 'dashboard' },
+      { keywords: ['klant', 'client'], route: '/admin/clients', label: 'klanten' },
+      { keywords: ['plan', 'social', 'distributie'], route: '/admin/distribution', label: 'distributie centrum' },
+      { keywords: ['email', 'mail'], route: '/admin/emails', label: 'emails' },
+      { keywords: ['factuur', 'invoice'], route: '/admin/financien', label: 'financiën' },
+    ];
+    
+    const matchedRoute = routingMap.find(({ keywords }) => 
+      keywords.some(keyword => messageLower.includes(keyword))
+    );
+    
+    if (matchedRoute) {
+      toast.success(`Navigeer naar ${matchedRoute.label}...`);
+      router.push(matchedRoute.route);
     } else {
       toast.info('AI assistent: Ik begrijp je vraag nog niet. Probeer een snelle actie te gebruiken!');
     }
