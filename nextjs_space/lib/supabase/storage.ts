@@ -7,13 +7,13 @@ const BRANDING_BUCKET = 'branding';
  * @param file - File buffer to upload
  * @param fileName - Original filename
  * @param contentType - MIME type of the file
- * @returns Public URL of the uploaded file
+ * @returns Object with public URL and stored filename
  */
 export async function uploadBrandingFile(
   file: Buffer,
   fileName: string,
   contentType: string
-): Promise<string> {
+): Promise<{ publicUrl: string; storedFileName: string }> {
   const timestamp = Date.now();
   const sanitizedName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const filePath = `${timestamp}-${sanitizedName}`;
@@ -35,7 +35,10 @@ export async function uploadBrandingFile(
     .from(BRANDING_BUCKET)
     .getPublicUrl(data.path);
 
-  return urlData.publicUrl;
+  return {
+    publicUrl: urlData.publicUrl,
+    storedFileName: data.path,
+  };
 }
 
 /**

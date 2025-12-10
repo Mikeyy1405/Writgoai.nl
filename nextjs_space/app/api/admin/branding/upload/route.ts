@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const fileName = `${type}/${file.name}`;
     
-    const publicUrl = await uploadBrandingFile(buffer, fileName, file.type);
+    const { publicUrl, storedFileName } = await uploadBrandingFile(buffer, fileName, file.type);
 
     console.log('[Branding Upload] File uploaded successfully:', publicUrl);
 
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
       success: true,
       url: publicUrl,
       fileName: file.name,
+      storedFileName,
       fileType: file.type,
       fileSize: file.size,
       type,
