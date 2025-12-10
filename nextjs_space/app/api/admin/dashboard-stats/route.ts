@@ -32,11 +32,55 @@ interface DashboardStats {
   today: { invoicesToSend: number; overdueInvoices: number; subscriptionsRenewing: number; revenueToday: number; contentGenerated: number };
 }
 
+/**
+ * Returns fallback stats when the dashboard cannot retrieve data
+ */
+function getFallbackStats(message?: string): DashboardStats {
+  return {
+    kpis: {
+      totalClients: 0,
+      activeSubscriptions: 0,
+      mrr: 0,
+      arr: 0,
+      revenueThisMonth: 0,
+      revenuePreviousMonth: 0,
+      revenueGrowthPercent: 0,
+      outstandingInvoices: 0,
+      overdueInvoices: 0,
+      creditsUsedThisMonth: 0,
+    },
+    charts: {
+      revenueByMonth: [],
+      clientGrowth: [],
+      invoiceStatus: { paid: 0, open: 0, overdue: 0, draft: 0 },
+    },
+    recentActivity: [{
+      type: 'info',
+      description: message || 'Dashboard data wordt geladen. Sommige statistieken zijn mogelijk niet beschikbaar.',
+      date: new Date().toISOString(),
+    }],
+    topClients: [],
+    today: {
+      invoicesToSend: 0,
+      overdueInvoices: 0,
+      subscriptionsRenewing: 0,
+      revenueToday: 0,
+      contentGenerated: 0,
+    },
+  };
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user.role !== 'admin' && session.user.role !== 'superadmin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if Supabase admin is properly initialized
+    if (!supabaseAdmin) {
+      console.error('[Dashboard Stats] Supabase admin client not initialized');
+      return NextResponse.json(getFallbackStats('Database niet beschikbaar. Controleer de configuratie.'), { status: 200 });
     }
 
     let moneybird;
@@ -50,11 +94,57 @@ export async function GET() {
 
     // If Moneybird is not configured, return minimal fallback data
     if (!moneybirdConfigured) {
-      const [clientsCount, creditsUsedThisMonth, contentGeneratedToday] = await Promise.all([
-        (async () => { try { const { count } = await supabaseAdmin.from('Client').select('*', { count: 'exact', head: true }); return count || 0; } catch { return 0; } })(),
-        (async () => { try { const firstDayOfMonth = startOfMonth(new Date()); const { data: transactions } = await supabaseAdmin.from('CreditTransaction').select('amount, type').eq('type', 'usage').gte('createdAt', firstDayOfMonth.toISOString()); return Math.abs((transactions || []).reduce((sum, t) => sum + (t.amount || 0), 0)); } catch { return 0; } })(),
-        (async () => { try { const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0); const { count } = await supabaseAdmin.from('SavedContent').select('*', { count: 'exact', head: true }).gte('createdAt', todayStart.toISOString()); return count || 0; } catch { return 0; } })(),
-      ]);
+      const clientsCount = await (async () => {
+        try {
+          const { count, error } = await supabaseAdmin.from('Client').select('*', { count: 'exact', head: true });
+          if (error) {
+            console.error('[Dashboard] Client count error:', error.message);
+            return 0;
+          }
+          return count || 0;
+        } catch (e) {
+          console.error('[Dashboard] Client count exception:', e);
+          return 0;
+        }
+      })();
+
+      const creditsUsedThisMonth = await (async () => {
+        try {
+          const firstDayOfMonth = startOfMonth(new Date());
+          const { data: transactions, error } = await supabaseAdmin
+            .from('CreditTransaction')
+            .select('amount, type')
+            .eq('type', 'usage')
+            .gte('createdAt', firstDayOfMonth.toISOString());
+          if (error) {
+            console.error('[Dashboard] Credits used error:', error.message);
+            return 0;
+          }
+          return Math.abs((transactions || []).reduce((sum, t) => sum + (t.amount || 0), 0));
+        } catch (e) {
+          console.error('[Dashboard] Credits used exception:', e);
+          return 0;
+        }
+      })();
+
+      const contentGeneratedToday = await (async () => {
+        try {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const { count, error } = await supabaseAdmin
+            .from('SavedContent')
+            .select('*', { count: 'exact', head: true })
+            .gte('createdAt', todayStart.toISOString());
+          if (error) {
+            console.error('[Dashboard] Content generated today error:', error.message);
+            return 0;
+          }
+          return count || 0;
+        } catch (e) {
+          console.error('[Dashboard] Content generated today exception:', e);
+          return 0;
+        }
+      })();
 
       const fallbackStats: DashboardStats = {
         kpis: { 
@@ -94,15 +184,93 @@ export async function GET() {
       return NextResponse.json(fallbackStats);
     }
 
-    const [clientsCount, salesInvoices, subscriptions, purchaseInvoices, contacts, creditsUsedThisMonth, contentGeneratedToday] = await Promise.all([
-      (async () => { try { const { count } = await supabaseAdmin.from('Client').select('*', { count: 'exact', head: true }); return count || 0; } catch { return 0; } })(),
-      moneybird.listSalesInvoices().catch(() => []),
-      moneybird.listSubscriptions().catch(() => []),
-      moneybird.getPurchaseInvoices().catch(() => []),
-      moneybird.listContacts().catch(() => []),
-      (async () => { try { const firstDayOfMonth = startOfMonth(new Date()); const { data: transactions } = await supabaseAdmin.from('CreditTransaction').select('amount, type').eq('type', 'usage').gte('createdAt', firstDayOfMonth.toISOString()); return Math.abs((transactions || []).reduce((sum, t) => sum + (t.amount || 0), 0)); } catch { return 0; } })(),
-      (async () => { try { const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0); const { count } = await supabaseAdmin.from('SavedContent').select('*', { count: 'exact', head: true }).gte('createdAt', todayStart.toISOString()); return count || 0; } catch { return 0; } })(),
-    ]);
+    const clientsCount = await (async () => {
+      try {
+        const { count, error } = await supabaseAdmin.from('Client').select('*', { count: 'exact', head: true });
+        if (error) {
+          console.error('[Dashboard] Client count error:', error.message);
+          return 0;
+        }
+        return count || 0;
+      } catch (e) {
+        console.error('[Dashboard] Client count exception:', e);
+        return 0;
+      }
+    })();
+
+    const salesInvoices = await (async () => {
+      try {
+        return await moneybird.listSalesInvoices();
+      } catch (e) {
+        console.error('[Dashboard] Sales invoices error:', e);
+        return [];
+      }
+    })();
+
+    const subscriptions = await (async () => {
+      try {
+        return await moneybird.listSubscriptions();
+      } catch (e) {
+        console.error('[Dashboard] Subscriptions error:', e);
+        return [];
+      }
+    })();
+
+    const purchaseInvoices = await (async () => {
+      try {
+        return await moneybird.getPurchaseInvoices();
+      } catch (e) {
+        console.error('[Dashboard] Purchase invoices error:', e);
+        return [];
+      }
+    })();
+
+    const contacts = await (async () => {
+      try {
+        return await moneybird.listContacts();
+      } catch (e) {
+        console.error('[Dashboard] Contacts error:', e);
+        return [];
+      }
+    })();
+
+    const creditsUsedThisMonth = await (async () => {
+      try {
+        const firstDayOfMonth = startOfMonth(new Date());
+        const { data: transactions, error } = await supabaseAdmin
+          .from('CreditTransaction')
+          .select('amount, type')
+          .eq('type', 'usage')
+          .gte('createdAt', firstDayOfMonth.toISOString());
+        if (error) {
+          console.error('[Dashboard] Credits used error:', error.message);
+          return 0;
+        }
+        return Math.abs((transactions || []).reduce((sum, t) => sum + (t.amount || 0), 0));
+      } catch (e) {
+        console.error('[Dashboard] Credits used exception:', e);
+        return 0;
+      }
+    })();
+
+    const contentGeneratedToday = await (async () => {
+      try {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const { count, error } = await supabaseAdmin
+          .from('SavedContent')
+          .select('*', { count: 'exact', head: true })
+          .gte('createdAt', todayStart.toISOString());
+        if (error) {
+          console.error('[Dashboard] Content generated today error:', error.message);
+          return 0;
+        }
+        return count || 0;
+      } catch (e) {
+        console.error('[Dashboard] Content generated today exception:', e);
+        return 0;
+      }
+    })();
 
     const now = new Date();
     const thisMonthStart = startOfMonth(now);
@@ -160,12 +328,44 @@ export async function GET() {
 
     const clientGrowth = [];
     for (let i = 11; i >= 0; i--) {
-      const monthDate = subMonths(now, i);
-      const monthStart = startOfMonth(monthDate);
-      const monthEnd = endOfMonth(monthDate);
-      const { count: totalByMonth } = await supabaseAdmin.from('Client').select('*', { count: 'exact', head: true }).lte('createdAt', monthEnd.toISOString());
-      const { count: newInMonth } = await supabaseAdmin.from('Client').select('*', { count: 'exact', head: true }).gte('createdAt', monthStart.toISOString()).lte('createdAt', monthEnd.toISOString());
-      clientGrowth.push({ month: format(monthDate, 'MMM yyyy', { locale: nl }), total: totalByMonth || 0, new: newInMonth || 0 });
+      try {
+        const monthDate = subMonths(now, i);
+        const monthStart = startOfMonth(monthDate);
+        const monthEnd = endOfMonth(monthDate);
+        
+        const { count: totalByMonth, error: totalError } = await supabaseAdmin
+          .from('Client')
+          .select('*', { count: 'exact', head: true })
+          .lte('createdAt', monthEnd.toISOString());
+        
+        if (totalError) {
+          console.error(`[Dashboard] Client growth total error for ${format(monthDate, 'MMM yyyy', { locale: nl })}:`, totalError.message);
+        }
+        
+        const { count: newInMonth, error: newError } = await supabaseAdmin
+          .from('Client')
+          .select('*', { count: 'exact', head: true })
+          .gte('createdAt', monthStart.toISOString())
+          .lte('createdAt', monthEnd.toISOString());
+        
+        if (newError) {
+          console.error(`[Dashboard] Client growth new error for ${format(monthDate, 'MMM yyyy', { locale: nl })}:`, newError.message);
+        }
+        
+        clientGrowth.push({ 
+          month: format(monthDate, 'MMM yyyy', { locale: nl }), 
+          total: totalByMonth || 0, 
+          new: newInMonth || 0 
+        });
+      } catch (e) {
+        console.error(`[Dashboard] Client growth exception for month ${i}:`, e);
+        const monthDate = subMonths(now, i);
+        clientGrowth.push({ 
+          month: format(monthDate, 'MMM yyyy', { locale: nl }), 
+          total: 0, 
+          new: 0 
+        });
+      }
     }
 
     const recentActivity: any[] = [];
@@ -214,8 +414,15 @@ export async function GET() {
 
     return NextResponse.json(dashboardStats);
   } catch (error) {
-    console.error('[Dashboard Stats API] Error:', error);
+    console.error('[Dashboard Stats API] Unexpected error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Onbekende fout';
-    return NextResponse.json({ error: 'Fout bij ophalen dashboard statistieken', details: errorMessage, timestamp: new Date().toISOString() }, { status: 500 });
+    console.error('[Dashboard Stats API] Error details:', errorMessage);
+    
+    // Return fallback stats instead of error to keep dashboard functional
+    const fallbackStats = getFallbackStats(
+      'Er is een fout opgetreden bij het laden van dashboard data. Dashboard wordt geladen met basis informatie.'
+    );
+    
+    return NextResponse.json(fallbackStats, { status: 200 });
   }
 }
