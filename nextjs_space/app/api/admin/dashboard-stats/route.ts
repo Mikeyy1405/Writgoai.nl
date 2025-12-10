@@ -40,11 +40,58 @@ export async function GET() {
     }
 
     let moneybird;
+    let moneybirdConfigured = true;
     try {
       moneybird = getMoneybird();
     } catch (error) {
-      console.error('[Dashboard Stats] Moneybird not configured:', error);
-      return NextResponse.json({ error: 'Moneybird niet geconfigureerd' }, { status: 500 });
+      console.warn('[Dashboard Stats] Moneybird not configured, using fallback data:', error);
+      moneybirdConfigured = false;
+    }
+
+    // If Moneybird is not configured, return minimal fallback data
+    if (!moneybirdConfigured) {
+      const [clientsCount, creditsUsedThisMonth, contentGeneratedToday] = await Promise.all([
+        (async () => { try { const { count } = await supabaseAdmin.from('Client').select('*', { count: 'exact', head: true }); return count || 0; } catch { return 0; } })(),
+        (async () => { try { const firstDayOfMonth = startOfMonth(new Date()); const { data: transactions } = await supabaseAdmin.from('CreditTransaction').select('amount, type').eq('type', 'usage').gte('createdAt', firstDayOfMonth.toISOString()); return Math.abs((transactions || []).reduce((sum, t) => sum + (t.amount || 0), 0)); } catch { return 0; } })(),
+        (async () => { try { const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0); const { count } = await supabaseAdmin.from('SavedContent').select('*', { count: 'exact', head: true }).gte('createdAt', todayStart.toISOString()); return count || 0; } catch { return 0; } })(),
+      ]);
+
+      const fallbackStats: DashboardStats = {
+        kpis: { 
+          totalClients: clientsCount, 
+          activeSubscriptions: 0, 
+          mrr: 0, 
+          arr: 0, 
+          revenueThisMonth: 0, 
+          revenuePreviousMonth: 0, 
+          revenueGrowthPercent: 0, 
+          outstandingInvoices: 0, 
+          overdueInvoices: 0, 
+          creditsUsedThisMonth 
+        },
+        charts: { 
+          revenueByMonth: [], 
+          clientGrowth: [], 
+          invoiceStatus: { paid: 0, open: 0, overdue: 0, draft: 0 } 
+        },
+        recentActivity: [
+          { 
+            type: 'info', 
+            description: 'Moneybird niet geconfigureerd. Configureer Moneybird in instellingen voor financiële data.', 
+            date: new Date().toISOString() 
+          }
+        ],
+        topClients: [],
+        today: { 
+          invoicesToSend: 0, 
+          overdueInvoices: 0, 
+          subscriptionsRenewing: 0, 
+          revenueToday: 0, 
+          contentGenerated: contentGeneratedToday 
+        },
+      };
+
+      return NextResponse.json(fallbackStats);
     }
 
     const [clientsCount, salesInvoices, subscriptions, purchaseInvoices, contacts, creditsUsedThisMonth, contentGeneratedToday] = await Promise.all([

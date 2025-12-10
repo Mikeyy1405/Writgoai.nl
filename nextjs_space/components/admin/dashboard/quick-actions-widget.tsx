@@ -2,13 +2,20 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Euro, Calendar, Mail } from 'lucide-react';
+import { FileText, Euro, Calendar, Mail, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function QuickActionsWidget() {
   const router = useRouter();
 
   const actions = [
+    {
+      icon: Sparkles,
+      label: '🚀 1-Klik Generator',
+      onClick: () => router.push('/admin/blog/auto-generate'),
+      color: 'text-orange-400',
+      bg: 'bg-orange-500/20',
+    },
     {
       icon: FileText,
       label: 'Nieuwe Blog',
