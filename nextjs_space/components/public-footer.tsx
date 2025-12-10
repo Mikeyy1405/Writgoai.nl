@@ -7,7 +7,7 @@ import { BrandLogo } from '@/components/brand/brand-logo';
 
 export default function PublicFooter() {
   return (
-    <footer className="bg-gray-900 border-t border-blue-500/20">
+    <footer className="bg-gray-900 border-t border-orange-500/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Over Ons */}
@@ -16,40 +16,50 @@ export default function PublicFooter() {
               <BrandLogo variant="full" size="md" />
             </div>
             <p className="text-gray-400 text-sm mb-4">
-              AI-gedreven content automatisering voor moderne bedrijven. 
-              Genereer SEO-geoptimaliseerde content, automatiseer social media en optimaliseer je online aanwezigheid.
+              100% Autonome AI Content Marketing voor lokale dienstverleners. 
+              SEO + Social Media + Video - volledig geautomatiseerd, zonder meetings.
             </p>
           </div>
 
           {/* Navigatie */}
           <div>
             <h3 className="text-white font-semibold mb-4 flex items-center">
-              <FileText className="w-4 h-4 mr-2 text-blue-500" />
+              <FileText className="w-4 h-4 mr-2 text-orange-500" />
               Pagina's
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
                   Home
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/hoe-het-werkt" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
+                  Hoe Het Werkt
+                </Link>
+              </li>
+              <li>
+                <Link href="/prijzen" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
+                  Prijzen
+                </Link>
+              </li>
+              <li>
+                <Link href="/over-ons" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
+                  Over Ons
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
                   Blog
                 </Link>
               </li>
               <li>
-                <Link href="/over-ons" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
-                  Over ons
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/contact" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
                   Contact
                 </Link>
               </li>
               <li>
-                <Link href="/inloggen" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/inloggen" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
                   Inloggen
                 </Link>
               </li>
@@ -59,27 +69,27 @@ export default function PublicFooter() {
           {/* Juridisch */}
           <div>
             <h3 className="text-white font-semibold mb-4 flex items-center">
-              <Shield className="w-4 h-4 mr-2 text-blue-500" />
+              <Shield className="w-4 h-4 mr-2 text-orange-500" />
               Juridisch
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/privacybeleid" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/privacybeleid" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
                   Privacybeleid
                 </Link>
               </li>
               <li>
-                <Link href="/algemene-voorwaarden" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/algemene-voorwaarden" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
                   Algemene Voorwaarden
                 </Link>
               </li>
               <li>
-                <Link href="/terugbetalingsbeleid" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/terugbetalingsbeleid" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
                   Terugbetalingsbeleid
                 </Link>
               </li>
               <li>
-                <Link href="/cookiebeleid" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
+                <Link href="/cookiebeleid" className="text-gray-400 hover:text-orange-500 transition-colors text-sm">
                   Cookiebeleid
                 </Link>
               </li>
@@ -89,21 +99,21 @@ export default function PublicFooter() {
           {/* Bedrijfsgegevens */}
           <div>
             <h3 className="text-white font-semibold mb-4 flex items-center">
-              <Building2 className="w-4 h-4 mr-2 text-blue-500" />
+              <Building2 className="w-4 h-4 mr-2 text-orange-500" />
               Contactgegevens
             </h3>
             <ul className="space-y-2 text-sm">
               <li className="flex items-start text-gray-400">
-                <MapPin className="w-4 h-4 mr-2 text-blue-500 mt-0.5 flex-shrink-0" />
+                <MapPin className="w-4 h-4 mr-2 text-orange-500 mt-0.5 flex-shrink-0" />
                 <span>
                   Langerakbaan 183-1287<br />
                   3544PE Utrecht
                 </span>
               </li>
               <li className="flex items-center text-gray-400">
-                <Mail className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0" />
-                <a href="mailto:support@WritgoAI.nl" className="hover:text-blue-500 transition-colors">
-                  support@WritgoAI.nl
+                <Mail className="w-4 h-4 mr-2 text-orange-500 flex-shrink-0" />
+                <a href="mailto:info@writgo.nl" className="hover:text-orange-500 transition-colors">
+                  info@writgo.nl
                 </a>
               </li>
             </ul>
