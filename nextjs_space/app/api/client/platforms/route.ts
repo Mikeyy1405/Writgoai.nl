@@ -94,7 +94,6 @@ export async function POST(request: NextRequest) {
       connected_at: new Date(),
       metadata: body.metadata || {},
       active: true,
-      connected_at: new Date(),
     };
 
     const newPlatform = await connectPlatform(platformData);
