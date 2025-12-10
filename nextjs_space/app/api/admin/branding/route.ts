@@ -50,6 +50,8 @@ export async function GET() {
     return NextResponse.json(brandSettings);
   } catch (error) {
     console.error('[Branding API] Failed to fetch brand settings:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Onbekende fout';
+    console.error('[Branding API] Error details:', errorMessage);
     
     return NextResponse.json(
       { error: 'Er is een fout opgetreden bij het ophalen van de branding instellingen' },
@@ -118,6 +120,8 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(brandSettings);
   } catch (error) {
     console.error('[Branding API] Failed to update brand settings:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Onbekende fout';
+    console.error('[Branding API] Error details:', errorMessage);
     
     return NextResponse.json(
       { error: 'Er is een fout opgetreden bij het bijwerken van de branding instellingen' },
