@@ -1,0 +1,18 @@
+⚠️ TEMPORARY LOGO PLACEHOLDER
+
+The file 'writgo-media-logo-transparent.png' is currently using 'writgoai-logo-new.png' as a temporary placeholder.
+
+REQUIRED ACTION:
+Please replace 'writgo-media-logo-transparent.png' with the actual new transparent Writgo Media logo 
+that includes social media icons as mentioned in the requirements.
+
+The logo should be:
+- Transparent background (PNG with alpha channel)
+- Include Writgo Media branding
+- Include social media icons
+- Optimized for web use
+
+Colors from new logo to maintain consistency:
+- Primary (orange text): #FF5722
+- Secondary (blue icons): #2196F3
+- Accent: #FF9800

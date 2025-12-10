@@ -29,10 +29,10 @@ export async function GET() {
           id: 'default',
           companyName: 'Writgo Media',
           tagline: 'AI-First Omnipresence Content Agency',
-          logoUrl: 'https://computerstartgids.nl/wp-content/uploads/2025/12/Writgo-Media-logo-4.png',
-          primaryColor: '#FF9933',
-          secondaryColor: '#0B3C5D',
-          accentColor: '#FF6B35',
+          logoUrl: '/writgo-media-logo-transparent.png',
+          primaryColor: '#FF5722',
+          secondaryColor: '#2196F3',
+          accentColor: '#FF9800',
         })
         .select()
         .single();
