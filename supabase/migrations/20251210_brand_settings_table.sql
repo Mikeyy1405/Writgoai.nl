@@ -56,12 +56,12 @@ INSERT INTO "BrandSettings" (
 )
 VALUES (
   'default',
-  'WritgoAI',
-  'Content die scoort',
+  'Writgo Media',
+  'AI-First Omnipresence Content Agency',
   '/writgo-media-logo-transparent.png',
-  '#FF6B35',
-  '#0B3C5D',
-  '#FF9933'
+  '#FF5722',
+  '#2196F3',
+  '#FF9800'
 )
 ON CONFLICT ("id") DO NOTHING;
 
