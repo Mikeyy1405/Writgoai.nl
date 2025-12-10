@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import * as Icons from 'lucide-react';
 import { PLATFORM_CONFIGS } from '@/lib/types/distribution';
+import { getIconComponent } from '@/lib/distribution-utils';
 
 interface DistributionDashboardProps {
   overview: DistributionOverview;
@@ -113,12 +114,7 @@ export function DistributionDashboard({
                         const platform = PLATFORM_CONFIGS[platformKey];
                         if (!platform) return null;
 
-                        const IconComponent = (Icons as any)[
-                          platform.icon.split('-').map((word, i) => 
-                            i === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : 
-                            word.charAt(0).toUpperCase() + word.slice(1)
-                          ).join('')
-                        ] || Icons.Share2;
+                        const IconComponent = getIconComponent(platform.icon);
 
                         return (
                           <div

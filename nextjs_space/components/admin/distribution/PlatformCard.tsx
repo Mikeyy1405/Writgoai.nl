@@ -4,7 +4,7 @@ import { PlatformConfig } from '@/lib/types/distribution';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import * as Icons from 'lucide-react';
+import { getIconComponent } from '@/lib/distribution-utils';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
@@ -17,12 +17,7 @@ interface PlatformCardProps {
 
 export function PlatformCard({ platform, onTest, onConfigure, onToggle }: PlatformCardProps) {
   // Get the icon component
-  const IconComponent = (Icons as any)[
-    platform.icon.split('-').map((word, i) => 
-      i === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join('')
-  ] || Icons.Share2;
+  const IconComponent = getIconComponent(platform.icon);
 
   return (
     <Card className={`bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors ${

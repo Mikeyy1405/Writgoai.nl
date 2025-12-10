@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PlatformType, PLATFORM_CONFIGS } from '@/lib/types/distribution';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import * as Icons from 'lucide-react';
+import { getIconComponent } from '@/lib/distribution-utils';
 
 interface PlatformSelectorProps {
   selectedPlatforms: PlatformType[];
@@ -45,12 +45,7 @@ export function PlatformSelector({ selectedPlatforms, onChange }: PlatformSelect
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {platforms.map(platform => {
           // Get the icon component
-          const IconComponent = (Icons as any)[
-            platform.icon.split('-').map((word, i) => 
-              i === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : 
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join('')
-          ] || Icons.Share2;
+          const IconComponent = getIconComponent(platform.icon);
 
           const isSelected = selectedPlatforms.includes(platform.platform);
 

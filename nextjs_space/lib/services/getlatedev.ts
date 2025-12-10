@@ -52,7 +52,7 @@ export async function schedulePost(task: DistributionTask): Promise<string> {
   await new Promise(resolve => setTimeout(resolve, 100));
 
   // Return mock job ID
-  return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `job_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
 /**
