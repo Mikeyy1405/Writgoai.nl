@@ -39,12 +39,12 @@ export default function CalendarPage() {
 
   const handleDateSelect = (date: Date) => {
     // TODO: Implement new post creation for selected date
-    toast.info('Nieuwe post plannen komt binnenkort');
+    toast('Nieuwe post plannen komt binnenkort');
   };
 
   const handleItemClick = (item: QueueItem) => {
     // TODO: Implement item details/edit
-    toast.info(`Item: ${item.content.title}`);
+    toast(`Item: ${item.content.title}`);
   };
 
   if (loading) {

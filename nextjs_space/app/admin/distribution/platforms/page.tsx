@@ -64,7 +64,7 @@ export default function PlatformsPage() {
 
   const handleConfigure = (platform: PlatformConfig) => {
     // TODO: Implement platform configuration dialog
-    toast.info(`${platform.display_name} configuratie komt binnenkort`);
+    toast(`${platform.display_name} configuratie komt binnenkort`);
   };
 
   const handleToggle = async (platform: PlatformConfig, enabled: boolean) => {

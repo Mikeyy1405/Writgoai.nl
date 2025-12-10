@@ -62,12 +62,12 @@ export default function QueuePage() {
 
   const handleEdit = (item: QueueItem) => {
     // TODO: Implement edit dialog
-    toast.info('Bewerken functie komt binnenkort');
+    toast('Bewerken functie komt binnenkort');
   };
 
   const handleReschedule = (item: QueueItem) => {
     // TODO: Implement reschedule dialog
-    toast.info('Herplannen functie komt binnenkort');
+    toast('Herplannen functie komt binnenkort');
   };
 
   const handleDelete = async () => {
