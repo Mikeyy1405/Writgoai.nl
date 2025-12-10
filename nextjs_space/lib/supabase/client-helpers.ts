@@ -274,9 +274,9 @@ export async function getDashboardStats(
 ): Promise<DashboardStats> {
   const supabase = getSupabaseAdmin();
   
-  // Get current month start
+  // Get current month start in UTC
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
   // Get content count this month
   const { count: contentCount } = await supabase

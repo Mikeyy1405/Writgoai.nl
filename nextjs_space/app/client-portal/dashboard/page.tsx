@@ -176,22 +176,25 @@ export default function ClientDashboardPage() {
             title="Content Deze Maand"
             value={stats.content_this_month || 0}
             icon={TrendingUp}
-            trend={stats.content_this_month > 0 ? 'up' : undefined}
+            color="orange"
           />
           <StatsCard
             title="Totaal Impressies"
             value={stats.total_impressions || 0}
             icon={Eye}
+            color="blue"
           />
           <StatsCard
             title="Totaal Engagements"
             value={stats.total_engagements || 0}
             icon={Heart}
+            color="purple"
           />
           <StatsCard
             title="Verbonden Platforms"
             value={stats.connected_platforms || 0}
             icon={Linkedin}
+            color="green"
           />
         </div>
       )}
