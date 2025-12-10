@@ -14,8 +14,7 @@ import {
   Share2, BarChart, Clock, Shield,
   Target, Bot, Award, Languages,
   MessageSquare, Calendar, Eye, EyeOff, X, Play, CheckCircle2,
-  Scissors, PenTool, Wrench, Hammer, Stethoscope, Home,
-  Facebook, Twitter, Instagram, Youtube
+  Scissors, PenTool, Wrench, Hammer, Stethoscope, Home
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -373,32 +372,6 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center space-y-8">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-writgo-secondary rounded-full backdrop-blur-sm animate-fade-in">
-              <Sparkles className="w-4 h-4 text-white" />
-              <span className="text-sm font-medium text-white">100% Autonoom AI-Powered Platform</span>
-            </div>
-
-            {/* Logo with Social Media Icons */}
-            <div className="flex flex-col items-center gap-3 animate-fade-in">
-              <div className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold tracking-tight mb-1">
-                  <span className="text-white">Writgo </span>
-                  <span className="text-writgo-primary">Media</span>
-                </div>
-                <p className="text-writgo-primary font-bold text-lg">#OMNIPRESENCE</p>
-              </div>
-              
-              {/* Social Media Icons */}
-              <div className="flex items-center gap-3">
-                <Facebook className="w-6 h-6 text-writgo-primary" />
-                <Twitter className="w-6 h-6 text-writgo-primary" />
-                <Instagram className="w-6 h-6 text-writgo-primary" />
-                <Youtube className="w-6 h-6 text-writgo-primary" />
-                <Globe className="w-6 h-6 text-writgo-primary" />
-              </div>
-            </div>
-
             {/* Main heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in leading-tight">
               DOMINEER GOOGLE & SOCIAL MEDIA
