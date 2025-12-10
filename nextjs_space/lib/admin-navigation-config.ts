@@ -17,6 +17,10 @@ import {
   Palette,
   Sparkles,
   PlaySquare,
+  Share2,
+  Send,
+  Calendar,
+  Megaphone,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -50,6 +54,17 @@ export const adminNavItems: AdminNavigationItem[] = [
       { label: 'Blog Posts', href: '/admin/blog', icon: FileText },
       { label: '🚀 1-Klik Generator', href: '/admin/blog/auto-generate', icon: Sparkles },
       { label: 'Autopilot', href: '/admin/autopilot-control', icon: PlaySquare },
+    ],
+  },
+  {
+    label: 'Distributie',
+    icon: Share2,
+    items: [
+      { label: 'Dashboard', href: '/admin/distribution', icon: LayoutDashboard },
+      { label: 'Wachtrij', href: '/admin/distribution/queue', icon: Send },
+      { label: 'Kalender', href: '/admin/distribution/calendar', icon: Calendar },
+      { label: 'Platforms', href: '/admin/distribution/platforms', icon: Megaphone },
+      { label: 'Analytics', href: '/admin/distribution/analytics', icon: FileBarChart },
     ],
   },
   {
