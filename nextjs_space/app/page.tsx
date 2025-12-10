@@ -14,7 +14,8 @@ import {
   Share2, BarChart, Clock, Shield,
   Target, Bot, Award, Languages,
   MessageSquare, Calendar, Eye, EyeOff, X, Play, CheckCircle2,
-  Scissors, PenTool, Wrench, Hammer, Stethoscope, Home
+  Scissors, PenTool, Wrench, Hammer, Stethoscope, Home,
+  Facebook, Twitter, Instagram, Youtube
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -120,26 +121,32 @@ export default function HomePage() {
     {
       number: '1',
       title: 'Kies Je Pakket',
-      time: '2 min',
-      description: 'Selecteer INSTAPPER, STARTER, GROEI of DOMINANT. Vul je bedrijfsgegevens in.',
+      time: '5 min',
+      description: 'Selecteer INSTAPPER, STARTER, GROEI of DOMINANT. Kies wat past bij jouw ambities.',
     },
     {
       number: '2',
-      title: 'AI Analyseert',
-      time: 'automatisch',
-      description: 'Onze AI scant je branche en concurrentie. Bepaalt optimale content strategie. Stelt tone-of-voice in.',
+      title: 'Vul Onboarding In',
+      time: '10 min',
+      description: 'Eenmalige vragenlijst over je bedrijf, doelgroep en tone-of-voice. Dat is alles.',
     },
     {
       number: '3',
-      title: 'Content Wordt Gemaakt',
+      title: 'AI Genereert Content',
       time: 'automatisch',
-      description: 'SEO artikelen, social posts, video's. Alles in jouw stijl en branche. Geoptimaliseerd voor resultaat.',
+      description: 'Onze 400+ AI modellen maken SEO artikelen, social posts en video\'s. Op maat voor jouw branche.',
     },
     {
       number: '4',
-      title: 'Alles Wordt Gepubliceerd',
+      title: 'Content Wordt Gepubliceerd',
       time: 'automatisch',
-      description: 'Content gaat live op alle platforms. Jij wordt overal zichtbaar. Leads komen binnen.',
+      description: 'Alles gaat automatisch live op WordPress, LinkedIn, Instagram, Google Mijn Bedrijf, etc.',
+    },
+    {
+      number: '5',
+      title: 'Bekijk Resultaten in Dashboard',
+      time: 'real-time',
+      description: 'Volg je groei in traffic, rankings en engagement. Maandelijkse PDF rapportage in je inbox.',
     },
   ];
 
@@ -153,7 +160,7 @@ export default function HomePage() {
         '✅ 2 SEO Blog Articles (1.500w)',
         '✅ 8 LinkedIn Posts',
         '✅ 8 Instagram Posts',
-        '✅ 4 Faceless Video's',
+        '✅ 4 Faceless Video\'s',
         '❌ Google Mijn Bedrijf',
         '❌ X/Twitter',
       ],
@@ -168,7 +175,7 @@ export default function HomePage() {
         '✅ 1 Pillar + 2 Cluster Articles',
         '✅ 8 LinkedIn Posts',
         '✅ 8 Instagram Posts',
-        '✅ 4 Faceless Video's',
+        '✅ 4 Faceless Video\'s',
         '❌ Google Mijn Bedrijf',
         '❌ X/Twitter',
       ],
@@ -183,7 +190,7 @@ export default function HomePage() {
         '✅ 1 Pillar + 3 Cluster Articles',
         '✅ 12 LinkedIn Posts',
         '✅ 12 Instagram Posts',
-        '✅ 8 Faceless Video's',
+        '✅ 8 Faceless Video\'s',
         '✅ 4 Google Mijn Bedrijf Posts',
         '❌ X/Twitter',
       ],
@@ -198,7 +205,7 @@ export default function HomePage() {
         '✅ 2 Pillar + 4 Cluster Articles',
         '✅ 16 LinkedIn Posts',
         '✅ 16 Instagram Posts',
-        '✅ 12 Faceless Video's',
+        '✅ 12 Faceless Video\'s',
         '✅ 8 Google Mijn Bedrijf Posts',
         '✅ 12 X/Twitter Posts',
       ],
@@ -372,14 +379,34 @@ export default function HomePage() {
               <span className="text-sm font-medium text-white">100% Autonoom AI-Powered Platform</span>
             </div>
 
+            {/* Logo with Social Media Icons */}
+            <div className="flex flex-col items-center gap-3 animate-fade-in">
+              <div className="text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-1">
+                  <span className="text-white">Writgo </span>
+                  <span className="text-writgo-primary">Media</span>
+                </h1>
+                <p className="text-writgo-primary font-bold text-lg">#OMNIPRESENCE</p>
+              </div>
+              
+              {/* Social Media Icons */}
+              <div className="flex items-center gap-3">
+                <Facebook className="w-6 h-6 text-writgo-primary" />
+                <Twitter className="w-6 h-6 text-writgo-primary" />
+                <Instagram className="w-6 h-6 text-writgo-primary" />
+                <Youtube className="w-6 h-6 text-writgo-primary" />
+                <Globe className="w-6 h-6 text-writgo-primary" />
+              </div>
+            </div>
+
             {/* Main heading */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in leading-tight">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in leading-tight">
               DOMINEER GOOGLE & SOCIAL MEDIA
               <br />
               <span className="text-writgo-primary">
                 ZONDER ER TIJD AAN TE BESTEDEN
               </span>
-            </h1>
+            </h2>
 
             {/* Subheading */}
             <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto animate-fade-in">
@@ -540,11 +567,11 @@ export default function HomePage() {
               Hoe Het Werkt
             </h2>
             <p className="text-lg text-text-muted max-w-2xl mx-auto">
-              4 stappen naar omnipresence - zonder dat jij er iets voor hoeft te doen
+              5 stappen naar omnipresence - zonder dat jij er iets voor hoeft te doen
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 justify-items-center">
             {howItWorksSteps.map((step, index) => (
               <div key={index} className="text-center max-w-xs">
                 <div className="relative mb-6">
