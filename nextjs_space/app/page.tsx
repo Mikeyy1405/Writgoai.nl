@@ -11,9 +11,10 @@ import PublicNav from '@/components/public-nav';
 import { 
   Check, Star, Zap, TrendingUp, Users, ArrowRight, Sparkles,
   FileText, Video, Image, Search, Globe, 
-  Newspaper, ShoppingBag, Share2, BarChart, Clock, Shield, Rocket,
-  Target, Brain, Layout, Bot, Award, Infinity, Code, Languages,
-  Smartphone, MessageSquare, Lightbulb, Calendar, UserCheck, Handshake
+  Share2, BarChart, Clock, Shield,
+  Target, Bot, Award, Languages,
+  MessageSquare, Calendar, Eye, EyeOff, X, Play, CheckCircle2,
+  Scissors, PenTool, Wrench, Hammer, Stethoscope, Home
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -52,198 +53,204 @@ export default function HomePage() {
     );
   }
 
-  const aiTools = [
+  const problemPoints = [
     {
-      icon: <FileText className="w-6 h-6" />,
-      title: 'Blog & Artikelen',
-      description: 'SEO content die rankt',
-      credits: '70 credits',
+      icon: <EyeOff className="w-8 h-8" />,
+      title: 'Onzichtbaar Online',
+      description: 'Je concurrent verschijnt op Google. Jij niet.',
     },
     {
-      icon: <Share2 className="w-6 h-6" />,
-      title: 'Social Media',
-      description: 'Posts voor alle platforms',
-      credits: '20 credits',
+      icon: <Clock className="w-8 h-8" />,
+      title: 'Geen Tijd',
+      description: "Marketing is 'voor later'. Maar later komt nooit.",
     },
     {
-      icon: <Video className="w-6 h-6" />,
-      title: 'Video Content',
-      description: "YouTube, Reels, TikTok",
-      credits: '120 credits',
-    },
-    {
-      icon: <MessageSquare className="w-6 h-6" />,
-      title: 'Email Marketing',
-      description: 'Nieuwsbrieven & sequences',
-      credits: '30 credits',
-    },
-    {
-      icon: <Target className="w-6 h-6" />,
-      title: 'Strategie',
-      description: 'Complete content planning',
-      credits: '40 credits',
-    },
-    {
-      icon: <BarChart className="w-6 h-6" />,
-      title: 'Analytics',
-      description: 'Meet je groei',
-      credits: '30 credits',
-    },
-    {
-      icon: <Search className="w-6 h-6" />,
-      title: 'Keyword Research',
-      description: 'Ontdek kansen om te scoren',
-      credits: '40 credits',
-    },
-    {
-      icon: <ShoppingBag className="w-6 h-6" />,
-      title: 'Product Content',
-      description: 'Reviews & beschrijvingen',
-      credits: '70 credits',
-    },
-    {
-      icon: <Bot className="w-6 h-6" />,
-      title: 'AI Assistent',
-      description: '24/7 hulp bij je content',
-      credits: '1-5 credits',
-    },
-    {
-      icon: <Newspaper className="w-6 h-6" />,
-      title: 'Nieuws Artikelen',
-      description: 'Actuele content creëren',
-      credits: '60 credits',
-    },
-    {
-      icon: <Layout className="w-6 h-6" />,
-      title: 'Content Library',
-      description: 'Al je werk op één plek',
-      credits: 'Gratis',
-    },
-    {
-      icon: <Globe className="w-6 h-6" />,
-      title: 'WordPress Sync',
-      description: 'Direct publiceren',
-      credits: 'Gratis',
+      icon: <X className="w-8 h-8" />,
+      title: 'Te Duur/Complex',
+      description: 'Bureaus kosten €2.000+/maand en veel gedoe.',
     },
   ];
 
-  const features = [
+  const omnipresenceChannels = [
     {
-      icon: <Sparkles className="w-6 h-6 text-writgo-primary" />,
-      title: 'Slimme Technologie',
-      description: 'Nieuwste modellen onder de motorkap',
+      icon: <Search className="w-8 h-8" />,
+      title: 'Google (SEO)',
+      description: 'Rank voor 10-50 zoektermen. Klanten vinden jou.',
     },
     {
-      icon: <Search className="w-6 h-6 text-writgo-secondary" />,
-      title: 'SEO Geoptimaliseerd',
-      description: 'Rank hoger in Google',
+      icon: <Users className="w-8 h-8" />,
+      title: 'LinkedIn',
+      description: 'Thought leadership. B2B leads stromen binnen.',
     },
     {
-      icon: <Zap className="w-6 h-6 text-writgo-primary" />,
-      title: '10x Sneller',
-      description: 'Dan zelf schrijven',
+      icon: <Image className="w-8 h-8" />,
+      title: 'Instagram',
+      description: 'Visuele content. Lokale klanten zien je overal.',
     },
     {
-      icon: <MessageSquare className="w-6 h-6 text-writgo-secondary" />,
-      title: 'Tone of Voice',
-      description: 'Volledig aanpasbaar',
-    },
-    {
-      icon: <Award className="w-6 h-6 text-writgo-primary" />,
-      title: '100% Unieke Content',
-      description: 'Geen duplicaten',
-    },
-    {
-      icon: <Languages className="w-6 h-6 text-writgo-secondary" />,
-      title: 'Multi-Language',
-      description: '30+ talen ondersteund',
-    },
-    {
-      icon: <Image className="w-6 h-6 text-writgo-primary" />,
-      title: 'Professionele Afbeeldingen',
-      description: 'Automatisch gegenereerd',
-    },
-    {
-      icon: <Shield className="w-6 h-6 text-writgo-secondary" />,
-      title: 'GDPR Compliant',
-      description: 'Veilig & privacy-proof',
+      icon: <Video className="w-8 h-8" />,
+      title: 'YouTube/TikTok',
+      description: "Video's die viral gaan. Nieuwe doelgroepen.",
     },
   ];
 
-  const pricingPlans = [
+  const howItWorksSteps = [
     {
-      name: 'Starter',
-      price: '€29',
+      number: '1',
+      title: 'Kies Je Pakket',
+      time: '2 min',
+      description: 'Selecteer INSTAPPER, STARTER, GROEI of DOMINANT. Vul je bedrijfsgegevens in.',
+    },
+    {
+      number: '2',
+      title: 'AI Analyseert',
+      time: 'automatisch',
+      description: 'Onze AI scant je branche en concurrentie. Bepaalt optimale content strategie. Stelt tone-of-voice in.',
+    },
+    {
+      number: '3',
+      title: 'Content Wordt Gemaakt',
+      time: 'automatisch',
+      description: 'SEO artikelen, social posts, video\'s. Alles in jouw stijl en branche. Geoptimaliseerd voor resultaat.',
+    },
+    {
+      number: '4',
+      title: 'Alles Wordt Gepubliceerd',
+      time: 'automatisch',
+      description: 'Content gaat live op alle platforms. Jij wordt overal zichtbaar. Leads komen binnen.',
+    },
+  ];
+
+  const pricingPackages = [
+    {
+      name: 'INSTAPPER',
+      price: '€297',
       period: '/maand',
-      credits: '1.000 credits',
-      subtitle: '~14 blogs',
       features: [
-        'Alle AI modellen',
-        '12+ content generators',
-        'SEO optimalisatie',
-        'Email support',
+        '3.000 woorden SEO content',
+        '8x LinkedIn posts',
+        '8x Instagram posts',
+        '4x Faceless video\'s',
       ],
       popular: false,
     },
     {
-      name: 'Professional',
-      price: '€79',
+      name: 'STARTER',
+      price: '€497',
       period: '/maand',
-      credits: '3.000 credits',
-      subtitle: '~42 blogs',
       features: [
-        'Alle Starter features',
-        'Priority support',
-        'Geavanceerde analytics',
-        'WordPress integratie',
+        '4.900 woorden (pillar/cluster)',
+        '8x LinkedIn posts',
+        '8x Instagram posts',
+        '4x Faceless video\'s',
+      ],
+      popular: false,
+    },
+    {
+      name: 'GROEI',
+      price: '€797',
+      period: '/maand',
+      features: [
+        '7.500 woorden SEO content',
+        '12x LinkedIn posts',
+        '12x Instagram posts',
+        '8x Faceless video\'s',
+        '4x Google Mijn Bedrijf posts',
       ],
       popular: true,
     },
     {
-      name: 'Enterprise',
-      price: '€199',
+      name: 'DOMINANT',
+      price: '€1.297',
       period: '/maand',
-      credits: '10.000 credits',
-      subtitle: '~142 blogs',
       features: [
-        'Alle Professional features',
-        'Multi-user accounts',
-        'Custom integraties',
-        'API toegang',
+        '12.000 woorden SEO content',
+        '16x LinkedIn posts',
+        '16x Instagram posts',
+        '12x Faceless video\'s',
+        '8x Google Mijn Bedrijf posts',
+        '12x Twitter/X posts',
+        '8x Pinterest pins',
       ],
       popular: false,
     },
   ];
 
-  const stats = [
-    { value: '100K+', label: 'Content pieces gepubliceerd' },
-    { value: '500+', label: 'Tevreden klanten' },
-    { value: '10x', label: 'Sneller dan zelf maken' },
-    { value: '#1', label: 'Rankings behaald' },
+  const targetAudiences = [
+    { icon: <Wrench className="w-6 h-6" />, title: 'Installateurs & CV Monteurs' },
+    { icon: <Scissors className="w-6 h-6" />, title: 'Kappers & Schoonheidssalons' },
+    { icon: <Stethoscope className="w-6 h-6" />, title: 'Tandartsen & Mondhygiënisten' },
+    { icon: <Target className="w-6 h-6" />, title: 'Fysiotherapeuten & Zorg' },
+    { icon: <Hammer className="w-6 h-6" />, title: 'Klus- & Onderhoudsbedrijven' },
+    { icon: <Home className="w-6 h-6" />, title: 'Lokale Dienstverleners' },
   ];
 
-  const testimonials = [
+  const caseStudies = [
     {
-      name: 'Sarah van der Berg',
-      role: 'Online Marketing Manager',
-      avatar: 'S',
-      text: 'Van onbekend naar overal zichtbaar - leads komen nu via alle kanalen',
-      rating: 5,
+      title: 'Tandartspraktijk Amsterdam',
+      result: 'Van 50 naar 500 bezoekers/maand',
+      icon: <TrendingUp className="w-8 h-8 text-writgo-primary" />,
     },
     {
-      name: 'Mark Jansen',
-      role: 'E-commerce Ondernemer',
-      avatar: 'M',
-      text: 'Eindelijk consistent aanwezig op social media én Google',
-      rating: 5,
+      title: 'Installatiebedrijf Rotterdam',
+      result: 'Top 3 Google ranking in 3 maanden',
+      icon: <Award className="w-8 h-8 text-writgo-primary" />,
     },
     {
-      name: 'Lisa Bakker',
-      role: 'Startup Founder',
-      avatar: 'L',
-      text: 'Complete omnipresence zonder dat ik er zelf tijd in hoef te steken',
-      rating: 5,
+      title: 'Kapsalon Utrecht',
+      result: 'Agenda 3 weken vol geboekt',
+      icon: <Calendar className="w-8 h-8 text-writgo-primary" />,
     },
+  ];
+
+  const faqs = [
+    {
+      question: 'Hoeveel tijd kost het mij?',
+      answer: '0 minuten. Alles is geautomatiseerd.',
+    },
+    {
+      question: 'Moet ik content goedkeuren?',
+      answer: 'Optioneel. Je kunt auto-publish kiezen.',
+    },
+    {
+      question: 'Hoe snel zie ik resultaat?',
+      answer: 'SEO: 2-3 maanden. Social: direct zichtbaar.',
+    },
+    {
+      question: 'Kan ik opzeggen?',
+      answer: 'Ja, maandelijks opzegbaar. Geen contract.',
+    },
+    {
+      question: 'Wat als ik niet tevreden ben?',
+      answer: 'Stop na 1 maand. Geen vragen.',
+    },
+    {
+      question: 'Schrijft AI echt alles?',
+      answer: 'Ja, onze AI + jouw branche kennis = perfecte content.',
+    },
+    {
+      question: 'Werkt het voor mijn branche?',
+      answer: 'Voor alle lokale dienstverleners.',
+    },
+    {
+      question: 'Heb ik meetings nodig?',
+      answer: 'Nee, volledig geautomatiseerd. Geen calls.',
+    },
+    {
+      question: 'Wat is omnipresence?',
+      answer: 'Overal zichtbaar zijn waar je klanten zijn.',
+    },
+    {
+      question: 'Waarom €297-1297?',
+      answer: '10x goedkoper dan bureaus, 10x beter dan zelf doen.',
+    },
+  ];
+
+  const stats = [
+    { value: '50+', label: 'Lokale dienstverleners geholpen' },
+    { value: '100%', label: 'Geautomatiseerd' },
+    { value: '0 uur', label: 'Jouw tijdsinvestering' },
+    { value: 'Top 3', label: 'Google rankings gemiddeld' },
   ];
 
   return (
@@ -263,53 +270,54 @@ export default function HomePage() {
           <div className="text-center space-y-8">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-writgo-secondary rounded-full backdrop-blur-sm animate-fade-in">
-              <Sparkles className="w-4 h-4 text-white" />
-              <span className="text-sm font-medium text-white">Content Bureau</span>
+              <Bot className="w-4 h-4 text-white" />
+              <span className="text-sm font-medium text-white">100% AI-Powered Omnipresence</span>
             </div>
 
             {/* Main heading */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-pearl-white animate-fade-in">
-              WRITGO MEDIA
+              Omnipresence voor
               <br />
               <span className="text-writgo-primary">
-                Omnipresence voor jouw merk
+                Lokale Dienstverleners
               </span>
             </h1>
 
             {/* Subheading */}
             <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto animate-fade-in">
-              Wees overal zichtbaar: blogs, social media, video's en meer.
-              Bouw een onvergetelijke online aanwezigheid die converteert.
+              Wees overal waar je klanten zijn. Google. LinkedIn. Instagram. YouTube.
+              <br className="hidden sm:block" />
+              Volledig geautomatiseerd met AI. Jij hoeft <span className="text-writgo-primary font-semibold">NIETS</span> te doen.
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in">
-              <Link href="/registreren">
+              <a href="#pakketten">
                 <Button size="lg" className="btn-gradient-orange text-white px-8 h-12 text-lg font-semibold group border-0">
-                  Start Gratis - 1000 Credits
+                  Start Direct - Kies Je Pakket
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
-              </Link>
-              <Link href="#managed-service">
+              </a>
+              <a href="#hoe-het-werkt">
                 <Button size="lg" variant="outline" className="border-pearl-white text-pearl-white hover:bg-white/10 px-8 h-12 text-lg font-semibold">
-                  Bekijk Managed Service
+                  Bekijk Hoe Het Werkt
                 </Button>
-              </Link>
+              </a>
             </div>
 
             {/* Trust indicators */}
             <div className="flex flex-wrap justify-center items-center gap-6 pt-8 animate-fade-in">
               <div className="flex items-center gap-2 text-pearl-white">
-                <Check className="w-5 h-5 text-pearl-white" />
-                <span className="text-sm">Direct online</span>
+                <Check className="w-5 h-5 text-writgo-secondary" />
+                <span className="text-sm">Volledig geautomatiseerd</span>
               </div>
               <div className="flex items-center gap-2 text-pearl-white">
-                <Check className="w-5 h-5 text-pearl-white" />
-                <span className="text-sm">Geen creditcard</span>
+                <Check className="w-5 h-5 text-writgo-secondary" />
+                <span className="text-sm">Geen gedoe, geen meetings</span>
               </div>
               <div className="flex items-center gap-2 text-pearl-white">
-                <Check className="w-5 h-5 text-pearl-white" />
-                <span className="text-sm">Resultaatgarantie</span>
+                <Check className="w-5 h-5 text-writgo-secondary" />
+                <span className="text-sm">Maandelijks opzegbaar</span>
               </div>
             </div>
           </div>
@@ -332,125 +340,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Hoe Wil Jij Werken Section */}
+      {/* Problem Section - Herken je dit? */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-writgo-secondary text-white border-0">
-              Kies Je Werkwijze
+              Het Probleem
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-pearl-white mb-4">
-              Hoe wil jij werken?
+              Herken je dit?
             </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
-              Self-service tools voor volledige controle, of managed service voor hands-off content
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 justify-items-center">
-            {/* Self-Service Card */}
-            <Card className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all duration-300 group text-center max-w-xl w-full">
-              <CardContent className="p-8">
-                <div className="inline-flex p-4 rounded-2xl bg-writgo-primary mb-6 group-hover:scale-110 transition-transform">
-                  <Zap className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-pearl-white mb-4">Zelf aan de slag</h3>
-                <p className="text-text-muted mb-6">Gebruik onze tools om snel professionele content te maken. Jij houdt de controle.</p>
-                <ul className="space-y-3 mb-6 text-left inline-block">
-                  <li className="flex items-start gap-3 text-text-muted">
-                    <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Blog Generator - complete artikelen in minuten</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-text-muted">
-                    <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Keyword Research - ontdek waar je op moet scoren</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-text-muted">
-                    <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Social Media Studio - posts voor alle kanalen</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-text-muted">
-                    <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Content Planner - plan weken vooruit</span>
-                  </li>
-                </ul>
-                <p className="text-sm text-text-muted mb-4">Vanaf €29/maand</p>
-                <Link href="#tools" className="block">
-                  <span className="text-writgo-secondary hover:underline font-semibold inline-flex items-center">
-                    Bekijk Tools <ArrowRight className="ml-2 w-4 h-4" />
-                  </span>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Managed Service Card */}
-            <Card className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all duration-300 group text-center max-w-xl w-full">
-              <CardContent className="p-8">
-                <div className="inline-flex p-4 rounded-2xl bg-writgo-primary mb-6 group-hover:scale-110 transition-transform">
-                  <Users className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-pearl-white mb-4">Wij doen het voor je</h3>
-                <p className="text-text-muted mb-6">Ons team schrijft, optimaliseert en publiceert. Jij focust op je business.</p>
-                <ul className="space-y-3 mb-6 text-left inline-block">
-                  <li className="flex items-start gap-3 text-text-muted">
-                    <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Maandelijks contentplan op maat</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-text-muted">
-                    <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>SEO-geoptimaliseerde artikelen</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-text-muted">
-                    <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Direct publicatie naar WordPress</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-text-muted">
-                    <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                    <span>Maandelijkse rapportages</span>
-                  </li>
-                </ul>
-                <p className="text-sm text-text-muted mb-4">Vanaf €499/maand</p>
-                <Link href="#managed-service" className="block">
-                  <span className="text-writgo-secondary hover:underline font-semibold inline-flex items-center">
-                    Plan een Gesprek <ArrowRight className="ml-2 w-4 h-4" />
-                  </span>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* AI Tools Grid */}
-      <section id="tools" className="py-20 px-4 sm:px-6 lg:px-8 bg-surface/50 text-center">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-writgo-secondary text-white border-0">
-              Self-Service Tools
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-pearl-white mb-4">
-              Alles wat je nodig hebt
-            </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
-              Krachtige tools voor professionele content
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
-            {aiTools.map((tool, index) => (
-              <Card
-                key={index}
-                className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all duration-300 hover:scale-105 group text-center max-w-xs w-full"
-              >
-                <CardContent className="p-6">
-                  <div className="inline-flex p-3 rounded-xl bg-writgo-primary mb-4 group-hover:scale-110 transition-transform text-white">
-                    {tool.icon}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
+            {problemPoints.map((point, index) => (
+              <Card key={index} className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all duration-300 text-center max-w-sm w-full">
+                <CardContent className="p-8">
+                  <div className="inline-flex p-4 rounded-2xl bg-writgo-primary/10 mb-6 text-writgo-primary">
+                    {point.icon}
                   </div>
-                  <h3 className="text-lg font-bold text-pearl-white mb-2">{tool.title}</h3>
-                  <p className="text-text-muted text-sm mb-3">{tool.description}</p>
-                  <Badge variant="outline" className="text-writgo-secondary border-writgo-secondary/30 text-xs">
-                    {tool.credits}
-                  </Badge>
+                  <h3 className="text-xl font-bold text-pearl-white mb-3">{point.title}</h3>
+                  <p className="text-text-muted">{point.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -458,220 +368,171 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 text-center">
+      {/* Solution Section - Omnipresence */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-surface/50 text-center">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-writgo-secondary text-white border-0">
-              Platform Features
+              De Oplossing
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-pearl-white mb-4">
-              Alles wat je nodig hebt
+              Omnipresence = Overal Zichtbaar
             </h2>
             <p className="text-lg text-text-muted max-w-2xl mx-auto">
-              Enterprise-grade features voor professionele content creatie
+              Wij zorgen dat je op alle kanalen aanwezig bent waar jouw klanten zijn
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all duration-300 group text-center max-w-xs w-full"
-              >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 justify-items-center">
+            {omnipresenceChannels.map((channel, index) => (
+              <Card key={index} className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all duration-300 text-center max-w-xs w-full">
                 <CardContent className="p-6">
-                  <div className="inline-flex p-3 rounded-xl bg-surface mb-4 group-hover:bg-writgo-primary/10 transition-colors">
-                    {feature.icon}
+                  <div className="inline-flex p-3 rounded-xl bg-writgo-primary mb-4 text-white">
+                    {channel.icon}
                   </div>
-                  <h3 className="text-lg font-bold text-pearl-white mb-2">{feature.title}</h3>
-                  <p className="text-text-muted text-sm">{feature.description}</p>
+                  <h3 className="text-lg font-bold text-pearl-white mb-2">{channel.title}</h3>
+                  <p className="text-text-muted text-sm">{channel.description}</p>
                 </CardContent>
               </Card>
+            ))}
+          </div>
+
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-xl text-pearl-white">
+              En het mooie? Onze AI regelt <span className="text-writgo-primary font-bold">ALLES</span>. 
+              Jij hoeft letterlijk <span className="text-writgo-primary font-bold">niets</span> te doen.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="hoe-het-werkt" className="py-20 px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-writgo-secondary text-white border-0">
+              Volledig Geautomatiseerd
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-pearl-white mb-4">
+              Hoe Het Werkt
+            </h2>
+            <p className="text-lg text-text-muted max-w-2xl mx-auto">
+              4 stappen naar omnipresence - zonder dat jij er iets voor hoeft te doen
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
+            {howItWorksSteps.map((step, index) => (
+              <div key={index} className="text-center max-w-xs">
+                <div className="relative mb-6">
+                  <div className="w-20 h-20 mx-auto rounded-full bg-writgo-primary flex items-center justify-center text-white text-3xl font-bold">
+                    {step.number}
+                  </div>
+                  {index < howItWorksSteps.length - 1 && (
+                    <div className="hidden lg:block absolute top-10 left-[60%] w-full h-0.5 bg-writgo-primary/30" />
+                  )}
+                </div>
+                <h3 className="text-xl font-bold text-pearl-white mb-2">{step.title}</h3>
+                <Badge variant="outline" className="text-writgo-secondary border-writgo-secondary/30 mb-3">
+                  {step.time}
+                </Badge>
+                <p className="text-text-muted text-sm">{step.description}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Managed Service Section */}
-      <section id="managed-service" className="py-20 px-4 sm:px-6 lg:px-8 bg-surface/50 text-center">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-writgo-secondary text-white border-0">
-              Managed Service
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-pearl-white mb-6">
-              Geen tijd? Wij regelen het.
-            </h2>
-            <p className="text-lg text-text-muted max-w-3xl mx-auto mb-8">
-              Focus op je business, wij zorgen voor de content. Persoonlijke content strateeg, maandelijks contentplan 
-              en professionele artikelen die direct op je WordPress worden gepubliceerd.
-            </p>
-          </div>
-
-          <div className="max-w-4xl mx-auto mb-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
-                <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
-                  <Calendar className="w-6 h-6 text-writgo-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">Complete strategie</h4>
-                  <p className="text-sm text-text-muted">Omnipresence planning voor alle kanalen</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
-                <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
-                  <FileText className="w-6 h-6 text-writgo-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">Wekelijkse blogs</h4>
-                  <p className="text-sm text-text-muted">SEO-geoptimaliseerde artikelen die ranken</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
-                <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
-                  <Share2 className="w-6 h-6 text-writgo-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">Dagelijkse social posts</h4>
-                  <p className="text-sm text-text-muted">Consistent aanwezig op alle platforms</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
-                <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
-                  <Video className="w-6 h-6 text-writgo-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">Maandelijkse video's</h4>
-                  <p className="text-sm text-text-muted">Video content voor YouTube en social</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
-                <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
-                  <MessageSquare className="w-6 h-6 text-writgo-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">Email sequences</h4>
-                  <p className="text-sm text-text-muted">Nieuwsbrieven die converteren</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 p-4 glass-dark rounded-lg text-left">
-                <div className="flex-shrink-0 p-2 bg-writgo-primary/10 rounded-lg">
-                  <BarChart className="w-6 h-6 text-writgo-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-pearl-white mb-1">Content kalender</h4>
-                  <p className="text-sm text-text-muted">Overzicht van al je geplande content</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <div className="glass-dark rounded-2xl p-8 border border-border-dark glow-orange">
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-pearl-white mb-2">Managed Service</h3>
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-sm text-text-muted">Vanaf</span>
-                  <span className="text-5xl font-bold text-writgo-primary">€499</span>
-                  <span className="text-text-muted">/maand</span>
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8 text-left max-w-md mx-auto">
-                <li className="flex items-center gap-3 text-text-muted">
-                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Complete omnipresence strategie</span>
-                </li>
-                <li className="flex items-center gap-3 text-text-muted">
-                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Wekelijkse blogs (4-8 per maand)</span>
-                </li>
-                <li className="flex items-center gap-3 text-text-muted">
-                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Dagelijkse social media posts</span>
-                </li>
-                <li className="flex items-center gap-3 text-text-muted">
-                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Maandelijkse video content</span>
-                </li>
-                <li className="flex items-center gap-3 text-text-muted">
-                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Email marketing sequences</span>
-                </li>
-                <li className="flex items-center gap-3 text-text-muted">
-                  <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0" />
-                  <span>Content kalender & rapportages</span>
-                </li>
-              </ul>
-              <Link href="/contact">
-                <Button size="lg" className="w-full btn-gradient-orange text-white font-semibold border-0">
-                  Plan een Vrijblijvend Gesprek
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 text-center">
+      {/* Packages Section */}
+      <section id="pakketten" className="py-20 px-4 sm:px-6 lg:px-8 bg-surface/50 text-center">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-writgo-secondary text-white border-0">
-              Prijzen
+              Pakketten
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-pearl-white mb-4">
-              Kies wat bij je past
+              Kies Je Pakket
             </h2>
             <p className="text-lg text-text-muted max-w-2xl mx-auto">
-              Transparante prijzen zonder verborgen kosten. Start vandaag nog.
+              Vaste pakketten, vaste prijzen. Volledig geautomatiseerd.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto justify-items-center">
-            {pricingPlans.map((plan, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto justify-items-center mb-8">
+            {pricingPackages.map((pkg, index) => (
               <Card
                 key={index}
-                className={`glass-dark transition-all duration-300 relative text-center max-w-sm w-full ${
-                  plan.popular
+                className={`glass-dark transition-all duration-300 relative text-center w-full ${
+                  pkg.popular
                     ? 'border-writgo-primary scale-105 glow-orange'
                     : 'border-border-dark hover:border-writgo-primary/40'
                 }`}
               >
-                {plan.popular && (
+                {pkg.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-writgo-primary text-white font-bold border-0">POPULAIR</Badge>
+                    <Badge className="bg-writgo-primary text-white font-bold border-0">⭐ BEST SELLER</Badge>
                   </div>
                 )}
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold text-pearl-white mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline justify-center gap-2 mb-1">
-                    <span className="text-4xl font-bold text-pearl-white">{plan.price}</span>
-                    <span className="text-text-muted">{plan.period}</span>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold text-pearl-white mb-2">{pkg.name}</h3>
+                  <div className="flex items-baseline justify-center gap-1 mb-4">
+                    <span className="text-3xl font-bold text-writgo-primary">{pkg.price}</span>
+                    <span className="text-text-muted text-sm">{pkg.period}</span>
                   </div>
-                  <p className="text-writgo-secondary font-semibold mb-2">{plan.credits}</p>
-                  <p className="text-text-muted text-sm mb-6">{plan.subtitle}</p>
-                  <ul className="space-y-3 mb-8 text-left inline-block">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-text-muted">
-                        <Check className="w-5 h-5 text-writgo-secondary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
+                  <ul className="space-y-2 mb-6 text-left">
+                    {pkg.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-text-muted text-sm">
+                        <Check className="w-4 h-4 text-writgo-secondary flex-shrink-0 mt-0.5" />
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
                   <Link href="/registreren">
                     <Button
                       className={`w-full font-semibold ${
-                        plan.popular
+                        pkg.popular
                           ? 'btn-gradient-orange text-white border-0'
                           : 'border-pearl-white text-pearl-white hover:bg-white/10'
                       }`}
-                      variant={plan.popular ? 'default' : 'outline'}
+                      variant={pkg.popular ? 'default' : 'outline'}
                     >
-                      Start Nu
+                      Start met {pkg.name}
                     </Button>
                   </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <p className="text-text-muted text-center">
+            Maandelijks opzegbaar. Geen contract. Geen gedoe.
+          </p>
+        </div>
+      </section>
+
+      {/* Voor Wie Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-writgo-secondary text-white border-0">
+              Voor Wie
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-pearl-white mb-4">
+              Speciaal voor Lokale Dienstverleners
+            </h2>
+            <p className="text-lg text-text-muted max-w-2xl mx-auto">
+              Die marktleider willen worden in hun regio
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 justify-items-center">
+            {targetAudiences.map((audience, index) => (
+              <Card key={index} className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all text-center w-full">
+                <CardContent className="p-6">
+                  <div className="inline-flex p-3 rounded-xl bg-writgo-primary mb-3 text-white">
+                    {audience.icon}
+                  </div>
+                  <h3 className="text-sm font-semibold text-pearl-white">{audience.title}</h3>
                 </CardContent>
               </Card>
             ))}
@@ -679,7 +540,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Results/Case Studies Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-surface/50 text-center">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -687,32 +548,22 @@ export default function HomePage() {
               Resultaten
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-pearl-white mb-4">
-              Resultaten die tellen
+              Échte Resultaten
             </h2>
             <p className="text-lg text-text-muted">
-              Échte resultaten van tevreden gebruikers
+              Van onzichtbaar naar omnipresent
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
-            {testimonials.map((testimonial, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
+            {caseStudies.map((study, index) => (
               <Card key={index} className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all text-center max-w-sm w-full">
-                <CardContent className="p-6">
-                  <div className="flex gap-1 mb-4 justify-center">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-writgo-primary text-writgo-primary" />
-                    ))}
+                <CardContent className="p-8">
+                  <div className="mb-6">
+                    {study.icon}
                   </div>
-                  <p className="text-pearl-white mb-6 italic">"{testimonial.text}"</p>
-                  <div className="flex items-center gap-3 justify-center">
-                    <div className="w-10 h-10 rounded-full bg-writgo-primary flex items-center justify-center text-white font-bold">
-                      {testimonial.avatar}
-                    </div>
-                    <div className="text-left">
-                      <div className="font-semibold text-pearl-white">{testimonial.name}</div>
-                      <div className="text-sm text-text-muted">{testimonial.role}</div>
-                    </div>
-                  </div>
+                  <h3 className="text-xl font-bold text-pearl-white mb-3">{study.title}</h3>
+                  <p className="text-lg text-writgo-secondary font-semibold">{study.result}</p>
                 </CardContent>
               </Card>
             ))}
@@ -720,34 +571,54 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* FAQ Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-writgo-secondary text-white border-0">
+              Veelgestelde Vragen
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-pearl-white mb-4">
+              Alles wat je wilt weten
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            {faqs.map((faq, index) => (
+              <Card key={index} className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-bold text-pearl-white mb-2">{faq.question}</h3>
+                  <p className="text-text-muted">{faq.answer}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-surface/50 text-center">
         <div className="max-w-4xl mx-auto">
           <Card className="relative overflow-hidden border-0">
             <div className="absolute inset-0 bg-gradient-to-r from-writgo-primary/80 to-writgo-primary opacity-100" />
             <CardContent className="p-12 text-center relative z-10">
               <Sparkles className="w-12 h-12 text-white mx-auto mb-6" />
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                Klaar om te groeien?
+                Klaar om Dominant Zichtbaar te Worden?
               </h2>
               <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
-                Start vandaag nog met content die scoort.
+                Start vandaag. Geen gedoe. Geen meetings. Gewoon resultaat.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/registreren">
+                <a href="#pakketten">
                   <Button size="lg" className="bg-white text-writgo-primary hover:bg-gray-100 px-8 h-12 text-lg font-semibold border-0">
-                    Start Gratis
+                    Kies Je Pakket en Start Direct
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
-                </Link>
-                <Link href="#managed-service">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 h-12 text-lg font-semibold">
-                    Plan een Gesprek
-                  </Button>
-                </Link>
+                </a>
               </div>
               <p className="text-sm text-white/80 mt-4">
-                Geen creditcard nodig • Direct starten • Cancel anytime
+                Volledig geautomatiseerd • Maandelijks opzegbaar • Resultaat binnen 30 dagen
               </p>
             </CardContent>
           </Card>
@@ -766,10 +637,10 @@ export default function HomePage() {
                 </span>
               </Link>
               <p className="text-text-muted mb-4 italic">
-                Content die scoort
+                Omnipresence voor Lokale Dienstverleners
               </p>
               <p className="text-text-muted mb-4">
-                Professionele content voor ambitieuze bedrijven. Self-service tools of managed service - kies wat bij jou past.
+                Volledig geautomatiseerde omnipresence met AI. Geen gedoe, geen meetings, gewoon resultaat.
               </p>
               <div className="flex gap-4 justify-center md:justify-start">
                 <Link href="/privacy" className="text-text-muted hover:text-pearl-white transition-colors">
@@ -784,9 +655,8 @@ export default function HomePage() {
             <div className="text-center md:text-left">
               <h4 className="font-semibold text-pearl-white mb-4">Product</h4>
               <ul className="space-y-2">
-                <li><Link href="#tools" className="text-text-muted hover:text-pearl-white transition-colors">Tools</Link></li>
-                <li><Link href="#pricing" className="text-text-muted hover:text-pearl-white transition-colors">Prijzen</Link></li>
-                <li><Link href="#managed-service" className="text-text-muted hover:text-pearl-white transition-colors">Managed Service</Link></li>
+                <li><a href="#pakketten" className="text-text-muted hover:text-pearl-white transition-colors">Pakketten</a></li>
+                <li><a href="#hoe-het-werkt" className="text-text-muted hover:text-pearl-white transition-colors">Hoe Het Werkt</a></li>
                 <li><Link href="/inloggen" className="text-text-muted hover:text-pearl-white transition-colors">Inloggen</Link></li>
               </ul>
             </div>
@@ -800,7 +670,7 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-border-dark pt-8 text-center text-text-muted text-sm">
-            <p>&copy; {new Date().getFullYear()} Writgo Media. Alle rechten voorbehouden.</p>
+            <p>&copy; 2025 Writgo Media - Omnipresence voor Lokale Dienstverleners</p>
           </div>
         </div>
       </footer>
