@@ -64,6 +64,19 @@ function DashboardContent() {
     }
   }, [status, session, router]);
 
+  const getDefaultStats = (): AdminStats => ({
+    totalClients: 0,
+    activeSubscriptions: 0,
+    pendingFeedback: 0,
+    unreadMessages: 0,
+    unreadSupport: 0,
+    totalContentGenerated: 0,
+    creditsUsedThisMonth: 0,
+    revenueThisMonth: 0,
+    pendingPayouts: 0,
+    pendingPayoutAmount: 0,
+  });
+
   async function loadStats() {
     try {
       const response = await fetch('/api/admin/stats');
@@ -72,35 +85,11 @@ function DashboardContent() {
         setStats(data.stats);
       } else {
         console.error('Stats API returned error:', response.status);
-        // Set default stats if API fails
-        setStats({
-          totalClients: 0,
-          activeSubscriptions: 0,
-          pendingFeedback: 0,
-          unreadMessages: 0,
-          unreadSupport: 0,
-          totalContentGenerated: 0,
-          creditsUsedThisMonth: 0,
-          revenueThisMonth: 0,
-          pendingPayouts: 0,
-          pendingPayoutAmount: 0,
-        });
+        setStats(getDefaultStats());
       }
     } catch (error) {
       console.error('Failed to load stats:', error);
-      // Set default stats if fetch fails
-      setStats({
-        totalClients: 0,
-        activeSubscriptions: 0,
-        pendingFeedback: 0,
-        unreadMessages: 0,
-        unreadSupport: 0,
-        totalContentGenerated: 0,
-        creditsUsedThisMonth: 0,
-        revenueThisMonth: 0,
-        pendingPayouts: 0,
-        pendingPayoutAmount: 0,
-      });
+      setStats(getDefaultStats());
     } finally {
       setLoading(false);
     }
