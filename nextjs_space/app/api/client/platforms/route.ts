@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
       token_expiry: body.token_expiry,
       platform_user_id: body.platform_user_id,
       platform_username: body.platform_username,
+      connected_at: new Date(),
       metadata: body.metadata || {},
       active: true,
       connected_at: new Date(),

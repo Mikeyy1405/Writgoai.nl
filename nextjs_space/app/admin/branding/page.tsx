@@ -36,8 +36,8 @@ interface BrandSettings {
 
 export default function BrandingPage() {
   const [settings, setSettings] = useState<BrandSettings>({
-    companyName: 'WritgoAI',
-    tagline: 'Content die scoort',
+    companyName: 'Writgo Media',
+    tagline: 'AI-First Omnipresence Content Agency',
     logoUrl: null,
     logoLightUrl: null,
     logoDarkUrl: null,
@@ -45,9 +45,9 @@ export default function BrandingPage() {
     faviconUrl: null,
     favicon192Url: null,
     favicon512Url: null,
-    primaryColor: '#FF6B35',
-    secondaryColor: '#0B3C5D',
-    accentColor: '#FF9933',
+    primaryColor: '#FF5722',
+    secondaryColor: '#2196F3',
+    accentColor: '#FF9800',
     email: null,
     phone: null,
     address: null,
