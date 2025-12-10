@@ -41,28 +41,40 @@ export async function syncMailbox(mailboxId: string): Promise<{
       }
     }
 
-    // TODO: IMPLEMENT ACTUAL IMAP/SMTP SYNC BEFORE PRODUCTION
-    // This is a placeholder. Production implementation should:
-    // 1. Connect to IMAP server using imap-simple or nodemailer
-    // 2. Fetch new emails since lastSyncAt
-    // 3. Parse email content with mailparser
-    // 4. Store emails in InboxEmail table
-    // 5. Trigger AI analysis for new emails
+    // Use real IMAP sync implementation
+    const { syncMailbox: syncWithIMAP } = await import('./email-imap-sync');
+    const result = await syncWithIMAP(mailboxId);
     
-    console.warn('⚠️  WARNING: IMAP sync not implemented. This is a placeholder.');
-    console.log(`[Mailbox Sync] Would sync mailbox ${mailbox.email}...`);
+    if (result.success) {
+      newEmailsCount = result.newEmails;
+      
+      // Process new emails with AI analysis
+      if (newEmailsCount > 0) {
+        const newEmails = await prisma.inboxEmail.findMany({
+          where: {
+            mailboxId,
+            analyzedAt: null,
+          },
+          orderBy: {
+            receivedAt: 'desc',
+          },
+          take: 10, // Process up to 10 at a time
+        });
 
-    // Update last sync time
-    await prisma.mailboxConnection.update({
-      where: { id: mailboxId },
-      data: {
-        lastSyncAt: new Date(),
-      },
-    });
+        for (const email of newEmails) {
+          try {
+            await processInboxEmail(email.id, mailbox.clientId);
+          } catch (error) {
+            console.error(`[Mailbox Sync] Error processing email ${email.id}:`, error);
+          }
+        }
+      }
+    }
 
     return {
-      success: true,
+      success: result.success,
       newEmails: newEmailsCount,
+      error: result.error,
     };
   } catch (error: any) {
     console.error('[Mailbox Sync] Error:', error);
@@ -151,12 +163,13 @@ export async function processInboxEmail(
     }
 
     // Analyze with AI
-    const analysis = await analyzeEmailWithAI(
-      email.body,
-      email.subject,
-      email.from,
-      clientId
-    );
+    const { analyzeEmail } = await import('./email-ai-analyzer');
+    const analysis = await analyzeEmail({
+      from: email.from,
+      subject: email.subject,
+      body: email.textBody || email.htmlBody || '',
+      attachments: email.attachments ? Object.keys(email.attachments as any) : [],
+    });
 
     // Update email with AI analysis
     await prisma.inboxEmail.update({
@@ -171,6 +184,12 @@ export async function processInboxEmail(
         creditsUsed: 5,
       },
     });
+
+    // Check for invoices and process with Moneybird
+    if (analysis.isInvoice) {
+      const { detectAndProcessInvoice } = await import('./email-invoice-detector');
+      await detectAndProcessInvoice(email as any);
+    }
 
     // Check if auto-reply should be sent
     const config = await prisma.emailAutoReplyConfig.findFirst({
