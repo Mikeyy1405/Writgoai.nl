@@ -332,25 +332,60 @@ export default function ClientsManagement() {
   }
   
   async function handleAddSubmit() {
+    console.log('[Client Creation] Starting client creation...', {
+      name: addForm.name,
+      email: addForm.email,
+      companyName: addForm.companyName,
+      website: addForm.website
+    });
+    
+    // Frontend validation
+    if (!addForm.name || !addForm.email || !addForm.password) {
+      toast.error('Naam, email en wachtwoord zijn verplicht');
+      return;
+    }
+    
+    if (addForm.password.length < 6) {
+      toast.error('Wachtwoord moet minimaal 6 tekens zijn');
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(addForm.email)) {
+      toast.error('Ongeldig email formaat');
+      return;
+    }
+    
     setActionLoading(true);
     try {
+      console.log('[Client Creation] Sending POST request to /api/admin/clients');
       const response = await fetch('/api/admin/clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(addForm)
       });
       
-      if (response.ok) {
-        toast.success('Klant succesvol aangemaakt');
+      console.log('[Client Creation] Response status:', response.status);
+      const data = await response.json();
+      console.log('[Client Creation] Response data:', data);
+      
+      if (response.ok && data.success) {
+        toast.success(data.message || 'Klant succesvol aangemaakt');
         setAddModalOpen(false);
-        loadClients();
+        await loadClients();
       } else {
-        const data = await response.json();
-        toast.error(data.error || 'Fout bij aanmaken klant');
+        const errorMessage = data.error || 'Fout bij aanmaken klant';
+        console.error('[Client Creation] Error:', errorMessage);
+        toast.error(errorMessage);
+        
+        // Show detailed error in development
+        if (data.details && process.env.NODE_ENV === 'development') {
+          console.error('[Client Creation] Error details:', data.details);
+        }
       }
-    } catch (error) {
-      console.error('Failed to create client:', error);
-      toast.error('Fout bij aanmaken klant');
+    } catch (error: any) {
+      console.error('[Client Creation] Network or parsing error:', error);
+      toast.error('Netwerk fout: kan geen verbinding maken met de server');
     } finally {
       setActionLoading(false);
     }
@@ -756,44 +791,62 @@ export default function ClientsManagement() {
       
       {/* Add Client Modal */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nieuwe Klant Toevoegen</DialogTitle>
             <DialogDescription>
-              Vul de gegevens in om een nieuwe klant aan te maken
+              Vul de gegevens in om een nieuwe klant aan te maken. Velden met * zijn verplicht.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="add-name">Naam *</Label>
+                <Label htmlFor="add-name" className="flex items-center gap-1">
+                  Naam <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="add-name"
                   value={addForm.name}
                   onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
                   placeholder="John Doe"
+                  required
+                  disabled={actionLoading}
+                  className={!addForm.name ? 'border-yellow-500/50' : ''}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="add-email">Email *</Label>
+                <Label htmlFor="add-email" className="flex items-center gap-1">
+                  Email <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="add-email"
                   type="email"
                   value={addForm.email}
                   onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
                   placeholder="john@example.com"
+                  required
+                  disabled={actionLoading}
+                  className={!addForm.email ? 'border-yellow-500/50' : ''}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="add-password">Wachtwoord *</Label>
+              <Label htmlFor="add-password" className="flex items-center gap-1">
+                Wachtwoord <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="add-password"
                 type="password"
                 value={addForm.password}
                 onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
                 placeholder="Minimaal 6 tekens"
+                required
+                disabled={actionLoading}
+                className={!addForm.password || addForm.password.length < 6 ? 'border-yellow-500/50' : ''}
               />
+              {addForm.password && addForm.password.length < 6 && (
+                <p className="text-xs text-yellow-500">Wachtwoord moet minimaal 6 tekens zijn</p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -803,6 +856,7 @@ export default function ClientsManagement() {
                   value={addForm.companyName}
                   onChange={(e) => setAddForm({ ...addForm, companyName: e.target.value })}
                   placeholder="Bedrijf BV"
+                  disabled={actionLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -812,6 +866,7 @@ export default function ClientsManagement() {
                   value={addForm.website}
                   onChange={(e) => setAddForm({ ...addForm, website: e.target.value })}
                   placeholder="https://example.com"
+                  disabled={actionLoading}
                 />
               </div>
             </div>
@@ -823,6 +878,8 @@ export default function ClientsManagement() {
                   type="number"
                   value={addForm.subscriptionCredits}
                   onChange={(e) => setAddForm({ ...addForm, subscriptionCredits: e.target.value })}
+                  disabled={actionLoading}
+                  min="0"
                 />
               </div>
               <div className="space-y-2">
@@ -832,6 +889,8 @@ export default function ClientsManagement() {
                   type="number"
                   value={addForm.topUpCredits}
                   onChange={(e) => setAddForm({ ...addForm, topUpCredits: e.target.value })}
+                  disabled={actionLoading}
+                  min="0"
                 />
               </div>
             </div>
@@ -840,14 +899,16 @@ export default function ClientsManagement() {
               <Select
                 value={addForm.subscriptionPlan}
                 onValueChange={(value) => setAddForm({ ...addForm, subscriptionPlan: value })}
+                disabled={actionLoading}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecteer plan (optioneel)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="starter">Starter</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
-                  <SelectItem value="business">Business</SelectItem>
+                  <SelectItem value="instapper">Instapper (€197)</SelectItem>
+                  <SelectItem value="starter">Starter (€297)</SelectItem>
+                  <SelectItem value="groei">Groei (€497)</SelectItem>
+                  <SelectItem value="dominant">Dominant (€797)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -858,17 +919,35 @@ export default function ClientsManagement() {
                 checked={addForm.isUnlimited}
                 onChange={(e) => setAddForm({ ...addForm, isUnlimited: e.target.checked })}
                 className="h-4 w-4 rounded border-zinc-700"
+                disabled={actionLoading}
               />
               <Label htmlFor="add-unlimited">Unlimited Credits</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddModalOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setAddModalOpen(false)}
+              disabled={actionLoading}
+            >
               Annuleren
             </Button>
-            <Button onClick={handleAddSubmit} disabled={actionLoading}>
-              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Klant Aanmaken
+            <Button 
+              onClick={handleAddSubmit} 
+              disabled={actionLoading || !addForm.name || !addForm.email || !addForm.password}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {actionLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Aanmaken...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Klant Aanmaken
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
