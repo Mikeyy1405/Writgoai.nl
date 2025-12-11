@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     await prisma.client.update({
       where: { id: writgoClient.id },
       data: {
-        contentPlan: contentPlan as any,
+        contentPlan: JSON.parse(JSON.stringify(contentPlan)),
         lastPlanGenerated: new Date()
       }
     });

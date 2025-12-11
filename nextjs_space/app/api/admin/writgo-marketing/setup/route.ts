@@ -42,7 +42,7 @@ export async function POST() {
         name: 'Writgo Marketing',
         companyName: 'Writgo.nl',
         website: 'https://writgo.nl',
-        password: await hashPassword('writgo-internal-2024'), // Secure password
+        password: await hashPassword(process.env.WRITGO_INTERNAL_PASSWORD || 'writgo-internal-2024'), // Secure password from env
         targetAudience: 'Lokale dienstverleners zoals kappers, installateurs, fysiotherapeuten, advocaten en andere MKB-ondernemers die hun online zichtbaarheid willen vergroten',
         brandVoice: 'Professioneel maar toegankelijk, Nederlands, expert maar niet complex, oplossingsgericht',
         keywords: [

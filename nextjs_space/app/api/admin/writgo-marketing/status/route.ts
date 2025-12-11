@@ -104,7 +104,15 @@ export async function GET() {
       }
     });
 
-    let recentSocial: any[] = [];
+    interface RecentSocialContent {
+      id: string;
+      title: string;
+      platform?: string;
+      status: string;
+      createdAt: Date;
+    }
+    
+    let recentSocial: RecentSocialContent[] = [];
     try {
       recentSocial = await prisma.contentPiece.findMany({
         where: {
