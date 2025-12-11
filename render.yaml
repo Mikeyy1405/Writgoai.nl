@@ -5,11 +5,55 @@ services:
     region: frankfurt
     plan: starter
     rootDir: nextjs_space
-    buildCommand: yarn install && yarn prisma generate && yarn prisma db push && yarn build
-    startCommand: yarn start
+    
+    # OPTIMIZED BUILD COMMAND
+    # - Frozen lockfile for faster, deterministic installs
+    # - Skip optional dependencies (like playwright)
+    # - Prisma generate and db push
+    # - Next.js build with standalone output
+    buildCommand: |
+      yarn install --frozen-lockfile --production=false --network-timeout 100000 && \
+      yarn prisma generate && \
+      yarn prisma db push && \
+      yarn build
+    
+    # OPTIMIZED START COMMAND
+    # With standalone output, we can start directly from .next/standalone
+    startCommand: node .next/standalone/nextjs_space/server.js
+    
+    # ENVIRONMENT VARIABLES
     envVars:
       - key: NODE_VERSION
         value: 22.16.0
       - key: NODE_ENV
         value: production
+      - key: NEXT_OUTPUT_MODE
+        value: standalone
+      # Optimize Node.js memory usage
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=4096"
+      # Skip Prisma telemetry for faster builds
+      - key: CHECKPOINT_DISABLE
+        value: "1"
+      - key: PRISMA_SKIP_POSTINSTALL_GENERATE
+        value: "false"
       - fromGroup: writgo-env-vars
+    
+    # BUILD OPTIMIZATIONS
+    # Cache directories to speed up subsequent builds
+    buildFilter:
+      paths:
+        - nextjs_space/package.json
+        - nextjs_space/yarn.lock
+        - nextjs_space/.yarnrc.yml
+        - nextjs_space/prisma/**
+        - nextjs_space/next.config.js
+        - nextjs_space/tsconfig.json
+        - nextjs_space/tailwind.config.ts
+        - nextjs_space/postcss.config.js
+      ignoredPaths:
+        - nextjs_space/node_modules/**
+        - nextjs_space/.next/**
+        - "**/*.md"
+        - "**/.vscode/**"
+        - "**/.git/**"
