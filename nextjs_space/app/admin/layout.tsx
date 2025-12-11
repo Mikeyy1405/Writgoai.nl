@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { AdminLayout } from '@/components/admin/admin-layout';
+import { SimplifiedLayout } from '@/components/admin/simplified-layout';
 import { isUserAdmin } from '@/lib/navigation-config';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { API_TIMEOUTS } from '@/lib/api-timeout';
@@ -67,10 +67,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   // Loading state
   if (status === 'loading' && !authError) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35] mx-auto mb-4"></div>
-          <p className="text-zinc-400">Sessie controleren...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF9933] mx-auto mb-4"></div>
+          <p className="text-gray-600">Sessie controleren...</p>
         </div>
       </div>
     );
@@ -79,10 +79,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   // Redirecting state
   if (isRedirecting) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35] mx-auto mb-4"></div>
-          <p className="text-zinc-400">Doorverwijzen...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF9933] mx-auto mb-4"></div>
+          <p className="text-gray-600">Doorverwijzen...</p>
         </div>
       </div>
     );
@@ -91,25 +91,25 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   // Error state
   if (authError) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 max-w-md text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-8 max-w-md text-center shadow-lg">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Authenticatie Fout</h2>
-          <p className="text-zinc-400 mb-6">{authError}</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authenticatie Fout</h2>
+          <p className="text-gray-600 mb-6">{authError}</p>
           <div className="space-y-3">
             <button
               onClick={() => {
                 setAuthError(null);
                 window.location.reload();
               }}
-              className="w-full px-6 py-3 bg-[#FF6B35] hover:bg-[#FF8555] text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+              className="w-full px-6 py-3 bg-[#FF9933] hover:bg-[#FF8555] text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <RefreshCcw className="w-4 h-4" />
               Pagina verversen
             </button>
             <button
               onClick={() => router.push('/client-login')}
-              className="w-full px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+              className="w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition-colors"
             >
               Terug naar login
             </button>
@@ -119,5 +119,5 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
     );
   }
 
-  return <AdminLayout>{children}</AdminLayout>;
+  return <SimplifiedLayout>{children}</SimplifiedLayout>;
 }
