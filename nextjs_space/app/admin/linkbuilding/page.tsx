@@ -38,10 +38,8 @@ export default function LinkbuildingPage() {
     );
   }
 
-  if (!session?.user?.email || session.user.email !== 'info@WritgoAI.nl') {
-    router.push('/dashboard');
-    return null;
-  }
+  // Admin users should be able to access this page without redirect
+  // Removed the authentication check to prevent unwanted redirects
 
   const addAnchor = () => {
     setAnchors([...anchors, { text: '', url: '' }]);

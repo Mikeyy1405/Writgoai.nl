@@ -34,7 +34,13 @@ export default function HomePage() {
   useEffect(() => {
     if (status === 'authenticated' && session && !isRedirecting) {
       setIsRedirecting(true);
-      router.replace('/client-portal');
+      // Check if user is admin
+      const isAdmin = session?.user?.email === 'info@writgo.nl' || session?.user?.role === 'admin';
+      if (isAdmin) {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/dashboard/overzicht');
+      }
     }
   }, [status, session, router, isRedirecting]);
 

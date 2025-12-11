@@ -1,0 +1,162 @@
+# ==========================================
+# WRITGO DEPLOYMENT OPTIMIZATION
+# .dockerignore - Exclude unnecessary files from deployment
+# This reduces deployment from 90k+ files to ~5k files
+# ==========================================
+
+# Dependencies - will be installed during build
+**/node_modules
+**/.pnp
+.pnp.js
+**/yarn-error.log
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/plugins
+!**/.yarn/releases
+!**/.yarn/sdks
+!**/.yarn/versions
+
+# Testing
+**/__tests__
+**/__mocks__
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+**/*.test.jsx
+**/*.spec.ts
+**/*.spec.tsx
+**/*.spec.js
+**/*.spec.jsx
+**/coverage
+**/.nyc_output
+**/jest.config.*
+**/vitest.config.*
+
+# Next.js build output
+**/.next
+**/out
+**/.next-env
+**/next-env.d.ts
+**/.build
+**/build
+**/dist
+
+# Development files
+**/.vscode
+**/.idea
+**/.fleet
+**/.devcontainer
+**/*.swp
+**/*.swo
+**/*~
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# Documentation (47 MD files!)
+**/*.md
+**/*.MD
+!README.md
+ADMIN_*.md
+CLIENT_*.md
+BRANDING_*.md
+DISTRIBUTION_*.md
+EMAIL_*.md
+FINAL_*.md
+PERFECT_*.md
+PR_*.md
+SECURITY_*.md
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Environment files (will be set via Render env vars)
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.test
+**/*.env
+**/*.env.*
+!.env.example
+
+# Logs
+**/logs
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/lerna-debug.log*
+**/.pnpm-debug.log*
+
+# Cache directories
+**/.cache
+**/.parcel-cache
+**/.eslintcache
+**/.stylelintcache
+**/.next/cache
+**/.turbo
+**/tsconfig.tsbuildinfo
+**/*.tsbuildinfo
+
+# Misc development files
+**/docker-compose.yml
+**/Dockerfile
+**/Dockerfile.*
+**/.dockerignore
+**/render.yaml
+**/.prettierrc
+**/.prettierignore
+**/.editorconfig
+**/.eslintrc*
+**/.stylelintrc*
+**/prettier.config.*
+
+# Database files
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+
+# Backup files
+**/*.backup
+**/*.bak
+**/*.tmp
+**/*.temp
+**/tmp
+**/temp
+
+# Large media assets that should be in CDN/S3
+# (uncomment if you have these)
+# **/public/videos
+# **/public/large-assets
+
+# OS files
+**/.Spotlight-V100
+**/.Trashes
+**/ehthumbs.db
+**/Desktop.ini
+**/$RECYCLE.BIN/
+
+# Abacus AI specific
+**/.abacus.donotdelete
+
+# Package manager locks (keep only one)
+# If using yarn, uncomment these:
+# **/package-lock.json
+# **/pnpm-lock.yaml
+
+# If using npm, uncomment these:
+# **/yarn.lock
+# **/.yarnrc.yml
+
+# Editor specific
+**/.vscode/
+**/.idea/
+
+# Playwright
+**/playwright-report
+**/test-results
+**/.playwright
