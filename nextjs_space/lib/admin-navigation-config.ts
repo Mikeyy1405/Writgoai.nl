@@ -46,7 +46,9 @@ export const adminNavItems: AdminNavigationItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Klanten', href: '/admin/klanten', icon: Users },
   { label: 'Opdrachten', href: '/admin/orders', icon: Package },
-  { label: 'Projecten', href: '/admin/managed-projects', icon: FolderKanban },
+  // NOTE: "Projecten" removed - in Writgo's simplified model, each client has ONE invisible default project
+  // The project layer exists in the backend but is hidden from the admin UI
+  // All project settings are now managed through the "Klanten" (clients) interface
   {
     label: 'Content',
     icon: FileText,
