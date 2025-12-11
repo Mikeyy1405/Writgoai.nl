@@ -149,6 +149,12 @@ export const adminNavSections: AdminNavSection[] = [
         description: 'Email inbox',
       },
       {
+        label: 'Concepten',
+        href: '/admin/email/drafts',
+        icon: FileEdit,
+        description: 'Opgeslagen email concepten',
+      },
+      {
         label: 'Instellingen',
         href: '/admin/email/instellingen',
         icon: Settings,

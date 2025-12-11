@@ -9,6 +9,18 @@
 
 import { supabaseAdmin } from './supabase';
 
+/**
+ * Table name mapping: Prisma camelCase -> Supabase PascalCase
+ * Maps the camelCase names used in code to the PascalCase table names in Supabase
+ */
+const TABLE_NAME_MAP: Record<string, string> = {
+  mailboxConnection: 'MailboxConnection',
+  inboxEmail: 'InboxEmail',
+  emailThread: 'EmailThread',
+  emailAutoReplyConfig: 'EmailAutoReplyConfig',
+  emailDraft: 'EmailDraft',
+};
+
 // Create a Proxy that intercepts property access and returns table-specific handlers
 export const prisma = new Proxy({} as any, {
   get(target, tableName: string) {
@@ -27,11 +39,14 @@ export const prisma = new Proxy({} as any, {
       };
     }
     
+    // Map the table name to the correct Supabase table name
+    const actualTableName = TABLE_NAME_MAP[tableName] || tableName;
+    
     // Return a handler for this specific table
     return {
       // findUnique: Find a single record by unique field
       findUnique: async ({ where, include, select }: any) => {
-        let query = supabaseAdmin.from(tableName).select('*');
+        let query = supabaseAdmin.from(actualTableName).select('*');
         
         // Apply where conditions
         if (where) {
@@ -53,7 +68,7 @@ export const prisma = new Proxy({} as any, {
       
       // findFirst: Find first matching record
       findFirst: async ({ where, orderBy, include, select }: any) => {
-        let query = supabaseAdmin.from(tableName).select('*');
+        let query = supabaseAdmin.from(actualTableName).select('*');
         
         // Apply where conditions
         if (where) {
@@ -89,7 +104,7 @@ export const prisma = new Proxy({} as any, {
       
       // findMany: Find multiple records
       findMany: async ({ where, orderBy, include, select, take, skip }: any = {}) => {
-        let query = supabaseAdmin.from(tableName).select('*');
+        let query = supabaseAdmin.from(actualTableName).select('*');
         
         // Apply where conditions
         if (where) {
@@ -180,7 +195,7 @@ export const prisma = new Proxy({} as any, {
       
       // update: Update a record
       update: async ({ where, data, select, include }: any) => {
-        let query = supabaseAdmin.from(tableName).update(data);
+        let query = supabaseAdmin.from(actualTableName).update(data);
         
         // Apply where conditions
         if (where) {
@@ -202,7 +217,7 @@ export const prisma = new Proxy({} as any, {
       
       // updateMany: Update multiple records
       updateMany: async ({ where, data }: any) => {
-        let query = supabaseAdmin.from(tableName).update(data);
+        let query = supabaseAdmin.from(actualTableName).update(data);
         
         // Apply where conditions
         if (where) {
@@ -224,7 +239,7 @@ export const prisma = new Proxy({} as any, {
       
       // delete: Delete a record
       delete: async ({ where }: any) => {
-        let query = supabaseAdmin.from(tableName).delete();
+        let query = supabaseAdmin.from(actualTableName).delete();
         
         // Apply where conditions
         if (where) {
@@ -246,7 +261,7 @@ export const prisma = new Proxy({} as any, {
       
       // deleteMany: Delete multiple records
       deleteMany: async ({ where }: any) => {
-        let query = supabaseAdmin.from(tableName).delete();
+        let query = supabaseAdmin.from(actualTableName).delete();
         
         // Apply where conditions
         if (where) {
@@ -268,7 +283,7 @@ export const prisma = new Proxy({} as any, {
       
       // count: Count records
       count: async ({ where }: any = {}) => {
-        let query = supabaseAdmin.from(tableName).select('*', { count: 'exact', head: true });
+        let query = supabaseAdmin.from(actualTableName).select('*', { count: 'exact', head: true });
         
         // Apply where conditions
         if (where) {
@@ -294,7 +309,7 @@ export const prisma = new Proxy({} as any, {
         
         // Basic count support
         if (_count) {
-          let query = supabaseAdmin.from(tableName).select('*', { count: 'exact', head: true });
+          let query = supabaseAdmin.from(actualTableName).select('*', { count: 'exact', head: true });
           
           // Apply where conditions
           if (where) {
