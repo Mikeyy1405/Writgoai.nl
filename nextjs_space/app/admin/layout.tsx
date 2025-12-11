@@ -67,10 +67,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   // Loading state
   if (status === 'loading' && !authError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF9933] mx-auto mb-4"></div>
-          <p className="text-gray-600">Sessie controleren...</p>
+          <p className="text-gray-400">Sessie controleren...</p>
         </div>
       </div>
     );
@@ -79,10 +79,10 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   // Redirecting state
   if (isRedirecting) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF9933] mx-auto mb-4"></div>
-          <p className="text-gray-600">Doorverwijzen...</p>
+          <p className="text-gray-400">Doorverwijzen...</p>
         </div>
       </div>
     );
@@ -91,11 +91,11 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
   // Error state
   if (authError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-8 max-w-md text-center shadow-lg">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-md text-center shadow-lg">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authenticatie Fout</h2>
-          <p className="text-gray-600 mb-6">{authError}</p>
+          <h2 className="text-2xl font-bold text-gray-100 mb-2">Authenticatie Fout</h2>
+          <p className="text-gray-400 mb-6">{authError}</p>
           <div className="space-y-3">
             <button
               onClick={() => {
@@ -109,7 +109,7 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
             </button>
             <button
               onClick={() => router.push('/client-login')}
-              className="w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition-colors"
+              className="w-full px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-100 rounded-lg transition-colors"
             >
               Terug naar login
             </button>

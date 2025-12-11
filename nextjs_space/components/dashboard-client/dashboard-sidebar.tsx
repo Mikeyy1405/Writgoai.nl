@@ -16,14 +16,14 @@ export function DashboardSidebar() {
     <aside
       className={`
         hidden lg:flex flex-col
-        bg-white border-r border-gray-200
+        bg-gray-900 border-r border-gray-800
         min-h-screen sticky top-0
         transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-20' : 'w-64'}
       `}
     >
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-gray-800">
         <AnimatePresence mode="wait">
           {!isCollapsed ? (
             <motion.div
@@ -48,7 +48,7 @@ export function DashboardSidebar() {
         
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-gray-100 transition-colors"
         >
           {isCollapsed ? (
             <ChevronRight className="w-5 h-5" />
@@ -73,8 +73,8 @@ export function DashboardSidebar() {
                 transition-all duration-200
                 ${
                   active
-                    ? 'bg-gradient-to-r from-[#FF9933]/10 to-[#FFAD33]/10 text-[#FF9933] font-medium shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-[#FF9933]/20 to-[#FFAD33]/20 text-[#FF9933] font-medium shadow-sm'
+                    : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800'
                 }
               `}
             >
@@ -91,7 +91,7 @@ export function DashboardSidebar() {
                   >
                     <div className="font-medium text-sm">{item.label}</div>
                     {!active && (
-                      <div className="text-xs text-gray-400 mt-0.5">{item.description}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
                     )}
                   </motion.div>
                 )}
@@ -112,11 +112,11 @@ export function DashboardSidebar() {
 
       {/* Footer Info */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="p-3 bg-gradient-to-br from-[#FF9933]/10 to-[#FFAD33]/10 rounded-lg">
+        <div className="p-4 border-t border-gray-800">
+          <div className="p-3 bg-gradient-to-br from-[#FF9933]/10 to-[#FFAD33]/10 border border-[#FF9933]/20 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs font-medium text-gray-700">Systeem actief</span>
+              <span className="text-xs font-medium text-gray-300">Systeem actief</span>
             </div>
             <p className="text-[10px] text-gray-500">
               Content wordt automatisch gegenereerd en gepost op al je verbonden platforms

@@ -65,12 +65,6 @@ export const adminNavSections: AdminNavSection[] = [
         description: 'Alle klanten beheren',
       },
       {
-        label: 'Clients (Legacy)',
-        href: '/admin/clients',
-        icon: UserCheck,
-        description: 'Legacy klanten',
-      },
-      {
         label: 'Projecten',
         href: '/admin/projects',
         icon: Briefcase,
@@ -173,12 +167,6 @@ export const adminNavSections: AdminNavSection[] = [
         href: '/admin/instellingen',
         icon: Settings,
         description: 'Systeem configuratie',
-      },
-      {
-        label: 'Settings',
-        href: '/admin/settings',
-        icon: Settings,
-        description: 'Settings',
       },
       {
         label: 'Branding',

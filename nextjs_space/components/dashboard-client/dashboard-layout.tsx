@@ -13,7 +13,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-950 flex">
       {/* Desktop Sidebar */}
       <DashboardSidebar />
 

@@ -19,14 +19,14 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
     <aside
       className={`
         hidden lg:flex flex-col
-        bg-white border-r border-gray-200
+        bg-gray-900 border-r border-gray-800
         min-h-screen sticky top-0
         transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-20' : 'w-72'}
       `}
     >
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-gray-800">
         <AnimatePresence mode="wait">
           {!isCollapsed ? (
             <motion.div
@@ -53,7 +53,7 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
         
         <button
           onClick={onToggleCollapse}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-gray-100 transition-colors"
         >
           {isCollapsed ? (
             <ChevronRight className="w-5 h-5" />
@@ -68,7 +68,7 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
         {adminNavSections.map((section) => (
           <div key={section.title}>
             {!isCollapsed && (
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">
                 {section.title}
               </h3>
             )}
@@ -86,13 +86,13 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
                       transition-all duration-200
                       ${
                         active
-                          ? 'bg-gradient-to-r from-red-50 to-orange-50 text-red-600 font-medium shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? 'bg-gradient-to-r from-[#FF9933]/20 to-red-500/20 text-[#FF9933] font-medium shadow-sm'
+                          : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800'
                       }
                     `}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    <Icon className={`w-5 h-5 shrink-0 ${active ? 'text-red-600' : ''}`} />
+                    <Icon className={`w-5 h-5 shrink-0 ${active ? 'text-[#FF9933]' : ''}`} />
                     
                     <AnimatePresence mode="wait">
                       {!isCollapsed && (
@@ -105,7 +105,7 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
                         >
                           <div className="font-medium text-sm truncate">{item.label}</div>
                           {item.description && !active && (
-                            <div className="text-xs text-gray-400 truncate">{item.description}</div>
+                            <div className="text-xs text-gray-500 truncate">{item.description}</div>
                           )}
                         </motion.div>
                       )}
@@ -115,7 +115,7 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
                     {active && (
                       <motion.div
                         layoutId="activeAdminTab"
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-red-600"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-[#FF9933]"
                         transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                       />
                     )}
@@ -129,11 +129,11 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
 
       {/* Footer Info */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="p-3 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg">
+        <div className="p-4 border-t border-gray-800">
+          <div className="p-3 bg-gradient-to-br from-[#FF9933]/10 to-red-500/10 border border-[#FF9933]/20 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-xs font-medium text-gray-700">Admin Mode</span>
+              <div className="w-2 h-2 rounded-full bg-[#FF9933] animate-pulse" />
+              <span className="text-xs font-medium text-gray-300">Admin Mode</span>
             </div>
             <p className="text-[10px] text-gray-500">
               Volledige toegang tot alle klanten, projecten en financiële data

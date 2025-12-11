@@ -14,7 +14,7 @@ export function AdminComplexLayout({ children }: AdminComplexLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-950 flex">
       {/* Desktop Sidebar */}
       <AdminComplexSidebar 
         isCollapsed={sidebarCollapsed}
