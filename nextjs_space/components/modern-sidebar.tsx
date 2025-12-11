@@ -42,6 +42,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 interface NavItem {
   label: string;
@@ -174,12 +175,9 @@ export function ModernSidebar() {
       `}>
         {/* Logo */}
         <div className="p-6 border-b border-gray-800">
-          <Link href="/client-portal" onClick={closeMobileMenu} className="flex flex-col gap-1">
-            <span className="text-2xl font-bold tracking-tight">
-              <span className="text-white">Writgo</span>
-              <span className="text-[#FF6B35]">Media</span>
-            </span>
-            <p className="text-gray-400 text-xs uppercase tracking-wide">Client Portal</p>
+          <Link href="/client-portal" onClick={closeMobileMenu} className="block">
+            <BrandLogo variant="text" size="md" />
+            <p className="text-gray-400 text-xs uppercase tracking-wide mt-2">Client Portal</p>
           </Link>
         </div>
 
