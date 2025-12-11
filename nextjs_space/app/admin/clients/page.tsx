@@ -53,6 +53,8 @@ interface Client {
   email: string;
   companyName?: string;
   website?: string;
+  websiteUrl?: string; // WordPress URL from default project
+  projectId?: string; // Default project ID
   subscriptionCredits: number;
   topUpCredits: number;
   isUnlimited: boolean;
@@ -417,6 +419,7 @@ export default function ClientsManagement() {
                 <TableRow>
                   <TableHead>Klant</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>WordPress</TableHead>
                   <TableHead>Credits</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Status</TableHead>
@@ -435,6 +438,21 @@ export default function ClientsManagement() {
                       </div>
                     </TableCell>
                     <TableCell>{client.email}</TableCell>
+                    <TableCell>
+                      {client.websiteUrl ? (
+                        <a 
+                          href={client.websiteUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-500 hover:text-blue-700 underline truncate max-w-[200px] block"
+                          title={client.websiteUrl}
+                        >
+                          {client.websiteUrl.replace(/^https?:\/\//, '').substring(0, 30)}...
+                        </a>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Niet ingesteld</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {client.isUnlimited ? (
                         <Badge variant="outline" className="bg-purple-50">

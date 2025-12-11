@@ -36,11 +36,26 @@ export async function GET(request: Request) {
         include: {
           _count: {
             select: { contentPieces: true }
+          },
+          projects: {
+            where: { isPrimary: true },
+            take: 1
           }
         }
       });
       
-      return NextResponse.json({ clients: recentClients });
+      // Enrich clients with WordPress URL from default project
+      const enrichedRecentClients = recentClients.map(client => {
+        const defaultProject = (client as any).projects?.[0];
+        return {
+          ...client,
+          websiteUrl: defaultProject?.websiteUrl || client.website,
+          projectId: defaultProject?.id,
+          projects: undefined // Remove projects array from response
+        };
+      });
+      
+      return NextResponse.json({ clients: enrichedRecentClients });
     }
     
     const clients = await prisma.client.findMany({
@@ -48,11 +63,26 @@ export async function GET(request: Request) {
       include: {
         _count: {
           select: { contentPieces: true }
+        },
+        projects: {
+          where: { isPrimary: true },
+          take: 1
         }
       }
     });
     
-    return NextResponse.json({ clients });
+    // Enrich clients with WordPress URL from default project
+    const enrichedClients = clients.map(client => {
+      const defaultProject = (client as any).projects?.[0];
+      return {
+        ...client,
+        websiteUrl: defaultProject?.websiteUrl || client.website,
+        projectId: defaultProject?.id,
+        projects: undefined // Remove projects array from response
+      };
+    });
+    
+    return NextResponse.json({ clients: enrichedClients });
   } catch (error) {
     console.error('Failed to fetch clients:', error);
     return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 });
@@ -124,12 +154,36 @@ export async function POST(request: Request) {
       }
     });
     
+    // Auto-create default project for client
+    // This project will be used for all content, WordPress, and platform integrations
+    // The client never sees "projects" in the UI, but the backend uses this for content management
+    const defaultProject = await prisma.project.create({
+      data: {
+        clientId: client.id,
+        name: companyName || name, // Use company name as project name
+        websiteUrl: website || 'https://example.com', // Default URL if not provided
+        description: `Standaard project voor ${companyName || name}`,
+        isPrimary: true, // Mark as primary/default project
+        isActive: true,
+        targetAudience: null,
+        brandVoice: null,
+        niche: null,
+        keywords: [],
+        contentPillars: [],
+        writingStyle: null,
+        customInstructions: null
+      }
+    });
+    
+    console.log(`[Client Creation] Auto-created default project for client: ${client.email}, project ID: ${defaultProject.id}`);
+    
     // Don't send password hash to frontend
     const { password: _, ...clientWithoutPassword } = client;
     
     return NextResponse.json({ 
-      message: 'Client created successfully',
-      client: clientWithoutPassword 
+      message: 'Client created successfully with default project',
+      client: clientWithoutPassword,
+      projectId: defaultProject.id // Include project ID for reference
     }, { status: 201 });
   } catch (error) {
     console.error('Failed to create client:', error);

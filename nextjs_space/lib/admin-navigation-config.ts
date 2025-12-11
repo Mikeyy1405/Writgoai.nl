@@ -43,6 +43,19 @@ export interface AdminNavSection {
   items: AdminNavItem[];
 }
 
+/**
+ * INVISIBLE PROJECT LAYER ARCHITECTURE
+ * 
+ * In Writgo's simplified business model, each client has ONE default project
+ * that is automatically created and managed behind the scenes.
+ * 
+ * The "Projecten" navigation item has been removed from the admin UI because:
+ * - Each client = one project (1:1 mapping)
+ * - Project settings are now managed through the "Klanten" interface
+ * - Simplifies the admin experience and eliminates redundant pages
+ * - The project layer still exists in the backend for data organization
+ */
+
 export const adminNavSections: AdminNavSection[] = [
   {
     title: 'Overzicht',
@@ -56,7 +69,7 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   {
-    title: 'Klanten & Projecten',
+    title: 'Klanten & Content',
     items: [
       {
         label: 'Klanten',
@@ -64,12 +77,7 @@ export const adminNavSections: AdminNavSection[] = [
         icon: Users,
         description: 'Alle klanten beheren',
       },
-      {
-        label: 'Projecten',
-        href: '/admin/projects',
-        icon: Briefcase,
-        description: 'Alle projecten & opdrachten',
-      },
+      // NOTE: "Projecten" item removed (see INVISIBLE PROJECT LAYER ARCHITECTURE above)
     ],
   },
   {
