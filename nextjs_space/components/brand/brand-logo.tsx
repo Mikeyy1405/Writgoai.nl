@@ -29,13 +29,13 @@ const sizeClasses = {
     container: 'h-9',
     text: 'text-base',
     tagline: 'text-sm',
-    image: { width: 110, height: 36 },
+    image: { width: 110, height: 32 },
   },
   lg: {
     container: 'h-12',
     text: 'text-xl',
     tagline: 'text-base',
-    image: { width: 140, height: 48 },
+    image: { width: 140, height: 44 },
   },
   xl: {
     container: 'h-16',
