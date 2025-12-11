@@ -218,6 +218,14 @@ export const prisma = new Proxy({} as any, {
           .single();
         
         if (error) {
+          console.error(`[Prisma Shim] Create error for table ${actualTableName}:`, {
+            errorCode: error.code,
+            errorMessage: error.message,
+            errorDetails: error.details,
+            errorHint: error.hint,
+            fullError: JSON.stringify(error, null, 2),
+            dataKeys: Object.keys(data)
+          });
           throw error;
         }
         

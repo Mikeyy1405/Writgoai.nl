@@ -212,14 +212,23 @@ export async function POST(request: Request) {
       projectId: defaultProject.id // Include project ID for reference
     }, { status: 201 });
   } catch (error: any) {
-    console.error('[Client Creation API] ERROR:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    console.error('[Client Creation API] ERROR - Full error:', JSON.stringify(error, null, 2));
+    console.error('[Client Creation API] ERROR - Error message:', error?.message);
+    console.error('[Client Creation API] ERROR - Error code:', error?.code);
+    console.error('[Client Creation API] ERROR - Error details:', error?.details);
+    console.error('[Client Creation API] ERROR - Error hint:', error?.hint);
+    console.error('[Client Creation API] ERROR - Error name:', error?.name);
+    console.error('[Client Creation API] ERROR - Error stack:', error?.stack);
+    
     return NextResponse.json({ 
-      error: error.message || 'Fout bij aanmaken klant',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: 'Failed to create client',
+      message: error?.message || 'Fout bij aanmaken klant',
+      details: process.env.NODE_ENV === 'development' ? {
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        stack: error?.stack
+      } : undefined
     }, { status: 500 });
   }
 }

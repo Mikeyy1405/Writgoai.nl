@@ -72,28 +72,30 @@ export async function POST() {
       client: writgoClient,
       message: 'Writgo.nl client created successfully'
     });
-  } catch (error) {
-    console.error('Error setting up Writgo marketing client:', error);
-    
-    // Log detailed error information for debugging
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
+  } catch (error: any) {
+    console.error('[Writgo Marketing Setup] ERROR - Full error:', JSON.stringify(error, null, 2));
+    console.error('[Writgo Marketing Setup] ERROR - Error message:', error?.message);
+    console.error('[Writgo Marketing Setup] ERROR - Error code:', error?.code);
+    console.error('[Writgo Marketing Setup] ERROR - Error details:', error?.details);
+    console.error('[Writgo Marketing Setup] ERROR - Error hint:', error?.hint);
+    console.error('[Writgo Marketing Setup] ERROR - Error name:', error?.name);
+    console.error('[Writgo Marketing Setup] ERROR - Error stack:', error?.stack);
     
     // Only expose detailed errors in development AND when explicitly enabled
     // This prevents accidental exposure if NODE_ENV is misconfigured
     const isDevelopment = process.env.NODE_ENV === 'development' && 
                           process.env.EXPOSE_ERROR_DETAILS !== 'false';
     
-    const errorMessage = isDevelopment && error instanceof Error 
-      ? error.message 
-      : 'Failed to setup Writgo marketing client';
-    
     return NextResponse.json(
       { 
-        error: errorMessage,
-        ...(isDevelopment && error instanceof Error && { details: error.stack })
+        error: 'Failed to setup Writgo marketing client',
+        message: error?.message,
+        details: isDevelopment ? {
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          stack: error?.stack
+        } : undefined
       },
       { status: 500 }
     );
