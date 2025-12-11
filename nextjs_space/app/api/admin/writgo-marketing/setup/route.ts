@@ -72,13 +72,20 @@ export async function POST() {
       client: writgoClient,
       message: 'Writgo.nl client created successfully'
     });
-  } catch (error) {
-    console.error('Error setting up Writgo marketing client:', error);
+  } catch (error: any) {
+    // Log comprehensive error details for debugging
+    console.error('[Writgo Marketing Setup] ERROR - Error message:', error?.message);
+    console.error('[Writgo Marketing Setup] ERROR - Error code:', error?.code);
+    console.error('[Writgo Marketing Setup] ERROR - Error details:', error?.details);
+    console.error('[Writgo Marketing Setup] ERROR - Error hint:', error?.hint);
+    console.error('[Writgo Marketing Setup] ERROR - Error name:', error?.name);
+    console.error('[Writgo Marketing Setup] ERROR - Error stack:', error?.stack);
     
-    // Log detailed error information for debugging
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+    // Try to stringify error object for complete visibility (may not capture all properties)
+    try {
+      console.error('[Writgo Marketing Setup] ERROR - Full error object:', JSON.stringify(error, null, 2));
+    } catch (stringifyError) {
+      console.error('[Writgo Marketing Setup] ERROR - Could not stringify error object');
     }
     
     // Only expose detailed errors in development AND when explicitly enabled
@@ -86,14 +93,17 @@ export async function POST() {
     const isDevelopment = process.env.NODE_ENV === 'development' && 
                           process.env.EXPOSE_ERROR_DETAILS !== 'false';
     
-    const errorMessage = isDevelopment && error instanceof Error 
-      ? error.message 
-      : 'Failed to setup Writgo marketing client';
-    
     return NextResponse.json(
       { 
-        error: errorMessage,
-        ...(isDevelopment && error instanceof Error && { details: error.stack })
+        error: error?.message || 'Failed to setup Writgo marketing client',
+        ...(isDevelopment && {
+          debugInfo: {
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint,
+            stack: error?.stack
+          }
+        })
       },
       { status: 500 }
     );
