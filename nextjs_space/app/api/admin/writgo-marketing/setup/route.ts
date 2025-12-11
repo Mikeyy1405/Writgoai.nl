@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { isUserAdmin } from '@/lib/navigation-config';
+import bcrypt from 'bcryptjs';
 
 /**
  * POST /api/admin/writgo-marketing/setup
@@ -80,9 +81,7 @@ export async function POST() {
   }
 }
 
-// Simple password hash function (in production, use bcrypt)
+// Hash password using bcryptjs
 async function hashPassword(password: string): Promise<string> {
-  // For now, just return a simple hash
-  // In production, this should use bcrypt
-  return `hashed_${password}_${Date.now()}`;
+  return await bcrypt.hash(password, 12);
 }

@@ -23,11 +23,6 @@ export async function GET() {
           { email: 'marketing@writgo.nl' },
           { companyName: 'Writgo.nl' }
         ]
-      },
-      include: {
-        lateDevAccounts: {
-          where: { isActive: true }
-        }
       }
     });
 
@@ -37,6 +32,7 @@ export async function GET() {
         hasContentPlan: false,
         hasSocialAccounts: false,
         automationActive: false,
+        lateDevAccounts: [],
         stats: {
           blogsThisMonth: 0,
           socialPostsThisMonth: 0,
@@ -65,23 +61,30 @@ export async function GET() {
       }
     });
 
-    // Get social posts count
-    const socialPostsThisMonth = await prisma.contentPiece.count({
-      where: {
-        clientId: writgoClient.id,
-        contentType: 'social',
-        createdAt: {
-          gte: firstDayOfMonth
+    // Get social posts count (if contentPiece table exists)
+    let socialPostsThisMonth = 0;
+    let totalSocialPosts = 0;
+    
+    try {
+      socialPostsThisMonth = await prisma.contentPiece.count({
+        where: {
+          clientId: writgoClient.id,
+          contentType: 'social',
+          createdAt: {
+            gte: firstDayOfMonth
+          }
         }
-      }
-    });
+      });
 
-    const totalSocialPosts = await prisma.contentPiece.count({
-      where: {
-        clientId: writgoClient.id,
-        contentType: 'social'
-      }
-    });
+      totalSocialPosts = await prisma.contentPiece.count({
+        where: {
+          clientId: writgoClient.id,
+          contentType: 'social'
+        }
+      });
+    } catch (error) {
+      console.log('ContentPiece table not available yet');
+    }
 
     // Get recent content
     const recentBlogs = await prisma.blogPost.findMany({
@@ -101,30 +104,45 @@ export async function GET() {
       }
     });
 
-    const recentSocial = await prisma.contentPiece.findMany({
-      where: {
-        clientId: writgoClient.id,
-        contentType: 'social'
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 5,
-      select: {
-        id: true,
-        title: true,
-        platform: true,
-        status: true,
-        createdAt: true
-      }
-    });
+    let recentSocial: any[] = [];
+    try {
+      recentSocial = await prisma.contentPiece.findMany({
+        where: {
+          clientId: writgoClient.id,
+          contentType: 'social'
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          platform: true,
+          status: true,
+          createdAt: true
+        }
+      });
+    } catch (error) {
+      console.log('ContentPiece table not available yet');
+    }
+
+    // Check for social accounts (simplified for now)
+    const hasSocialAccounts = !!(
+      writgoClient.facebookConnected ||
+      writgoClient.instagramConnected ||
+      writgoClient.tiktokConnected ||
+      writgoClient.youtubeConnected ||
+      writgoClient.lateDevProfileId
+    );
 
     return NextResponse.json({
       isSetup: true,
       hasContentPlan: !!writgoClient.contentPlan,
-      hasSocialAccounts: writgoClient.lateDevAccounts.length > 0,
+      hasSocialAccounts,
       automationActive: writgoClient.automationActive,
       lastPlanGenerated: writgoClient.lastPlanGenerated,
+      lateDevAccounts: [],
       stats: {
         blogsThisMonth,
         socialPostsThisMonth,
