@@ -212,7 +212,7 @@ export async function POST(request: Request) {
       projectId: defaultProject.id // Include project ID for reference
     }, { status: 201 });
   } catch (error: any) {
-    console.error('[Client Creation API] ERROR - Full error:', JSON.stringify(error, null, 2));
+    // Log comprehensive error details for debugging
     console.error('[Client Creation API] ERROR - Error message:', error?.message);
     console.error('[Client Creation API] ERROR - Error code:', error?.code);
     console.error('[Client Creation API] ERROR - Error details:', error?.details);
@@ -220,15 +220,23 @@ export async function POST(request: Request) {
     console.error('[Client Creation API] ERROR - Error name:', error?.name);
     console.error('[Client Creation API] ERROR - Error stack:', error?.stack);
     
+    // Try to stringify error object for complete visibility (may not capture all properties)
+    try {
+      console.error('[Client Creation API] ERROR - Full error object:', JSON.stringify(error, null, 2));
+    } catch (stringifyError) {
+      console.error('[Client Creation API] ERROR - Could not stringify error object');
+    }
+    
     return NextResponse.json({ 
-      error: 'Failed to create client',
-      message: error?.message || 'Fout bij aanmaken klant',
-      details: process.env.NODE_ENV === 'development' ? {
-        code: error?.code,
-        details: error?.details,
-        hint: error?.hint,
-        stack: error?.stack
-      } : undefined
+      error: error?.message || 'Fout bij aanmaken klant',
+      ...(process.env.NODE_ENV === 'development' && {
+        debugInfo: {
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          stack: error?.stack
+        }
+      })
     }, { status: 500 });
   }
 }

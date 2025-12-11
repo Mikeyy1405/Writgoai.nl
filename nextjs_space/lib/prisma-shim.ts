@@ -218,14 +218,26 @@ export const prisma = new Proxy({} as any, {
           .single();
         
         if (error) {
-          console.error(`[Prisma Shim] Create error for table ${actualTableName}:`, {
-            errorCode: error.code,
-            errorMessage: error.message,
-            errorDetails: error.details,
-            errorHint: error.hint,
-            fullError: JSON.stringify(error, null, 2),
-            dataKeys: Object.keys(data)
-          });
+          // Log detailed error information for debugging
+          console.error(`[Prisma Shim] Create error for table ${actualTableName}:`);
+          console.error(`[Prisma Shim] - Error code: ${error.code}`);
+          console.error(`[Prisma Shim] - Error message: ${error.message}`);
+          console.error(`[Prisma Shim] - Error details: ${error.details}`);
+          console.error(`[Prisma Shim] - Error hint: ${error.hint}`);
+          console.error(`[Prisma Shim] - Data keys being inserted:`, Object.keys(data));
+          
+          // Try to stringify full error object (with size limit for performance)
+          try {
+            const errorStr = JSON.stringify(error, null, 2);
+            if (errorStr.length < 10000) { // Only log if less than 10KB
+              console.error(`[Prisma Shim] - Full error object:`, errorStr);
+            } else {
+              console.error(`[Prisma Shim] - Full error object too large to log (${errorStr.length} chars)`);
+            }
+          } catch (stringifyError) {
+            console.error(`[Prisma Shim] - Could not stringify error object`);
+          }
+          
           throw error;
         }
         

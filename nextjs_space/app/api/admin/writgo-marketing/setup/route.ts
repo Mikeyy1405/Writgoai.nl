@@ -73,13 +73,20 @@ export async function POST() {
       message: 'Writgo.nl client created successfully'
     });
   } catch (error: any) {
-    console.error('[Writgo Marketing Setup] ERROR - Full error:', JSON.stringify(error, null, 2));
+    // Log comprehensive error details for debugging
     console.error('[Writgo Marketing Setup] ERROR - Error message:', error?.message);
     console.error('[Writgo Marketing Setup] ERROR - Error code:', error?.code);
     console.error('[Writgo Marketing Setup] ERROR - Error details:', error?.details);
     console.error('[Writgo Marketing Setup] ERROR - Error hint:', error?.hint);
     console.error('[Writgo Marketing Setup] ERROR - Error name:', error?.name);
     console.error('[Writgo Marketing Setup] ERROR - Error stack:', error?.stack);
+    
+    // Try to stringify error object for complete visibility (may not capture all properties)
+    try {
+      console.error('[Writgo Marketing Setup] ERROR - Full error object:', JSON.stringify(error, null, 2));
+    } catch (stringifyError) {
+      console.error('[Writgo Marketing Setup] ERROR - Could not stringify error object');
+    }
     
     // Only expose detailed errors in development AND when explicitly enabled
     // This prevents accidental exposure if NODE_ENV is misconfigured
@@ -88,14 +95,15 @@ export async function POST() {
     
     return NextResponse.json(
       { 
-        error: 'Failed to setup Writgo marketing client',
-        message: error?.message,
-        details: isDevelopment ? {
-          code: error?.code,
-          details: error?.details,
-          hint: error?.hint,
-          stack: error?.stack
-        } : undefined
+        error: error?.message || 'Failed to setup Writgo marketing client',
+        ...(isDevelopment && {
+          debugInfo: {
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint,
+            stack: error?.stack
+          }
+        })
       },
       { status: 500 }
     );
