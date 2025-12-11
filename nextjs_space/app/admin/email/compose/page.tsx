@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { Send, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Save, X, ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react';
 import RichTextEditor from '@/components/email/RichTextEditor';
 
 interface Mailbox {
@@ -55,6 +55,12 @@ export default function EmailComposePage() {
   const [saving, setSaving] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // AI state
+  const [aiPrompt, setAiPrompt] = useState<string>('');
+  const [aiTone, setAiTone] = useState<'zakelijk' | 'vriendelijk' | 'neutraal'>('zakelijk');
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [showAiSection, setShowAiSection] = useState(false);
 
   // Load mailboxes on mount
   useEffect(() => {
@@ -225,6 +231,50 @@ export default function EmailComposePage() {
       toast.error('Fout bij laden email');
     } finally {
       setLoadingData(false);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // 🤖 AI EMAIL GENERATION
+  // ═══════════════════════════════════════════════════════
+
+  const handleGenerateAiEmail = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error('Voer een beschrijving in voor de email');
+      return;
+    }
+
+    try {
+      setGeneratingAi(true);
+
+      const response = await fetch('/api/admin/email/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          tone: aiTone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Fout bij genereren email');
+      }
+
+      // Fill subject and body
+      setSubject(data.email.subject);
+      setBodyHtml(data.email.body.replace(/\n/g, '<br>'));
+      
+      toast.success('✨ Email gegenereerd! Je kunt de tekst nog aanpassen.');
+      
+      // Clear AI prompt after successful generation
+      setAiPrompt('');
+    } catch (err: any) {
+      console.error('Error generating AI email:', err);
+      toast.error(err.message || 'Fout bij genereren email');
+    } finally {
+      setGeneratingAi(false);
     }
   };
 
@@ -473,6 +523,85 @@ export default function EmailComposePage() {
               placeholder="Email onderwerp"
               className="w-full bg-gray-800 text-gray-100 px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
+          </div>
+
+          {/* AI Email Generator */}
+          <div className="border-b border-gray-800">
+            <button
+              onClick={() => setShowAiSection(!showAiSection)}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-800/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-500" />
+                <span className="text-gray-100 font-medium">✨ AI Schrijven</span>
+              </div>
+              {showAiSection ? (
+                <ChevronUp className="h-5 w-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-400" />
+              )}
+            </button>
+
+            {showAiSection && (
+              <div className="p-4 bg-gray-900/50 space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    Waar moet de email over gaan?
+                  </label>
+                  <textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Bijvoorbeeld: 'Bevestig afspraak voor volgende week dinsdag om 14:00' of 'Bedank klant voor bestelling en geef verzendinfo'"
+                    className="w-full bg-gray-800 text-gray-100 px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[100px] resize-y"
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {aiPrompt.length}/500 karakters
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Toon</label>
+                  <div className="flex gap-2">
+                    {(['zakelijk', 'vriendelijk', 'neutraal'] as const).map((tone) => (
+                      <button
+                        key={tone}
+                        onClick={() => setAiTone(tone)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          aiTone === tone
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
+                      >
+                        {tone.charAt(0).toUpperCase() + tone.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleGenerateAiEmail}
+                  disabled={generatingAi || !aiPrompt.trim()}
+                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-500 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  {generatingAi ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Email genereren...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-5 w-5" />
+                      Genereer Email
+                    </>
+                  )}
+                </button>
+
+                <p className="text-xs text-gray-500 text-center">
+                  De AI schrijft automatisch een professionele email. Je kunt de tekst daarna nog aanpassen.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Body */}
