@@ -48,13 +48,17 @@ export async function schedulePost(task: DistributionTask): Promise<string> {
       scheduled_at: task.scheduled_at,
     });
 
+    // Extract content and media from metadata
+    const content = task.metadata?.content || task.metadata?.preview || '';
+    const mediaUrl = task.metadata?.media_url || task.metadata?.mediaUrl;
+
     // Use the real GetLate API
     const result = await createPost({
-      content: task.content || '',
+      content: content,
       platforms: task.platforms || [],
       scheduledAt: task.scheduled_at?.toISOString(),
-      mediaItems: task.media_url ? [{
-        url: task.media_url,
+      mediaItems: mediaUrl ? [{
+        url: mediaUrl,
         type: 'image'
       }] : undefined
     });
