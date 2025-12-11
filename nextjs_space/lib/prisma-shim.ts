@@ -86,31 +86,33 @@ export const prisma = new Proxy({} as any, {
         
         // Apply where conditions
         if (where) {
-          // Handle OR conditions
-          if ('OR' in where) {
-            const orConditions = where.OR;
-            if (Array.isArray(orConditions) && orConditions.length > 0) {
-              // Build OR filter string for Supabase
-              const orFilters = orConditions.map((condition: any) => {
-                const key = Object.keys(condition)[0];
-                const value = condition[key];
-                return `${key}.eq.${value}`;
-              }).join(',');
-              query = query.or(orFilters);
-            }
-          } else {
-            // Handle regular conditions
-            Object.entries(where).forEach(([key, value]) => {
-              if (value && typeof value === 'object') {
-                // Handle nested conditions
-                if ('not' in value) {
-                  query = query.not(key, 'eq', value.not);
-                }
-              } else if (value !== null && value !== undefined) {
-                query = query.eq(key, value);
-              }
-            });
+          const { OR, ...regularConditions } = where;
+          
+          // Handle OR conditions if present
+          if (OR && Array.isArray(OR) && OR.length > 0) {
+            // Build OR filter string for Supabase
+            // Note: This handles simple equality conditions only
+            // Complex nested operators in OR are not yet supported
+            const orFilters = OR.map((condition: any) => {
+              const key = Object.keys(condition)[0];
+              const value = condition[key];
+              // Simple equality for OR conditions
+              return `${key}.eq.${value}`;
+            }).join(',');
+            query = query.or(orFilters);
           }
+          
+          // Handle regular conditions alongside OR
+          Object.entries(regularConditions).forEach(([key, value]) => {
+            if (value && typeof value === 'object') {
+              // Handle nested conditions
+              if ('not' in value) {
+                query = query.not(key, 'eq', value.not);
+              }
+            } else if (value !== null && value !== undefined) {
+              query = query.eq(key, value);
+            }
+          });
         }
         
         // Apply ordering

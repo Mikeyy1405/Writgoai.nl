@@ -81,8 +81,11 @@ export async function POST() {
       console.error('Error stack:', error.stack);
     }
     
-    // In development mode, return more specific error details
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    // Only expose detailed errors in development AND when explicitly enabled
+    // This prevents accidental exposure if NODE_ENV is misconfigured
+    const isDevelopment = process.env.NODE_ENV === 'development' && 
+                          process.env.EXPOSE_ERROR_DETAILS !== 'false';
+    
     const errorMessage = isDevelopment && error instanceof Error 
       ? error.message 
       : 'Failed to setup Writgo marketing client';
