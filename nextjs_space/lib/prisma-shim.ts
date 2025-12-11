@@ -14,6 +14,20 @@ import { supabaseAdmin } from './supabase';
  * Maps the camelCase names used in code to the PascalCase table names in Supabase
  */
 const TABLE_NAME_MAP: Record<string, string> = {
+  // Client & Project tables
+  client: 'Client',
+  project: 'Project',
+  // Content & Brand tables
+  blogPost: 'BlogPost',
+  brandSettings: 'BrandSettings',
+  savedContent: 'SavedContent',
+  video: 'Video',
+  // Credit & Transaction tables
+  creditTransaction: 'CreditTransaction',
+  // Auth tables
+  user: 'User',
+  passwordResetToken: 'PasswordResetToken',
+  // Email system tables
   mailboxConnection: 'MailboxConnection',
   inboxEmail: 'InboxEmail',
   emailThread: 'EmailThread',
