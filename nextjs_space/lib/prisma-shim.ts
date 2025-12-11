@@ -86,16 +86,31 @@ export const prisma = new Proxy({} as any, {
         
         // Apply where conditions
         if (where) {
-          Object.entries(where).forEach(([key, value]) => {
-            if (value && typeof value === 'object') {
-              // Handle nested conditions
-              if ('not' in value) {
-                query = query.not(key, 'eq', value.not);
-              }
-            } else if (value !== null && value !== undefined) {
-              query = query.eq(key, value);
+          // Handle OR conditions
+          if ('OR' in where) {
+            const orConditions = where.OR;
+            if (Array.isArray(orConditions) && orConditions.length > 0) {
+              // Build OR filter string for Supabase
+              const orFilters = orConditions.map((condition: any) => {
+                const key = Object.keys(condition)[0];
+                const value = condition[key];
+                return `${key}.eq.${value}`;
+              }).join(',');
+              query = query.or(orFilters);
             }
-          });
+          } else {
+            // Handle regular conditions
+            Object.entries(where).forEach(([key, value]) => {
+              if (value && typeof value === 'object') {
+                // Handle nested conditions
+                if ('not' in value) {
+                  query = query.not(key, 'eq', value.not);
+                }
+              } else if (value !== null && value !== undefined) {
+                query = query.eq(key, value);
+              }
+            });
+          }
         }
         
         // Apply ordering
@@ -195,7 +210,7 @@ export const prisma = new Proxy({} as any, {
       // create: Create a new record
       create: async ({ data, select, include }: any) => {
         const { data: result, error } = await supabaseAdmin
-          .from(tableName)
+          .from(actualTableName)
           .insert(data)
           .select()
           .single();

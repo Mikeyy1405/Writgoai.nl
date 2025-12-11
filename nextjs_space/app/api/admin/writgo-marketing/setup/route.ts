@@ -74,8 +74,24 @@ export async function POST() {
     });
   } catch (error) {
     console.error('Error setting up Writgo marketing client:', error);
+    
+    // Log detailed error information for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
+    // In development mode, return more specific error details
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const errorMessage = isDevelopment && error instanceof Error 
+      ? error.message 
+      : 'Failed to setup Writgo marketing client';
+    
     return NextResponse.json(
-      { error: 'Failed to setup Writgo marketing client' },
+      { 
+        error: errorMessage,
+        ...(isDevelopment && error instanceof Error && { details: error.stack })
+      },
       { status: 500 }
     );
   }
