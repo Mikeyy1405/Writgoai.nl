@@ -29,6 +29,7 @@ import {
   UserCheck,
   Mail,
   Inbox,
+  Sparkles,
   LucideIcon,
 } from 'lucide-react';
 
@@ -159,6 +160,29 @@ export const adminNavSections: AdminNavSection[] = [
         href: '/admin/email/instellingen',
         icon: Settings,
         description: 'Email configuratie',
+      },
+    ],
+  },
+  {
+    title: 'Writgo Marketing',
+    items: [
+      {
+        label: 'Marketing Dashboard',
+        href: '/admin/writgo-marketing',
+        icon: Sparkles,
+        description: 'Eigen marketing beheren',
+      },
+      {
+        label: 'Content Plan',
+        href: '/admin/writgo-marketing/content-plan',
+        icon: Calendar,
+        description: 'Content planning genereren',
+      },
+      {
+        label: 'Social Accounts',
+        href: '/admin/writgo-marketing/social',
+        icon: Share2,
+        description: 'Social media koppelen',
       },
     ],
   },
