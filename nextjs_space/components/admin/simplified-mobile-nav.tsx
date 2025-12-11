@@ -25,7 +25,7 @@ export function SimplifiedMobileNav({ isOpen, onClose }: SimplifiedMobileNavProp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
           />
 
           {/* Mobile Menu */}
@@ -34,14 +34,14 @@ export function SimplifiedMobileNav({ isOpen, onClose }: SimplifiedMobileNavProp
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 lg:hidden overflow-y-auto"
+            className="fixed inset-y-0 left-0 z-50 w-72 bg-gray-900 border-r border-gray-800 lg:hidden overflow-y-auto"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-800">
               <Logo size="md" showText={true} />
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -64,7 +64,7 @@ export function SimplifiedMobileNav({ isOpen, onClose }: SimplifiedMobileNavProp
                       ${
                         active
                           ? 'bg-gradient-to-r from-[#FF9933]/10 to-[#FFAD33]/10 text-[#FF9933] font-medium'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800/50'
                       }
                     `}
                   >
@@ -72,7 +72,7 @@ export function SimplifiedMobileNav({ isOpen, onClose }: SimplifiedMobileNavProp
                       <Icon className={`w-5 h-5 shrink-0 ${active ? 'text-[#FF9933]' : ''}`} />
                       <div className="flex-1">
                         <div className="font-medium text-sm">{item.label}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">{item.description}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
                       </div>
                     </div>
                     {active && (
@@ -84,13 +84,13 @@ export function SimplifiedMobileNav({ isOpen, onClose }: SimplifiedMobileNavProp
             </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-200 mt-auto">
+            <div className="p-4 border-t border-gray-800 mt-auto">
               <div className="p-3 bg-gradient-to-br from-[#FF9933]/10 to-[#FFAD33]/10 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-xs font-medium text-gray-700">Systeem actief</span>
+                  <span className="text-xs font-medium text-gray-100">Systeem actief</span>
                 </div>
-                <p className="text-[10px] text-gray-500">
+                <p className="text-[10px] text-gray-400">
                   Content wordt automatisch gegenereerd en gepost
                 </p>
               </div>
