@@ -43,6 +43,8 @@ export interface DistributionTask {
   published_at?: Date;
   error_message?: string;
   metadata?: Record<string, any>;
+  content?: string;      // Content text for the post
+  media_url?: string;    // Optional media URL for attachments
 }
 
 export interface PlatformConfig {
