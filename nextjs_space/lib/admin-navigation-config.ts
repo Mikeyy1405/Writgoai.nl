@@ -27,6 +27,8 @@ import {
   Package,
   CreditCard,
   UserCheck,
+  Mail,
+  Inbox,
   LucideIcon,
 } from 'lucide-react';
 
@@ -134,6 +136,23 @@ export const adminNavSections: AdminNavSection[] = [
         href: '/admin/distribution/analytics',
         icon: BarChart3,
         description: 'Content performance',
+      },
+    ],
+  },
+  {
+    title: 'Email',
+    items: [
+      {
+        label: 'Inbox',
+        href: '/admin/email/inbox',
+        icon: Inbox,
+        description: 'Email inbox',
+      },
+      {
+        label: 'Instellingen',
+        href: '/admin/email/instellingen',
+        icon: Settings,
+        description: 'Email configuratie',
       },
     ],
   },
