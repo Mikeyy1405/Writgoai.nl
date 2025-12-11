@@ -17,31 +17,31 @@ const sizeClasses = {
     container: 'h-6',
     text: 'text-xs',
     tagline: 'text-[10px]',
-    image: { width: 80, height: 24 },
+    image: { width: 60, height: 24 },
   },
   sm: {
     container: 'h-8',
     text: 'text-sm',
     tagline: 'text-xs',
-    image: { width: 100, height: 32 },
+    image: { width: 80, height: 32 },
   },
   md: {
-    container: 'h-10',
+    container: 'h-9',
     text: 'text-base',
     tagline: 'text-sm',
-    image: { width: 140, height: 40 },
+    image: { width: 110, height: 36 },
   },
   lg: {
-    container: 'h-14',
+    container: 'h-12',
     text: 'text-xl',
     tagline: 'text-base',
-    image: { width: 176, height: 56 },
+    image: { width: 140, height: 48 },
   },
   xl: {
-    container: 'h-20',
+    container: 'h-16',
     text: 'text-3xl',
     tagline: 'text-lg',
-    image: { width: 240, height: 80 },
+    image: { width: 180, height: 64 },
   },
 };
 
@@ -97,7 +97,7 @@ export function BrandLogo({
           alt={brand.companyName}
           width={sizeConfig.image.width}
           height={sizeConfig.image.height}
-          className="object-contain"
+          className="object-contain max-w-full"
           priority
         />
       </div>
@@ -113,7 +113,7 @@ export function BrandLogo({
           alt={brand.companyName}
           width={sizeConfig.image.width}
           height={sizeConfig.image.height}
-          className="object-contain object-left"
+          className="object-contain object-left max-w-full"
           priority
         />
       </div>
