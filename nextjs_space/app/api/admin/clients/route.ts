@@ -91,14 +91,22 @@ export async function GET(request: Request) {
 
 // POST - Create new client
 export async function POST(request: Request) {
+  console.log('[Client Creation API] POST request received');
+  
   try {
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user) {
+      console.log('[Client Creation API] Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     const body = await request.json();
+    console.log('[Client Creation API] Request body:', {
+      ...body,
+      password: body.password ? '[REDACTED]' : undefined
+    });
+    
     const { 
       name, 
       email, 
@@ -113,14 +121,25 @@ export async function POST(request: Request) {
     
     // Validation
     if (!name || !email || !password) {
+      console.log('[Client Creation API] Validation failed: missing required fields');
       return NextResponse.json({ 
-        error: 'Name, email, and password are required' 
+        error: 'Naam, email en wachtwoord zijn verplicht' 
       }, { status: 400 });
     }
     
     if (password.length < 6) {
+      console.log('[Client Creation API] Validation failed: password too short');
       return NextResponse.json({ 
-        error: 'Password must be at least 6 characters' 
+        error: 'Wachtwoord moet minimaal 6 tekens zijn' 
+      }, { status: 400 });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log('[Client Creation API] Validation failed: invalid email format');
+      return NextResponse.json({ 
+        error: 'Ongeldig email formaat' 
       }, { status: 400 });
     }
     
@@ -130,14 +149,17 @@ export async function POST(request: Request) {
     });
     
     if (existingClient) {
+      console.log('[Client Creation API] Email already exists:', email);
       return NextResponse.json({ 
-        error: 'A client with this email already exists' 
+        error: 'Een klant met dit email bestaat al' 
       }, { status: 400 });
     }
     
+    console.log('[Client Creation API] Hashing password...');
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
+    console.log('[Client Creation API] Creating client...');
     // Create client
     const client = await prisma.client.create({
       data: {
@@ -154,9 +176,12 @@ export async function POST(request: Request) {
       }
     });
     
+    console.log('[Client Creation API] Client created successfully:', client.id);
+    
     // Auto-create default project for client
     // This project will be used for all content, WordPress, and platform integrations
     // The client never sees "projects" in the UI, but the backend uses this for content management
+    console.log('[Client Creation API] Creating default project...');
     const defaultProject = await prisma.project.create({
       data: {
         clientId: client.id,
@@ -175,20 +200,26 @@ export async function POST(request: Request) {
       }
     });
     
-    console.log(`[Client Creation] Auto-created default project for client: ${client.email}, project ID: ${defaultProject.id}`);
+    console.log(`[Client Creation API] SUCCESS - Client: ${client.email}, Project: ${defaultProject.id}`);
     
     // Don't send password hash to frontend
     const { password: _, ...clientWithoutPassword } = client;
     
     return NextResponse.json({ 
-      message: 'Client created successfully with default project',
+      success: true,
+      message: 'Klant succesvol aangemaakt met standaard project',
       client: clientWithoutPassword,
       projectId: defaultProject.id // Include project ID for reference
     }, { status: 201 });
-  } catch (error) {
-    console.error('Failed to create client:', error);
+  } catch (error: any) {
+    console.error('[Client Creation API] ERROR:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json({ 
-      error: 'Failed to create client' 
+      error: error.message || 'Fout bij aanmaken klant',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, { status: 500 });
   }
 }
