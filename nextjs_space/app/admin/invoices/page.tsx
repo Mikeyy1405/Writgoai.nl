@@ -287,16 +287,66 @@ export default function InvoicesPage() {
       {/* Invoices List */}
       <div className="space-y-4">
         {filteredInvoices.length === 0 ? (
-          <div className="text-center py-12 bg-white/5 rounded-xl border border-white/10">
-            <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400">Geen facturen gevonden</p>
-            <Link
-              href="/dashboard/agency/invoices/new"
-              className="inline-flex items-center gap-2 mt-4 text-green-400 hover:text-green-300"
-            >
-              <Plus className="w-4 h-4" />
-              Maak eerste factuur
-            </Link>
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+            <div className="p-8 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 border border-gray-700 mb-4">
+                <FileText className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-100 mb-2">
+                Nog geen facturen
+              </h3>
+              <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                {statusFilter !== 'all' 
+                  ? `Geen facturen gevonden met status "${statusOptions.find(o => o.value === statusFilter)?.label}"`
+                  : 'Begin met het maken van facturen voor je klanten. Automatische facturatie op basis van abonnementen is binnenkort beschikbaar.'
+                }
+              </p>
+              
+              {statusFilter === 'all' && (
+                <>
+                  <Link
+                    href="/admin/invoices/new"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium mb-8"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Maak Eerste Factuur
+                  </Link>
+                  
+                  <div className="mt-8 pt-8 border-t border-gray-700">
+                    <h4 className="text-sm font-semibold text-gray-300 mb-3">
+                      💡 Binnenkort beschikbaar
+                    </h4>
+                    <ul className="text-sm text-gray-400 space-y-2 text-left max-w-md mx-auto">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>Automatische facturatie op basis van abonnementen</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>Integratie met boekhoudsoftware (Exact, Moneybird)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>Automatische herinneringen voor openstaande facturen</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>Export naar PDF en verzenden via email</span>
+                      </li>
+                    </ul>
+                  </div>
+                </>
+              )}
+              
+              {statusFilter !== 'all' && (
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className="text-blue-400 hover:text-blue-300 text-sm"
+                >
+                  Bekijk alle facturen
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           filteredInvoices.map((invoice) => (
