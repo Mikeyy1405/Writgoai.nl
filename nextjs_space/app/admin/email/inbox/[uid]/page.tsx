@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Mail, Paperclip, AlertCircle, Reply, Forward, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Mail, Paperclip, AlertCircle, Reply, Forward, Sparkles, CheckCircle2, X } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 
