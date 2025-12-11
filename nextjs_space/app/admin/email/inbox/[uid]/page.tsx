@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Mail, Paperclip, AlertCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Mail, Paperclip, AlertCircle, Reply, Forward } from 'lucide-react';
 import Link from 'next/link';
 
 interface EmailDetail {
@@ -217,6 +217,22 @@ export default function EmailDetailPage() {
                   <span className="text-gray-400 min-w-[60px]">Datum:</span>
                   <span className="text-gray-200">{formatDate(email.date)}</span>
                 </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-4 flex gap-3">
+                <Link href={`/admin/email/compose?reply=${uid}`}>
+                  <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                    <Reply className="h-4 w-4 mr-2" />
+                    Beantwoorden
+                  </Button>
+                </Link>
+                <Link href={`/admin/email/compose?forward=${uid}`}>
+                  <Button variant="outline" className="bg-gray-700 text-gray-100 hover:bg-gray-600 border-gray-600">
+                    <Forward className="h-4 w-4 mr-2" />
+                    Doorsturen
+                  </Button>
+                </Link>
               </div>
             </div>
 

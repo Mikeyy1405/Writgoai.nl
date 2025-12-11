@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Inbox, RefreshCw, Mail, MailOpen, Paperclip, AlertCircle, Settings } from 'lucide-react';
+import { Loader2, Inbox, RefreshCw, Mail, MailOpen, Paperclip, AlertCircle, Settings, Edit } from 'lucide-react';
 import Link from 'next/link';
 
 interface Email {
@@ -129,6 +129,13 @@ export default function EmailInboxPage() {
         </div>
 
         <div className="flex gap-2">
+          <Link href="/admin/email/compose">
+            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+              <Edit className="h-4 w-4 mr-2" />
+              Nieuwe Email
+            </Button>
+          </Link>
+
           <Button
             onClick={() => fetchEmails(true)}
             disabled={refreshing}
