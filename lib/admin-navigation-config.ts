@@ -15,6 +15,9 @@ import {
   Calculator,
   FileBarChart,
   Palette,
+  Sparkles,
+  Calendar,
+  Share2,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -60,6 +63,15 @@ export const adminNavItems: AdminNavigationItem[] = [
     items: [
       { label: 'Blog CMS', href: '/admin/blog', icon: FileText },
       { label: 'Email Manager', href: '/admin/emails', icon: Mail },
+    ],
+  },
+  {
+    label: 'Writgo Marketing',
+    icon: Sparkles,
+    items: [
+      { label: 'Marketing Dashboard', href: '/admin/writgo-marketing', icon: Sparkles },
+      { label: 'Content Plan', href: '/admin/writgo-marketing/content-plan', icon: Calendar },
+      { label: 'Social Accounts', href: '/admin/writgo-marketing/social', icon: Share2 },
     ],
   },
   { label: 'Branding', href: '/admin/branding', icon: Palette },
