@@ -31,13 +31,13 @@ export const prisma = new Proxy({} as any, {
     return {
       // findUnique: Find a single record by unique field
       findUnique: async ({ where, include, select }: any) => {
-        const query = supabaseAdmin.from(tableName).select('*');
+        let query = supabaseAdmin.from(tableName).select('*');
         
         // Apply where conditions
         if (where) {
           Object.entries(where).forEach(([key, value]) => {
             if (value !== null && value !== undefined) {
-              query.eq(key, value);
+              query = query.eq(key, value);
             }
           });
         }
@@ -64,7 +64,7 @@ export const prisma = new Proxy({} as any, {
                 query = query.not(key, 'eq', value.not);
               }
             } else if (value !== null && value !== undefined) {
-              query.eq(key, value);
+              query = query.eq(key, value);
             }
           });
         }
@@ -113,7 +113,7 @@ export const prisma = new Proxy({} as any, {
                 query = query.lte(key, value.lte);
               }
             } else if (value !== null && value !== undefined) {
-              query.eq(key, value);
+              query = query.eq(key, value);
             }
           });
         }
@@ -144,6 +144,20 @@ export const prisma = new Proxy({} as any, {
         
         if (error) {
           throw error;
+        }
+        
+        // Handle include._count if requested
+        if (include && include._count) {
+          // For now, add _count but with placeholder values
+          // TODO: Implement proper counting of related records
+          const results = data || [];
+          return results.map((item: any) => ({
+            ...item,
+            _count: Object.keys(include._count.select || {}).reduce((acc, key) => {
+              acc[key] = 0; // Placeholder - would need to query related tables
+              return acc;
+            }, {} as Record<string, number>)
+          }));
         }
         
         return data || [];
