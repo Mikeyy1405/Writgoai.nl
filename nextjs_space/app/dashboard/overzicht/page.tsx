@@ -88,7 +88,7 @@ export default function OverzichtPage() {
       setLoading(true);
 
       // Fetch platforms
-      const platformsRes = await fetch('/api/admin/distribution/platforms');
+      const platformsRes = await fetch('/api/dashboard/distribution/platforms');
       if (platformsRes.ok) {
         const platformsData = await platformsRes.json();
         setPlatforms(
@@ -104,7 +104,7 @@ export default function OverzichtPage() {
       }
 
       // Fetch queue for stats
-      const queueRes = await fetch('/api/admin/distribution/queue?per_page=100');
+      const queueRes = await fetch('/api/dashboard/distribution/queue?per_page=100');
       if (queueRes.ok) {
         const queueData = await queueRes.json();
         
@@ -287,7 +287,7 @@ export default function OverzichtPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">🎯 Je Verbonden Platforms</CardTitle>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/platforms">
+            <Link href="/dashboard/platforms">
               <Plus className="w-4 h-4 mr-2" />
               Voeg platform toe
             </Link>
@@ -298,7 +298,7 @@ export default function OverzichtPage() {
             <div className="text-center py-8 text-gray-500">
               <p>Nog geen platforms verbonden.</p>
               <Button asChild className="mt-4" variant="outline">
-                <Link href="/admin/platforms">Verbind je eerste platform</Link>
+                <Link href="/dashboard/platforms">Verbind je eerste platform</Link>
               </Button>
             </div>
           ) : (
@@ -328,7 +328,7 @@ export default function OverzichtPage() {
                        '❌ Error'}
                     </span>
                     <Button asChild variant="ghost" size="sm">
-                      <Link href="/admin/platforms">
+                      <Link href="/dashboard/platforms">
                         <ExternalLink className="w-4 h-4" />
                       </Link>
                     </Button>
@@ -348,7 +348,7 @@ export default function OverzichtPage() {
             Recente Activiteit
           </CardTitle>
           <Button asChild variant="ghost" size="sm">
-            <Link href="/admin/content">
+            <Link href="/dashboard/content">
               Bekijk alle content
               <ExternalLink className="w-4 h-4 ml-2" />
             </Link>

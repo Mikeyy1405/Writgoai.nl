@@ -7,8 +7,8 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to the new simplified Overzicht page
-    router.replace('/admin/overzicht');
+    // Redirect to the admin dashboard
+    router.replace('/admin/dashboard');
   }, [router]);
 
   return (

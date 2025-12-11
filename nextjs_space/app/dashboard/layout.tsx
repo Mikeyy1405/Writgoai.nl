@@ -3,16 +3,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { AdminComplexLayout } from '@/components/admin-complex/admin-complex-layout';
+import { DashboardLayout } from '@/components/dashboard-client/dashboard-layout';
 import { isUserAdmin } from '@/lib/navigation-config';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { API_TIMEOUTS } from '@/lib/api-timeout';
 
-interface AdminLayoutPropsType {
+interface DashboardLayoutPropsType {
   children: React.ReactNode;
 }
 
-export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
+export default function DashboardLayoutWrapper({ children }: DashboardLayoutPropsType) {
   const { data: session, status } = useSession() || {};
   const router = useRouter();
   const [authError, setAuthError] = useState<string | null>(null);
@@ -37,19 +37,19 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
 
       if (status === 'authenticated') {
         clearTimeout(authTimeout);
-        // Check if user is admin
+        // Check if user is admin - redirect admins to /admin
         try {
           const isAdmin = isUserAdmin(session?.user?.email, session?.user?.role);
-          if (!isAdmin) {
+          if (isAdmin) {
             setIsRedirecting(true);
-            router.push('/client-portal');
+            router.push('/admin');
             return;
           }
-          // User is admin, clear any errors
+          // User is client, clear any errors
           setAuthError(null);
         } catch (error) {
-          console.error('Error checking admin status:', error);
-          setAuthError('Fout bij het controleren van admin rechten');
+          console.error('Error checking user status:', error);
+          setAuthError('Fout bij het controleren van gebruikersrechten');
         }
       }
     } catch (error) {
@@ -119,5 +119,5 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
     );
   }
 
-  return <AdminComplexLayout>{children}</AdminComplexLayout>;
+  return <DashboardLayout>{children}</DashboardLayout>;
 }

@@ -1,92 +1,219 @@
+/**
+ * ADMIN NAVIGATION FOR WRITGO EIGENAAR
+ * 
+ * This configuration implements the full admin interface with ALL agency features:
+ * - Klanten Management (lijst van alle klanten)
+ * - Financieel Dashboard (MRR, kosten, winst, BTW)
+ * - Projecten Overzicht (alle projecten van alle klanten)
+ * - Content Distributie Center (alle content van alle klanten)
+ * - Facturatie en Betalingen
+ * - Statistieken en Rapportages
+ * - Instellingen en Configuratie
+ */
+
 import {
   LayoutDashboard,
   Users,
-  Package,
-  FolderKanban,
-  DollarSign,
-  Receipt,
-  CreditCard,
+  Briefcase,
   FileText,
-  Mail,
-  Settings,
-  Repeat,
-  ShoppingCart,
-  Landmark,
-  Calculator,
-  FileBarChart,
-  Palette,
-  Sparkles,
-  PlaySquare,
+  DollarSign,
   Share2,
-  Send,
+  Settings,
+  BarChart3,
   Calendar,
-  Megaphone,
+  FileEdit,
+  Link as LinkIcon,
+  TrendingUp,
+  Package,
+  CreditCard,
+  UserCheck,
+  LucideIcon,
 } from 'lucide-react';
 
 export interface AdminNavItem {
   label: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
+  description?: string;
+  badge?: string;
 }
 
-export interface AdminNavGroup {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
+export interface AdminNavSection {
+  title: string;
   items: AdminNavItem[];
 }
 
-export type AdminNavigationItem = AdminNavItem | AdminNavGroup;
-
-/**
- * Admin-only navigation items
- * This configuration is used by both desktop and mobile admin navigation
- * Alle financiële data komt uit Moneybird
- */
-export const adminNavItems: AdminNavigationItem[] = [
-  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { label: 'Klanten', href: '/admin/klanten', icon: Users },
-  { label: 'Opdrachten', href: '/admin/orders', icon: Package },
-  { label: 'Projecten', href: '/admin/managed-projects', icon: FolderKanban },
+export const adminNavSections: AdminNavSection[] = [
   {
-    label: 'Content',
-    icon: FileText,
+    title: 'Overzicht',
     items: [
-      { label: 'Blog Posts', href: '/admin/blog', icon: FileText },
-      { label: '🚀 1-Klik Generator', href: '/admin/blog/auto-generate', icon: Sparkles },
-      { label: 'Autopilot', href: '/admin/autopilot-control', icon: PlaySquare },
+      {
+        label: 'Dashboard',
+        href: '/admin/dashboard',
+        icon: LayoutDashboard,
+        description: 'Hoofdoverzicht',
+      },
     ],
   },
   {
-    label: 'Distributie',
-    icon: Share2,
+    title: 'Klanten & Projecten',
     items: [
-      { label: 'Dashboard', href: '/admin/distribution', icon: LayoutDashboard },
-      { label: 'Wachtrij', href: '/admin/distribution/queue', icon: Send },
-      { label: 'Kalender', href: '/admin/distribution/calendar', icon: Calendar },
-      { label: 'Platforms', href: '/admin/distribution/platforms', icon: Megaphone },
-      { label: 'Analytics', href: '/admin/distribution/analytics', icon: FileBarChart },
+      {
+        label: 'Klanten',
+        href: '/admin/klanten',
+        icon: Users,
+        description: 'Alle klanten beheren',
+      },
+      {
+        label: 'Clients (Legacy)',
+        href: '/admin/clients',
+        icon: UserCheck,
+        description: 'Legacy klanten',
+      },
+      {
+        label: 'Projecten',
+        href: '/admin/projects',
+        icon: Briefcase,
+        description: 'Alle projecten',
+      },
+      {
+        label: 'Opdrachten',
+        href: '/admin/assignments',
+        icon: FileEdit,
+        description: 'Contentopdrachten',
+      },
+      {
+        label: 'Managed Projects',
+        href: '/admin/managed-projects',
+        icon: Package,
+        description: 'Beheerde projecten',
+      },
     ],
   },
   {
-    label: 'Financieel',
-    icon: DollarSign,
+    title: 'Content & Distributie',
     items: [
-      { label: 'Facturen', href: '/admin/financien/facturen', icon: Receipt },
-      { label: 'Abonnementen', href: '/admin/financien/abonnementen', icon: Repeat },
-      { label: 'Uitgaven', href: '/admin/financien/uitgaven', icon: ShoppingCart },
-      { label: 'Bank', href: '/admin/financien/bank', icon: Landmark },
-      { label: 'BTW', href: '/admin/financien/btw', icon: Calculator },
-      { label: 'Rapporten', href: '/admin/financien/rapporten', icon: FileBarChart },
+      {
+        label: 'Content Center',
+        href: '/admin/content',
+        icon: FileText,
+        description: 'Alle content',
+      },
+      {
+        label: 'Blog Management',
+        href: '/admin/blog',
+        icon: FileEdit,
+        description: 'Blog artikelen',
+      },
+      {
+        label: 'Distributie',
+        href: '/admin/distribution',
+        icon: Share2,
+        description: 'Multi-platform posting',
+      },
+      {
+        label: 'Platforms',
+        href: '/admin/platforms',
+        icon: Share2,
+        description: 'Social media platforms',
+      },
+      {
+        label: 'Linkbuilding',
+        href: '/admin/linkbuilding',
+        icon: LinkIcon,
+        description: 'SEO linkbuilding',
+      },
     ],
   },
-  { label: 'Email Inbox', href: '/admin/emails', icon: Mail },
-  { label: 'Branding', href: '/admin/branding', icon: Palette },
-  { label: 'Instellingen', href: '/admin/instellingen', icon: Settings },
+  {
+    title: 'Financieel',
+    items: [
+      {
+        label: 'Financieel Dashboard',
+        href: '/admin/financieel',
+        icon: DollarSign,
+        description: 'MRR, winst, kosten',
+      },
+      {
+        label: 'Facturen',
+        href: '/admin/invoices',
+        icon: CreditCard,
+        description: 'Facturatie',
+      },
+    ],
+  },
+  {
+    title: 'Analytics & Rapportage',
+    items: [
+      {
+        label: 'Statistieken',
+        href: '/admin/statistieken',
+        icon: TrendingUp,
+        description: 'KPIs en metrics',
+      },
+      {
+        label: 'Analytics',
+        href: '/admin/distribution/analytics',
+        icon: BarChart3,
+        description: 'Content analytics',
+      },
+      {
+        label: 'API Usage',
+        href: '/admin/api-usage',
+        icon: BarChart3,
+        description: 'AI API verbruik',
+      },
+    ],
+  },
+  {
+    title: 'Instellingen',
+    items: [
+      {
+        label: 'Instellingen',
+        href: '/admin/instellingen',
+        icon: Settings,
+        description: 'Systeem configuratie',
+      },
+      {
+        label: 'Settings',
+        href: '/admin/settings',
+        icon: Settings,
+        description: 'Settings',
+      },
+      {
+        label: 'Branding',
+        href: '/admin/branding',
+        icon: Settings,
+        description: 'Brand settings',
+      },
+    ],
+  },
 ];
 
 /**
- * Type guard to check if an item is a navigation group
+ * Flatten all nav items for easy lookup
  */
-export function isAdminNavGroup(item: AdminNavigationItem): item is AdminNavGroup {
-  return 'items' in item;
+export const allAdminNavItems: AdminNavItem[] = adminNavSections.reduce(
+  (acc, section) => [...acc, ...section.items],
+  [] as AdminNavItem[]
+);
+
+/**
+ * Helper function to check if navigation item is active
+ */
+export function isAdminNavActive(href: string, pathname: string): boolean {
+  // For exact matches
+  if (href === pathname) return true;
+  
+  // For /admin/dashboard, also match /admin and /admin/
+  if (href === '/admin/dashboard' && (pathname === '/admin' || pathname === '/admin/')) {
+    return true;
+  }
+  
+  // For other paths, check if pathname starts with href
+  if (href !== '/admin/dashboard' && pathname.startsWith(href)) {
+    return true;
+  }
+  
+  return false;
 }
