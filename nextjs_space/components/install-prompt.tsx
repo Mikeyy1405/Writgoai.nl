@@ -167,7 +167,7 @@ export default function InstallPrompt() {
         </div>
         <Button
           onClick={handleInstallClick}
-          className="text-white"
+          className="text-white transition-opacity hover:opacity-90"
           style={{ 
             backgroundColor: brand.accentColor || brand.primaryColor,
           }}
