@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Globe, Settings, Trash2, ExternalLink, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, Globe, ExternalLink } from 'lucide-react';
 
 interface Project {
   id: string;

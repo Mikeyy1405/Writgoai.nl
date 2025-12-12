@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma-shim';
@@ -6,10 +6,10 @@ import { prisma } from '@/lib/prisma-shim';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/admin/blog
- * Get all blog posts for a project (SIMPLIFIED)
+ * GET /api/social
+ * Get all social media posts for a project
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -40,29 +40,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Geen toegang tot dit project' }, { status: 403 });
     }
 
-    // Get all posts for this project
-    const posts = await prisma.blogPost.findMany({
-      where: { projectId },
+    // Get social media strategy for this project
+    const strategy = await prisma.socialMediaStrategy.findFirst({
+      where: { projectId }
+    });
+
+    if (!strategy) {
+      return NextResponse.json([]);
+    }
+
+    // Get all posts for this strategy
+    const posts = await prisma.socialMediaPost.findMany({
+      where: { strategyId: strategy.id },
       orderBy: { createdAt: 'desc' }
     });
 
-    console.log(`[Blog API GET] Found ${posts.length} posts for project ${projectId}`);
-
     return NextResponse.json(posts);
   } catch (error: any) {
-    console.error('GET /api/admin/blog error:', error);
+    console.error('GET /api/social error:', error);
     return NextResponse.json(
-      { error: 'Fout bij ophalen blogs', details: error.message },
+      { error: 'Fout bij ophalen social posts', details: error.message },
       { status: 500 }
     );
   }
 }
 
 /**
- * POST /api/admin/blog
- * Create a new blog post (SIMPLIFIED)
+ * POST /api/social
+ * Create a new social media post
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -71,9 +78,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    if (!body.projectId || !body.title || !body.content) {
+    if (!body.projectId || !body.content) {
       return NextResponse.json(
-        { error: 'Project, titel en content zijn verplicht' },
+        { error: 'Project en content zijn verplicht' },
         { status: 400 }
       );
     }
@@ -95,46 +102,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Geen toegang tot dit project' }, { status: 403 });
     }
 
-    // Generate slug from title if not provided
-    const slug = body.slug || body.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-
-    // Check if slug exists
-    const existing = await prisma.blogPost.findFirst({
-      where: { slug, projectId: body.projectId }
+    // Get or create strategy for this project
+    let strategy = await prisma.socialMediaStrategy.findFirst({
+      where: { projectId: body.projectId }
     });
 
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Een blog met deze titel bestaat al' },
-        { status: 400 }
-      );
+    if (!strategy) {
+      // Create a default strategy
+      strategy = await prisma.socialMediaStrategy.create({
+        data: {
+          projectId: body.projectId,
+          platforms: [body.platform || 'instagram'],
+          frequency: '3x-week',
+          contentTypes: ['post'],
+          tone: 'friendly',
+          topics: [],
+          status: 'active'
+        }
+      });
     }
 
     // Create the post
-    const post = await prisma.blogPost.create({
+    const post = await prisma.socialMediaPost.create({
       data: {
-        projectId: body.projectId,
-        title: body.title,
-        slug,
+        strategyId: strategy.id,
+        platform: body.platform || 'instagram',
         content: body.content,
-        excerpt: body.excerpt || body.content.substring(0, 150),
-        status: body.status || 'draft',
-        category: body.category || 'Algemeen',
-        tags: body.tags || [],
-        authorName: body.authorName || session.user.name || 'Auteur'
+        title: body.title || null,
+        hashtags: body.hashtags || [],
+        mediaUrls: body.mediaUrls || [],
+        scheduledDate: body.scheduledDate || null,
+        status: body.status || 'pending'
       }
     });
 
-    console.log(`[Blog API POST] Created post ${post.id} for project ${body.projectId}`);
-
     return NextResponse.json(post);
   } catch (error: any) {
-    console.error('POST /api/admin/blog error:', error);
+    console.error('POST /api/social error:', error);
     return NextResponse.json(
-      { error: 'Fout bij aanmaken blog', details: error.message },
+      { error: 'Fout bij aanmaken social post', details: error.message },
       { status: 500 }
     );
   }
