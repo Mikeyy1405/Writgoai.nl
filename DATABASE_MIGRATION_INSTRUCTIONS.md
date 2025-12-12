@@ -264,6 +264,22 @@ git push origin main
 
 ---
 
+## ⚠️ Foreign Key Issues?
+
+Als je na de migratie foreign key problemen tegenkomt (zoals "only 6 foreign keys instead of 8" of "Key (planId)=(PLAN_ID) is not present"), gebruik dan de **Foreign Key Fix Guide**:
+
+📖 **Zie:** [FOREIGN_KEY_FIX_GUIDE.md](./FOREIGN_KEY_FIX_GUIDE.md)
+
+**Quick Fix:** Run `/supabase/migrations/COMPLETE_FIX_PACKAGE.sql` in Supabase SQL Editor.
+
+Dit script:
+- ✅ Cleanup orphaned data
+- ✅ Fix invalid references  
+- ✅ Voegt ontbrekende foreign keys toe (ContentPlanItem.blogPostId en TopicalMapArticle.blogPostId)
+- ✅ Verifieert dat alle 8 foreign keys aanwezig zijn
+
+---
+
 **Status:** Ready for production 🚀  
 **Last Updated:** 12 December 2024  
 **Migration Version:** 2.0 (Complete Package)
