@@ -201,6 +201,12 @@ export const adminNavSections: AdminNavSection[] = [
         icon: Settings,
         description: 'Brand settings',
       },
+      {
+        label: 'Writgo Marketing',
+        href: '/admin/writgo',
+        icon: TrendingUp,
+        description: 'Writgo.nl als interne klant',
+      },
     ],
   },
 ];
