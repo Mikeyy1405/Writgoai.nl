@@ -59,7 +59,10 @@ async function createClient(config: IMAPConfig): Promise<ImapFlow> {
     },
     logger: false, // Disable logging in production
     tls: {
-      rejectUnauthorized: false, // Allow self-signed or mismatched certificates
+      // SECURITY NOTE: Disabling certificate validation to work around hostname mismatch
+      // (e.g., connecting to mail.writgo.nl when cert only covers webmail.writgo.nl)
+      // This is a workaround - proper fix is to update SSL certificate to include all hostnames
+      rejectUnauthorized: false,
     },
   };
 
