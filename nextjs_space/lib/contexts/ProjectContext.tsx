@@ -1,63 +1,45 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-// Project type definition
 export interface Project {
   id: string;
-  clientId: string;
   name: string;
-  websiteUrl: string;
+  websiteUrl?: string | null;
   description?: string | null;
-  status?: string;
-  isPrimary?: boolean;
-  isActive?: boolean;
-  settings?: Record<string, any>;
-  createdAt?: string;
+  status: string;
+  createdAt: string;
   updatedAt?: string;
-  
-  // Content settings
-  targetAudience?: string | null;
-  brandVoice?: string | null;
-  niche?: string | null;
-  keywords?: string[];
-  contentPillars?: string[];
-  writingStyle?: string | null;
-  
-  // WordPress settings
-  wordpressUrl?: string | null;
-  wordpressUsername?: string | null;
-  wordpressPassword?: string | null;
-  wordpressCategory?: string | null;
-  wordpressAutoPublish?: boolean;
 }
 
 interface ProjectContextType {
   currentProject: Project | null;
   projects: Project[];
   loading: boolean;
-  switchProject: (projectId: string) => void;
-  addProject: (project: Partial<Project>) => Promise<Project>;
-  updateProject: (projectId: string, data: Partial<Project>) => Promise<void>;
-  deleteProject: (projectId: string) => Promise<void>;
+  error: string | null;
+  switchProject: (projectId: string) => Promise<void>;
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { status?: string }) => Promise<Project | null>;
+  updateProject: (projectId: string, updates: Partial<Project>) => Promise<boolean>;
+  deleteProject: (projectId: string) => Promise<boolean>;
   refreshProjects: () => Promise<void>;
+  ensureDefaultProject: () => Promise<void>;
 }
 
-const ProjectContext = createContext<ProjectContextType | null>(null);
+const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
-export function ProjectProvider({ children }: { children: ReactNode }) {
+const PROJECT_STORAGE_KEY = 'writgo_current_project';
+const PROJECT_EVENT = 'writgo_project_switched';
+
+export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch all projects on mount
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
+  // Fetch all projects
+  const fetchProjects = useCallback(async () => {
     try {
-      setLoading(true);
+      setError(null);
       const response = await fetch('/api/admin/projects');
       
       if (!response.ok) {
@@ -65,146 +47,177 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       }
       
       const data = await response.json();
-      setProjects(data.projects || []);
-
-      // Set current project from localStorage or default to first project
-      const lastProjectId = typeof window !== 'undefined' 
-        ? localStorage.getItem('lastProjectId') 
-        : null;
-
-      let defaultProject: Project | null = null;
-
-      if (lastProjectId) {
-        defaultProject = data.projects.find((p: Project) => p.id === lastProjectId) || null;
+      setProjects(data);
+      
+      // If no current project but we have projects, set the first one
+      if (!currentProject && data.length > 0) {
+        const lastProjectId = localStorage.getItem(PROJECT_STORAGE_KEY);
+        const projectToSet = lastProjectId 
+          ? data.find((p: Project) => p.id === lastProjectId) || data[0]
+          : data[0];
+        
+        setCurrentProject(projectToSet);
+        localStorage.setItem(PROJECT_STORAGE_KEY, projectToSet.id);
       }
-
-      // Fall back to primary project or first project
-      if (!defaultProject) {
-        defaultProject = 
-          data.projects.find((p: Project) => p.isPrimary) || 
-          data.projects[0] || 
-          null;
-      }
-
-      if (defaultProject) {
-        setCurrentProject(defaultProject);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lastProjectId', defaultProject.id);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
+      
+      return data;
+    } catch (err: any) {
+      console.error('Failed to fetch projects:', err);
+      setError(err.message || 'Failed to load projects');
+      return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentProject]);
 
-  const switchProject = (projectId: string) => {
+  // Initial load
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  // Refresh projects
+  const refreshProjects = useCallback(async () => {
+    await fetchProjects();
+  }, [fetchProjects]);
+
+  // Switch to a different project
+  const switchProject = useCallback(async (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     
-    if (project) {
-      setCurrentProject(project);
-      
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('lastProjectId', projectId);
-        
-        // Trigger custom event to notify components of project change
-        window.dispatchEvent(
-          new CustomEvent('projectChanged', { 
-            detail: { projectId } 
-          })
-        );
-      }
+    if (!project) {
+      console.error('Project not found:', projectId);
+      return;
     }
-  };
+    
+    setCurrentProject(project);
+    localStorage.setItem(PROJECT_STORAGE_KEY, projectId);
+    
+    // Dispatch event for other components to react
+    window.dispatchEvent(new CustomEvent(PROJECT_EVENT, { 
+      detail: { projectId, project } 
+    }));
+  }, [projects]);
 
-  const addProject = async (projectData: Partial<Project>): Promise<Project> => {
+  // Add a new project
+  const addProject = useCallback(async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { status?: string }) => {
     try {
       const response = await fetch('/api/admin/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(projectData),
+        body: JSON.stringify(projectData)
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create project');
-      }
-
-      const newProject = await response.json();
-      setProjects([...projects, newProject.project]);
-      switchProject(newProject.project.id);
       
-      return newProject.project;
-    } catch (error) {
-      console.error('Failed to add project:', error);
-      throw error;
+      if (!response.ok) {
+        throw new Error('Failed to create project');
+      }
+      
+      const newProject = await response.json();
+      
+      // Refresh projects list
+      await refreshProjects();
+      
+      // Auto-switch to new project
+      await switchProject(newProject.id);
+      
+      return newProject;
+    } catch (err: any) {
+      console.error('Failed to add project:', err);
+      setError(err.message || 'Failed to create project');
+      return null;
     }
-  };
+  }, [refreshProjects, switchProject]);
 
-  const updateProject = async (projectId: string, data: Partial<Project>): Promise<void> => {
+  // Update a project
+  const updateProject = useCallback(async (projectId: string, updates: Partial<Project>) => {
     try {
       const response = await fetch(`/api/admin/projects/${projectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updates)
       });
-
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update project');
+        throw new Error('Failed to update project');
       }
-
-      // Refresh projects after update
-      await fetchProjects();
-    } catch (error) {
-      console.error('Failed to update project:', error);
-      throw error;
+      
+      await refreshProjects();
+      
+      // If we updated the current project, refresh it
+      if (currentProject?.id === projectId) {
+        const updatedProject = projects.find(p => p.id === projectId);
+        if (updatedProject) {
+          setCurrentProject(updatedProject);
+        }
+      }
+      
+      return true;
+    } catch (err: any) {
+      console.error('Failed to update project:', err);
+      setError(err.message || 'Failed to update project');
+      return false;
     }
-  };
+  }, [currentProject, projects, refreshProjects]);
 
-  const deleteProject = async (projectId: string): Promise<void> => {
+  // Delete a project
+  const deleteProject = useCallback(async (projectId: string) => {
     try {
       const response = await fetch(`/api/admin/projects/${projectId}`, {
-        method: 'DELETE',
+        method: 'DELETE'
       });
-
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete project');
+        throw new Error('Failed to delete project');
       }
-
-      // If we deleted the current project, switch to another one
+      
+      // If we deleted the current project, switch to another
       if (currentProject?.id === projectId) {
         const remainingProjects = projects.filter(p => p.id !== projectId);
         if (remainingProjects.length > 0) {
-          switchProject(remainingProjects[0].id);
+          await switchProject(remainingProjects[0].id);
         } else {
           setCurrentProject(null);
+          localStorage.removeItem(PROJECT_STORAGE_KEY);
         }
       }
-
-      // Refresh projects
-      await fetchProjects();
-    } catch (error) {
-      console.error('Failed to delete project:', error);
-      throw error;
+      
+      await refreshProjects();
+      return true;
+    } catch (err: any) {
+      console.error('Failed to delete project:', err);
+      setError(err.message || 'Failed to delete project');
+      return false;
     }
+  }, [currentProject, projects, refreshProjects, switchProject]);
+
+  // Ensure at least one default project exists
+  const ensureDefaultProject = useCallback(async () => {
+    if (projects.length === 0 && !loading) {
+      console.log('[ProjectContext] No projects found, creating default project...');
+      
+      await addProject({
+        name: 'Mijn Website',
+        websiteUrl: 'https://example.com',
+        description: 'Standaard project',
+        status: 'active'
+      });
+    }
+  }, [projects, loading, addProject]);
+
+  const value: ProjectContextType = {
+    currentProject,
+    projects,
+    loading,
+    error,
+    switchProject,
+    addProject,
+    updateProject,
+    deleteProject,
+    refreshProjects,
+    ensureDefaultProject
   };
 
   return (
-    <ProjectContext.Provider
-      value={{
-        currentProject,
-        projects,
-        loading,
-        switchProject,
-        addProject,
-        updateProject,
-        deleteProject,
-        refreshProjects: fetchProjects,
-      }}
-    >
+    <ProjectContext.Provider value={value}>
       {children}
     </ProjectContext.Provider>
   );
@@ -213,9 +226,24 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 export function useProject() {
   const context = useContext(ProjectContext);
   
-  if (!context) {
-    throw new Error('useProject must be used within ProjectProvider');
+  if (context === undefined) {
+    throw new Error('useProject must be used within a ProjectProvider');
   }
   
   return context;
+}
+
+// Custom hook to listen for project switches
+export function useProjectSwitch(callback: (project: Project) => void) {
+  useEffect(() => {
+    const handleProjectSwitch = (event: CustomEvent) => {
+      callback(event.detail.project);
+    };
+    
+    window.addEventListener(PROJECT_EVENT as any, handleProjectSwitch as any);
+    
+    return () => {
+      window.removeEventListener(PROJECT_EVENT as any, handleProjectSwitch as any);
+    };
+  }, [callback]);
 }

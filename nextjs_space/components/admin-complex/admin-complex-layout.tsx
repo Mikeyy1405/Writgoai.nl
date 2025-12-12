@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AdminComplexSidebar } from './admin-complex-sidebar';
 import { AdminComplexHeader } from './admin-complex-header';
 import { AdminComplexMobileNav } from './admin-complex-mobile-nav';
+import FirstProjectModal from '@/components/onboarding/FirstProjectModal';
 
 interface AdminComplexLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,9 @@ export function AdminComplexLayout({ children }: AdminComplexLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-950 flex">
+      {/* First Project Onboarding Modal */}
+      <FirstProjectModal />
+
       {/* Desktop Sidebar */}
       <AdminComplexSidebar 
         isCollapsed={sidebarCollapsed}

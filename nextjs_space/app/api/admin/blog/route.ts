@@ -15,12 +15,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const category = searchParams.get('category');
+    const projectId = searchParams.get('projectId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
     const where: any = {};
     if (status) where.status = status;
     if (category) where.category = category;
+    if (projectId) where.projectId = projectId;
 
     const [posts, total] = await Promise.all([
       prisma.blogPost.findMany({
@@ -105,6 +107,7 @@ export async function POST(request: NextRequest) {
       scheduledFor,
       authorName,
       readingTimeMinutes,
+      projectId,
     } = body;
 
     // Validatie
@@ -138,6 +141,7 @@ export async function POST(request: NextRequest) {
         scheduledFor,
         authorName: authorName || 'WritgoAI Team',
         readingTimeMinutes: readingTimeMinutes || 5,
+        projectId: projectId || null,
       },
     });
 

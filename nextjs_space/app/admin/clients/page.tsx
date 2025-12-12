@@ -659,10 +659,10 @@ export default function ClientsManagement() {
                     <SelectValue placeholder="Selecteer status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    <SelectItem value="past_due">Past Due</SelectItem>
-                    <SelectItem value="trialing">Trialing</SelectItem>
+                    <SelectItem value="active">Actief</SelectItem>
+                    <SelectItem value="cancelled">Geannuleerd</SelectItem>
+                    <SelectItem value="past_due">Achterstallig</SelectItem>
+                    <SelectItem value="trialing">Proefperiode</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

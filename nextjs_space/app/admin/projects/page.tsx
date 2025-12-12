@@ -1,327 +1,306 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useProject } from '@/lib/contexts/ProjectContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { 
-  Globe, 
-  Plus, 
-  Check, 
-  Edit, 
-  Trash2, 
-  ExternalLink,
-  Loader2,
-  AlertCircle
-} from 'lucide-react';
-import { AddProjectDialog } from '@/components/project/AddProjectDialog';
+import { useState, useEffect } from 'react';
+import { Plus, Globe, Settings, Trash2, ExternalLink, Loader2 } from 'lucide-react';
 
-export default function ProjectsManagementPage() {
-  const { projects, currentProject, switchProject, updateProject, deleteProject, loading } = useProject();
+interface Project {
+  id: string;
+  name: string;
+  websiteUrl?: string | null;
+  description?: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingProject, setEditingProject] = useState<string | null>(null);
-  const [deletingProject, setDeletingProject] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    websiteUrl: '',
-    description: '',
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
-  const handleEditClick = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
-    if (project) {
-      setEditFormData({
-        name: project.name,
-        websiteUrl: project.websiteUrl,
-        description: project.description || '',
-      });
-      setEditingProject(projectId);
-    }
-  };
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setActionLoading(true);
-
+  const fetchProjects = async () => {
     try {
-      await updateProject(editingProject!, editFormData);
-      setEditingProject(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update project');
+      const response = await fetch('/api/admin/projects');
+      if (!response.ok) {
+        throw new Error('Failed to fetch projects');
+      }
+      const data = await response.json();
+      setProjects(data);
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
     } finally {
-      setActionLoading(false);
+      setLoading(false);
     }
   };
-
-  const handleDeleteConfirm = async () => {
-    if (!deletingProject) return;
-    
-    setError(null);
-    setActionLoading(true);
-
-    try {
-      await deleteProject(deletingProject);
-      setDeletingProject(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete project');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-orange-500 mx-auto mb-4" />
-          <p className="text-gray-400">Projecten laden...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-100">Projecten Beheren</h1>
-          <p className="text-gray-400 mt-2">
-            Beheer al je websites en projecten op één plek
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowAddDialog(true)}
-          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nieuw Project
-        </Button>
-      </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => (
-          <Card
-            key={project.id}
-            className={`
-              bg-gray-900 border-gray-800 hover:border-gray-700 transition-all
-              ${project.id === currentProject?.id ? 'ring-2 ring-orange-500 border-orange-500/50' : ''}
-            `}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Mijn Projecten</h1>
+            <p className="text-gray-600 mt-2">Beheer al je websites en projecten</p>
+          </div>
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-md hover:shadow-lg"
           >
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg text-gray-100 truncate flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-orange-400 flex-shrink-0" />
-                    {project.name}
-                  </CardTitle>
-                  <CardDescription className="mt-1 flex items-center gap-2">
-                    <a
-                      href={project.websiteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-orange-400 hover:text-orange-300 truncate flex items-center gap-1 text-sm"
-                    >
-                      {project.websiteUrl}
-                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                    </a>
-                  </CardDescription>
-                </div>
-                {project.id === currentProject?.id && (
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/50">
-                    <Check className="w-3 h-3 mr-1" />
-                    Actief
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
+            <Plus className="w-5 h-5" />
+            Nieuw Project
+          </button>
+        </div>
 
-            <CardContent className="space-y-4">
-              {project.description && (
-                <p className="text-sm text-gray-400 line-clamp-2">
-                  {project.description}
-                </p>
-              )}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+          </div>
+        ) : projects.length === 0 ? (
+          <EmptyState onAdd={() => setShowAddDialog(true)} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map(project => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onRefresh={fetchProjects}
+              />
+            ))}
+          </div>
+        )}
 
-              <div className="flex items-center gap-2">
-                {project.id !== currentProject?.id && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => switchProject(project.id)}
-                    className="flex-1"
-                  >
-                    Activeer
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEditClick(project.id)}
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDeletingProject(project.id)}
-                  className="text-red-400 hover:text-red-300"
-                  disabled={projects.length === 1}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Add New Project Card */}
-        <Card
-          className="bg-gray-900/50 border-gray-800 border-dashed hover:border-orange-500/50 transition-all cursor-pointer"
-          onClick={() => setShowAddDialog(true)}
-        >
-          <CardContent className="flex flex-col items-center justify-center min-h-[200px] text-center">
-            <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center mb-4">
-              <Plus className="w-6 h-6 text-orange-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-100 mb-2">
-              Nieuw Project
-            </h3>
-            <p className="text-sm text-gray-400">
-              Voeg een nieuwe website toe om te beheren
-            </p>
-          </CardContent>
-        </Card>
+        {showAddDialog && (
+          <AddProjectDialog
+            onClose={() => setShowAddDialog(false)}
+            onSuccess={() => {
+              setShowAddDialog(false);
+              fetchProjects();
+            }}
+          />
+        )}
       </div>
+    </div>
+  );
+}
 
-      {/* Add Project Dialog */}
-      <AddProjectDialog
-        open={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-      />
+function EmptyState({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="max-w-md mx-auto">
+        <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center">
+          <Globe className="w-10 h-10 text-orange-500" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2 text-gray-900">Nog geen projecten</h3>
+        <p className="text-gray-600 mb-6">
+          Voeg je eerste website toe om te beginnen met content management
+        </p>
+        <button
+          onClick={onAdd}
+          className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-md hover:shadow-lg"
+        >
+          Eerste Project Toevoegen
+        </button>
+      </div>
+    </div>
+  );
+}
 
-      {/* Edit Project Dialog */}
-      <Dialog open={!!editingProject} onOpenChange={(open) => !open && setEditingProject(null)}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Project Bewerken</DialogTitle>
-            <DialogDescription>
-              Wijzig de gegevens van je project
-            </DialogDescription>
-          </DialogHeader>
+function ProjectCard({ project, onRefresh }: { project: Project; onRefresh: () => void }) {
+  const [deleting, setDeleting] = useState(false);
 
-          <form onSubmit={handleEditSubmit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Project Naam</Label>
-                <Input
-                  id="edit-name"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                  required
-                  disabled={actionLoading}
-                />
-              </div>
+  const handleDelete = async () => {
+    if (!confirm(`Weet je zeker dat je "${project.name}" wilt verwijderen?`)) {
+      return;
+    }
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-url">Website URL</Label>
-                <Input
-                  id="edit-url"
-                  type="url"
-                  value={editFormData.websiteUrl}
-                  onChange={(e) => setEditFormData({ ...editFormData, websiteUrl: e.target.value })}
-                  required
-                  disabled={actionLoading}
-                />
-              </div>
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: 'DELETE'
+      });
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Beschrijving</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editFormData.description}
-                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                  rows={3}
-                  disabled={actionLoading}
-                />
-              </div>
+      if (response.ok) {
+        onRefresh();
+      } else {
+        alert('Verwijderen mislukt');
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      alert('Verwijderen mislukt');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-lg flex items-center justify-center">
+            <Globe className="w-5 h-5 text-orange-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">{project.name}</h3>
+            <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
+              project.status === 'active' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {project.status === 'active' ? 'Actief' : 'Inactief'}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      {project.websiteUrl && (
+        <a
+          href={project.websiteUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 text-sm text-blue-600 hover:underline mb-3 group"
+        >
+          <span className="truncate">{project.websiteUrl}</span>
+          <ExternalLink className="w-3 h-3 flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        </a>
+      )}
+      
+      {project.description && (
+        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.description}</p>
+      )}
+      
+      <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+        <button
+          onClick={() => window.location.href = `/admin/blog?project=${project.id}`}
+          className="flex-1 px-4 py-2 text-sm bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 rounded-lg hover:from-orange-100 hover:to-amber-100 transition-all font-medium"
+        >
+          Open Project
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          title="Project verwijderen"
+        >
+          {deleting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Trash2 className="w-4 h-4 text-gray-600" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AddProjectDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    websiteUrl: '',
+    description: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/admin/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create project');
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+        <h2 className="text-2xl font-bold mb-6 text-gray-900">Nieuw Project Toevoegen</h2>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700">
+                Project Naam *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="bijv. WritGo.nl"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                required
+              />
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditingProject(null)}
-                disabled={actionLoading}
-              >
-                Annuleren
-              </Button>
-              <Button type="submit" disabled={actionLoading}>
-                {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Opslaan
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700">
+                Website URL *
+              </label>
+              <input
+                type="url"
+                value={formData.websiteUrl}
+                onChange={(e) => setFormData({...formData, websiteUrl: e.target.value})}
+                placeholder="https://writgo.nl"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                required
+              />
+            </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingProject} onOpenChange={(open) => !open && setDeletingProject(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Project Verwijderen</AlertDialogTitle>
-            <AlertDialogDescription>
-              Weet je zeker dat je dit project wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.
-              Alle content en instellingen van dit project worden permanent verwijderd.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>Annuleren</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={actionLoading}
-              className="bg-red-500 hover:bg-red-600"
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700">
+                Beschrijving (optioneel)
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Korte beschrijving van het project"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
-              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Verwijderen
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              Annuleren
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 transition-all shadow-md font-medium"
+            >
+              {loading ? 'Toevoegen...' : 'Project Toevoegen'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

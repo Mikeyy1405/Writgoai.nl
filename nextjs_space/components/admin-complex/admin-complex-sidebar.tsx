@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../dashboard/logo';
-import { ProjectSwitcher } from '@/components/project/ProjectSwitcher';
+import ProjectSwitcher from '@/components/project/ProjectSwitcher';
 import { adminNavSections, isAdminNavActive } from '@/lib/admin-navigation-config';
 
 interface AdminComplexSidebarProps {
