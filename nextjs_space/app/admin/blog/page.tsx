@@ -37,6 +37,7 @@ import {
 import toast from 'react-hot-toast';
 import ContentPlanGenerator from '@/components/blog/ContentPlanGenerator';
 import WebsiteBasedTopicalMapGenerator from '@/components/blog/WebsiteBasedTopicalMapGenerator';
+import TopicalAuthorityMapGenerator from '@/components/blog/TopicalAuthorityMapGenerator';
 
 interface BlogPost {
   id: string;
@@ -61,7 +62,7 @@ interface BlogPost {
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'list' | 'new' | 'ai-generate' | 'content-plan' | 'website-topical-map'>('list');
+  const [view, setView] = useState<'list' | 'new' | 'ai-generate' | 'content-plan' | 'website-topical-map' | 'topical-map'>('list');
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [generating, setGenerating] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
@@ -347,6 +348,21 @@ export default function AdminBlogPage() {
                     <p className="text-sm text-gray-400">Genereer compleet contentplan + blogs</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-blue-400 transition-colors" />
+                </button>
+
+                {/* Topical Authority Map Generator */}
+                <button
+                  onClick={() => setView('topical-map')}
+                  className="group relative bg-gradient-to-br from-orange-500/20 to-amber-600/10 border border-orange-500/30 hover:border-orange-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[120px] flex items-center gap-4 text-left"
+                >
+                  <div className="p-3 bg-orange-500/20 rounded-xl group-hover:bg-orange-500/30 transition-colors">
+                    <TrendingUp className="w-7 h-7 text-orange-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-white text-lg mb-1">🔥 Topical Authority Map</h3>
+                    <p className="text-sm text-gray-400">100-500 artikelen met pillar/cluster structuur</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-orange-400 transition-colors" />
                 </button>
                 
                 {/* AI Genereren */}
@@ -737,6 +753,38 @@ export default function AdminBlogPage() {
 
             {/* Content Plan Generator Component */}
             <ContentPlanGenerator
+              onComplete={() => {
+                setView('list');
+                fetchPosts();
+              }}
+            />
+          </div>
+        )}
+
+        {/* View: Topical Authority Map Generator */}
+        {view === 'topical-map' && (
+          <div className="space-y-6">
+            {/* Header with back button */}
+            <Card className="bg-zinc-800/50 border-zinc-700">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl text-white flex items-center gap-3">
+                    <TrendingUp className="w-6 h-6 text-orange-400" />
+                    Topical Authority Map Generator
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setView('list')}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* Topical Authority Map Generator Component */}
+            <TopicalAuthorityMapGenerator
               onComplete={() => {
                 setView('list');
                 fetchPosts();

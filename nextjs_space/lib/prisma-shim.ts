@@ -36,6 +36,10 @@ const TABLE_NAME_MAP: Record<string, string> = {
   // Content Plan tables
   contentPlan: 'ContentPlan',
   contentPlanItem: 'ContentPlanItem',
+  // Topical Authority Map tables
+  topicalAuthorityMap: 'TopicalAuthorityMap',
+  topicalMapArticle: 'TopicalMapArticle',
+  batchJob: 'BatchJob',
 };
 
 // Create a Proxy that intercepts property access and returns table-specific handlers
