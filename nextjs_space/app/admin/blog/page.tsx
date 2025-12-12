@@ -16,6 +16,7 @@ import toast from 'react-hot-toast';
 import { PipelineStep, PipelineContainer } from '@/components/pipeline/PipelineStep';
 import { AutopilotToggle } from '@/components/autopilot/AutopilotToggle';
 import TopicalAuthorityMapGenerator from '@/components/blog/TopicalAuthorityMapGenerator';
+import WebsiteAnalyzer from '@/components/analyzer/WebsiteAnalyzer';
 
 interface PipelineStatus {
   hasActivePlan: boolean;
@@ -39,10 +40,24 @@ interface SocialPipelineStatus {
   autopilotEnabled: boolean;
 }
 
+interface WebsiteAnalysis {
+  niche: string;
+  nicheConfidence: number;
+  targetAudience: string;
+  audienceConfidence: number;
+  tone: string;
+  toneConfidence: number;
+  keywords: string[];
+  themes: string[];
+  reasoning: string;
+}
+
 export default function AdminBlogPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'pipelines' | 'topical-map' | 'social-strategy'>('pipelines');
+  const [clientId, setClientId] = useState<string>('');
+  const [websiteAnalysis, setWebsiteAnalysis] = useState<WebsiteAnalysis | null>(null);
   
   // Pipeline states
   const [blogPipeline, setBlogPipeline] = useState<PipelineStatus>({
@@ -71,6 +86,15 @@ export default function AdminBlogPage() {
 
   const fetchPipelineStatus = async () => {
     try {
+      // Get current user/client
+      const session = await fetch('/api/auth/session');
+      if (session.ok) {
+        const sessionData = await session.json();
+        // In admin context, we might need to select a client
+        // For now, using a placeholder - you'll need to implement client selection
+        setClientId('default-client-id');
+      }
+
       // Fetch blog pipeline status
       const blogRes = await fetch('/api/admin/blog/pipeline/status');
       if (blogRes.ok) {
@@ -83,6 +107,15 @@ export default function AdminBlogPage() {
       if (socialRes.ok) {
         const socialData = await socialRes.json();
         setSocialPipeline(socialData);
+      }
+
+      // Try to fetch existing website analysis
+      if (clientId) {
+        const analysisRes = await fetch(`/api/admin/analyzer/website?clientId=${clientId}`);
+        if (analysisRes.ok) {
+          const analysisData = await analysisRes.json();
+          setWebsiteAnalysis(analysisData);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch pipeline status:', error);
@@ -135,6 +168,11 @@ export default function AdminBlogPage() {
     }
   };
 
+  const handleAnalysisComplete = (analysis: WebsiteAnalysis) => {
+    setWebsiteAnalysis(analysis);
+    toast.success('✅ Website analyse beschikbaar voor blog planning!');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-900 flex items-center justify-center">
@@ -173,6 +211,13 @@ export default function AdminBlogPage() {
         {/* View: Pipelines Overview */}
         {view === 'pipelines' && (
           <div className="space-y-8">
+            
+            {/* AI Website Analyzer */}
+            <WebsiteAnalyzer
+              clientId={clientId}
+              onAnalysisComplete={handleAnalysisComplete}
+              existingAnalysis={websiteAnalysis}
+            />
             
             {/* Blog Content Pipeline */}
             <PipelineContainer
@@ -458,6 +503,7 @@ export default function AdminBlogPage() {
 
             {/* Topical Authority Map Generator Component */}
             <TopicalAuthorityMapGenerator
+              websiteAnalysis={websiteAnalysis}
               onComplete={() => {
                 setView('pipelines');
                 fetchPipelineStatus();

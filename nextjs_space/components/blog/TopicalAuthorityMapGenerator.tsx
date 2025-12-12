@@ -29,7 +29,20 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+interface WebsiteAnalysis {
+  niche: string;
+  nicheConfidence: number;
+  targetAudience: string;
+  audienceConfidence: number;
+  tone: string;
+  toneConfidence: number;
+  keywords: string[];
+  themes: string[];
+  reasoning: string;
+}
+
 interface TopicalAuthorityMapGeneratorProps {
+  websiteAnalysis?: WebsiteAnalysis | null;
   onComplete?: () => void;
 }
 
@@ -73,7 +86,10 @@ interface GeneratedMap {
   keywordCoverage: number;
 }
 
-export default function TopicalAuthorityMapGenerator({ onComplete }: TopicalAuthorityMapGeneratorProps) {
+export default function TopicalAuthorityMapGenerator({ 
+  websiteAnalysis, 
+  onComplete 
+}: TopicalAuthorityMapGeneratorProps) {
   const [step, setStep] = useState<'config' | 'preview' | 'generating'>('config');
   const [generating, setGenerating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -90,6 +106,23 @@ export default function TopicalAuthorityMapGenerator({ onComplete }: TopicalAuth
     totalArticles: 100,
     pillarClusterRatio: '1:10',
   });
+
+  // Pre-fill configuration from website analysis
+  useEffect(() => {
+    if (websiteAnalysis) {
+      setConfig(prev => ({
+        ...prev,
+        niche: websiteAnalysis.niche || prev.niche,
+        targetAudience: websiteAnalysis.targetAudience || prev.targetAudience,
+        tone: websiteAnalysis.tone?.toLowerCase() || prev.tone,
+        keywords: websiteAnalysis.keywords?.join(', ') || prev.keywords,
+      }));
+      
+      if (websiteAnalysis.niche && websiteAnalysis.targetAudience) {
+        toast.success('✨ Velden automatisch ingevuld met website analyse!');
+      }
+    }
+  }, [websiteAnalysis]);
 
   // Generated map
   const [map, setMap] = useState<GeneratedMap | null>(null);
@@ -300,7 +333,28 @@ export default function TopicalAuthorityMapGenerator({ onComplete }: TopicalAuth
 
             {/* Niche */}
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Niche/Onderwerp *</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold">Niche/Onderwerp *</Label>
+                {websiteAnalysis?.niche && (
+                  <>
+                    <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-300">
+                      ✨ Auto-detected
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        websiteAnalysis.nicheConfidence >= 80 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : websiteAnalysis.nicheConfidence >= 60 
+                          ? 'bg-yellow-500/20 text-yellow-400' 
+                          : 'bg-orange-500/20 text-orange-400'
+                      }`}
+                    >
+                      {websiteAnalysis.nicheConfidence}% confidence
+                    </Badge>
+                  </>
+                )}
+              </div>
               <Input
                 value={config.niche}
                 onChange={(e) => setConfig({ ...config, niche: e.target.value })}
@@ -311,7 +365,28 @@ export default function TopicalAuthorityMapGenerator({ onComplete }: TopicalAuth
 
             {/* Doelgroep */}
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Doelgroep *</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold">Doelgroep *</Label>
+                {websiteAnalysis?.targetAudience && (
+                  <>
+                    <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-300">
+                      ✨ Auto-detected
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        websiteAnalysis.audienceConfidence >= 80 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : websiteAnalysis.audienceConfidence >= 60 
+                          ? 'bg-yellow-500/20 text-yellow-400' 
+                          : 'bg-orange-500/20 text-orange-400'
+                      }`}
+                    >
+                      {websiteAnalysis.audienceConfidence}% confidence
+                    </Badge>
+                  </>
+                )}
+              </div>
               <Input
                 value={config.targetAudience}
                 onChange={(e) => setConfig({ ...config, targetAudience: e.target.value })}
@@ -341,7 +416,28 @@ export default function TopicalAuthorityMapGenerator({ onComplete }: TopicalAuth
 
             {/* Tone */}
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Tone</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold">Tone</Label>
+                {websiteAnalysis?.tone && (
+                  <>
+                    <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-300">
+                      ✨ Auto-detected
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        websiteAnalysis.toneConfidence >= 80 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : websiteAnalysis.toneConfidence >= 60 
+                          ? 'bg-yellow-500/20 text-yellow-400' 
+                          : 'bg-orange-500/20 text-orange-400'
+                      }`}
+                    >
+                      {websiteAnalysis.toneConfidence}% confidence
+                    </Badge>
+                  </>
+                )}
+              </div>
               <Select
                 value={config.tone}
                 onValueChange={(v) => setConfig({ ...config, tone: v })}
@@ -362,7 +458,14 @@ export default function TopicalAuthorityMapGenerator({ onComplete }: TopicalAuth
 
           {/* Keywords (optional) */}
           <div className="space-y-2">
-            <Label className="text-base font-semibold">Focus Keywords (optioneel)</Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-base font-semibold">Focus Keywords (optioneel)</Label>
+              {websiteAnalysis?.keywords && websiteAnalysis.keywords.length > 0 && (
+                <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-300">
+                  ✨ Auto-detected {websiteAnalysis.keywords.length} keywords
+                </Badge>
+              )}
+            </div>
             <Textarea
               value={config.keywords}
               onChange={(e) => setConfig({ ...config, keywords: e.target.value })}
