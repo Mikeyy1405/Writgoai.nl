@@ -142,11 +142,20 @@ export default function EmailInstellingenPage() {
       setSaving(true);
       setMessage(null);
 
-      // Validate required fields
-      if (!formData.email || !formData.imapHost || !formData.imapPort || !formData.password) {
+      // Validate required fields - password is only required for new accounts
+      if (!formData.email || !formData.imapHost || !formData.imapPort) {
         setMessage({
           type: 'error',
-          text: 'Vul alle vereiste velden in.',
+          text: 'Vul alle vereiste velden in (email, IMAP host en poort).',
+        });
+        return;
+      }
+
+      // For new accounts (no id), password is required
+      if (!formData.id && !formData.password) {
+        setMessage({
+          type: 'error',
+          text: 'Wachtwoord is verplicht voor nieuwe accounts.',
         });
         return;
       }
@@ -168,7 +177,7 @@ export default function EmailInstellingenPage() {
           text: '✓ Email configuratie succesvol opgeslagen!',
         });
         
-        // Reload configuration
+        // Reload configuration after a short delay
         setTimeout(() => {
           loadConfiguration();
         }, 1000);

@@ -98,35 +98,93 @@ export async function POST(request: Request) {
 
     // For IMAP provider, validate IMAP settings
     if (provider === 'imap') {
-      if (!imapHost || !imapPort || !password) {
+      if (!imapHost || !imapPort) {
         return NextResponse.json(
-          { error: 'IMAP host, port, and password are required for IMAP provider' },
+          { error: 'IMAP host and port are required for IMAP provider' },
+          { status: 400 }
+        );
+      }
+      
+      // Password is only required for new accounts (when id is not provided)
+      if (!id && !password) {
+        return NextResponse.json(
+          { error: 'Password is required for new IMAP accounts' },
           { status: 400 }
         );
       }
     }
 
-    // Encrypt password
-    const encryptedPassword = password ? encrypt(password) : null;
+    // Determine the correct clientId
+    let effectiveClientId = clientId;
+    
+    if (!effectiveClientId) {
+      // If no clientId provided, determine based on user role
+      const userRole = (session.user as any).role;
+      
+      if (userRole === 'admin') {
+        // For admin users, find or create a Client record with their email
+        const adminEmail = session.user.email;
+        
+        // Check if Client exists for this admin email
+        let adminClient = await prisma.client.findFirst({
+          where: { email: adminEmail },
+        });
+        
+        if (!adminClient) {
+          // Create a Client record for this admin
+          const bcrypt = require('bcryptjs');
+          const tempPassword = await bcrypt.hash('temp-password-' + Date.now(), 10);
+          
+          adminClient = await prisma.client.create({
+            data: {
+              email: adminEmail!,
+              name: session.user.name || adminEmail!.split('@')[0],
+              password: tempPassword,
+              credits: 1000, // Give admin generous credits
+            },
+          });
+          
+          console.log(`Created Client record for admin: ${adminEmail} (ID: ${adminClient.id})`);
+        }
+        
+        effectiveClientId = adminClient.id;
+      } else {
+        // For client users, use their session user id (which is already a Client ID)
+        effectiveClientId = session.user.id;
+      }
+    }
+
+    // Encrypt password only if provided (for updates, password can be omitted)
+    let encryptedPassword = null;
+    if (password) {
+      encryptedPassword = encrypt(password);
+    }
 
     // If id is provided, update existing account
     if (id) {
+      // Build update data object - only include password if it was provided
+      const updateData: any = {
+        provider,
+        email,
+        displayName,
+        imapHost,
+        imapPort: imapPort ? parseInt(imapPort) : 993,
+        imapTls: imapTls ?? true,
+        smtpHost,
+        smtpPort: smtpPort ? parseInt(smtpPort) : 587,
+        smtpTls: smtpTls ?? true,
+        isActive: isActive ?? true,
+        updatedAt: new Date(),
+      };
+      
+      // Only update password if a new one was provided
+      if (encryptedPassword) {
+        updateData.password = encryptedPassword;
+      }
+
       const updated = await prisma.mailboxConnection.update({
         where: { id },
-        data: {
-          provider,
-          email,
-          displayName,
-          imapHost,
-          imapPort: imapPort ? parseInt(imapPort) : 993,
-          imapTls: imapTls ?? true,
-          smtpHost,
-          smtpPort: smtpPort ? parseInt(smtpPort) : 587,
-          smtpTls: smtpTls ?? true,
-          password: encryptedPassword,
-          isActive: isActive ?? true,
-          updatedAt: new Date(),
-        },
+        data: updateData,
       });
 
       return NextResponse.json({
@@ -138,10 +196,17 @@ export async function POST(request: Request) {
       });
     }
 
-    // Create new account
+    // Create new account - password is required for new accounts
+    if (!encryptedPassword) {
+      return NextResponse.json(
+        { error: 'Password is required for new mailbox accounts' },
+        { status: 400 }
+      );
+    }
+
     const account = await prisma.mailboxConnection.create({
       data: {
-        clientId: clientId || session.user.id, // Use session user id if no clientId provided
+        clientId: effectiveClientId,
         provider,
         email,
         displayName,
