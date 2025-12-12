@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 import { isUserAdmin } from '@/lib/navigation-config';
 
 /**
@@ -17,14 +17,17 @@ export async function GET() {
     }
 
     // Find Writgo.nl client
-    const writgoClient = await prisma.client.findFirst({
-      where: {
-        OR: [
-          { email: 'marketing@writgo.nl' },
-          { companyName: 'Writgo.nl' }
-        ]
-      }
-    });
+    const { data: writgoClient, error: clientError } = await supabaseAdmin
+      .from('Client')
+      .select('*')
+      .or('email.eq.marketing@writgo.nl,companyName.eq.Writgo.nl')
+      .limit(1)
+      .single();
+
+    if (clientError && clientError.code !== 'PGRST116') {
+      console.error('Error fetching Writgo client:', clientError);
+      throw clientError;
+    }
 
     if (!writgoClient) {
       return NextResponse.json({
@@ -46,93 +49,92 @@ export async function GET() {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    const blogsThisMonth = await prisma.blogPost.count({
-      where: {
-        authorName: 'Writgo.nl',
-        createdAt: {
-          gte: firstDayOfMonth
-        }
-      }
-    });
+    const { count: blogsThisMonth, error: blogsThisMonthError } = await supabaseAdmin
+      .from('BlogPost')
+      .select('id', { count: 'exact', head: true })
+      .eq('authorName', 'Writgo.nl')
+      .gte('createdAt', firstDayOfMonth.toISOString());
 
-    const totalBlogs = await prisma.blogPost.count({
-      where: {
-        authorName: 'Writgo.nl'
-      }
-    });
+    if (blogsThisMonthError) {
+      console.error('Error counting blogs this month:', blogsThisMonthError);
+      throw blogsThisMonthError;
+    }
 
-    // Get social posts count (if contentPiece table exists)
+    const { count: totalBlogs, error: totalBlogsError } = await supabaseAdmin
+      .from('BlogPost')
+      .select('id', { count: 'exact', head: true })
+      .eq('authorName', 'Writgo.nl');
+
+    if (totalBlogsError) {
+      console.error('Error counting total blogs:', totalBlogsError);
+      throw totalBlogsError;
+    }
+
+    // Get social posts count from content_deliveries table
     let socialPostsThisMonth = 0;
     let totalSocialPosts = 0;
     
     try {
-      socialPostsThisMonth = await prisma.contentPiece.count({
-        where: {
-          clientId: writgoClient.id,
-          contentType: 'social',
-          createdAt: {
-            gte: firstDayOfMonth
-          }
-        }
-      });
+      const { count: socialThisMonth, error: socialThisMonthError } = await supabaseAdmin
+        .from('content_deliveries')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', writgoClient.id)
+        .eq('content_type', 'social')
+        .gte('created_at', firstDayOfMonth.toISOString());
 
-      totalSocialPosts = await prisma.contentPiece.count({
-        where: {
-          clientId: writgoClient.id,
-          contentType: 'social'
-        }
-      });
+      if (!socialThisMonthError) {
+        socialPostsThisMonth = socialThisMonth || 0;
+      }
+
+      const { count: totalSocial, error: totalSocialError } = await supabaseAdmin
+        .from('content_deliveries')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', writgoClient.id)
+        .eq('content_type', 'social');
+
+      if (!totalSocialError) {
+        totalSocialPosts = totalSocial || 0;
+      }
     } catch (error) {
-      console.log('ContentPiece table not available yet');
+      console.log('content_deliveries table not available yet');
     }
 
     // Get recent content
-    const recentBlogs = await prisma.blogPost.findMany({
-      where: {
-        authorName: 'Writgo.nl'
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 5,
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        createdAt: true,
-        publishedAt: true
-      }
-    });
+    const { data: recentBlogs, error: recentBlogsError } = await supabaseAdmin
+      .from('BlogPost')
+      .select('id, title, status, createdAt, publishedAt')
+      .eq('authorName', 'Writgo.nl')
+      .order('createdAt', { ascending: false })
+      .limit(5);
+
+    if (recentBlogsError) {
+      console.error('Error fetching recent blogs:', recentBlogsError);
+      throw recentBlogsError;
+    }
 
     interface RecentSocialContent {
       id: string;
       title: string;
-      platform?: string;
+      platform_ids?: string[];
       status: string;
-      createdAt: Date;
+      created_at: Date;
     }
     
     let recentSocial: RecentSocialContent[] = [];
     try {
-      recentSocial = await prisma.contentPiece.findMany({
-        where: {
-          clientId: writgoClient.id,
-          contentType: 'social'
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: 5,
-        select: {
-          id: true,
-          title: true,
-          platform: true,
-          status: true,
-          createdAt: true
-        }
-      });
+      const { data: socialContent, error: socialContentError } = await supabaseAdmin
+        .from('content_deliveries')
+        .select('id, title, platform_ids, status, created_at')
+        .eq('client_id', writgoClient.id)
+        .eq('content_type', 'social')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (!socialContentError && socialContent) {
+        recentSocial = socialContent;
+      }
     } catch (error) {
-      console.log('ContentPiece table not available yet');
+      console.log('content_deliveries table not available yet');
     }
 
     // Check for social accounts (simplified for now)
@@ -152,13 +154,13 @@ export async function GET() {
       lastPlanGenerated: writgoClient.lastPlanGenerated,
       lateDevAccounts: [],
       stats: {
-        blogsThisMonth,
+        blogsThisMonth: blogsThisMonth || 0,
         socialPostsThisMonth,
-        totalBlogs,
+        totalBlogs: totalBlogs || 0,
         totalSocialPosts
       },
       recentContent: {
-        blogs: recentBlogs,
+        blogs: recentBlogs || [],
         social: recentSocial
       },
       client: {
