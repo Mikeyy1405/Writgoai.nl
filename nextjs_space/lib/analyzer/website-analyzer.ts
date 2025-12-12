@@ -35,23 +35,47 @@ interface WebsiteAnalysis {
  * Main function to analyze a client's website and content
  */
 export async function analyzeWebsite(clientId: string): Promise<WebsiteAnalysis> {
-  console.log(`[Website Analyzer] Starting analysis for client ${clientId}`);
+  console.log(`\n🔵 ========================================`);
+  console.log(`🔵 [Website Analyzer] Starting analysis for client ${clientId}`);
+  console.log(`🔵 ========================================\n`);
   
   // Step 1: Collect data
+  console.log(`🔵 STEP 1: Collecting website data...`);
   const data = await collectWebsiteData(clientId);
+  console.log(`✅ Data collection complete`);
   
   // Step 2: Analyze with AI
+  console.log(`\n🔵 STEP 2: Analyzing with AI...`);
   const analysis = await analyzeWithAI(data);
-  
-  // Step 3: Save analysis to database
-  await saveAnalysis(clientId, analysis, data);
-  
-  console.log(`[Website Analyzer] Analysis complete:`, {
-    niche: analysis.niche,
-    audience: analysis.targetAudience,
+  console.log(`✅ AI analysis complete`);
+  console.log(`📊 Analysis preview:`, {
+    niche: analysis.niche.substring(0, 50) + '...',
+    audience: analysis.targetAudience.substring(0, 50) + '...',
     tone: analysis.tone,
     keywordsCount: analysis.keywords.length,
+    themesCount: analysis.themes.length,
+    hasReasoning: !!analysis.reasoning,
   });
+  
+  // Step 3: Save analysis to database
+  console.log(`\n🔵 STEP 3: Saving to database...`);
+  await saveAnalysis(clientId, analysis, data);
+  console.log(`✅ Database save complete`);
+  
+  console.log(`\n✅ ========================================`);
+  console.log(`✅ [Website Analyzer] ANALYSIS COMPLETE!`);
+  console.log(`✅ ========================================`);
+  console.log(`📊 Final Results:`, {
+    niche: analysis.niche,
+    nicheConfidence: analysis.nicheConfidence,
+    targetAudience: analysis.targetAudience,
+    audienceConfidence: analysis.audienceConfidence,
+    tone: analysis.tone,
+    toneConfidence: analysis.toneConfidence,
+    keywords: analysis.keywords,
+    themes: analysis.themes,
+  });
+  console.log(`\n`);
   
   return analysis;
 }
@@ -60,9 +84,10 @@ export async function analyzeWebsite(clientId: string): Promise<WebsiteAnalysis>
  * Collect all relevant data about the client
  */
 async function collectWebsiteData(clientId: string): Promise<WebsiteData> {
-  console.log(`[Website Analyzer] Collecting data for client ${clientId}`);
+  console.log(`   📂 Collecting data for client ${clientId}...`);
   
   // Get client with related content
+  console.log(`   📂 Fetching client info...`);
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     include: {
@@ -71,10 +96,19 @@ async function collectWebsiteData(clientId: string): Promise<WebsiteData> {
   });
 
   if (!client) {
+    console.error(`   ❌ Client not found: ${clientId}`);
     throw new Error('Client niet gevonden');
   }
+  
+  console.log(`   ✅ Client found:`, {
+    name: client.name,
+    companyName: client.companyName,
+    website: client.website,
+    hasDescription: !!client.description,
+  });
 
   // Get recent blog posts
+  console.log(`   📂 Fetching blog posts...`);
   const blogPosts = await prisma.blogPost.findMany({
     where: { clientId },
     orderBy: { createdAt: 'desc' },
@@ -87,15 +121,21 @@ async function collectWebsiteData(clientId: string): Promise<WebsiteData> {
       metaDescription: true,
     },
   });
+  console.log(`   ✅ Found ${blogPosts.length} blog posts`);
 
   // Get recent social media posts
+  console.log(`   📂 Fetching social media strategies...`);
+  const strategies = await prisma.socialMediaStrategy.findMany({
+    where: { clientId },
+    select: { id: true },
+  });
+  console.log(`   ✅ Found ${strategies.length} social media strategies`);
+  
+  console.log(`   📂 Fetching social media posts...`);
   const socialPosts = await prisma.socialMediaPost.findMany({
     where: { 
       strategyId: {
-        in: (await prisma.socialMediaStrategy.findMany({
-          where: { clientId },
-          select: { id: true },
-        })).map(s => s.id),
+        in: strategies.map(s => s.id),
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -105,12 +145,21 @@ async function collectWebsiteData(clientId: string): Promise<WebsiteData> {
       platform: true,
     },
   });
+  console.log(`   ✅ Found ${socialPosts.length} social media posts`);
 
-  console.log(`[Website Analyzer] Collected data:`, {
+  console.log(`\n   📊 Data collection summary:`, {
+    clientName: client.name,
+    website: client.website || 'Not provided',
     blogPosts: blogPosts.length,
     socialPosts: socialPosts.length,
-    hasWebsite: !!client.website,
+    hasDescription: !!client.description,
+    totalContentItems: blogPosts.length + socialPosts.length,
   });
+
+  if (blogPosts.length === 0 && socialPosts.length === 0) {
+    console.warn(`   ⚠️  WARNING: No blog posts or social media posts found for this client!`);
+    console.warn(`   ⚠️  Analysis will be based on client info and fallback data only`);
+  }
 
   return {
     client,
@@ -123,7 +172,11 @@ async function collectWebsiteData(clientId: string): Promise<WebsiteData> {
  * Analyze data using AI
  */
 async function analyzeWithAI(data: WebsiteData): Promise<WebsiteAnalysis> {
-  console.log(`[Website Analyzer] Analyzing data with AI...`);
+  console.log(`   🤖 Preparing AI analysis prompt...`);
+  console.log(`   📝 Content to analyze:`, {
+    blogPostTitles: data.blogPosts.slice(0, 3).map(p => p.title),
+    socialPostSample: data.socialPosts.slice(0, 2).map(p => p.content?.substring(0, 50)),
+  });
   
   const prompt = `
 Je bent een expert in content marketing en doelgroep analyse. Analyseer de volgende informatie om de niche, doelgroep, tone of voice en keywords te bepalen.
@@ -195,11 +248,15 @@ Antwoord ALLEEN met valid JSON in dit exacte format (geen markdown, geen extra t
 
   try {
     // Call AI API (using environment variable for API key)
+    console.log(`   🔑 Checking API key...`);
     const aimlApiKey = process.env.AIML_API_KEY;
     if (!aimlApiKey) {
+      console.error(`   ❌ AIML_API_KEY not configured`);
       throw new Error('AIML_API_KEY niet geconfigureerd');
     }
+    console.log(`   ✅ API key found (${aimlApiKey.substring(0, 10)}...)`);
 
+    console.log(`   🌐 Calling AI API (model: gpt-4o)...`);
     const response = await fetch('https://api.aimlapi.com/chat/completions', {
       method: 'POST',
       headers: {
@@ -223,40 +280,66 @@ Antwoord ALLEEN met valid JSON in dit exacte format (geen markdown, geen extra t
       }),
     });
 
+    console.log(`   📡 AI API response status: ${response.status}`);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`   ❌ AI API error:`, {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText.substring(0, 200),
+      });
       throw new Error(`AI API error: ${response.status} - ${errorText}`);
     }
 
     const aiResponse = await response.json();
+    console.log(`   ✅ AI API response received`);
+    
     const content = aiResponse.choices?.[0]?.message?.content;
 
     if (!content) {
+      console.error(`   ❌ No content in AI response:`, aiResponse);
       throw new Error('Geen response van AI API');
     }
+
+    console.log(`   📄 Raw AI response (first 200 chars):`, content.substring(0, 200));
 
     // Parse JSON response (handle potential markdown wrapping)
     let cleanedContent = content.trim();
     if (cleanedContent.startsWith('```json')) {
+      console.log(`   🧹 Removing markdown JSON wrapper...`);
       cleanedContent = cleanedContent.replace(/^```json\n/, '').replace(/\n```$/, '');
     } else if (cleanedContent.startsWith('```')) {
+      console.log(`   🧹 Removing markdown wrapper...`);
       cleanedContent = cleanedContent.replace(/^```\n/, '').replace(/\n```$/, '');
     }
 
+    console.log(`   🔄 Parsing JSON response...`);
     const analysis: WebsiteAnalysis = JSON.parse(cleanedContent);
 
     // Validate response structure
+    console.log(`   ✅ JSON parsed successfully`);
+    console.log(`   🔍 Validating response structure...`);
+    
     if (!analysis.niche || !analysis.targetAudience || !analysis.tone) {
+      console.error(`   ❌ Incomplete AI response:`, {
+        hasNiche: !!analysis.niche,
+        hasTargetAudience: !!analysis.targetAudience,
+        hasTone: !!analysis.tone,
+      });
       throw new Error('Incomplete AI response');
     }
 
-    console.log(`[Website Analyzer] AI analysis successful`);
+    console.log(`   ✅ Response structure validated`);
+    console.log(`   ✅ AI analysis successful!`);
     return analysis;
   } catch (error: any) {
-    console.error('[Website Analyzer] AI analysis error:', error);
+    console.error(`   ❌ AI analysis error:`, error.message);
+    console.error(`   ❌ Full error:`, error);
+    console.log(`   🔄 Using fallback analysis...`);
     
     // Return fallback analysis if AI fails
-    return {
+    const fallbackAnalysis = {
       niche: data.client.description || 'Algemene business services',
       nicheConfidence: 50,
       targetAudience: 'Zakelijke klanten en consumenten',
@@ -265,8 +348,16 @@ Antwoord ALLEEN met valid JSON in dit exacte format (geen markdown, geen extra t
       toneConfidence: 50,
       keywords: extractKeywordsFromContent(data),
       themes: extractThemesFromContent(data),
-      reasoning: `Fallback analyse: ${error.message}. Gebaseerd op beschikbare content metadata.`,
+      reasoning: `⚠️ Fallback analyse gebruikt (AI fout: ${error.message}). Gebaseerd op beschikbare content metadata.`,
     };
+    
+    console.log(`   ✅ Fallback analysis created:`, {
+      niche: fallbackAnalysis.niche,
+      keywordsCount: fallbackAnalysis.keywords.length,
+      themesCount: fallbackAnalysis.themes.length,
+    });
+    
+    return fallbackAnalysis;
   }
 }
 
@@ -279,7 +370,16 @@ async function saveAnalysis(
   data: WebsiteData
 ): Promise<void> {
   try {
-    await prisma.websiteAnalysis.create({
+    console.log(`   💾 Saving analysis to database...`);
+    console.log(`   💾 Data to save:`, {
+      clientId,
+      niche: analysis.niche.substring(0, 50),
+      nicheConfidence: analysis.nicheConfidence,
+      keywordsCount: analysis.keywords.length,
+      themesCount: analysis.themes.length,
+    });
+    
+    const saved = await prisma.websiteAnalysis.create({
       data: {
         clientId,
         niche: analysis.niche,
@@ -297,9 +397,16 @@ async function saveAnalysis(
         analyzedAt: new Date(),
       },
     });
-    console.log(`[Website Analyzer] Analysis saved to database`);
+    
+    console.log(`   ✅ Analysis saved to database (ID: ${saved.id})`);
   } catch (error: any) {
-    console.error('[Website Analyzer] Error saving analysis:', error);
+    console.error(`   ❌ Error saving analysis to database:`, {
+      error: error.message,
+      code: error.code,
+      meta: error.meta,
+    });
+    console.error(`   ❌ Full error:`, error);
+    console.warn(`   ⚠️  Analysis will be returned but not saved to database`);
     // Don't throw - analysis is still valid even if save fails
   }
 }

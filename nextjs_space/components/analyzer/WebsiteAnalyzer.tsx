@@ -203,40 +203,79 @@ export default function WebsiteAnalyzer({
     clientId.trim().length > 0;
 
   const handleAnalyze = async () => {
+    console.log(`\n🟦 ========================================`);
+    console.log(`🟦 [Frontend] Starting website analysis...`);
+    console.log(`🟦 ========================================`);
+    console.log(`🟦 Client ID:`, clientId);
+    console.log(`🟦 Is valid:`, isValidClientId);
+    
     // Validate clientId before making API call
     if (!isValidClientId) {
+      console.error(`🟥 [Frontend] Invalid client ID, aborting`);
       toast.error('Selecteer eerst een client om te analyseren', { id: 'analyze' });
       return;
     }
 
     setAnalyzing(true);
     toast.loading('Website analyseren...', { id: 'analyze' });
+    console.log(`🟦 [Frontend] Making API request...`);
 
     try {
+      const requestBody = { clientId };
+      console.log(`🟦 [Frontend] Request body:`, requestBody);
+      
       const response = await fetch('/api/admin/analyzer/website', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log(`🟦 [Frontend] API response status:`, response.status);
 
       if (!response.ok) {
         const error = await response.json();
+        console.error(`🟥 [Frontend] API error response:`, error);
         throw new Error(error.error || 'Analyse mislukt');
       }
 
       const data = await response.json();
+      console.log(`🟩 [Frontend] API response data:`, {
+        niche: data.niche?.substring(0, 50),
+        nicheConfidence: data.nicheConfidence,
+        targetAudience: data.targetAudience?.substring(0, 50),
+        audienceConfidence: data.audienceConfidence,
+        tone: data.tone,
+        toneConfidence: data.toneConfidence,
+        keywordsCount: data.keywords?.length,
+        themesCount: data.themes?.length,
+        hasReasoning: !!data.reasoning,
+      });
+      console.log(`🟩 [Frontend] Full analysis data:`, data);
+      
       setAnalysis(data);
+      console.log(`🟩 [Frontend] Analysis state updated`);
       
       toast.success('✨ Website analyse compleet!', { id: 'analyze' });
       
       if (onAnalysisComplete) {
+        console.log(`🟦 [Frontend] Calling onAnalysisComplete callback`);
         onAnalysisComplete(data);
       }
+      
+      console.log(`🟩 ========================================`);
+      console.log(`🟩 [Frontend] Analysis complete!`);
+      console.log(`🟩 ========================================\n`);
     } catch (error: any) {
-      console.error('Analysis error:', error);
+      console.error(`\n🟥 ========================================`);
+      console.error(`🟥 [Frontend] Analysis error`);
+      console.error(`🟥 ========================================`);
+      console.error(`🟥 Error:`, error);
+      console.error(`🟥 Error message:`, error.message);
+      console.error(`🟥 ========================================\n`);
       toast.error(error.message || 'Fout bij website analyse', { id: 'analyze' });
     } finally {
       setAnalyzing(false);
+      console.log(`🟦 [Frontend] Analysis process finished (analyzing set to false)`);
     }
   };
 

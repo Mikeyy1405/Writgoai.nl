@@ -11,18 +11,27 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   try {
+    console.log(`\n🔵 ========================================`);
+    console.log(`🔵 [API] POST /api/admin/analyzer/website`);
+    console.log(`🔵 ========================================`);
+    
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user?.email) {
+      console.error(`❌ [API] Unauthorized - no session`);
       return NextResponse.json(
         { error: 'Niet geautoriseerd' },
         { status: 401 }
       );
     }
+    
+    console.log(`✅ [API] Authenticated as: ${session.user.email}`);
 
     const { clientId } = await request.json();
+    console.log(`📝 [API] Request body: { clientId: "${clientId}" }`);
 
     if (!clientId) {
+      console.error(`❌ [API] Missing clientId`);
       return NextResponse.json(
         { error: 'Client ID is verplicht' },
         { status: 400 }
@@ -31,20 +40,36 @@ export async function POST(request: NextRequest) {
 
     // Validate that clientId is not a placeholder value
     if (clientId === 'default-client-id' || clientId.trim().length === 0) {
+      console.error(`❌ [API] Invalid clientId: "${clientId}"`);
       return NextResponse.json(
         { error: 'Selecteer eerst een geldige client voordat je een analyse uitvoert' },
         { status: 400 }
       );
     }
 
-    console.log(`[API] Analyzing website for client ${clientId}`);
+    console.log(`✅ [API] Valid clientId, starting analysis...`);
 
     // Perform analysis
     const analysis = await analyzeWebsite(clientId);
 
+    console.log(`✅ [API] Analysis complete, returning results`);
+    console.log(`📊 [API] Response:`, {
+      niche: analysis.niche.substring(0, 50) + '...',
+      nicheConfidence: analysis.nicheConfidence,
+      keywordsCount: analysis.keywords.length,
+      themesCount: analysis.themes.length,
+    });
+    console.log(`🔵 ========================================\n`);
+
     return NextResponse.json(analysis);
   } catch (error: any) {
-    console.error('[API] Website analysis error:', error);
+    console.error(`\n❌ ========================================`);
+    console.error(`❌ [API] Website analysis error`);
+    console.error(`❌ ========================================`);
+    console.error(`❌ Error message:`, error.message);
+    console.error(`❌ Error stack:`, error.stack);
+    console.error(`❌ ========================================\n`);
+    
     return NextResponse.json(
       { error: error.message || 'Fout bij website analyse' },
       { status: 500 }
