@@ -31,9 +31,11 @@ import {
   Search,
   Filter,
   Calendar,
-  Clock
+  Clock,
+  ListTree
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ContentPlanGenerator from '@/components/blog/ContentPlanGenerator';
 
 interface BlogPost {
   id: string;
@@ -58,7 +60,7 @@ interface BlogPost {
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'list' | 'new' | 'ai-generate'>('list');
+  const [view, setView] = useState<'list' | 'new' | 'ai-generate' | 'content-plan'>('list');
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [generating, setGenerating] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
@@ -309,7 +311,22 @@ export default function AdminBlogPage() {
             {/* Quick Actions */}
             <div>
               <h2 className="text-xl font-bold text-white mb-4 px-2">Snelle Acties</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                {/* AI Contentplan Generator */}
+                <button
+                  onClick={() => setView('content-plan')}
+                  className="group relative bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 hover:border-blue-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] flex items-center gap-4 text-left"
+                >
+                  <div className="p-3 bg-blue-500/20 rounded-xl group-hover:bg-blue-500/30 transition-colors">
+                    <ListTree className="w-7 h-7 text-blue-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-white text-lg mb-1">AI Contentplan</h3>
+                    <p className="text-sm text-gray-400">Genereer compleet contentplan + blogs</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-blue-400 transition-colors" />
+                </button>
                 
                 {/* AI Genereren */}
                 <button
@@ -641,6 +658,38 @@ export default function AdminBlogPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* View: Content Plan Generator */}
+        {view === 'content-plan' && (
+          <div className="space-y-6">
+            {/* Header with back button */}
+            <Card className="bg-zinc-800/50 border-zinc-700">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl text-white flex items-center gap-3">
+                    <ListTree className="w-6 h-6 text-blue-400" />
+                    AI Contentplan Generator
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setView('list')}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* Content Plan Generator Component */}
+            <ContentPlanGenerator
+              onComplete={() => {
+                setView('list');
+                fetchPosts();
+              }}
+            />
+          </div>
         )}
 
         {/* View: New/Edit Post */}

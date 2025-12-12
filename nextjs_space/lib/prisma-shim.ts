@@ -33,6 +33,9 @@ const TABLE_NAME_MAP: Record<string, string> = {
   emailThread: 'EmailThread',
   emailAutoReplyConfig: 'EmailAutoReplyConfig',
   emailDraft: 'EmailDraft',
+  // Content Plan tables
+  contentPlan: 'ContentPlan',
+  contentPlanItem: 'ContentPlanItem',
 };
 
 // Create a Proxy that intercepts property access and returns table-specific handlers
