@@ -80,7 +80,7 @@ export async function GET(request: Request) {
               username: newAccount.username,
               displayName: newAccount.displayName,
               accountHandle: newAccount.username,
-              profileImage: newAccount.profileImage || null,
+              profileImage: newAccount.profilePicture || null,
               isActive: true,
               followersCount: newAccount.followersCount || null,
               metadata: {}
