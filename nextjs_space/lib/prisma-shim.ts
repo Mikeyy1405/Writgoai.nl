@@ -40,6 +40,11 @@ const TABLE_NAME_MAP: Record<string, string> = {
   topicalAuthorityMap: 'TopicalAuthorityMap',
   topicalMapArticle: 'TopicalMapArticle',
   batchJob: 'BatchJob',
+  // Social Media Pipeline tables
+  socialMediaStrategy: 'SocialMediaStrategy',
+  socialMediaPost: 'SocialMediaPost',
+  // Autopilot Configuration table
+  autopilotConfig: 'AutopilotConfig',
 };
 
 // Create a Proxy that intercepts property access and returns table-specific handlers
