@@ -29,6 +29,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate that clientId is not a placeholder value
+    if (clientId === 'default-client-id' || clientId.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Selecteer eerst een geldige client voordat je een analyse uitvoert' },
+        { status: 400 }
+      );
+    }
+
     console.log(`[API] Analyzing website for client ${clientId}`);
 
     // Perform analysis
@@ -65,6 +73,14 @@ export async function GET(request: NextRequest) {
     if (!clientId) {
       return NextResponse.json(
         { error: 'Client ID is verplicht' },
+        { status: 400 }
+      );
+    }
+
+    // Validate that clientId is not a placeholder value
+    if (clientId === 'default-client-id' || clientId.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Selecteer eerst een geldige client' },
         { status: 400 }
       );
     }

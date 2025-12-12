@@ -197,7 +197,18 @@ export default function WebsiteAnalyzer({
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<WebsiteAnalysis | null>(existingAnalysis || null);
 
+  // Check if clientId is valid
+  const isValidClientId = clientId && 
+    clientId !== 'default-client-id' && 
+    clientId.trim().length > 0;
+
   const handleAnalyze = async () => {
+    // Validate clientId before making API call
+    if (!isValidClientId) {
+      toast.error('Selecteer eerst een client om te analyseren', { id: 'analyze' });
+      return;
+    }
+
     setAnalyzing(true);
     toast.loading('Website analyseren...', { id: 'analyze' });
 
@@ -276,6 +287,22 @@ export default function WebsiteAnalyzer({
         {!analysis ? (
           // Analyze Button State
           <div className="space-y-4">
+            {!isValidClientId && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-5">
+                <div className="flex items-start gap-3">
+                  <MessageSquare className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-300 mb-2">
+                      Selecteer eerst een client
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Je moet eerst een client selecteren voordat je een website analyse kunt uitvoeren.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-5">
               <div className="flex items-start gap-3">
                 <Sparkles className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
@@ -296,8 +323,8 @@ export default function WebsiteAnalyzer({
 
             <Button
               onClick={handleAnalyze}
-              disabled={analyzing}
-              className="w-full h-16 bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-lg font-semibold"
+              disabled={analyzing || !isValidClientId}
+              className="w-full h-16 bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {analyzing ? (
                 <>
