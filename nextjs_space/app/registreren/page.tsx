@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Sparkles, Gift, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Sparkles, Gift, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { BrandLogo } from '@/components/brand/brand-logo';
 
@@ -109,7 +109,7 @@ function RegisterForm() {
             Maak een WritgoAI account
           </CardTitle>
           <CardDescription className="text-center text-zinc-400">
-            Krijg toegang tot onze AI tools en agency diensten
+            Start met professionele omnipresence marketing - 100% autonoom en AI-gedreven
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,18 +130,66 @@ function RegisterForm() {
               </div>
             )}
 
-            {/* Features Highlight */}
-            <div className="p-4 bg-emerald-900/20 border-2 border-emerald-500 rounded-lg mb-4">
-              <div className="flex items-center gap-3 mb-2">
-                <Sparkles className="h-5 w-5 text-emerald-400" />
-                <h3 className="font-semibold text-white">Wat krijg je?</h3>
+            {/* Features Highlight - 100% Autonomous Marketing */}
+            <div className="p-4 bg-gradient-to-r from-orange-900/20 to-amber-900/20 border-2 border-[#FF9933] rounded-lg mb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Sparkles className="h-5 w-5 text-[#FF9933]" />
+                <h3 className="font-semibold text-white">100% Autonome Marketing</h3>
               </div>
-              <ul className="text-sm text-zinc-300 space-y-1 ml-8">
-                <li>✅ Toegang tot AI Blog Generator</li>
-                <li>✅ Zoekwoord Onderzoek Tool</li>
-                <li>✅ Content & Afbeelding Generator</li>
-                <li>✅ Agency diensten op aanvraag</li>
+              <ul className="text-sm text-zinc-300 space-y-2 ml-2">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span><strong>SEO Artikelen</strong> - Pillar & cluster content voor Google rankings</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span><strong>Social Media</strong> - Posts op ALLE platforms die jij kiest (LinkedIn, Instagram, TikTok, Facebook, etc.)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span><strong>Faceless Videos</strong> - Professionele video content zonder dat je voor de camera hoeft</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span><strong>Volledig Autonoom</strong> - Wij doen alles, jij doet niets (na onboarding)</span>
+                </li>
               </ul>
+            </div>
+
+            {/* Platform Flexibility Note */}
+            <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg mb-4">
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                🎯 <strong className="text-white">Jij bepaalt waar we posten</strong> - Verbind LinkedIn, Instagram, TikTok, Facebook, Pinterest, Google My Business en meer. Wij passen content automatisch aan per platform.
+              </p>
+            </div>
+
+            {/* Package Information */}
+            <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg mb-4">
+              <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-[#FF9933]" />
+                Kies Straks Je Pakket
+              </h4>
+              <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-zinc-600"></div>
+                  <span>INSTAPPER vanaf €197/mnd</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-zinc-600"></div>
+                  <span>STARTER vanaf €297/mnd</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-[#FF9933]"></div>
+                  <span><strong>GROEI vanaf €497/mnd ⭐</strong></span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-zinc-600"></div>
+                  <span>DOMINANT vanaf €797/mnd</span>
+                </div>
+              </div>
+              <p className="text-xs text-zinc-500 mt-2">
+                Na registratie krijg je een overzicht van alle pakketten
+              </p>
             </div>
 
             <div className="space-y-2">
