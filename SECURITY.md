@@ -238,7 +238,7 @@ If a security vulnerability is discovered:
 ## Contact
 
 For security concerns or to report vulnerabilities, please contact:
-- Email: security@writgo.ai (recommended)
+- Email: info@writgo.nl (recommended)
 - GitHub Security Advisory: Use "Security" tab in the repository
 
 **Do not** disclose security vulnerabilities in public issues or pull requests.
