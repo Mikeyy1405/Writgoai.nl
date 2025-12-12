@@ -2,493 +2,982 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Loader2,
-  ArrowLeft,
-  Save,
-  Globe,
-  FileText,
-  Plug,
-  CheckCircle,
-  XCircle,
+import { 
+  Settings, Link as LinkIcon, BookOpen, Plug, 
+  Share2, Save, Plus, Trash2, Edit2, X, Check,
+  ArrowLeft, AlertCircle
 } from 'lucide-react';
-import { toast } from 'sonner';
-import Link from 'next/link';
 
-interface AdminProject {
+interface Project {
   id: string;
   name: string;
-  websiteUrl: string | null;
-  description: string | null;
-  wordpressUrl: string | null;
-  wordpressUsername: string | null;
-  wordpressPassword: string | null;
-  wordpressCategory: string | null;
-  wordpressAutoPublish: boolean;
-  language: string;
-  niche: string | null;
-  targetAudience: string | null;
-  brandVoice: string | null;
-  keywords: string[];
-  isActive: boolean;
-  blogPostCount: number;
-  createdAt: string;
+  websiteUrl: string;
+  description?: string;
 }
 
-export default function AdminProjectDetailPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const params = useParams();
-  const projectId = params.id as string;
+interface AffiliateLink {
+  id: string;
+  name: string;
+  url: string;
+  description?: string;
+  category?: string;
+  keywords?: string[];
+  isActive: boolean;
+  clickCount: number;
+}
 
-  const [project, setProject] = useState<AdminProject | null>(null);
+interface KnowledgeBaseItem {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+  tags?: string[];
+  isActive: boolean;
+}
+
+interface ProjectSettings {
+  brandVoice?: string;
+  targetAudience?: string;
+  contentGuidelines?: string;
+  defaultSeoTitle?: string;
+  defaultSeoDescription?: string;
+  defaultKeywords?: string[];
+  autoIncludeAffiliateLinks?: boolean;
+  useKnowledgeBase?: boolean;
+  contentTone?: string;
+  autoPublishBlogs?: boolean;
+  autoPublishSocial?: boolean;
+}
+
+export default function ProjectSettingsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const projectId = params.id as string;
+  
+  const [project, setProject] = useState<Project | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    websiteUrl: '',
-    description: '',
-    wordpressUrl: '',
-    wordpressUsername: '',
-    wordpressPassword: '',
-    wordpressCategory: '',
-    wordpressAutoPublish: false,
-    language: 'NL',
-    niche: '',
-    targetAudience: '',
-    brandVoice: '',
-    keywords: '',
-    isActive: true,
-  });
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
-    if (status === 'authenticated') {
-      if ((session?.user as any)?.role !== 'admin') {
-        toast.error('Alleen admins hebben toegang tot deze pagina');
-        router.push('/client-portal');
-        return;
-      }
-      fetchProject();
-    } else if (status === 'unauthenticated') {
-      router.push('/inloggen');
-    }
-  }, [status, session, router, projectId]);
+    loadProject();
+  }, [projectId]);
 
-  const fetchProject = async () => {
+  const loadProject = async () => {
     try {
-      setLoading(true);
       const res = await fetch(`/api/admin/projects/${projectId}`);
-      if (!res.ok) throw new Error('Failed to fetch project');
-      
+      if (!res.ok) throw new Error('Failed to load project');
       const data = await res.json();
-      setProject(data.project);
-      
-      // Update form data
-      setFormData({
-        name: data.project.name || '',
-        websiteUrl: data.project.websiteUrl || '',
-        description: data.project.description || '',
-        wordpressUrl: data.project.wordpressUrl || '',
-        wordpressUsername: data.project.wordpressUsername || '',
-        wordpressPassword: data.project.wordpressPassword || '',
-        wordpressCategory: data.project.wordpressCategory || '',
-        wordpressAutoPublish: data.project.wordpressAutoPublish || false,
-        language: data.project.language || 'NL',
-        niche: data.project.niche || '',
-        targetAudience: data.project.targetAudience || '',
-        brandVoice: data.project.brandVoice || '',
-        keywords: data.project.keywords?.join(', ') || '',
-        isActive: data.project.isActive !== false,
-      });
-    } catch (error: any) {
-      console.error('Error fetching project:', error);
-      toast.error('Kon project niet laden');
+      setProject(data);
+    } catch (error) {
+      console.error('Error loading project:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const tabs = [
+    { id: 'overview', label: 'Instellingen', icon: Settings },
+    { id: 'affiliate', label: 'Affiliate Links', icon: LinkIcon },
+    { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
+    { id: 'integrations', label: 'Integraties', icon: Plug },
+    { id: 'social', label: 'Social Media', icon: Share2 }
+  ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name) {
-      toast.error('Project naam is verplicht');
-      return;
-    }
-
-    try {
-      setUpdating(true);
-      
-      const payload = {
-        ...formData,
-        keywords: formData.keywords ? formData.keywords.split(',').map(k => k.trim()) : [],
-      };
-
-      const res = await fetch(`/api/admin/projects/${projectId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to update project');
-      }
-
-      toast.success('Project succesvol bijgewerkt!');
-      fetchProject(); // Refresh project data
-    } catch (error: any) {
-      console.error('Error updating project:', error);
-      toast.error(error.message || 'Kon project niet bijwerken');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleTestWordPress = async () => {
-    try {
-      setTesting(true);
-      const res = await fetch(`/api/admin/projects/${projectId}/test-wordpress`, {
-        method: 'POST',
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success(`✅ WordPress connectie succesvol! Ingelogd als: ${data.user?.name || data.user?.username}`);
-      } else {
-        toast.error(`❌ WordPress connectie mislukt: ${data.error || 'Onbekende fout'}`);
-      }
-    } catch (error: any) {
-      console.error('Error testing WordPress:', error);
-      toast.error('Kon WordPress verbinding niet testen');
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  if (loading || status === 'loading') {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Project laden...</p>
+        </div>
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
-        <Card className="bg-gray-800/50 border-gray-700">
-          <CardContent className="py-8 text-center">
-            <p className="text-white mb-4">Project niet gevonden</p>
-            <Link href="/admin/projects">
-              <Button>Terug naar projecten</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Project niet gevonden</h2>
+          <button
+            onClick={() => router.push('/admin/clients')}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Terug naar klanten
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
-        <Link href="/admin/projects">
-          <Button variant="ghost" size="sm" className="mb-4 text-gray-300 hover:text-white">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Terug naar projecten
-          </Button>
-        </Link>
-
-        {/* Project Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <Globe className="h-8 w-8 text-orange-500" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">{project.name}</h1>
-          </div>
-          {project.websiteUrl && (
-            <a
-              href={project.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 text-sm"
-            >
-              {project.websiteUrl}
-            </a>
-          )}
-          <div className="flex gap-2 mt-3">
-            <Badge variant="outline" className="text-gray-300 border-gray-600">
-              {project.blogPostCount} blog posts
-            </Badge>
-            {project.wordpressUrl && (
-              <Badge variant="outline" className="text-green-400 border-green-600">
-                <Plug className="h-3 w-3 mr-1" />
-                WordPress gekoppeld
-              </Badge>
-            )}
-            {project.isActive ? (
-              <Badge variant="outline" className="text-green-400 border-green-600">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Actief
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-red-400 border-red-600">
-                <XCircle className="h-3 w-3 mr-1" />
-                Inactief
-              </Badge>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.back()}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {project.name}
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  {project.websiteUrl}
+                </p>
+              </div>
+            </div>
+            {saveMessage && (
+              <div className="flex items-center gap-2 text-green-600">
+                <Check className="w-5 h-5" />
+                <span>{saveMessage}</span>
+              </div>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Edit Form */}
-        <Card className="bg-gray-800/50 border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-xl text-white">Project Instellingen</CardTitle>
-            <CardDescription className="text-gray-400">
-              Beheer de instellingen van dit project
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Basis Informatie</h3>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-300">Project Naam *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    required
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="websiteUrl" className="text-gray-300">Website URL</Label>
-                  <Input
-                    id="websiteUrl"
-                    value={formData.websiteUrl}
-                    onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
-                    placeholder="https://example.com"
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="text-gray-300">Beschrijving</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    rows={3}
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="language" className="text-gray-300">Taal</Label>
-                    <Select value={formData.language} onValueChange={(value) => handleInputChange('language', value)}>
-                      <SelectTrigger className="bg-gray-700/50 border-gray-600 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-700">
-                        <SelectItem value="NL">Nederlands</SelectItem>
-                        <SelectItem value="EN">English</SelectItem>
-                        <SelectItem value="DE">Deutsch</SelectItem>
-                        <SelectItem value="FR">Français</SelectItem>
-                        <SelectItem value="ES">Español</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="niche" className="text-gray-300">Niche</Label>
-                    <Input
-                      id="niche"
-                      value={formData.niche}
-                      onChange={(e) => handleInputChange('niche', e.target.value)}
-                      className="bg-gray-700/50 border-gray-600 text-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="isActive" className="text-gray-300">Status</Label>
-                    <Select 
-                      value={formData.isActive ? "active" : "inactive"} 
-                      onValueChange={(value) => handleInputChange('isActive', value === "active")}
-                    >
-                      <SelectTrigger className="bg-gray-700/50 border-gray-600 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-700">
-                        <SelectItem value="active">Actief</SelectItem>
-                        <SelectItem value="inactive">Inactief</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* WordPress Connection */}
-              <div className="space-y-4 pt-4 border-t border-gray-700">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-white">WordPress Koppeling</h3>
-                  {formData.wordpressUrl && formData.wordpressUsername && formData.wordpressPassword && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleTestWordPress}
-                      disabled={testing}
-                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                    >
-                      {testing ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Testen...
-                        </>
-                      ) : (
-                        <>
-                          <Plug className="h-4 w-4 mr-2" />
-                          Test Verbinding
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="wordpressUrl" className="text-gray-300">WordPress URL</Label>
-                  <Input
-                    id="wordpressUrl"
-                    value={formData.wordpressUrl}
-                    onChange={(e) => handleInputChange('wordpressUrl', e.target.value)}
-                    placeholder="https://example.com"
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="wordpressUsername" className="text-gray-300">Username</Label>
-                    <Input
-                      id="wordpressUsername"
-                      value={formData.wordpressUsername}
-                      onChange={(e) => handleInputChange('wordpressUsername', e.target.value)}
-                      className="bg-gray-700/50 border-gray-600 text-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="wordpressPassword" className="text-gray-300">Application Password</Label>
-                    <Input
-                      id="wordpressPassword"
-                      type="password"
-                      value={formData.wordpressPassword}
-                      onChange={(e) => handleInputChange('wordpressPassword', e.target.value)}
-                      placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
-                      className="bg-gray-700/50 border-gray-600 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="wordpressCategory" className="text-gray-300">Standaard Categorie</Label>
-                  <Input
-                    id="wordpressCategory"
-                    value={formData.wordpressCategory}
-                    onChange={(e) => handleInputChange('wordpressCategory', e.target.value)}
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Content Settings */}
-              <div className="space-y-4 pt-4 border-t border-gray-700">
-                <h3 className="text-lg font-semibold text-white">Content Instellingen</h3>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="targetAudience" className="text-gray-300">Doelgroep</Label>
-                  <Input
-                    id="targetAudience"
-                    value={formData.targetAudience}
-                    onChange={(e) => handleInputChange('targetAudience', e.target.value)}
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="brandVoice" className="text-gray-300">Brand Voice</Label>
-                  <Input
-                    id="brandVoice"
-                    value={formData.brandVoice}
-                    onChange={(e) => handleInputChange('brandVoice', e.target.value)}
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="keywords" className="text-gray-300">Keywords (komma gescheiden)</Label>
-                  <Textarea
-                    id="keywords"
-                    value={formData.keywords}
-                    onChange={(e) => handleInputChange('keywords', e.target.value)}
-                    rows={2}
-                    className="bg-gray-700/50 border-gray-600 text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex gap-4 pt-4">
-                <Button
-                  type="submit"
-                  disabled={updating}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+      {/* Tabs */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-8 overflow-x-auto">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex items-center gap-2 px-4 py-4 border-b-2 transition-colors whitespace-nowrap
+                    ${activeTab === tab.id
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                    }
+                  `}
                 >
-                  {updating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Bijwerken...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Wijzigingen opslaan
-                    </>
+                  <Icon className="w-5 h-5" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'overview' && (
+          <OverviewTab 
+            projectId={projectId} 
+            setSaving={setSaving}
+            setSaveMessage={setSaveMessage}
+          />
+        )}
+        {activeTab === 'affiliate' && <AffiliateLinksTab projectId={projectId} />}
+        {activeTab === 'knowledge' && <KnowledgeBaseTab projectId={projectId} />}
+        {activeTab === 'integrations' && <IntegrationsTab projectId={projectId} />}
+        {activeTab === 'social' && <SocialMediaTab projectId={projectId} />}
+      </div>
+    </div>
+  );
+}
+
+// Overview Tab Component
+function OverviewTab({ 
+  projectId, 
+  setSaving,
+  setSaveMessage 
+}: { 
+  projectId: string;
+  setSaving: (val: boolean) => void;
+  setSaveMessage: (val: string) => void;
+}) {
+  const [settings, setSettings] = useState<ProjectSettings>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadSettings();
+  }, [projectId]);
+
+  const loadSettings = async () => {
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/settings`);
+      const data = await res.json();
+      setSettings(data);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveMessage('');
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      
+      if (!res.ok) throw new Error('Failed to save settings');
+      
+      setSaveMessage('Instellingen opgeslagen! ✓');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setSaveMessage('Fout bij opslaan');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Laden...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Brand Settings */}
+      <div className="bg-white rounded-lg border p-6">
+        <h2 className="text-lg font-semibold mb-4">Merk Instellingen</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Brand Voice
+            </label>
+            <textarea
+              value={settings.brandVoice || ''}
+              onChange={(e) => setSettings({ ...settings, brandVoice: e.target.value })}
+              placeholder="Beschrijf de tone of voice van het merk..."
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Doelgroep
+            </label>
+            <textarea
+              value={settings.targetAudience || ''}
+              onChange={(e) => setSettings({ ...settings, targetAudience: e.target.value })}
+              placeholder="Beschrijf de doelgroep..."
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={2}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Content Richtlijnen
+            </label>
+            <textarea
+              value={settings.contentGuidelines || ''}
+              onChange={(e) => setSettings({ ...settings, contentGuidelines: e.target.value })}
+              placeholder="Richtlijnen voor content creatie..."
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={4}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Content Tone
+            </label>
+            <select
+              value={settings.contentTone || 'professional'}
+              onChange={(e) => setSettings({ ...settings, contentTone: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="professional">Professioneel</option>
+              <option value="casual">Casual</option>
+              <option value="friendly">Vriendelijk</option>
+              <option value="authoritative">Autoritair</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* SEO Settings */}
+      <div className="bg-white rounded-lg border p-6">
+        <h2 className="text-lg font-semibold mb-4">SEO Instellingen</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Default SEO Title
+            </label>
+            <input
+              type="text"
+              value={settings.defaultSeoTitle || ''}
+              onChange={(e) => setSettings({ ...settings, defaultSeoTitle: e.target.value })}
+              placeholder="Standaard SEO titel..."
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Default SEO Description
+            </label>
+            <textarea
+              value={settings.defaultSeoDescription || ''}
+              onChange={(e) => setSettings({ ...settings, defaultSeoDescription: e.target.value })}
+              placeholder="Standaard SEO beschrijving..."
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={2}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content Settings */}
+      <div className="bg-white rounded-lg border p-6">
+        <h2 className="text-lg font-semibold mb-4">Content Instellingen</h2>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={settings.autoIncludeAffiliateLinks ?? true}
+              onChange={(e) => setSettings({ ...settings, autoIncludeAffiliateLinks: e.target.checked })}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div>
+              <div className="font-medium text-gray-900">Automatisch Affiliate Links Toevoegen</div>
+              <div className="text-sm text-gray-600">Voeg relevante affiliate links automatisch toe aan content</div>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={settings.useKnowledgeBase ?? true}
+              onChange={(e) => setSettings({ ...settings, useKnowledgeBase: e.target.checked })}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div>
+              <div className="font-medium text-gray-900">Knowledge Base Gebruiken</div>
+              <div className="text-sm text-gray-600">Gebruik knowledge base informatie bij content generatie</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* Publishing Settings */}
+      <div className="bg-white rounded-lg border p-6">
+        <h2 className="text-lg font-semibold mb-4">Publicatie Instellingen</h2>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={settings.autoPublishBlogs ?? false}
+              onChange={(e) => setSettings({ ...settings, autoPublishBlogs: e.target.checked })}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div>
+              <div className="font-medium text-gray-900">Automatisch Blogs Publiceren</div>
+              <div className="text-sm text-gray-600">Publiceer gegenereerde blogs automatisch</div>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={settings.autoPublishSocial ?? false}
+              onChange={(e) => setSettings({ ...settings, autoPublishSocial: e.target.checked })}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div>
+              <div className="font-medium text-gray-900">Automatisch Social Media Posten</div>
+              <div className="text-sm text-gray-600">Post gegenereerde social media content automatisch</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleSave}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-medium"
+        >
+          <Save className="w-5 h-5" />
+          Instellingen Opslaan
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Affiliate Links Tab Component
+function AffiliateLinksTab({ projectId }: { projectId: string }) {
+  const [links, setLinks] = useState<AffiliateLink[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingLink, setEditingLink] = useState<AffiliateLink | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    url: '',
+    description: '',
+    category: '',
+    keywords: ''
+  });
+
+  useEffect(() => {
+    loadLinks();
+  }, [projectId]);
+
+  const loadLinks = async () => {
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/affiliate-links`);
+      const data = await res.json();
+      setLinks(data);
+    } catch (error) {
+      console.error('Error loading links:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const keywordsArray = formData.keywords 
+        ? formData.keywords.split(',').map(k => k.trim()).filter(k => k)
+        : [];
+
+      const url = editingLink
+        ? `/api/admin/projects/${projectId}/affiliate-links/${editingLink.id}`
+        : `/api/admin/projects/${projectId}/affiliate-links`;
+      
+      const method = editingLink ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          keywords: keywordsArray
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to save link');
+
+      setFormData({ name: '', url: '', description: '', category: '', keywords: '' });
+      setShowAddForm(false);
+      setEditingLink(null);
+      loadLinks();
+    } catch (error) {
+      console.error('Error saving link:', error);
+    }
+  };
+
+  const handleDelete = async (linkId: string) => {
+    if (!confirm('Weet je zeker dat je deze affiliate link wilt verwijderen?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/affiliate-links/${linkId}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) throw new Error('Failed to delete link');
+      loadLinks();
+    } catch (error) {
+      console.error('Error deleting link:', error);
+    }
+  };
+
+  const handleEdit = (link: AffiliateLink) => {
+    setEditingLink(link);
+    setFormData({
+      name: link.name,
+      url: link.url,
+      description: link.description || '',
+      category: link.category || '',
+      keywords: link.keywords?.join(', ') || ''
+    });
+    setShowAddForm(true);
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Laden...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Affiliate Links</h2>
+        <button
+          onClick={() => {
+            setShowAddForm(!showAddForm);
+            setEditingLink(null);
+            setFormData({ name: '', url: '', description: '', category: '', keywords: '' });
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {showAddForm ? 'Annuleren' : 'Nieuwe Link'}
+        </button>
+      </div>
+
+      {/* Add/Edit Form */}
+      {showAddForm && (
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg border p-6 space-y-4">
+          <h3 className="font-semibold text-lg">
+            {editingLink ? 'Link Bewerken' : 'Nieuwe Affiliate Link'}
+          </h3>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Naam *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Product/dienst naam"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              URL *
+            </label>
+            <input
+              type="url"
+              required
+              value={formData.url}
+              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="https://affiliate-link.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Beschrijving
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={2}
+              placeholder="Korte beschrijving van het product/dienst"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Categorie
+            </label>
+            <input
+              type="text"
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="product, service, tool, etc."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Keywords (komma gescheiden)
+            </label>
+            <input
+              type="text"
+              value={formData.keywords}
+              onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="keyword1, keyword2, keyword3"
+            />
+          </div>
+
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setEditingLink(null);
+                setFormData({ name: '', url: '', description: '', category: '', keywords: '' });
+              }}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Annuleren
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              {editingLink ? 'Bijwerken' : 'Toevoegen'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Links List */}
+      <div className="grid gap-4">
+        {links.length === 0 ? (
+          <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+            Nog geen affiliate links toegevoegd
+          </div>
+        ) : (
+          links.map((link) => (
+            <div key={link.id} className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-medium text-gray-900">{link.name}</h3>
+                    {link.category && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                        {link.category}
+                      </span>
+                    )}
+                    {!link.isActive && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                        Inactief
+                      </span>
+                    )}
+                  </div>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline block mb-2"
+                  >
+                    {link.url}
+                  </a>
+                  {link.description && (
+                    <p className="text-sm text-gray-600 mb-2">{link.description}</p>
                   )}
-                </Button>
-                <Link href="/admin/projects">
-                  <Button type="button" variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                    Annuleren
-                  </Button>
-                </Link>
+                  {link.keywords && link.keywords.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {link.keywords.map((keyword, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-500 mt-2">
+                    Clicks: {link.clickCount}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 ml-4">
+                  <button
+                    onClick={() => handleEdit(link)}
+                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(link.id)}
+                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Knowledge Base Tab Component
+function KnowledgeBaseTab({ projectId }: { projectId: string }) {
+  const [items, setItems] = useState<KnowledgeBaseItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<KnowledgeBaseItem | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    type: 'document',
+    tags: ''
+  });
+
+  useEffect(() => {
+    loadKnowledge();
+  }, [projectId]);
+
+  const loadKnowledge = async () => {
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/knowledge`);
+      const data = await res.json();
+      setItems(data);
+    } catch (error) {
+      console.error('Error loading knowledge:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const tagsArray = formData.tags 
+        ? formData.tags.split(',').map(t => t.trim()).filter(t => t)
+        : [];
+
+      const url = editingItem
+        ? `/api/admin/projects/${projectId}/knowledge/${editingItem.id}`
+        : `/api/admin/projects/${projectId}/knowledge`;
+      
+      const method = editingItem ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          tags: tagsArray
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to save item');
+
+      setFormData({ title: '', content: '', type: 'document', tags: '' });
+      setShowAddForm(false);
+      setEditingItem(null);
+      loadKnowledge();
+    } catch (error) {
+      console.error('Error saving item:', error);
+    }
+  };
+
+  const handleDelete = async (itemId: string) => {
+    if (!confirm('Weet je zeker dat je dit knowledge base item wilt verwijderen?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/knowledge/${itemId}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) throw new Error('Failed to delete item');
+      loadKnowledge();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    }
+  };
+
+  const handleEdit = (item: KnowledgeBaseItem) => {
+    setEditingItem(item);
+    setFormData({
+      title: item.title,
+      content: item.content,
+      type: item.type,
+      tags: item.tags?.join(', ') || ''
+    });
+    setShowAddForm(true);
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Laden...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Knowledge Base</h2>
+        <button
+          onClick={() => {
+            setShowAddForm(!showAddForm);
+            setEditingItem(null);
+            setFormData({ title: '', content: '', type: 'document', tags: '' });
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {showAddForm ? 'Annuleren' : 'Nieuw Document'}
+        </button>
+      </div>
+
+      {/* Add/Edit Form */}
+      {showAddForm && (
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg border p-6 space-y-4">
+          <h3 className="font-semibold text-lg">
+            {editingItem ? 'Document Bewerken' : 'Nieuw Knowledge Base Document'}
+          </h3>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Titel *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Document titel"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Type
+            </label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="document">Document</option>
+              <option value="faq">FAQ</option>
+              <option value="guideline">Richtlijn</option>
+              <option value="brand_voice">Brand Voice</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Content *
+            </label>
+            <textarea
+              required
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={10}
+              placeholder="Document inhoud..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tags (komma gescheiden)
+            </label>
+            <input
+              type="text"
+              value={formData.tags}
+              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="tag1, tag2, tag3"
+            />
+          </div>
+
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setEditingItem(null);
+                setFormData({ title: '', content: '', type: 'document', tags: '' });
+              }}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Annuleren
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              {editingItem ? 'Bijwerken' : 'Toevoegen'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Items List */}
+      <div className="grid gap-4">
+        {items.length === 0 ? (
+          <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+            Nog geen knowledge base items toegevoegd
+          </div>
+        ) : (
+          items.map((item) => (
+            <div key={item.id} className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-medium text-gray-900">{item.title}</h3>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                      {item.type}
+                    </span>
+                    {!item.isActive && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                        Inactief
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                    {item.content}
+                  </p>
+                  {item.tags && item.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {item.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 ml-4">
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Integrations Tab Component
+function IntegrationsTab({ projectId }: { projectId: string }) {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-lg font-semibold">Integraties</h2>
+      <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+        <Plug className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+        <p className="text-lg font-medium mb-2">Integraties Overzicht</p>
+        <p className="text-sm">WordPress, Getlate en andere integraties worden hier getoond</p>
+      </div>
+    </div>
+  );
+}
+
+// Social Media Tab Component
+function SocialMediaTab({ projectId }: { projectId: string }) {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-lg font-semibold">Social Media Accounts</h2>
+      <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+        <Share2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+        <p className="text-lg font-medium mb-2">Social Media Overzicht</p>
+        <p className="text-sm">Gekoppelde social media accounts worden hier getoond</p>
       </div>
     </div>
   );

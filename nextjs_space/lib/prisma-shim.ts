@@ -49,6 +49,10 @@ const TABLE_NAME_MAP: Record<string, string> = {
   websiteAnalysis: 'WebsiteAnalysis',
   // Getlate Integration tables
   connectedSocialAccount: 'ConnectedSocialAccount',
+  // Project-based system tables
+  affiliateLink: 'AffiliateLink',
+  knowledgeBase: 'KnowledgeBase',
+  projectSettings: 'ProjectSettings',
 };
 
 // Create a Proxy that intercepts property access and returns table-specific handlers
