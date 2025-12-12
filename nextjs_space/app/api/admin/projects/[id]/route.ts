@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
-// GET - Get single admin project
+// GET - Fetch a specific project
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -13,44 +13,37 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
+    const projectId = params.id;
 
-    if (user?.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
-    }
-
-    const project = await prisma.adminProject.findUnique({
-      where: { id: params.id },
-      include: {
-        _count: {
-          select: {
-            blogPosts: true
-          }
-        }
-      }
+    const project = await prisma.project.findUnique({
+      where: { id: projectId }
     });
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      );
     }
 
-    const transformedProject = {
-      ...project,
-      blogPostCount: project._count?.blogPosts || 0,
-      _count: undefined
-    };
+    // Check authorization: user must own the project or be admin
+    if (
+      project.clientId !== session.user.id && 
+      session.user.role !== 'admin'
+    ) {
+      return NextResponse.json(
+        { error: 'Unauthorized to access this project' },
+        { status: 403 }
+      );
+    }
 
-    return NextResponse.json({ project: transformedProject });
-
-  } catch (error: any) {
-    console.error('Error fetching admin project:', error);
+    return NextResponse.json({ project });
+  } catch (error) {
+    console.error('Failed to fetch project:', error);
     return NextResponse.json(
       { error: 'Failed to fetch project' },
       { status: 500 }
@@ -58,7 +51,7 @@ export async function GET(
   }
 }
 
-// PUT - Update admin project
+// PUT - Update a project
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -66,74 +59,83 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
+    const projectId = params.id;
+    const body = await request.json();
 
-    if (user?.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
-    }
-
-    const data = await request.json();
-    
     // Check if project exists
-    const existingProject = await prisma.adminProject.findUnique({
-      where: { id: params.id }
+    const existingProject = await prisma.project.findUnique({
+      where: { id: projectId }
     });
 
     if (!existingProject) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    // Validation
-    if (data.name !== undefined && !data.name) {
       return NextResponse.json(
-        { error: 'Project name is required' },
-        { status: 400 }
+        { error: 'Project not found' },
+        { status: 404 }
       );
     }
 
-    const project = await prisma.adminProject.update({
-      where: { id: params.id },
-      data: {
-        ...(data.name !== undefined && { name: data.name }),
-        ...(data.websiteUrl !== undefined && { websiteUrl: data.websiteUrl || null }),
-        ...(data.description !== undefined && { description: data.description || null }),
-        ...(data.wordpressUrl !== undefined && { wordpressUrl: data.wordpressUrl || null }),
-        ...(data.wordpressUsername !== undefined && { wordpressUsername: data.wordpressUsername || null }),
-        ...(data.wordpressPassword !== undefined && { wordpressPassword: data.wordpressPassword || null }),
-        ...(data.wordpressCategory !== undefined && { wordpressCategory: data.wordpressCategory || null }),
-        ...(data.wordpressAutoPublish !== undefined && { wordpressAutoPublish: data.wordpressAutoPublish }),
-        ...(data.language !== undefined && { language: data.language }),
-        ...(data.niche !== undefined && { niche: data.niche || null }),
-        ...(data.targetAudience !== undefined && { targetAudience: data.targetAudience || null }),
-        ...(data.brandVoice !== undefined && { brandVoice: data.brandVoice || null }),
-        ...(data.keywords !== undefined && { keywords: data.keywords || [] }),
-        ...(data.isActive !== undefined && { isActive: data.isActive }),
-      }
+    // Check authorization
+    if (
+      existingProject.clientId !== session.user.id && 
+      session.user.role !== 'admin'
+    ) {
+      return NextResponse.json(
+        { error: 'Unauthorized to update this project' },
+        { status: 403 }
+      );
+    }
+
+    // Prepare update data
+    const updateData: any = {};
+    
+    if (body.name !== undefined) updateData.name = body.name.trim();
+    if (body.websiteUrl !== undefined) updateData.websiteUrl = body.websiteUrl.trim();
+    if (body.description !== undefined) updateData.description = body.description?.trim() || null;
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.isActive !== undefined) updateData.isActive = body.isActive;
+    if (body.isPrimary !== undefined) updateData.isPrimary = body.isPrimary;
+    if (body.settings !== undefined) updateData.settings = body.settings;
+    
+    // Content settings
+    if (body.targetAudience !== undefined) updateData.targetAudience = body.targetAudience;
+    if (body.brandVoice !== undefined) updateData.brandVoice = body.brandVoice;
+    if (body.niche !== undefined) updateData.niche = body.niche;
+    if (body.keywords !== undefined) updateData.keywords = body.keywords;
+    if (body.contentPillars !== undefined) updateData.contentPillars = body.contentPillars;
+    if (body.writingStyle !== undefined) updateData.writingStyle = body.writingStyle;
+    
+    // WordPress settings
+    if (body.wordpressUrl !== undefined) updateData.wordpressUrl = body.wordpressUrl;
+    if (body.wordpressUsername !== undefined) updateData.wordpressUsername = body.wordpressUsername;
+    if (body.wordpressPassword !== undefined) updateData.wordpressPassword = body.wordpressPassword;
+    if (body.wordpressCategory !== undefined) updateData.wordpressCategory = body.wordpressCategory;
+    if (body.wordpressAutoPublish !== undefined) updateData.wordpressAutoPublish = body.wordpressAutoPublish;
+
+    // Update project
+    const updatedProject = await prisma.project.update({
+      where: { id: projectId },
+      data: updateData
     });
 
     return NextResponse.json({
       success: true,
-      project,
-      message: 'Admin project updated successfully'
+      message: 'Project succesvol bijgewerkt',
+      project: updatedProject
     });
-
   } catch (error: any) {
-    console.error('Error updating admin project:', error);
+    console.error('Failed to update project:', error);
     return NextResponse.json(
-      { error: 'Failed to update project' },
+      { error: error.message || 'Failed to update project' },
       { status: 500 }
     );
   }
 }
 
-// DELETE - Delete admin project
+// DELETE - Delete a project
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
@@ -141,42 +143,62 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (user?.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
-    }
+    const projectId = params.id;
 
     // Check if project exists
-    const existingProject = await prisma.adminProject.findUnique({
-      where: { id: params.id }
+    const existingProject = await prisma.project.findUnique({
+      where: { id: projectId }
     });
 
     if (!existingProject) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      );
     }
 
-    // Delete the project (cascades to blog posts)
-    await prisma.adminProject.delete({
-      where: { id: params.id }
+    // Check authorization
+    if (
+      existingProject.clientId !== session.user.id && 
+      session.user.role !== 'admin'
+    ) {
+      return NextResponse.json(
+        { error: 'Unauthorized to delete this project' },
+        { status: 403 }
+      );
+    }
+
+    // Prevent deleting primary project if it's the only one
+    if (existingProject.isPrimary) {
+      const projectCount = await prisma.project.count({
+        where: { clientId: existingProject.clientId }
+      });
+
+      if (projectCount === 1) {
+        return NextResponse.json(
+          { error: 'Cannot delete the only project. Create another project first.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Delete project (CASCADE will handle related content)
+    await prisma.project.delete({
+      where: { id: projectId }
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Admin project deleted successfully'
+      message: 'Project succesvol verwijderd'
     });
-
   } catch (error: any) {
-    console.error('Error deleting admin project:', error);
+    console.error('Failed to delete project:', error);
     return NextResponse.json(
-      { error: 'Failed to delete project' },
+      { error: error.message || 'Failed to delete project' },
       { status: 500 }
     );
   }

@@ -27,6 +27,7 @@ import {
   BarChart3,
   Mail,
   Settings,
+  Globe,
   LucideIcon,
 } from 'lucide-react';
 import { isFeatureEnabled } from './feature-flags';
@@ -93,7 +94,22 @@ export const adminNavSections: AdminNavSection[] = [
   },
   
   // ======================================
-  // SECTIE 3: CONTENT & SOCIAL MEDIA (2 items)
+  // SECTIE 3: PROJECTEN (1 item)
+  // ======================================
+  {
+    title: 'Projecten',
+    items: [
+      {
+        label: 'Projecten Beheer',
+        href: '/admin/projects',
+        icon: Globe,
+        description: 'Multi-project management',
+      },
+    ],
+  },
+  
+  // ======================================
+  // SECTIE 4: CONTENT & SOCIAL MEDIA (2 items)
   // ======================================
   {
     title: 'Content & Social Media',
@@ -114,7 +130,7 @@ export const adminNavSections: AdminNavSection[] = [
   },
   
   // ======================================
-  // SECTIE 4: FINANCIEEL (2 items)
+  // SECTIE 5: FINANCIEEL (2 items)
   // ======================================
   {
     title: 'Financieel',
@@ -135,7 +151,7 @@ export const adminNavSections: AdminNavSection[] = [
   },
   
   // ======================================
-  // SECTIE 5: STATISTIEKEN (1 item)
+  // SECTIE 6: STATISTIEKEN (1 item)
   // ======================================
   {
     title: 'Statistieken',
@@ -150,7 +166,7 @@ export const adminNavSections: AdminNavSection[] = [
   },
   
   // ======================================
-  // SECTIE 6: EMAIL (optioneel - 1 item)
+  // SECTIE 7: EMAIL (optioneel - 1 item)
   // ======================================
   ...(isFeatureEnabled('ADMIN_EMAIL_INBOX') ? [{
     title: 'Email',
@@ -165,7 +181,7 @@ export const adminNavSections: AdminNavSection[] = [
   }] : []),
   
   // ======================================
-  // SECTIE 7: INSTELLINGEN (1 item)
+  // SECTIE 8: INSTELLINGEN (1 item)
   // ======================================
   {
     title: 'Instellingen',

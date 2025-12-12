@@ -1,11 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { useProject } from '@/lib/contexts/ProjectContext';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,257 +27,301 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
+import { 
+  Globe, 
+  Plus, 
+  Check, 
+  Edit, 
+  Trash2, 
+  ExternalLink,
   Loader2,
-  Globe,
-  Settings,
-  Eye,
-  Plus,
-  ArrowLeft,
-  Trash2,
-  FileText,
+  AlertCircle
 } from 'lucide-react';
-import { toast } from 'sonner';
-import Link from 'next/link';
+import { AddProjectDialog } from '@/components/project/AddProjectDialog';
 
-interface AdminProject {
-  id: string;
-  name: string;
-  websiteUrl: string | null;
-  description: string | null;
-  wordpressUrl: string | null;
-  language: string;
-  niche: string | null;
-  isActive: boolean;
-  blogPostCount: number;
-  createdAt: string;
-}
+export default function ProjectsManagementPage() {
+  const { projects, currentProject, switchProject, updateProject, deleteProject, loading } = useProject();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [deletingProject, setDeletingProject] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    websiteUrl: '',
+    description: '',
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-export default function AdminProjectsPage() {
-  const { data: session, status } = useSession() || {};
-  const router = useRouter();
-  const [projects, setProjects] = useState<AdminProject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/inloggen');
-    } else if (status === 'authenticated') {
-      // Check if user is admin
-      if ((session?.user as any)?.role !== 'admin') {
-        toast.error('Alleen admins hebben toegang tot deze pagina');
-        router.push('/client-portal');
-        return;
-      }
-      fetchProjects();
-    }
-  }, [status, session, router]);
-
-  const fetchProjects = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin/projects');
-      if (!res.ok) throw new Error('Failed to fetch projects');
-      const data = await res.json();
-      setProjects(data.projects || []);
-    } catch (error: any) {
-      console.error('Error fetching projects:', error);
-      toast.error('Kon projecten niet laden');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteProject = async () => {
-    if (!deleteProjectId) return;
-    
-    try {
-      setDeleting(true);
-      const res = await fetch(`/api/admin/projects/${deleteProjectId}`, {
-        method: 'DELETE',
+  const handleEditClick = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setEditFormData({
+        name: project.name,
+        websiteUrl: project.websiteUrl,
+        description: project.description || '',
       });
-      
-      if (!res.ok) throw new Error('Failed to delete project');
-      
-      toast.success('Project verwijderd');
-      setDeleteProjectId(null);
-      fetchProjects(); // Refresh the list
-    } catch (error: any) {
-      console.error('Error deleting project:', error);
-      toast.error('Kon project niet verwijderen');
-    } finally {
-      setDeleting(false);
+      setEditingProject(projectId);
     }
   };
 
-  if (status === 'loading' || loading) {
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setActionLoading(true);
+
+    try {
+      await updateProject(editingProject!, editFormData);
+      setEditingProject(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update project');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingProject) return;
+    
+    setError(null);
+    setActionLoading(true);
+
+    try {
+      await deleteProject(deletingProject);
+      setDeletingProject(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete project');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-orange-500 mx-auto mb-4" />
+          <p className="text-gray-400">Projecten laden...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
-        <div className="mb-6">
-          <Link href="/admin">
-            <Button variant="ghost" size="sm" className="mb-4 text-gray-300 hover:text-white">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              <span className="text-sm sm:text-base">Terug naar dashboard</span>
-            </Button>
-          </Link>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Admin Projecten</h1>
-              <p className="text-sm sm:text-base text-gray-400 mt-1 sm:mt-2">
-                Beheer meerdere websites en WordPress sites
-              </p>
-            </div>
-            <Link href="/admin/projects/new" className="w-full sm:w-auto">
-              <Button className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="text-sm sm:text-base">Nieuw project</span>
-              </Button>
-            </Link>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-100">Projecten Beheren</h1>
+          <p className="text-gray-400 mt-2">
+            Beheer al je websites en projecten op één plek
+          </p>
         </div>
+        <Button
+          onClick={() => setShowAddDialog(true)}
+          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nieuw Project
+        </Button>
+      </div>
 
-        {/* Projects Grid */}
-        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
-            <Card key={project.id} className="bg-gray-800/50 border-gray-700">
-              <CardHeader className="pb-3 sm:pb-6">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-white">
-                      <Globe className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                      <span className="truncate">{project.name}</span>
-                    </CardTitle>
-                    {!project.isActive && (
-                      <Badge variant="secondary" className="text-xs">Inactief</Badge>
-                    )}
-                  </div>
-                  {project.websiteUrl && (
-                    <CardDescription className="text-xs sm:text-sm break-all text-gray-400">
-                      {project.websiteUrl}
-                    </CardDescription>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {project.description && (
-                  <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
-                )}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {project.niche && (
-                    <Badge variant="outline" className="text-xs text-gray-300 border-gray-600">
-                      {project.niche}
-                    </Badge>
-                  )}
-                  <Badge variant="outline" className="text-xs text-gray-300 border-gray-600">
-                    {project.language}
-                  </Badge>
-                  {project.wordpressUrl && (
-                    <Badge variant="outline" className="text-xs text-green-400 border-green-600">
-                      WordPress
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
-                  <FileText className="h-3 w-3" />
-                  <span>{project.blogPostCount} blog posts</span>
-                </div>
-
-                <div className="space-y-2">
-                  <Link href={`/admin/projects/${project.id}`}>
-                    <Button variant="default" size="sm" className="w-full text-sm">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Project bekijken
-                    </Button>
-                  </Link>
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link href={`/admin/projects/${project.id}`}>
-                      <Button variant="outline" size="sm" className="w-full text-sm border-gray-600 text-gray-300 hover:bg-gray-700">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Instellingen
-                      </Button>
-                    </Link>
-                    
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      className="w-full text-sm"
-                      onClick={() => setDeleteProjectId(project.id)}
+      {/* Projects Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map((project) => (
+          <Card
+            key={project.id}
+            className={`
+              bg-gray-900 border-gray-800 hover:border-gray-700 transition-all
+              ${project.id === currentProject?.id ? 'ring-2 ring-orange-500 border-orange-500/50' : ''}
+            `}
+          >
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg text-gray-100 truncate flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                    {project.name}
+                  </CardTitle>
+                  <CardDescription className="mt-1 flex items-center gap-2">
+                    <a
+                      href={project.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-orange-400 hover:text-orange-300 truncate flex items-center gap-1 text-sm"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Verwijderen
-                    </Button>
-                  </div>
+                      {project.websiteUrl}
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                  </CardDescription>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                {project.id === currentProject?.id && (
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/50">
+                    <Check className="w-3 h-3 mr-1" />
+                    Actief
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
 
-        {projects.length === 0 && (
-          <Card className="bg-gray-800/50 border-gray-700">
-            <CardContent className="py-8 sm:py-12 text-center px-4">
-              <Globe className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-3 sm:mb-4" />
-              <p className="text-sm sm:text-base text-gray-400 mb-3 sm:mb-4">Nog geen projecten aangemaakt</p>
-              <Link href="/admin/projects/new" className="inline-block w-full sm:w-auto">
-                <Button className="w-full sm:w-auto text-sm sm:text-base bg-orange-500 hover:bg-orange-600">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nieuw project aanmaken
+            <CardContent className="space-y-4">
+              {project.description && (
+                <p className="text-sm text-gray-400 line-clamp-2">
+                  {project.description}
+                </p>
+              )}
+
+              <div className="flex items-center gap-2">
+                {project.id !== currentProject?.id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => switchProject(project.id)}
+                    className="flex-1"
+                  >
+                    Activeer
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEditClick(project.id)}
+                >
+                  <Edit className="w-4 h-4" />
                 </Button>
-              </Link>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDeletingProject(project.id)}
+                  className="text-red-400 hover:text-red-300"
+                  disabled={projects.length === 1}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        )}
+        ))}
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteProjectId !== null} onOpenChange={(open) => !open && setDeleteProjectId(null)}>
-          <AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Project verwijderen?</AlertDialogTitle>
-              <AlertDialogDescription className="text-gray-400">
-                Weet je zeker dat je dit project wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.
-                Alle gekoppelde blog posts worden ook verwijderd.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleting} className="bg-gray-700 text-white hover:bg-gray-600">
-                Annuleren
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteProject}
-                disabled={deleting}
-                className="bg-red-600 text-white hover:bg-red-700"
-              >
-                {deleting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Verwijderen...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Verwijderen
-                  </>
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Add New Project Card */}
+        <Card
+          className="bg-gray-900/50 border-gray-800 border-dashed hover:border-orange-500/50 transition-all cursor-pointer"
+          onClick={() => setShowAddDialog(true)}
+        >
+          <CardContent className="flex flex-col items-center justify-center min-h-[200px] text-center">
+            <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center mb-4">
+              <Plus className="w-6 h-6 text-orange-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-100 mb-2">
+              Nieuw Project
+            </h3>
+            <p className="text-sm text-gray-400">
+              Voeg een nieuwe website toe om te beheren
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Add Project Dialog */}
+      <AddProjectDialog
+        open={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+      />
+
+      {/* Edit Project Dialog */}
+      <Dialog open={!!editingProject} onOpenChange={(open) => !open && setEditingProject(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Project Bewerken</DialogTitle>
+            <DialogDescription>
+              Wijzig de gegevens van je project
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleEditSubmit}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Project Naam</Label>
+                <Input
+                  id="edit-name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  required
+                  disabled={actionLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-url">Website URL</Label>
+                <Input
+                  id="edit-url"
+                  type="url"
+                  value={editFormData.websiteUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, websiteUrl: e.target.value })}
+                  required
+                  disabled={actionLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Beschrijving</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  rows={3}
+                  disabled={actionLoading}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingProject(null)}
+                disabled={actionLoading}
+              >
+                Annuleren
+              </Button>
+              <Button type="submit" disabled={actionLoading}>
+                {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Opslaan
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingProject} onOpenChange={(open) => !open && setDeletingProject(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Project Verwijderen</AlertDialogTitle>
+            <AlertDialogDescription>
+              Weet je zeker dat je dit project wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.
+              Alle content en instellingen van dit project worden permanent verwijderd.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Annuleren</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={actionLoading}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Verwijderen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

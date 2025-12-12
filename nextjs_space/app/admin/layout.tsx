@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AdminComplexLayout } from '@/components/admin-complex/admin-complex-layout';
+import { ProjectProvider } from '@/lib/contexts/ProjectContext';
 import { isUserAdmin } from '@/lib/navigation-config';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { API_TIMEOUTS } from '@/lib/api-timeout';
@@ -119,5 +120,9 @@ export default function AdminLayoutWrapper({ children }: AdminLayoutPropsType) {
     );
   }
 
-  return <AdminComplexLayout>{children}</AdminComplexLayout>;
+  return (
+    <ProjectProvider>
+      <AdminComplexLayout>{children}</AdminComplexLayout>
+    </ProjectProvider>
+  );
 }

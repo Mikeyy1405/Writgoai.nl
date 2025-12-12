@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../dashboard/logo';
+import { ProjectSwitcher } from '@/components/project/ProjectSwitcher';
 import { adminNavSections, isAdminNavActive } from '@/lib/admin-navigation-config';
 
 interface AdminComplexSidebarProps {
@@ -62,6 +63,13 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
           )}
         </button>
       </div>
+
+      {/* Project Switcher */}
+      {!isCollapsed && (
+        <div className="px-4 py-3 border-b border-gray-800">
+          <ProjectSwitcher />
+        </div>
+      )}
 
       {/* Navigation Items */}
       <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
