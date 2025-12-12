@@ -8,6 +8,7 @@ export const maxDuration = 300; // 5 minutes timeout
 /**
  * POST /api/admin/social-media/generate-ideas
  * Generates social media content ideas based on website analysis
+ * FIXED: Now accessible to all authenticated clients
  */
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    console.log('[Social Media Ideas] Request from:', session.user.email);
 
     const { 
       websiteUrl, 

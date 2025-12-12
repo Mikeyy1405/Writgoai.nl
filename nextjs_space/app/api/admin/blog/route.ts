@@ -3,13 +3,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 // GET - Alle blog posts ophalen (met filters)
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.role !== 'admin') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get client to ensure they can only see their own content
+    const { data: client } = await supabaseAdmin
+      .from('Client')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
+
+    if (!client) {
+      console.error('[Blog API] Client not found for:', session.user.email);
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -23,6 +36,24 @@ export async function GET(request: NextRequest) {
     if (status) where.status = status;
     if (category) where.category = category;
     if (projectId) where.projectId = projectId;
+    
+    // CRITICAL: Only show posts for projects owned by this client
+    // Get all project IDs for this client
+    const { data: clientProjects } = await supabaseAdmin
+      .from('Project')
+      .select('id')
+      .eq('clientId', client.id);
+    
+    const projectIds = clientProjects?.map(p => p.id) || [];
+    if (projectIds.length > 0) {
+      where.projectId = projectIds; // Filter by client's projects
+    } else {
+      // No projects = no blog posts
+      return NextResponse.json({
+        posts: [],
+        pagination: { total: 0, page, limit, pages: 0 },
+      });
+    }
 
     const [posts, total] = await Promise.all([
       prisma.blogPost.findMany({
@@ -86,8 +117,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.role !== 'admin') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get client to validate ownership
+    const { data: client } = await supabaseAdmin
+      .from('Client')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
+
+    if (!client) {
+      console.error('[Blog API POST] Client not found for:', session.user.email);
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
     const body = await request.json();
@@ -116,6 +159,22 @@ export async function POST(request: NextRequest) {
         { error: 'Title, slug, excerpt en content zijn verplicht' },
         { status: 400 }
       );
+    }
+
+    // CRITICAL: If projectId provided, verify it belongs to this client
+    if (projectId) {
+      const { data: project } = await supabaseAdmin
+        .from('Project')
+        .select('clientId')
+        .eq('id', projectId)
+        .single();
+      
+      if (!project || project.clientId !== client.id) {
+        console.error('[Blog API POST] Project ownership validation failed');
+        return NextResponse.json({ 
+          error: 'Project niet gevonden of geen toegang' 
+        }, { status: 403 });
+      }
     }
 
     // Check of slug al bestaat

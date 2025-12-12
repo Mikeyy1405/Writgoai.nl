@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,12 +10,25 @@ export const dynamic = 'force-dynamic';
  * GET /api/admin/blog/content-plan
  * 
  * List all content plans with their items and stats
+ * FIXED: Now allows clients to see their own content plans
  */
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.role !== 'admin') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get client to filter by their content
+    const { data: client } = await supabaseAdmin
+      .from('Client')
+      .select('id')
+      .eq('email', session.user.email)
+      .single();
+
+    if (!client) {
+      console.error('[Content Plan API] Client not found for:', session.user.email);
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -22,8 +36,12 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const page = parseInt(searchParams.get('page') || '1');
 
-    const where: any = {};
+    const where: any = {
+      clientId: client.id // CRITICAL: Only show this client's content plans
+    };
     if (status) where.status = status;
+
+    console.log('[Content Plan API] Fetching plans for client:', client.id);
 
     // Get plans with item counts
     const [plans, total] = await Promise.all([
@@ -35,6 +53,8 @@ export async function GET(request: NextRequest) {
       }),
       prisma.contentPlan.count({ where }),
     ]);
+
+    console.log('[Content Plan API] Found', total, 'plans');
 
     // Get item counts for each plan
     const plansWithStats = await Promise.all(
