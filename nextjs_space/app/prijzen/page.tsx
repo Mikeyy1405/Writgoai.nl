@@ -151,7 +151,7 @@ export default function PrijzenPage() {
             Eenvoudige, Transparante Prijzen
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-2">
-            Kies het pakket dat bij jouw ambitie past
+            🎯 <span className="text-orange-500 font-semibold">JIJ KIEST JE PLATFORMS</span> - Kies het pakket dat bij jouw ambitie past
           </p>
           <p className="text-lg text-gray-400">
             Maandelijks opzegbaar • Geen setup kosten • 30 dagen garantie
@@ -260,10 +260,13 @@ export default function PrijzenPage() {
             Platform Flexibiliteit
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Ondersteunde Platforms
+            🎯 JIJ BEPAALT JE PLATFORMS
           </h2>
-          <p className="text-xl text-gray-300 mb-12">
-            Kies zelf waar je zichtbaar wilt zijn. Verbind één platform of alle acht.
+          <p className="text-xl text-gray-300 mb-2">
+            Verbind alleen wat jij wilt. Content wordt automatisch aangepast per platform.
+          </p>
+          <p className="text-lg text-orange-500 font-semibold mb-12">
+            LinkedIn only? Prima. Alle 8 platforms? Ook goed.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

@@ -41,7 +41,7 @@ export default function OverOnsPage() {
     {
       icon: Sliders,
       title: 'Platform Flexibiliteit',
-      description: 'De klant bepaalt waar ze zichtbaar willen zijn. LinkedIn only? Prima. Alle 8 platforms? Ook goed.',
+      description: 'JIJ kiest waar je zichtbaar wilt zijn. Alleen LinkedIn? Prima. Alle platforms? Ook goed. Content wordt aangepast per platform via Getlate.dev.',
     },
   ];
 
@@ -63,7 +63,11 @@ export default function OverOnsPage() {
     },
     {
       title: '400+ AI modellen',
-      description: 'Eigen AI platform met de nieuwste technologie.',
+      description: 'Eigen AI platform met de nieuwste technologie (GPT-5.1, Claude 4.5, Gemini 3, etc.).',
+    },
+    {
+      title: '🎯 Platform Flexibiliteit via Getlate.dev',
+      description: 'Verbind elk social media platform dat je wilt. LinkedIn, Instagram, TikTok, Facebook, Twitter/X, Pinterest, GMB, YouTube.',
     },
     {
       title: 'Nederlandse markt',
@@ -177,7 +181,7 @@ export default function OverOnsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {expertise.map((item, index) => (
               <Card
                 key={index}

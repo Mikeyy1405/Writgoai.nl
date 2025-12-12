@@ -14,7 +14,7 @@ import {
   Share2, BarChart, Clock, Shield,
   Target, Bot, Award, Languages,
   MessageSquare, Calendar, Eye, EyeOff, X, Play, CheckCircle2,
-  Scissors, PenTool, Wrench, Hammer, Stethoscope, Home
+  Scissors, PenTool, Wrench, Hammer, Stethoscope, Home, Sliders
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -97,22 +97,16 @@ export default function HomePage() {
       details: ['Pillar/cluster strategie', 'Lokale keywords', 'Rank in top 3 voor jouw regio'],
     },
     {
-      icon: <Users className="w-8 h-8" />,
-      title: '💼 LinkedIn',
-      description: 'Thought leadership posts',
-      details: ['B2B exposure', 'Professionele uitstraling', '3-4x per week automatisch'],
-    },
-    {
-      icon: <Image className="w-8 h-8" />,
-      title: '📸 Instagram',
-      description: 'Carrousels, quotes, tips',
-      details: ['Stories templates', 'Engagement content', 'Visueel aanwezig bij je doelgroep'],
+      icon: <Sliders className="w-8 h-8" />,
+      title: '🎯 JIJ KIEST JE PLATFORMS',
+      description: 'LinkedIn, Instagram, Facebook, TikTok, Twitter/X & meer',
+      details: ['Verbind ALLEEN wat jij wilt', 'Content aangepast per platform', 'Automatisch gepost op ALLE verbonden accounts'],
     },
     {
       icon: <Video className="w-8 h-8" />,
-      title: '🎬 YouTube/Video',
-      description: 'Faceless video\'s (30-60 sec)',
-      details: ['AI voiceover Nederlands', 'YouTube Shorts + Reels', 'Viral bereik zonder camera'],
+      title: '🎬 Faceless Video\'s',
+      description: 'Video content zonder voor de camera',
+      details: ['AI voiceover Nederlands', 'YouTube Shorts + Reels + TikTok', 'Viral bereik zonder camera'],
     },
     {
       icon: <Globe className="w-8 h-8" />,
@@ -163,10 +157,10 @@ export default function HomePage() {
       description: 'Ideaal voor: Starters, kleine budgetten',
       features: [
         '✅ 2 SEO Artikelen (800-1200 woorden)',
-        '✅ 16 Social Media Posts',
+        '✅ 16 Social Media Posts (op jouw platforms)',
         '✅ 4 Faceless video\'s',
-        '✅ Platform flexibiliteit',
-        '✅ Automatische posting',
+        '🎯 Verbind elk platform dat jij wilt',
+        '✅ Automatische posting op ALLE accounts',
       ],
       popular: false,
     },
@@ -177,10 +171,10 @@ export default function HomePage() {
       description: 'Ideaal voor: SEO autoriteit opbouwen',
       features: [
         '✅ 1 Pillar + 2 Cluster Artikelen',
-        '✅ 16 Social Media Posts',
+        '✅ 16 Social Media Posts (op jouw platforms)',
         '✅ 4 Faceless video\'s',
-        '✅ Pillar-Cluster strategie',
-        '✅ Automatische posting',
+        '✅ Pillar-Cluster SEO strategie',
+        '🎯 Content aangepast per platform',
       ],
       popular: false,
     },
@@ -191,9 +185,9 @@ export default function HomePage() {
       description: 'Ideaal voor: Ambitieuze ondernemers',
       features: [
         '✅ 1 Pillar + 3 Cluster Artikelen',
-        '✅ 24 Social Media Posts',
+        '✅ 24 Social Media Posts (~6/week)',
         '✅ 8 Faceless video\'s',
-        '✅ Pillar-Cluster strategie',
+        '🎯 Post op ALLE gekozen platforms',
         '✅ Priority support',
       ],
       popular: true,
@@ -205,9 +199,9 @@ export default function HomePage() {
       description: 'Ideaal voor: Marktleiders',
       features: [
         '✅ 2 Pillar + 4 Cluster Artikelen',
-        '✅ 40 Social Media Posts',
+        '✅ 40 Social Media Posts (vrijwel dagelijks)',
         '✅ 12 Faceless video\'s',
-        '✅ Advanced strategie',
+        '🎯 Omnipresence op alle platforms',
         '✅ Dedicated account manager',
       ],
       popular: false,
@@ -385,9 +379,9 @@ export default function HomePage() {
 
             {/* Subheading */}
             <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto animate-fade-in">
-              Volledig Geautomatiseerd, Zonder Meetings
+              🎯 <span className="text-writgo-secondary font-semibold">JIJ KIEST JE PLATFORMS</span> - WIJ POSTEN OVERAL
               <br className="hidden sm:block" />
-              Vanaf €197/maand voor lokale dienstverleners
+              Volledig Geautomatiseerd, Zonder Meetings • Vanaf €197/maand
             </p>
 
             {/* CTA Buttons */}
@@ -493,14 +487,17 @@ export default function HomePage() {
               De Oplossing
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-pearl-white mb-4">
-              Omnipresence = Overal Zichtbaar
+              🎯 Omnipresence op JOUW Platforms
             </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
-              Wij zorgen dat je op alle kanalen aanwezig bent waar jouw klanten zijn
+            <p className="text-lg text-text-muted max-w-2xl mx-auto mb-2">
+              Wij zorgen dat je overal zichtbaar bent waar jouw klanten zijn
+            </p>
+            <p className="text-xl text-writgo-secondary font-bold">
+              LinkedIn? Instagram? TikTok? Facebook? JIJ BEPAALT.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12 justify-items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 justify-items-center">
             {omnipresenceChannels.map((channel, index) => (
               <Card key={index} className="glass-dark border-border-dark hover:border-writgo-primary/40 transition-all duration-300 text-left max-w-xs w-full">
                 <CardContent className="p-6">
@@ -523,10 +520,17 @@ export default function HomePage() {
           </div>
 
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-xl text-pearl-white">
-              En het mooie? Onze AI regelt <span className="text-writgo-primary font-bold">ALLES</span>. 
-              Jij hoeft letterlijk <span className="text-writgo-primary font-bold">niets</span> te doen.
-            </p>
+            <Card className="glass-dark border-writgo-primary/30 p-8">
+              <p className="text-xl text-pearl-white mb-4">
+                En het mooie? Onze AI regelt <span className="text-writgo-primary font-bold">ALLES</span>. 
+              </p>
+              <p className="text-2xl font-bold text-writgo-secondary mb-2">
+                🎯 JIJ KIEST JE PLATFORMS, WIJ DOEN DE REST
+              </p>
+              <p className="text-lg text-text-muted">
+                Verbind alleen LinkedIn? Prima. Alle 8 platforms? Ook goed. Content wordt automatisch aangepast per platform.
+              </p>
+            </Card>
           </div>
         </div>
       </section>

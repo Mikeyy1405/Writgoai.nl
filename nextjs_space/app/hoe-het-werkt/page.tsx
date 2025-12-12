@@ -28,11 +28,11 @@ export default function HoeHetWerktPage() {
     {
       number: '2',
       title: 'Social Media Accounts Verbinden',
-      description: 'Verbind je social media accounts via Getlate.dev. Kies zelf welke platforms je wilt gebruiken.',
+      description: '🎯 JIJ KIEST welke platforms je verbindt via Getlate.dev. Alleen LinkedIn? Prima. Alle 8? Ook goed.',
       details: [
-        'LinkedIn, Instagram, Facebook, TikTok, etc.',
+        'LinkedIn, Instagram, Facebook, TikTok, Twitter/X, Pinterest, GMB, YouTube',
         'Veilige OAuth verbinding',
-        'Verbind 1 platform of alle 8',
+        'Content automatisch aangepast per platform',
       ],
       icon: LinkIcon,
       time: '5 minuten',
