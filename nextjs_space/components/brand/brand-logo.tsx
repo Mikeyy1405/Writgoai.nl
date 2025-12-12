@@ -97,7 +97,8 @@ export function BrandLogo({
           alt={brand.companyName}
           width={sizeConfig.image.width}
           height={sizeConfig.image.height}
-          className="object-contain max-w-full"
+          className="object-contain max-w-full max-h-full"
+          style={{ maxHeight: '100%', width: 'auto', height: 'auto' }}
           priority
         />
       </div>
@@ -113,7 +114,8 @@ export function BrandLogo({
           alt={brand.companyName}
           width={sizeConfig.image.width}
           height={sizeConfig.image.height}
-          className="object-contain object-left max-w-full"
+          className="object-contain object-left max-w-full max-h-full"
+          style={{ maxHeight: '100%', width: 'auto', height: 'auto' }}
           priority
         />
       </div>

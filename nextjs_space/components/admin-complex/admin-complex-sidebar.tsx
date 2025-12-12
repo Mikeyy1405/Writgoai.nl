@@ -27,7 +27,7 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
       `}
     >
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-800">
+      <div className="flex items-center justify-between p-3 border-b border-gray-800 h-16 max-h-16">
         <AnimatePresence mode="wait">
           {!isCollapsed ? (
             <motion.div
@@ -35,7 +35,7 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 max-h-full"
             >
               <Logo size="sm" showText={true} />
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white uppercase">Admin</span>
@@ -46,6 +46,7 @@ export function AdminComplexSidebar({ isCollapsed, onToggleCollapse }: AdminComp
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.2 }}
+              className="max-h-full"
             >
               <Logo size="sm" showText={false} />
             </motion.div>

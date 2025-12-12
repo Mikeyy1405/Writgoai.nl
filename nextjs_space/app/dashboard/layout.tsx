@@ -3,18 +3,21 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { DashboardLayout } from '@/components/dashboard-client/dashboard-layout';
-import { isUserAdmin } from '@/lib/navigation-config';
+import { ProjectProvider } from '@/lib/contexts/ProjectContext';
+import ClientSidebar from '@/components/client-dashboard/ClientSidebar';
+import ClientHeader from '@/components/client-dashboard/ClientHeader';
+import ClientMobileNav from '@/components/client-dashboard/ClientMobileNav';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { API_TIMEOUTS } from '@/lib/api-timeout';
 
-interface DashboardLayoutPropsType {
+interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export default function DashboardLayoutWrapper({ children }: DashboardLayoutPropsType) {
-  const { data: session, status } = useSession() || {};
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const isMountedRef = useRef(true);
@@ -37,20 +40,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutProp
 
       if (status === 'authenticated') {
         clearTimeout(authTimeout);
-        // Check if user is admin - redirect admins to /admin
-        try {
-          const isAdmin = isUserAdmin(session?.user?.email, session?.user?.role);
-          if (isAdmin) {
-            setIsRedirecting(true);
-            router.push('/admin');
-            return;
-          }
-          // User is client, clear any errors
-          setAuthError(null);
-        } catch (error) {
-          console.error('Error checking user status:', error);
-          setAuthError('Fout bij het controleren van gebruikersrechten');
-        }
+        // User is authenticated, clear any errors
+        setAuthError(null);
       }
     } catch (error) {
       console.error('Error in auth check:', error);
@@ -62,7 +53,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutProp
       isMountedRef.current = false;
       clearTimeout(authTimeout);
     };
-  }, [status, session, router]);
+  }, [status, router]);
 
   // Loading state
   if (status === 'loading' && !authError) {
@@ -119,5 +110,29 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutProp
     );
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return (
+    <ProjectProvider>
+      <div className="min-h-screen bg-gray-950 flex">
+        {/* Sidebar */}
+        <ClientSidebar />
+
+        {/* Mobile Navigation */}
+        <ClientMobileNav 
+          isOpen={mobileMenuOpen} 
+          onClose={() => setMobileMenuOpen(false)} 
+        />
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header */}
+          <ClientHeader onMobileMenuToggle={() => setMobileMenuOpen(true)} />
+
+          {/* Page Content */}
+          <main className="flex-1 overflow-x-hidden">
+            <div className="p-4 lg:p-8">{children}</div>
+          </main>
+        </div>
+      </div>
+    </ProjectProvider>
+  );
 }
