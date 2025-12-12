@@ -45,6 +45,8 @@ const TABLE_NAME_MAP: Record<string, string> = {
   socialMediaPost: 'SocialMediaPost',
   // Autopilot Configuration table
   autopilotConfig: 'AutopilotConfig',
+  // Website Analysis table
+  websiteAnalysis: 'WebsiteAnalysis',
 };
 
 // Create a Proxy that intercepts property access and returns table-specific handlers

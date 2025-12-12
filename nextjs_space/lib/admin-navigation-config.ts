@@ -106,9 +106,9 @@ export const adminNavSections: AdminNavSection[] = [
       },
       {
         label: 'Social Media',
-        href: '/admin/distribution',
+        href: '/admin/social',
         icon: Share2,
-        description: 'Planning en distributie',
+        description: 'Social media strategie & content',
       },
     ],
   },
