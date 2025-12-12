@@ -12,15 +12,22 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: Request) {
   try {
+    console.log('🔵 Social connect API called');
+    
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
+      console.error('❌ No session');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { projectId, platform } = await request.json();
+    const body = await request.json();
+    console.log('🔵 Request body:', body);
+    
+    const { projectId, platform } = body;
 
     // Validate input
     if (!projectId || !platform) {
+      console.error('❌ Missing projectId or platform');
       return NextResponse.json(
         { error: 'projectId and platform are required' },
         { status: 400 }
@@ -32,17 +39,23 @@ export async function POST(request: Request) {
       where: { id: projectId }
     });
 
+    console.log('🔵 Project found:', project ? `Yes (ID: ${project.id})` : 'No');
+
     if (!project) {
+      console.error('❌ Project not found');
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
     if (!project.getlateProfileId) {
+      console.error('❌ No Getlate profile ID');
       return NextResponse.json(
         { error: 'Project has no Getlate profile. Please contact support.' },
         { status: 400 }
       );
     }
 
+    console.log('🔵 Getting connect URL from Getlate...');
+    
     // Get connect URL from Getlate.dev
     const redirectUrl = `${process.env.NEXTAUTH_URL}/api/social/connect/callback`;
     
@@ -52,14 +65,17 @@ export async function POST(request: Request) {
       redirectUrl
     );
 
-    console.log('✓ Generated connect URL for platform:', platform);
+    console.log('✅ Generated connect URL for platform:', platform);
+    console.log('🔵 Connect data:', { authUrl: connectData.authUrl, state: connectData.state });
 
     return NextResponse.json({
       authUrl: connectData.authUrl,
       state: connectData.state
     });
   } catch (error: any) {
-    console.error('Failed to get connect URL:', error);
+    console.error('❌ API Error:', error);
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Error stack:', error.stack);
     return NextResponse.json(
       { error: error.message || 'Failed to get connect URL' },
       { status: 500 }

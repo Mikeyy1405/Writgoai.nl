@@ -130,6 +130,8 @@ export default function SocialConnectPage() {
   };
 
   const handleConnect = async (platform: string) => {
+    console.log('🔵 Connect clicked:', platform);
+    
     if (!currentProjectId) {
       alert('Geen project geselecteerd');
       return;
@@ -139,6 +141,8 @@ export default function SocialConnectPage() {
     setError(null);
     
     try {
+      console.log('🔵 Fetching connect URL for project:', currentProjectId);
+      
       // Stap 1: Get OAuth URL from our API
       const response = await fetch('/api/social/connect', {
         method: 'POST',
@@ -149,14 +153,27 @@ export default function SocialConnectPage() {
         })
       });
       
+      console.log('🔵 Response status:', response.status);
+      
       if (!response.ok) {
         const error = await response.json();
+        console.error('❌ API Error:', error);
         throw new Error(error.error || 'Failed to get connect URL');
       }
       
-      const { authUrl } = await response.json();
+      const data = await response.json();
+      console.log('🔵 Response data:', data);
+      
+      const { authUrl } = data;
+      
+      if (!authUrl) {
+        console.error('❌ No authUrl in response');
+        throw new Error('Geen connect URL ontvangen');
+      }
       
       // Stap 2: Open OAuth in popup
+      console.log('🔵 Opening popup with URL:', authUrl);
+      
       const width = 600;
       const height = 700;
       const left = window.screen.width / 2 - width / 2;
@@ -167,6 +184,13 @@ export default function SocialConnectPage() {
         'Connect Social Media',
         `width=${width},height=${height},left=${left},top=${top}`
       );
+      
+      if (!popup) {
+        console.error('❌ Popup blocked');
+        throw new Error('Popup geblokkeerd. Sta popups toe voor deze website.');
+      }
+      
+      console.log('✅ Popup opened successfully');
       
       // Stap 3: Poll for connection completion
       const pollInterval = setInterval(async () => {

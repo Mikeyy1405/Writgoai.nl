@@ -18,6 +18,10 @@ const BlogContentLibrary = dynamic(() => import('@/components/blog/BlogContentLi
   loading: () => <div className="animate-pulse bg-gray-800 rounded-lg h-96"></div>
 });
 
+const WordPressConnection = dynamic(() => import('@/components/blog/WordPressConnection'), {
+  loading: () => <div className="animate-pulse bg-gray-800 rounded-lg h-48"></div>
+});
+
 export default function ClientBlogPage() {
   const { data: session } = useSession();
   const [websiteAnalysis, setWebsiteAnalysis] = useState<any>(null);
@@ -120,14 +124,7 @@ export default function ClientBlogPage() {
             </p>
           </div>
         </div>
-        <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-          <p className="text-sm text-gray-400 mb-4">
-            WordPress connectie zorgt ervoor dat gegenereerde artikelen automatisch worden gepubliceerd op je website.
-          </p>
-          <button className="px-4 py-2 bg-[#FF9933] text-white rounded-lg hover:bg-[#FF9933]/90 transition-colors">
-            WordPress Koppelen (Binnenkort)
-          </button>
-        </div>
+        <WordPressConnection clientId={clientId} />
       </div>
 
       {/* Stap 2: Content Map (Topical Authority Map) */}
