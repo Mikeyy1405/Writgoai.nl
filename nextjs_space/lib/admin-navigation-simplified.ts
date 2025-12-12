@@ -1,21 +1,20 @@
 /**
- * ADMIN NAVIGATION CONFIG - SIMPLIFIED VERSION
+ * VEREENVOUDIGDE ADMIN NAVIGATIE
  * 
- * ✅ VEREENVOUDIGING UITGEVOERD: Van 19+ items naar 8-10 items
+ * Van 19+ menu items naar 8-10 essentiële items
+ * Focus op core business: klanten, content, distributie, financieel
  * 
- * Deze configuratie implementeert een vereenvoudigde admin interface met focus op:
- * - Klanten Management (lijst van alle klanten)
- * - Content & Social Media (blog + distributie)
- * - Financieel Dashboard (MRR, facturen)
- * - Statistieken en Analytics
- * - Instellingen
- * 
- * VERWIJDERD/VERBORGEN:
- * ❌ SEO & Linkbuilding (te complex, niet core dienst)
- * ❌ Content Analytics (samengevoegd met Statistieken)
- * ❌ Writgo Marketing (experimenteel, niet essentieel)
- * ❌ Email sectie details (vereenvoudigd naar 1 item)
- * ❌ Projecten (invisible layer architectuur)
+ * WIJZIGINGEN:
+ * ✅ Dashboard - Behouden
+ * ✅ Klanten - Behouden
+ * ✅ Content - Behouden (blog management)
+ * ✅ Distributie - Behouden
+ * ✅ Financieel - Behouden (dashboard + facturen samengevoegd)
+ * ✅ Analytics - Behouden
+ * ⚠️ Email - Optioneel (kan verborgen worden)
+ * ❌ Writgo Marketing - Verwijderd (experimenteel)
+ * ❌ SEO & Linkbuilding - Verwijderd (te complex)
+ * ❌ Content Analytics - Verwijderd (samengevoegd met Analytics)
  */
 
 import {
@@ -45,26 +44,14 @@ export interface AdminNavSection {
 }
 
 /**
- * INVISIBLE PROJECT LAYER ARCHITECTURE
+ * VEREENVOUDIGDE NAVIGATIE STRUCTUUR
  * 
- * In Writgo's simplified business model, each client has ONE default project
- * that is automatically created and managed behind the scenes.
- * 
- * The "Projecten" navigation item has been removed from the admin UI because:
- * - Each client = one project (1:1 mapping)
- * - Project settings are now managed through the "Klanten" interface
- * - Simplifies the admin experience and eliminates redundant pages
- * - The project layer still exists in the backend for data organization
+ * Slechts 8-10 items voor maximale duidelijkheid
  */
-
-/**
- * VEREENVOUDIGDE ADMIN NAVIGATIE
- * Van 19+ items naar 8-10 essentiële items
- */
-export const adminNavSections: AdminNavSection[] = [
-  // ======================================
+export const simplifiedAdminNavSections: AdminNavSection[] = [
+  // ========================================
   // SECTIE 1: OVERZICHT (1 item)
-  // ======================================
+  // ========================================
   {
     title: 'Overzicht',
     items: [
@@ -77,9 +64,9 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   
-  // ======================================
+  // ========================================
   // SECTIE 2: KLANTEN (1 item)
-  // ======================================
+  // ========================================
   {
     title: 'Klanten',
     items: [
@@ -92,9 +79,9 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   
-  // ======================================
-  // SECTIE 3: CONTENT & SOCIAL MEDIA (2 items)
-  // ======================================
+  // ========================================
+  // SECTIE 3: CONTENT & DISTRIBUTIE (2 items)
+  // ========================================
   {
     title: 'Content & Social Media',
     items: [
@@ -102,7 +89,7 @@ export const adminNavSections: AdminNavSection[] = [
         label: 'Blog Management',
         href: '/admin/blog',
         icon: FileText,
-        description: 'Blog posts voor klanten',
+        description: 'Blog posts voor klanten en WritGo.nl',
       },
       {
         label: 'Social Media',
@@ -113,9 +100,9 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   
-  // ======================================
+  // ========================================
   // SECTIE 4: FINANCIEEL (2 items)
-  // ======================================
+  // ========================================
   {
     title: 'Financieel',
     items: [
@@ -134,9 +121,9 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   
-  // ======================================
-  // SECTIE 5: STATISTIEKEN (1 item)
-  // ======================================
+  // ========================================
+  // SECTIE 5: ANALYTICS (1 item)
+  // ========================================
   {
     title: 'Statistieken',
     items: [
@@ -149,9 +136,9 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   },
   
-  // ======================================
+  // ========================================
   // SECTIE 6: EMAIL (optioneel - 1 item)
-  // ======================================
+  // ========================================
   ...(isFeatureEnabled('ADMIN_EMAIL_INBOX') ? [{
     title: 'Email',
     items: [
@@ -164,9 +151,9 @@ export const adminNavSections: AdminNavSection[] = [
     ],
   }] : []),
   
-  // ======================================
+  // ========================================
   // SECTIE 7: INSTELLINGEN (1 item)
-  // ======================================
+  // ========================================
   {
     title: 'Instellingen',
     items: [
@@ -183,7 +170,7 @@ export const adminNavSections: AdminNavSection[] = [
 /**
  * Flatten all nav items for easy lookup
  */
-export const allAdminNavItems: AdminNavItem[] = adminNavSections.reduce(
+export const allSimplifiedAdminNavItems: AdminNavItem[] = simplifiedAdminNavSections.reduce(
   (acc, section) => [...acc, ...section.items],
   [] as AdminNavItem[]
 );
@@ -206,4 +193,11 @@ export function isAdminNavActive(href: string, pathname: string): boolean {
   }
   
   return false;
+}
+
+/**
+ * Count total navigation items
+ */
+export function getNavigationItemCount(): number {
+  return allSimplifiedAdminNavItems.length;
 }

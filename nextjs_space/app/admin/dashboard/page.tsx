@@ -27,6 +27,7 @@ import {
   Clock
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand/brand-logo';
+import GettingStarted from '@/components/admin/GettingStarted';
 
 interface AdminStats {
   totalClients: number;
@@ -154,6 +155,12 @@ function DashboardContent() {
             </div>
           </div>
         )}
+
+        {/* Getting Started Guide - Only show for new users */}
+        <GettingStarted 
+          clientCount={stats?.totalClients || 0}
+          hasActiveClients={(stats?.activeSubscriptions || 0) > 0}
+        />
 
         {/* Quick Actions - Large Touch Targets */}
         <div>
