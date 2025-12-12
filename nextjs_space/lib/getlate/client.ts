@@ -41,13 +41,26 @@ export interface GetlatePost {
 }
 
 export class GetlateClient {
-  private apiKey: string;
+  private apiKey: string | undefined;
   
   constructor() {
-    if (!GETLATE_API_KEY) {
-      throw new Error('GETLATE_API_KEY not configured in environment variables');
-    }
+    // Don't throw during build time - only check at runtime
     this.apiKey = GETLATE_API_KEY;
+    
+    // Only log warning in development, don't throw
+    if (!this.apiKey && process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️  GETLATE_API_KEY not configured in environment variables');
+    }
+  }
+  
+  /**
+   * Ensure API key is available (runtime check)
+   */
+  private ensureApiKey(): string {
+    if (!this.apiKey) {
+      throw new Error('GETLATE_API_KEY not configured. Please add it to your environment variables.');
+    }
+    return this.apiKey;
   }
   
   /**
@@ -57,12 +70,15 @@ export class GetlateClient {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> {
+    // Check API key at runtime, not build time
+    const apiKey = this.ensureApiKey();
+    
     const url = `${GETLATE_API_URL}${endpoint}`;
     
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         ...options.headers
       }
