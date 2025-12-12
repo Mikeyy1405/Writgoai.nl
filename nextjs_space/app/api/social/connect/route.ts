@@ -34,6 +34,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if GETLATE_API_KEY is configured
+    if (!process.env.GETLATE_API_KEY) {
+      console.error('❌ GETLATE_API_KEY not configured');
+      return NextResponse.json(
+        { 
+          error: 'Social media koppeling is momenteel niet geconfigureerd. Neem contact op met support@writgo.nl voor activatie.' 
+        },
+        { status: 503 }
+      );
+    }
+
     // Get project with getlateProfileId
     const project = await prisma.project.findUnique({
       where: { id: projectId }
@@ -49,7 +60,7 @@ export async function POST(request: Request) {
     if (!project.getlateProfileId) {
       console.error('❌ No Getlate profile ID');
       return NextResponse.json(
-        { error: 'Project has no Getlate profile. Please contact support.' },
+        { error: 'Project heeft nog geen Getlate profiel. Neem contact op met support.' },
         { status: 400 }
       );
     }
@@ -76,6 +87,15 @@ export async function POST(request: Request) {
     console.error('❌ API Error:', error);
     console.error('❌ Error message:', error.message);
     console.error('❌ Error stack:', error.stack);
+    
+    // Check if error is due to missing API key
+    if (error.message?.includes('GETLATE_API_KEY')) {
+      return NextResponse.json(
+        { error: 'Social media koppeling is momenteel niet geconfigureerd. Neem contact op met support@writgo.nl voor activatie.' },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { error: error.message || 'Failed to get connect URL' },
       { status: 500 }

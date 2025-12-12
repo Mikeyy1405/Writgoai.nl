@@ -159,7 +159,7 @@ export default function ContentPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-700 mb-2">
             📅 Content Kalender
           </h1>
           <p className="text-gray-600">
@@ -216,7 +216,7 @@ export default function ContentPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
               Geen content gevonden
             </h3>
             <p className="text-gray-500">
@@ -236,7 +236,7 @@ export default function ContentPage() {
               <div key={date}>
                 {/* Date Header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 className="text-xl font-bold text-gray-700">
                     {dateLabel}
                   </h2>
                   <div className="flex-1 h-px bg-gray-200" />
@@ -258,7 +258,7 @@ export default function ContentPage() {
                             {/* Time */}
                             <div className="flex flex-col items-center justify-center min-w-[60px] text-center">
                               <Clock className="w-5 h-5 text-gray-400 mb-1" />
-                              <div className="text-sm font-semibold text-gray-900">
+                              <div className="text-sm font-semibold text-gray-700">
                                 {format(parseISO(item.scheduledFor), 'HH:mm')}
                               </div>
                             </div>
@@ -282,7 +282,7 @@ export default function ContentPage() {
                               </div>
 
                               {/* Title & Preview */}
-                              <h3 className="font-semibold text-gray-900 mb-2">
+                              <h3 className="font-semibold text-gray-700 mb-2">
                                 {item.title}
                               </h3>
                               {item.preview && (
@@ -311,7 +311,7 @@ export default function ContentPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleDownload(item)}
-                                    className="text-gray-600 hover:text-gray-900"
+                                    className="text-gray-600 hover:text-gray-700"
                                   >
                                     <Download className="w-4 h-4" />
                                   </Button>
@@ -320,7 +320,7 @@ export default function ContentPage() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => handleViewLive(item)}
-                                      className="text-gray-600 hover:text-gray-900"
+                                      className="text-gray-600 hover:text-gray-700"
                                     >
                                       <ExternalLink className="w-4 h-4" />
                                     </Button>
@@ -346,7 +346,7 @@ export default function ContentPage() {
           <div className="flex items-start gap-3">
             <div className="text-2xl">ℹ️</div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-gray-700 mb-2">
                 Content wordt automatisch beheerd
               </h3>
               <p className="text-sm text-gray-700">

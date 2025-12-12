@@ -118,7 +118,7 @@ export default function AccountPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-700 mb-2">
           ⚙️ Account Instellingen
         </h1>
         <p className="text-gray-600">
@@ -158,7 +158,7 @@ export default function AccountPage() {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-bold text-gray-900">
+                    <h3 className="text-2xl font-bold text-gray-700">
                       📦 {packageInfo.name} PAKKET
                     </h3>
                     {packageInfo.badge && (
@@ -185,7 +185,7 @@ export default function AccountPage() {
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Volgende betaling:</span>
-                  <span className="font-semibold text-gray-900">1 januari 2026</span>
+                  <span className="font-semibold text-gray-700">1 januari 2026</span>
                 </div>
               </div>
 
@@ -202,7 +202,7 @@ export default function AccountPage() {
 
           {/* All Packages */}
           <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Andere Pakketten</h3>
+            <h3 className="text-xl font-bold text-gray-700 mb-4">Andere Pakketten</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Object.entries(PACKAGES).map(([key, pkg]) => (
                 <Card key={key} className={`border-2 ${key === currentPackage ? 'border-[#FF9933]' : 'border-gray-200'} hover:border-[#FF9933] transition-colors`}>
@@ -213,8 +213,8 @@ export default function AccountPage() {
                           {pkg.badge}
                         </span>
                       )}
-                      <h4 className="font-bold text-lg text-gray-900 mb-2">{pkg.name}</h4>
-                      <div className="text-2xl font-bold text-gray-900">
+                      <h4 className="font-bold text-lg text-gray-700 mb-2">{pkg.name}</h4>
+                      <div className="text-2xl font-bold text-gray-700">
                         €{pkg.price}
                       </div>
                       <div className="text-xs text-gray-500">per maand</div>
@@ -248,7 +248,7 @@ export default function AccountPage() {
                     iD
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">iDEAL via Moneybird</div>
+                    <div className="font-medium text-gray-700">iDEAL via Moneybird</div>
                     <div className="text-sm text-gray-500">Laatst gebruikt: 1 december 2025</div>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export default function AccountPage() {
                     <div className="flex items-center gap-3">
                       <FileText className="w-5 h-5 text-gray-400" />
                       <div>
-                        <div className="font-medium text-gray-900">{invoice.date}</div>
+                        <div className="font-medium text-gray-700">{invoice.date}</div>
                         <div className="text-sm text-gray-500">€{invoice.amount}</div>
                       </div>
                     </div>
@@ -419,7 +419,7 @@ export default function AccountPage() {
                     <HelpCircle className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-2">Veelgestelde vragen (FAQ)</h3>
+                    <h3 className="font-semibold text-gray-700 mb-2">Veelgestelde vragen (FAQ)</h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Vind snel antwoorden op veel gestelde vragen
                     </p>
@@ -438,7 +438,7 @@ export default function AccountPage() {
                     <Mail className="w-6 h-6 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-2">Email Support</h3>
+                    <h3 className="font-semibold text-gray-700 mb-2">Email Support</h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Stuur ons een email en we helpen je verder
                     </p>
@@ -457,7 +457,7 @@ export default function AccountPage() {
                     <MessageSquare className="w-6 h-6 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-2">WhatsApp Support</h3>
+                    <h3 className="font-semibold text-gray-700 mb-2">WhatsApp Support</h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Direct contact via WhatsApp
                     </p>
@@ -476,7 +476,7 @@ export default function AccountPage() {
                     <FileText className="w-6 h-6 text-orange-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-2">Tutorial Videos</h3>
+                    <h3 className="font-semibold text-gray-700 mb-2">Tutorial Videos</h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Bekijk instructievideo's
                     </p>

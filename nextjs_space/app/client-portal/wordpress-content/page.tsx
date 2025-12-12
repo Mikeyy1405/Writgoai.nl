@@ -522,8 +522,8 @@ export default function WordPressContentPage() {
 
               {/* What will happen */}
               <Card className="p-4 border-blue-200 bg-blue-50">
-                <h4 className="font-semibold text-blue-900 mb-2">Wat gebeurt er?</h4>
-                <ul className="text-sm text-blue-800 space-y-1.5">
+                <h4 className="font-semibold text-blue-700 mb-2">Wat gebeurt er?</h4>
+                <ul className="text-sm text-blue-600 space-y-1.5">
                   <li>✨ Content wordt volledig herschreven en gemoderniseerd</li>
                   <li>📊 SEO metadata wordt geoptimaliseerd</li>
                   <li>🖼️ 2 nieuwe AI-gegenereerde afbeeldingen</li>

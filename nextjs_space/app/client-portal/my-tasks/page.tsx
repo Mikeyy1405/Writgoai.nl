@@ -113,7 +113,7 @@ export default function MyTasksPage() {
 
               {task.adminNotes && (
                 <div className="mt-4 p-3 bg-zinc-900 rounded-lg border border-orange-200">
-                  <p className="text-sm font-medium text-blue-900 mb-1">Admin notitie:</p>
+                  <p className="text-sm font-medium text-blue-700 mb-1">Admin notitie:</p>
                   <p className="text-sm text-orange-800">{task.adminNotes}</p>
                 </div>
               )}

@@ -48,7 +48,7 @@ export function SimplifiedSidebar() {
         
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-700 transition-colors"
         >
           {isCollapsed ? (
             <ChevronRight className="w-5 h-5" />
@@ -74,7 +74,7 @@ export function SimplifiedSidebar() {
                 ${
                   active
                     ? 'bg-gradient-to-r from-[#FF9933]/10 to-[#FFAD33]/10 text-[#FF9933] font-medium shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    : 'text-gray-600 hover:text-gray-700 hover:bg-gray-50'
                 }
               `}
             >

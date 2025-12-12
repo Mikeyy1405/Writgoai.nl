@@ -345,7 +345,7 @@ export default function LinkbuildingPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+        <h1 className="text-3xl font-bold text-gray-700 mb-2 flex items-center gap-2">
           <Link2 className="h-8 w-8 text-orange-500" />
           Linkbuilding Netwerk
         </h1>

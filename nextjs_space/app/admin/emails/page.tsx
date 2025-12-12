@@ -226,7 +226,7 @@ export default function AdminEmailsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-700 flex items-center gap-2">
                 <Mail className="w-6 h-6" />
                 Email Manager
               </h1>
@@ -267,7 +267,7 @@ export default function AdminEmailsPage() {
           <div className="lg:col-span-1">
             <Card className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-700 flex items-center gap-2">
                   <Inbox className="w-4 h-4" />
                   Inbox ({threads.length})
                 </h3>
@@ -300,7 +300,7 @@ export default function AdminEmailsPage() {
                         <div className="flex items-start justify-between mb-1">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`text-sm font-medium ${unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                              <span className={`text-sm font-medium ${unreadCount > 0 ? 'text-gray-700' : 'text-gray-700'}`}>
                                 {latestEmail?.fromName || latestEmail?.from || 'Unknown'}
                               </span>
                               {unreadCount > 0 && (
@@ -309,7 +309,7 @@ export default function AdminEmailsPage() {
                                 </Badge>
                               )}
                             </div>
-                            <p className={`text-sm ${unreadCount > 0 ? 'font-medium' : 'font-normal'} text-gray-900 truncate`}>
+                            <p className={`text-sm ${unreadCount > 0 ? 'font-medium' : 'font-normal'} text-gray-700 truncate`}>
                               {thread.subject}
                             </p>
                             <p className="text-xs text-gray-600 truncate mt-0.5">
@@ -339,7 +339,7 @@ export default function AdminEmailsPage() {
                 <Card className="p-4">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                      <h2 className="text-xl font-bold text-gray-700 mb-2">
                         {selectedThread.subject}
                       </h2>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -380,7 +380,7 @@ export default function AdminEmailsPage() {
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-gray-700">
                               {email.fromName || email.from}
                             </div>
                             <div className="text-sm text-gray-600">
@@ -396,7 +396,7 @@ export default function AdminEmailsPage() {
                             {new Date(email.receivedAt).toLocaleString('nl-NL')}
                           </div>
                         </div>
-                        <div className="text-gray-800 whitespace-pre-wrap">
+                        <div className="text-gray-700 whitespace-pre-wrap">
                           {email.textBody || email.snippet}
                         </div>
                         {email.hasAttachments && (
@@ -413,7 +413,7 @@ export default function AdminEmailsPage() {
                 {selectedThread.status !== 'archived' && (
                   <Card className="p-4">
                     <div className="mb-3 flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900">Antwoord versturen</h3>
+                      <h3 className="font-semibold text-gray-700">Antwoord versturen</h3>
                       <div className="flex items-center gap-2">
                         <Select value={replyTone} onValueChange={setReplyTone}>
                           <SelectTrigger className="w-40">
@@ -463,7 +463,7 @@ export default function AdminEmailsPage() {
             ) : (
               <Card className="p-12 text-center">
                 <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-gray-700 mb-2">
                   Geen email geselecteerd
                 </h3>
                 <p className="text-gray-600">

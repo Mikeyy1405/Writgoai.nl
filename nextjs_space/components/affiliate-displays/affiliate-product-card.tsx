@@ -92,7 +92,7 @@ export default function AffiliateProductCard({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-orange-600 transition-colors">
+            <h4 className="font-semibold text-gray-700 mb-1 line-clamp-2 group-hover:text-orange-600 transition-colors">
               {product.title}
             </h4>
             <div className="flex items-center gap-2 mb-1">
@@ -157,7 +157,7 @@ export default function AffiliateProductCard({
 
       {/* Content */}
       <div className="p-5">
-        <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+        <h3 className="font-bold text-lg text-gray-700 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
           {product.title}
         </h3>
 

@@ -142,7 +142,7 @@ export default function PlatformsPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-700 mb-2">
             🌐 Jouw Platforms
           </h1>
           <p className="text-gray-600">
@@ -168,7 +168,7 @@ export default function PlatformsPage() {
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#FF9933] to-[#FFAD33] text-white mb-3">
               <Plus className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
               Voeg een nieuw platform toe
             </h3>
             <p className="text-sm text-gray-600 mb-4">
@@ -185,7 +185,7 @@ export default function PlatformsPage() {
       {/* Connected Platforms */}
       {connectedPlatforms.length > 0 && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Verbonden Platforms</h2>
+          <h2 className="text-xl font-bold text-gray-700 mb-4">Verbonden Platforms</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {connectedPlatforms.map((platform) => {
               const icon = PLATFORM_ICONS[platform.platform] || '🌐';
@@ -201,7 +201,7 @@ export default function PlatformsPage() {
                           {icon}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg">
+                          <h3 className="font-semibold text-gray-700 text-lg">
                             {platform.display_name}
                           </h3>
                           <p className="text-sm text-gray-500">
@@ -229,7 +229,7 @@ export default function PlatformsPage() {
                       </div>
                       <div>
                         <div className="text-xs text-gray-500 mb-1">Deze maand</div>
-                        <div className="text-sm font-bold text-gray-900">
+                        <div className="text-sm font-bold text-gray-700">
                           {platform.posts_this_month || 0} posts
                         </div>
                       </div>
@@ -279,7 +279,7 @@ export default function PlatformsPage() {
       {/* Available Platforms */}
       {availablePlatforms.length > 0 && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Beschikbare Platforms</h2>
+          <h2 className="text-xl font-bold text-gray-700 mb-4">Beschikbare Platforms</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {availablePlatforms.map((platform) => {
               const icon = PLATFORM_ICONS[platform.platform] || '🌐';
@@ -294,7 +294,7 @@ export default function PlatformsPage() {
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-2xl mx-auto mb-2 group-hover:scale-110 transition-transform`}>
                     {icon}
                   </div>
-                  <div className="font-medium text-sm text-gray-900">
+                  <div className="font-medium text-sm text-gray-700">
                     {platform.display_name}
                   </div>
                 </button>
@@ -310,7 +310,7 @@ export default function PlatformsPage() {
           <div className="flex items-start gap-3">
             <div className="text-2xl">💡</div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-gray-700 mb-2">
                 Jij kiest, wij posten
               </h3>
               <p className="text-sm text-gray-700 mb-3">

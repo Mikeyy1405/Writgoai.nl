@@ -357,8 +357,8 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
             </div>
 
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-2">📝 WordPress Configuratie Vereist</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h4 className="font-semibold text-blue-700 mb-2">📝 WordPress Configuratie Vereist</h4>
+              <ul className="text-sm text-blue-600 space-y-1">
                 <li>• Ga naar <strong>Project Instellingen → Integraties</strong></li>
                 <li>• Vul je WordPress URL, gebruikersnaam en applicatie wachtwoord in</li>
                 <li>• Klik op "Inloggegevens opslaan"</li>

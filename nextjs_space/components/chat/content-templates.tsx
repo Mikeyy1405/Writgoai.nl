@@ -448,7 +448,7 @@ export function ContentTemplates({ onSelectTemplate }: ContentTemplatesProps) {
               >
                 <Icon className="w-4 h-4 mr-2 text-orange-600 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+                  <div className="text-xs font-medium text-gray-700 dark:text-gray-100 truncate">
                     {template.name}
                   </div>
                   <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate">

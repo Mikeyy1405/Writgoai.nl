@@ -124,7 +124,7 @@ export default function AffiliateDisplaysDemo() {
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-700 mb-2">
           Affiliate Display Opties
         </h1>
         <p className="text-gray-600">
@@ -169,7 +169,7 @@ export default function AffiliateDisplaysDemo() {
             </p>
             
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <p className="text-gray-800 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed">
                 Op zoek naar de beste noise cancelling koptelefoon? Kijk dan eens naar de{' '}
                 <AffiliateTextLink 
                   text="Sony WH-1000XM5"
@@ -189,8 +189,8 @@ export default function AffiliateDisplaysDemo() {
             </div>
 
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Wanneer gebruiken?</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h3 className="font-semibold text-blue-700 mb-2">Wanneer gebruiken?</h3>
+              <ul className="text-sm text-blue-600 space-y-1">
                 <li>• In lopende tekst waar je producten noemt</li>
                 <li>• Voor subtiele affiliate verwijzingen</li>
                 <li>• Als je niet te "salesy" wilt overkomen</li>
@@ -223,8 +223,8 @@ export default function AffiliateDisplaysDemo() {
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Wanneer gebruiken?</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h3 className="font-semibold text-blue-700 mb-2">Wanneer gebruiken?</h3>
+              <ul className="text-sm text-blue-600 space-y-1">
                 <li>• Voor individuele product reviews</li>
                 <li>• Als featured/aanbevolen product</li>
                 <li>• In product roundups en vergelijkingen</li>
@@ -263,8 +263,8 @@ export default function AffiliateDisplaysDemo() {
             </div>
 
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Wanneer gebruiken?</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h3 className="font-semibold text-blue-700 mb-2">Wanneer gebruiken?</h3>
+              <ul className="text-sm text-blue-600 space-y-1">
                 <li>• Voor "Top 5" of "Best of" lijsten</li>
                 <li>• Product categorieën overzichtelijk tonen</li>
                 <li>• Meerdere alternatieven naast elkaar</li>
@@ -291,8 +291,8 @@ export default function AffiliateDisplaysDemo() {
             />
 
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Wanneer gebruiken?</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h3 className="font-semibold text-blue-700 mb-2">Wanneer gebruiken?</h3>
+              <ul className="text-sm text-blue-600 space-y-1">
                 <li>• Als je veel producten wilt tonen</li>
                 <li>• Voor dynamische, eye-catching displays</li>
                 <li>• In de sidebar of onder artikelen</li>
@@ -353,8 +353,8 @@ export default function AffiliateDisplaysDemo() {
             </div>
 
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Wanneer gebruiken?</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h3 className="font-semibold text-blue-700 mb-2">Wanneer gebruiken?</h3>
+              <ul className="text-sm text-blue-600 space-y-1">
                 <li>• Voor je #1 aanbeveling</li>
                 <li>• Aan het einde van een review artikel</li>
                 <li>• Bij speciale aanbiedingen of deals</li>
@@ -378,8 +378,8 @@ export default function AffiliateDisplaysDemo() {
             />
 
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Wanneer gebruiken?</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h3 className="font-semibold text-blue-700 mb-2">Wanneer gebruiken?</h3>
+              <ul className="text-sm text-blue-600 space-y-1">
                 <li>• Voor uitgebreide product vergelijkingen</li>
                 <li>• Als specs belangrijk zijn voor de beslissing</li>
                 <li>• In "X vs Y" vergelijkingsartikelen</li>

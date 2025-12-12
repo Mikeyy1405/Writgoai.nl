@@ -458,7 +458,7 @@ export default function VideoGeneratorPage() {
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <Music className="h-5 w-5 text-blue-900" />
+                <Music className="h-5 w-5 text-blue-700" />
               </div>
               <div>
                 <h4 className="font-semibold mb-1">Hoogwaardige Stemmen</h4>

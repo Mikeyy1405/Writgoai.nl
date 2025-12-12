@@ -221,7 +221,7 @@ export default function ClientDetailPage() {
               Terug
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Klantbeheer: {client.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-700">Klantbeheer: {client.name}</h1>
               <p className="text-gray-600">Beheer abonnement en details</p>
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function ClientDetailPage() {
                   <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <div className="font-bold text-xl text-gray-900">{activeSubscription.Package.tier}</div>
+                        <div className="font-bold text-xl text-gray-700">{activeSubscription.Package.tier}</div>
                         <div className="text-sm text-gray-600">{activeSubscription.Package.displayName}</div>
                       </div>
                       <div className="text-right">
@@ -413,7 +413,7 @@ export default function ClientDetailPage() {
                       const selectedPkg = packages.find(p => p.id === selectedPackageId);
                       return selectedPkg ? (
                         <>
-                          <div className="font-semibold text-gray-900 mb-1">{selectedPkg.displayName}</div>
+                          <div className="font-semibold text-gray-700 mb-1">{selectedPkg.displayName}</div>
                           <div className="text-sm text-gray-600 mb-2">{selectedPkg.description}</div>
                           <div className="text-lg font-bold text-[#FF6B35]">€{selectedPkg.monthlyPrice}/maand</div>
                         </>

@@ -46,7 +46,7 @@ export default function ProductCTABox({
           {rating && (
             <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md flex items-center gap-1">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-semibold text-gray-800">{rating}</span>
+              <span className="text-sm font-semibold text-gray-700">{rating}</span>
             </div>
           )}
         </div>
@@ -54,7 +54,7 @@ export default function ProductCTABox({
         {/* Product Info */}
         <div className="flex flex-col justify-between">
           <div className="space-y-3">
-            <h3 className="text-2xl font-bold text-gray-900 leading-tight">
+            <h3 className="text-2xl font-bold text-gray-700 leading-tight">
               {title}
             </h3>
             

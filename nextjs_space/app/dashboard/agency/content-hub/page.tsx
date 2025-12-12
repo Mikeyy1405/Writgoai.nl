@@ -359,7 +359,7 @@ export default function AgencyContentHubPage() {
           <div className="flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-100">
                 Blog Beheer voor Writgo.nl
               </p>
               <p className="text-sm text-blue-700 dark:text-blue-300">

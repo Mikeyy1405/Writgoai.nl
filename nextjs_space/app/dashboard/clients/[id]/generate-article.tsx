@@ -131,9 +131,9 @@ export function GenerateArticleDialog({
             />
           </div>
 
-          <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+          <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
             <p className="font-medium mb-1">✨ AI gebruikt automatisch:</p>
-            <ul className="list-disc list-inside space-y-1 text-blue-800">
+            <ul className="list-disc list-inside space-y-1 text-blue-600">
               <li>Bedrijfsinformatie uit het AI-profiel</li>
               <li>Content voorkeuren en tone of voice</li>
               <li>SEO optimalisatie en structuur</li>

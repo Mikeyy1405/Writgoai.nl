@@ -326,7 +326,7 @@ export default function GetlateSettingsPage() {
 
           {selectedProjectId && !config?.profileId && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800 mb-3">
+              <p className="text-sm text-blue-600 mb-3">
                 {language === 'nl' 
                   ? 'Social media connecties zijn nog niet ingesteld voor dit project. Klik op de knop hieronder om te starten.' 
                   : 'Social media connections are not yet set up for this project. Click the button below to get started.'}
@@ -383,7 +383,7 @@ export default function GetlateSettingsPage() {
 
           {/* Individual Platform Connection Buttons */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900">
+            <h3 className="text-lg font-semibold mb-4 text-gray-700">
               {language === 'nl' ? 'Verbind Social Media Accounts' : 'Connect Social Media Accounts'}
             </h3>
             <p className="text-sm text-gray-600 mb-4">
@@ -434,7 +434,7 @@ export default function GetlateSettingsPage() {
                             {platformInfo.emoji}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-gray-900 mb-1">
+                            <h4 className="font-semibold text-gray-700 mb-1">
                               {platformInfo.name}
                             </h4>
                             {connectedAccount ? (

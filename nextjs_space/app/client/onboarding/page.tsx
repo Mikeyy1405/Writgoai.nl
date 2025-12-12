@@ -564,7 +564,7 @@ export default function ClientOnboardingPage() {
                     onCheckedChange={(checked) => handleInputChange('autopilotEnabled', checked)}
                   />
                   <Label htmlFor="autopilot" className="cursor-pointer text-sm">
-                    <span className="font-semibold text-blue-900">Autopilot Mode Inschakelen</span>
+                    <span className="font-semibold text-blue-700">Autopilot Mode Inschakelen</span>
                     <p className="text-xs text-blue-700 mt-1">
                       Laat de AI automatisch content genereren en publiceren volgens jouw schema
                     </p>

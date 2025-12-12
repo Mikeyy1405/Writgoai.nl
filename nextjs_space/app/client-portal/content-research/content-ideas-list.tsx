@@ -156,8 +156,8 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { color: string; icon: any }> = {
-      idea: { color: 'bg-gray-100 text-gray-800', icon: FileText },
-      queued: { color: 'bg-blue-100 text-blue-800', icon: Clock },
+      idea: { color: 'bg-gray-100 text-gray-700', icon: FileText },
+      queued: { color: 'bg-blue-100 text-blue-600', icon: Clock },
       writing: { color: 'bg-orange-100 text-orange-800', icon: Edit3 },
       completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle2 },
       published: { color: 'bg-purple-100 text-purple-800', icon: Zap },
@@ -450,7 +450,7 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <Zap className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-blue-800 space-y-2">
+                <div className="text-sm text-blue-600 space-y-2">
                   <p><strong>De AI vult automatisch in:</strong></p>
                   <ul className="list-disc list-inside space-y-1 ml-2">
                     <li>Focus keyword en secondary keywords</li>
@@ -578,7 +578,7 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
                     </Badge>
                   )}
                   {idea.competitorGap && (
-                    <Badge className="bg-blue-100 text-blue-800">
+                    <Badge className="bg-blue-100 text-blue-600">
                       <Target className="w-3 h-3 mr-1" />
                       Kans
                     </Badge>

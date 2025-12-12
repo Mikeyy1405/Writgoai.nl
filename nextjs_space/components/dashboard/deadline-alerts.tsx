@@ -53,7 +53,7 @@ export function DeadlineAlerts({ urgentTasks }: DeadlineAlertsProps) {
             <div key={task.id} className="bg-white rounded-lg p-4 border border-red-200">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-1">
+                  <h4 className="font-semibold text-gray-700 mb-1">
                     {task.title}
                   </h4>
                   <p className="text-sm text-gray-400 mb-2">

@@ -107,7 +107,7 @@ export function EmailCampaignManager() {
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg space-y-2">
-              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+              <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-100">
                 ℹ️ Automatische Verzending
               </h4>
               <p className="text-xs text-blue-700 dark:text-blue-300">
@@ -306,7 +306,7 @@ export function EmailCampaignManager() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">-</div>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-100">-</div>
               <div className="text-sm text-blue-600 dark:text-blue-400">Verzonden</div>
             </div>
             <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">

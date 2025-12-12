@@ -197,7 +197,7 @@ export default function OverzichtPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-700 mb-2">
           👋 Welkom terug, {session?.user?.name || 'Gebruiker'}!
         </h1>
         <p className="text-gray-600">
@@ -211,7 +211,7 @@ export default function OverzichtPage() {
           <div className="flex items-start gap-4">
             <div className={`w-3 h-3 rounded-full bg-${statusColor}-500 mt-1 animate-pulse`} />
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-gray-700 mb-2">
                 {systemStatus.overall === 'active' ? '🟢 SYSTEEM STATUS: ACTIEF' : 
                  systemStatus.overall === 'warning' ? '🟠 SYSTEEM STATUS: WAARSCHUWING' :
                  '🔴 SYSTEEM STATUS: FOUT'}
@@ -239,7 +239,7 @@ export default function OverzichtPage() {
             <CardTitle className="text-sm font-medium text-gray-500">DEZE MAAND</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-gray-900">{stats.thisMonth.posts} posts</div>
+            <div className="text-2xl font-bold text-gray-700">{stats.thisMonth.posts} posts</div>
             <div className="space-y-1 text-sm text-gray-600">
               <div>{stats.thisMonth.articles} artikelen</div>
               <div>{stats.thisMonth.videos} videos</div>
@@ -254,7 +254,7 @@ export default function OverzichtPage() {
             <CardTitle className="text-sm font-medium text-gray-500">DEZE WEEK</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-gray-900">{stats.thisWeek.posts} posts</div>
+            <div className="text-2xl font-bold text-gray-700">{stats.thisWeek.posts} posts</div>
             <div className="space-y-1 text-sm text-gray-600">
               <div>{stats.thisWeek.articles} artikelen</div>
               <div>{stats.thisWeek.videos} videos</div>
@@ -272,7 +272,7 @@ export default function OverzichtPage() {
             <CardTitle className="text-sm font-medium text-gray-500">VANDAAG</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-gray-900">{stats.today.posts} posts</div>
+            <div className="text-2xl font-bold text-gray-700">{stats.today.posts} posts</div>
             <div className="space-y-1 text-sm text-gray-600">
               <div>{stats.today.articles} artikelen</div>
               <div>{stats.today.videos} videos</div>
@@ -313,7 +313,7 @@ export default function OverzichtPage() {
                       <span className="text-xl">{platform.display_name.charAt(0)}</span>
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">{platform.display_name}</div>
+                      <div className="font-medium text-gray-700">{platform.display_name}</div>
                       <div className="text-sm text-gray-500">{platform.username}</div>
                     </div>
                   </div>
@@ -365,7 +365,7 @@ export default function OverzichtPage() {
                 <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                   <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">{activity.description}</p>
+                    <p className="text-sm text-gray-700">{activity.description}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true, locale: nl })}
                       {activity.platform && ` • ${activity.platform}`}

@@ -91,7 +91,10 @@ async function collectWebsiteData(clientId: string): Promise<WebsiteData> {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     include: {
-      projects: true,
+      projects: {
+        where: { status: 'active' },
+        take: 1,
+      },
     },
   });
 
@@ -105,67 +108,184 @@ async function collectWebsiteData(clientId: string): Promise<WebsiteData> {
     companyName: client.companyName,
     website: client.website,
     hasDescription: !!client.description,
+    projectsCount: client.projects?.length || 0,
   });
 
-  // Get recent blog posts
-  console.log(`   📂 Fetching blog posts...`);
-  const blogPosts = await prisma.blogPost.findMany({
-    where: { clientId },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-    select: {
-      title: true,
-      excerpt: true,
-      content: true,
-      keywords: true,
-      metaDescription: true,
-    },
-  });
-  console.log(`   ✅ Found ${blogPosts.length} blog posts`);
+  // Get WordPress URL from project or client
+  const project = client.projects?.[0];
+  const websiteUrl = project?.wordpressUrl || project?.websiteUrl || client.website;
 
-  // Get recent social media posts
-  console.log(`   📂 Fetching social media strategies...`);
-  const strategies = await prisma.socialMediaStrategy.findMany({
-    where: { clientId },
-    select: { id: true },
-  });
-  console.log(`   ✅ Found ${strategies.length} social media strategies`);
-  
-  console.log(`   📂 Fetching social media posts...`);
-  const socialPosts = await prisma.socialMediaPost.findMany({
-    where: { 
-      strategyId: {
-        in: strategies.map(s => s.id),
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-    select: {
-      content: true,
-      platform: true,
-    },
-  });
-  console.log(`   ✅ Found ${socialPosts.length} social media posts`);
+  console.log(`   🌐 Website URL:`, websiteUrl || 'NOT FOUND');
+
+  if (!websiteUrl) {
+    console.error(`   ❌ No website URL found for this client!`);
+    throw new Error('Geen website URL gevonden. Voeg eerst een WordPress URL toe aan het project.');
+  }
+
+  // Scrape public WordPress website
+  console.log(`   🌐 Scraping public WordPress website: ${websiteUrl}`);
+  const scrapedContent = await scrapePublicWordPressSite(websiteUrl);
 
   console.log(`\n   📊 Data collection summary:`, {
     clientName: client.name,
-    website: client.website || 'Not provided',
-    blogPosts: blogPosts.length,
-    socialPosts: socialPosts.length,
-    hasDescription: !!client.description,
-    totalContentItems: blogPosts.length + socialPosts.length,
+    website: websiteUrl,
+    homepageLength: scrapedContent.homepage?.length || 0,
+    blogPostsCount: scrapedContent.blogPosts?.length || 0,
+    aboutPageLength: scrapedContent.aboutPage?.length || 0,
+    totalContentLength: (scrapedContent.homepage?.length || 0) + 
+                        (scrapedContent.aboutPage?.length || 0) +
+                        (scrapedContent.blogPosts?.reduce((sum, p) => sum + (p.content?.length || 0), 0) || 0),
   });
 
-  if (blogPosts.length === 0 && socialPosts.length === 0) {
-    console.warn(`   ⚠️  WARNING: No blog posts or social media posts found for this client!`);
-    console.warn(`   ⚠️  Analysis will be based on client info and fallback data only`);
+  if (!scrapedContent.homepage && scrapedContent.blogPosts.length === 0) {
+    console.warn(`   ⚠️  WARNING: Could not scrape any content from the website!`);
+    console.warn(`   ⚠️  The website may be protected, offline, or inaccessible`);
   }
 
   return {
     client,
-    blogPosts,
-    socialPosts,
+    blogPosts: scrapedContent.blogPosts,
+    socialPosts: [],
+    wordpressContent: scrapedContent,
   };
+}
+
+/**
+ * Scrape public WordPress website
+ */
+async function scrapePublicWordPressSite(websiteUrl: string): Promise<any> {
+  console.log(`   🌐 Starting WordPress website scrape...`);
+  
+  const content = {
+    homepage: '',
+    blogPosts: [] as any[],
+    aboutPage: '',
+  };
+
+  try {
+    // Normalize URL
+    const baseUrl = websiteUrl.replace(/\/$/, '');
+    console.log(`   🌐 Base URL: ${baseUrl}`);
+
+    // 1. Scrape homepage
+    console.log(`   📄 Fetching homepage...`);
+    try {
+      const homepageResponse = await fetch(baseUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+      
+      if (homepageResponse.ok) {
+        const html = await homepageResponse.text();
+        content.homepage = extractTextFromHTML(html);
+        console.log(`   ✅ Homepage scraped: ${content.homepage.length} chars`);
+      } else {
+        console.warn(`   ⚠️  Homepage fetch failed: ${homepageResponse.status}`);
+      }
+    } catch (error: any) {
+      console.warn(`   ⚠️  Homepage fetch error: ${error.message}`);
+    }
+
+    // 2. Try to fetch blog posts via WordPress REST API
+    console.log(`   📝 Fetching blog posts via WP REST API...`);
+    try {
+      const postsUrl = `${baseUrl}/wp-json/wp/v2/posts?per_page=10&_embed`;
+      console.log(`   📝 Posts URL: ${postsUrl}`);
+      
+      const postsResponse = await fetch(postsUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+      
+      if (postsResponse.ok) {
+        const posts = await postsResponse.json();
+        console.log(`   ✅ Found ${posts.length} blog posts via REST API`);
+        
+        content.blogPosts = posts.map((post: any) => ({
+          title: stripHTMLTags(post.title?.rendered || ''),
+          excerpt: stripHTMLTags(post.excerpt?.rendered || ''),
+          content: stripHTMLTags(post.content?.rendered || '').substring(0, 2000), // Limit content length
+        }));
+      } else {
+        console.warn(`   ⚠️  WP REST API not available: ${postsResponse.status}`);
+      }
+    } catch (error: any) {
+      console.warn(`   ⚠️  WP REST API error: ${error.message}`);
+    }
+
+    // 3. Try to scrape about/over page
+    console.log(`   📄 Fetching about page...`);
+    const aboutUrls = [
+      `${baseUrl}/over-ons`,
+      `${baseUrl}/over-mij`,
+      `${baseUrl}/about`,
+      `${baseUrl}/about-us`,
+      `${baseUrl}/over`,
+    ];
+
+    for (const aboutUrl of aboutUrls) {
+      try {
+        console.log(`   📄 Trying: ${aboutUrl}`);
+        const aboutResponse = await fetch(aboutUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        });
+        
+        if (aboutResponse.ok) {
+          const html = await aboutResponse.text();
+          content.aboutPage = extractTextFromHTML(html);
+          console.log(`   ✅ About page scraped: ${content.aboutPage.length} chars from ${aboutUrl}`);
+          break;
+        }
+      } catch (error: any) {
+        // Try next URL
+        console.log(`   ⚠️  Failed: ${error.message}`);
+      }
+    }
+
+  } catch (error: any) {
+    console.error(`   ❌ Scraping error:`, error.message);
+  }
+
+  console.log(`   ✅ Scraping complete`);
+  return content;
+}
+
+/**
+ * Extract clean text from HTML
+ */
+function extractTextFromHTML(html: string): string {
+  // Remove scripts and styles
+  let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  
+  // Remove HTML tags
+  text = text.replace(/<[^>]+>/g, ' ');
+  
+  // Decode HTML entities
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#\d+;/g, ' ');
+  text = text.replace(/&[a-z]+;/gi, ' ');
+  
+  // Clean up whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+  
+  // Limit length
+  return text.substring(0, 10000);
+}
+
+/**
+ * Strip HTML tags from text
+ */
+function stripHTMLTags(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -174,28 +294,31 @@ async function collectWebsiteData(clientId: string): Promise<WebsiteData> {
 async function analyzeWithAI(data: WebsiteData): Promise<WebsiteAnalysis> {
   console.log(`   🤖 Preparing AI analysis prompt...`);
   console.log(`   📝 Content to analyze:`, {
+    hasHomepage: !!data.wordpressContent?.homepage,
+    blogPostsCount: data.blogPosts.length,
+    hasAboutPage: !!data.wordpressContent?.aboutPage,
     blogPostTitles: data.blogPosts.slice(0, 3).map(p => p.title),
-    socialPostSample: data.socialPosts.slice(0, 2).map(p => p.content?.substring(0, 50)),
   });
   
   const prompt = `
-Je bent een expert in content marketing en doelgroep analyse. Analyseer de volgende informatie om de niche, doelgroep, tone of voice en keywords te bepalen.
+Je bent een expert in content marketing en doelgroep analyse. Analyseer de volgende WordPress website content om de niche, doelgroep, tone of voice en keywords te bepalen.
 
 BEDRIJFSINFORMATIE:
 - Bedrijfsnaam: ${data.client.companyName || data.client.name}
 - Website: ${data.client.website || 'Niet beschikbaar'}
 - Beschrijving: ${data.client.description || 'Niet beschikbaar'}
 
-BLOG CONTENT (laatste ${data.blogPosts.length} posts):
+HOMEPAGE CONTENT:
+${data.wordpressContent?.homepage ? data.wordpressContent.homepage.substring(0, 3000) : 'Niet beschikbaar'}
+
+OVER/ABOUT PAGINA:
+${data.wordpressContent?.aboutPage ? data.wordpressContent.aboutPage.substring(0, 2000) : 'Niet beschikbaar'}
+
+BLOG POSTS (${data.blogPosts.length} recente posts van WordPress):
 ${data.blogPosts.map((p, i) => `
 ${i + 1}. "${p.title}"
    Samenvatting: ${p.excerpt || 'N/A'}
-   Keywords: ${Array.isArray(p.keywords) ? p.keywords.join(', ') : 'N/A'}
-`).join('\n')}
-
-SOCIAL MEDIA POSTS (laatste ${data.socialPosts.length}):
-${data.socialPosts.slice(0, 20).map((p, i) => `
-${i + 1}. [${p.platform || 'Unknown'}]: ${p.content?.substring(0, 150) || 'N/A'}...
+   Content preview: ${p.content?.substring(0, 200) || 'N/A'}...
 `).join('\n')}
 
 INSTRUCTIES:
@@ -393,7 +516,7 @@ async function saveAnalysis(
         reasoning: analysis.reasoning,
         websiteUrl: data.client.website || null,
         blogPostsAnalyzed: data.blogPosts.length,
-        socialPostsAnalyzed: data.socialPosts.length,
+        socialPostsAnalyzed: 0, // No social posts from scraping
         analyzedAt: new Date(),
       },
     });

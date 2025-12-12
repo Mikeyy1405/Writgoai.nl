@@ -41,7 +41,7 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            className="text-gray-600 hover:text-gray-700 hover:bg-gray-100"
           >
             <HelpCircle className="w-5 h-5" />
           </Button>
@@ -50,7 +50,7 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 relative"
+            className="text-gray-600 hover:text-gray-700 hover:bg-gray-100 relative"
           >
             <Bell className="w-5 h-5" />
             {/* Notification dot - hide for now */}
@@ -62,7 +62,7 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                className="flex items-center gap-2 text-gray-700 hover:text-gray-700 hover:bg-gray-100"
               >
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-[#FF9933] to-[#FFAD33] text-white text-sm font-medium">
                   {session?.user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -73,7 +73,7 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-white border-gray-200">
-              <DropdownMenuLabel className="text-gray-900">
+              <DropdownMenuLabel className="text-gray-700">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{session?.user?.name || 'Gebruiker'}</span>
                   <span className="text-xs text-gray-500">{session?.user?.email}</span>
@@ -81,14 +81,14 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-gray-200" />
               <DropdownMenuItem 
-                className="text-gray-700 focus:bg-gray-100 focus:text-gray-900 cursor-pointer"
+                className="text-gray-700 focus:bg-gray-100 focus:text-gray-700 cursor-pointer"
                 onClick={() => window.location.href = '/admin/account'}
               >
                 <User className="w-4 h-4 mr-2" />
                 Account instellingen
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="text-gray-700 focus:bg-gray-100 focus:text-gray-900 cursor-pointer"
+                className="text-gray-700 focus:bg-gray-100 focus:text-gray-700 cursor-pointer"
                 onClick={() => window.location.href = '/admin/account?tab=support'}
               >
                 <HelpCircle className="w-4 h-4 mr-2" />

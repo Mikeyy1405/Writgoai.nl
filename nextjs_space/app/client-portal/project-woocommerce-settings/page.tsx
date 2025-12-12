@@ -207,7 +207,7 @@ export default function ProjectWooCommerceSettingsPage() {
         
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-700">
               <Store className="inline-block mr-3 h-8 w-8 text-blue-600" />
               WooCommerce Instellingen
             </h1>
@@ -312,10 +312,10 @@ export default function ProjectWooCommerceSettingsPage() {
           
           {/* Instructions */}
           <div className="bg-blue-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-blue-900 mb-2">
+            <h4 className="font-semibold text-blue-700 mb-2">
               Hoe verkrijg ik WooCommerce API credentials?
             </h4>
-            <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+            <ol className="text-sm text-blue-600 space-y-1 list-decimal list-inside">
               <li>Log in op je WordPress website</li>
               <li>Ga naar WooCommerce → Instellingen → Geavanceerd → REST API</li>
               <li>Klik op "Toevoegen sleutel"</li>
@@ -328,7 +328,7 @@ export default function ProjectWooCommerceSettingsPage() {
               href="https://woocommerce.com/document/woocommerce-rest-api/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 mt-2"
+              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-600 mt-2"
             >
               WooCommerce REST API Documentatie
               <ExternalLink className="ml-1 h-3 w-3" />

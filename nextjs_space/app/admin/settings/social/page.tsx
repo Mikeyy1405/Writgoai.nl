@@ -112,7 +112,7 @@ export default function SocialMediaSettingsPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center">
               <Share2 className="w-6 h-6 text-orange-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Social Media Koppelen</h1>
+            <h1 className="text-3xl font-bold text-gray-700">Social Media Koppelen</h1>
           </div>
           <p className="text-gray-600 ml-15">
             Koppel je social media accounts via Late.dev om automatisch content te kunnen plaatsen
@@ -129,7 +129,7 @@ export default function SocialMediaSettingsPage() {
                     <CheckCircle className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Gekoppeld</h3>
+                    <h3 className="font-semibold text-gray-700">Gekoppeld</h3>
                     <p className="text-sm text-gray-600">Social media is actief</p>
                   </div>
                 </>
@@ -139,7 +139,7 @@ export default function SocialMediaSettingsPage() {
                     <AlertCircle className="w-5 h-5 text-gray-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Niet gekoppeld</h3>
+                    <h3 className="font-semibold text-gray-700">Niet gekoppeld</h3>
                     <p className="text-sm text-gray-600">Voeg je API key toe om te koppelen</p>
                   </div>
                 </>
@@ -155,7 +155,7 @@ export default function SocialMediaSettingsPage() {
 
         {/* Configuration Card */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Late.dev Configuratie</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Late.dev Configuratie</h3>
           
           <div className="space-y-4">
             <div>
@@ -253,11 +253,11 @@ export default function SocialMediaSettingsPage() {
 
         {/* Info Card */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+          <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" />
             Hoe werkt het?
           </h4>
-          <ul className="space-y-2 text-sm text-blue-800">
+          <ul className="space-y-2 text-sm text-blue-600">
             <li className="flex gap-2">
               <span className="font-bold">1.</span>
               <span>Maak een account aan op <a href="https://late.dev" target="_blank" rel="noopener noreferrer" className="underline">late.dev</a></span>

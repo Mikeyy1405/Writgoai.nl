@@ -60,7 +60,7 @@ export default function AffiliateComparisonTable({
       {(title || description) && (
         <div className="mb-6 text-center">
           {title && (
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            <h3 className="text-2xl font-bold text-gray-700 mb-2">
               {title}
             </h3>
           )}
@@ -113,7 +113,7 @@ export default function AffiliateComparisonTable({
               )}
 
               {/* Title */}
-              <h4 className="font-bold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem]">
+              <h4 className="font-bold text-gray-700 mb-2 line-clamp-2 min-h-[2.5rem]">
                 {product.title}
               </h4>
 

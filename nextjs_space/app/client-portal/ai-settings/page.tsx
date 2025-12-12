@@ -647,13 +647,13 @@ export default function AISettingsPage() {
                   
                   {/* Voorbeelden sectie */}
                   <div className="mb-4 p-4 bg-zinc-900 border-2 border-blue-200 rounded-lg">
-                    <h4 className="font-bold text-sm text-blue-900 mb-2 flex items-center gap-2">
+                    <h4 className="font-bold text-sm text-blue-700 mb-2 flex items-center gap-2">
                       <Sparkles className="h-4 w-4" />
                       Voorbeelden van goede tone of voice beschrijvingen:
                     </h4>
                     <div className="space-y-3 text-sm text-gray-200">
                       <div className="pl-3 border-l-2 border-blue-400">
-                        <p className="font-semibold text-blue-900">Casual & Vriendelijk:</p>
+                        <p className="font-semibold text-blue-700">Casual & Vriendelijk:</p>
                         <p className="italic">"Gebruik 'je' en 'jij', schrijf alsof je een vriend adviseert. Kort en krachtig, zonder vakjargon. Gebruik emoji's waar passend. Eindig zinnen met een persoonlijke noot."</p>
                       </div>
                       <div className="pl-3 border-l-2 border-purple-400">

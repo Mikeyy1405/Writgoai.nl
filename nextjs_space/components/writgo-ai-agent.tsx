@@ -480,7 +480,7 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm text-gray-900 truncate">
+                        <h4 className="font-medium text-sm text-gray-700 truncate">
                           {conv.title}
                         </h4>
                         <p className="text-xs text-gray-500 mt-1">
@@ -564,7 +564,7 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
                       ? 'bg-blue-600 text-white' 
                       : 'bg-white border-2 border-gray-200'
                   } rounded-2xl px-4 py-3 shadow-sm`}>
-                    <div className={`text-sm whitespace-pre-wrap ${message.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                    <div className={`text-sm whitespace-pre-wrap ${message.role === 'user' ? 'text-white' : 'text-gray-700'}`}>
                       {message.content.split('\n').map((line, i) => {
                         // Parse markdown-style bold
                         if (line.includes('**')) {

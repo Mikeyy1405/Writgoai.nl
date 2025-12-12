@@ -338,7 +338,7 @@ export default function ContentAutomationPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Content Automatisering</h1>
+              <h1 className="text-3xl font-bold text-gray-700">Content Automatisering</h1>
               <p className="text-gray-600 mt-1">Automatische content planning en publicatie</p>
             </div>
             <Dialog open={wpDialogOpen} onOpenChange={setWpDialogOpen}>
@@ -500,7 +500,7 @@ export default function ContentAutomationPage() {
         {/* Content Plans Overview */}
         {selectedClient && contentPlans.length > 0 && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Content Kalender</h2>
+            <h2 className="text-2xl font-bold text-gray-700">Content Kalender</h2>
             {contentPlans.map((plan) => {
               // Groepeer artikelen per week
               const articlesByWeek: { [key: number]: any[] } = {};
@@ -562,7 +562,7 @@ export default function ContentAutomationPage() {
                                       <div className="flex items-start gap-2 mb-2">
                                         <FileText className="h-5 w-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
                                         <div className="flex-1">
-                                          <h4 className="font-semibold text-gray-900 text-lg leading-tight">
+                                          <h4 className="font-semibold text-gray-700 text-lg leading-tight">
                                             {normalizeTitle(article.title)}
                                           </h4>
                                         </div>
@@ -575,7 +575,7 @@ export default function ContentAutomationPage() {
                                           {article.keywords.map((keyword: string, idx: number) => (
                                             <span
                                               key={idx}
-                                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-600"
                                             >
                                               {cleanText(keyword)}
                                             </span>
@@ -626,7 +626,7 @@ export default function ContentAutomationPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-700 mb-2">
                 Nog geen content plannen
               </h3>
               <p className="text-gray-600">

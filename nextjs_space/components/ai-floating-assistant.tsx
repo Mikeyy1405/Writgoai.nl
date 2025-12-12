@@ -186,7 +186,7 @@ export function AIFloatingAssistant({ onTaskCreated }: AIFloatingAssistantProps)
 
                     {response.tasks && response.tasks.length > 0 && (
                       <div className="bg-white border border-orange-100 rounded-lg p-3">
-                        <h4 className="font-semibold text-gray-900 text-sm mb-2">
+                        <h4 className="font-semibold text-gray-700 text-sm mb-2">
                           Aangemaakte taken ({response.tasks.length}):
                         </h4>
                         <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -195,7 +195,7 @@ export function AIFloatingAssistant({ onTaskCreated }: AIFloatingAssistantProps)
                               key={task.id}
                               className="border rounded p-2 bg-orange-50 text-xs"
                             >
-                              <div className="font-semibold text-gray-900">{task.title}</div>
+                              <div className="font-semibold text-gray-700">{task.title}</div>
                               <div className="text-gray-600 mt-0.5">
                                 📅 {format(new Date(task.deadline), 'dd MMM yyyy', { locale: nl })}
                               </div>
@@ -210,7 +210,7 @@ export function AIFloatingAssistant({ onTaskCreated }: AIFloatingAssistantProps)
                 {/* Quick Examples */}
                 {!response && (
                   <div className="mt-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <h4 className="font-semibold text-gray-900 text-xs mb-2">Voorbeelden:</h4>
+                    <h4 className="font-semibold text-gray-700 text-xs mb-2">Voorbeelden:</h4>
                     <ul className="space-y-1 text-xs text-gray-700">
                       <li className="flex items-start gap-1">
                         <span className="text-writgo-orange">•</span>

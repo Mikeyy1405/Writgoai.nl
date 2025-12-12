@@ -86,7 +86,7 @@ export function ProfessionalContentCard({ content, onEdit, onPreview, onPublish,
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-600" />
-                <h4 className="font-semibold text-blue-900">Blog Artikel (HTML)</h4>
+                <h4 className="font-semibold text-blue-700">Blog Artikel (HTML)</h4>
               </div>
               {content.blogPublished ? (
                 <Badge className="bg-green-500 text-white">

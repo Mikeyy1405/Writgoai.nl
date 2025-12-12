@@ -291,7 +291,7 @@ export default function SocialConnectPage() {
     <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Social Media Koppelen</h1>
+        <h1 className="text-3xl font-bold text-gray-700">Social Media Koppelen</h1>
         <p className="text-gray-600 mt-2">
           Koppel je social media accounts om automatisch posts te kunnen plaatsen via WritGo.
         </p>
@@ -334,7 +334,7 @@ export default function SocialConnectPage() {
                     </div>
                     
                     <div>
-                      <h3 className="font-semibold text-lg text-gray-900">{platform.name}</h3>
+                      <h3 className="font-semibold text-lg text-gray-700">{platform.name}</h3>
                       <p className="text-sm text-gray-500">{platform.description}</p>
                       {connected.length > 0 && (
                         <div className="flex items-center gap-2 text-sm text-green-600 mt-1">
@@ -385,7 +385,7 @@ export default function SocialConnectPage() {
                         )}
                         
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{account.displayName}</p>
+                          <p className="font-medium text-gray-700">{account.displayName}</p>
                           {account.accountHandle && (
                             <p className="text-sm text-gray-600">@{account.accountHandle}</p>
                           )}

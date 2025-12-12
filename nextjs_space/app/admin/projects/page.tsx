@@ -41,7 +41,7 @@ export default function ProjectsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Mijn Projecten</h1>
+            <h1 className="text-3xl font-bold text-gray-700">Mijn Projecten</h1>
             <p className="text-gray-600 mt-2">Beheer al je websites en projecten</p>
           </div>
           <button
@@ -92,7 +92,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center">
           <Globe className="w-10 h-10 text-orange-500" />
         </div>
-        <h3 className="text-xl font-semibold mb-2 text-gray-900">Nog geen projecten</h3>
+        <h3 className="text-xl font-semibold mb-2 text-gray-700">Nog geen projecten</h3>
         <p className="text-gray-600 mb-6">
           Voeg je eerste website toe om te beginnen met content management
         </p>
@@ -142,11 +142,11 @@ function ProjectCard({ project, onRefresh }: { project: Project; onRefresh: () =
             <Globe className="w-5 h-5 text-orange-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{project.name}</h3>
+            <h3 className="font-semibold text-gray-700">{project.name}</h3>
             <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
               project.status === 'active' 
                 ? 'bg-green-100 text-green-800' 
-                : 'bg-gray-100 text-gray-800'
+                : 'bg-gray-100 text-gray-700'
             }`}>
               {project.status === 'active' ? 'Actief' : 'Inactief'}
             </span>
@@ -231,7 +231,7 @@ function AddProjectDialog({ onClose, onSuccess }: { onClose: () => void; onSucce
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Nieuw Project Toevoegen</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-700">Nieuw Project Toevoegen</h2>
         
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">

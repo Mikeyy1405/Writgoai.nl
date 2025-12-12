@@ -218,10 +218,10 @@ export default function CreditPaywall({
           <div className="flex items-start gap-3">
             <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="font-semibold text-blue-900 mb-1">
+              <h4 className="font-semibold text-blue-700 mb-1">
                 Hoe werken credits?
               </h4>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <ul className="text-sm text-blue-600 space-y-1">
                 <li>• 1 credit ≈ 10 AI chat berichten (basis modellen)</li>
                 <li>• Geavanceerde modellen kosten meer credits</li>
                 <li>• Credits verlopen nooit</li>

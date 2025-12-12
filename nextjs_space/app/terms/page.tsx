@@ -9,7 +9,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white shadow-lg rounded-lg p-8 md:p-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">
+          <h1 className="text-4xl font-bold text-slate-700 mb-2">
             Algemene Voorwaarden
           </h1>
           <p className="text-slate-600 mb-8">
@@ -17,7 +17,7 @@ export default function TermsPage() {
           </p>
 
           <div className="prose prose-slate max-w-none">
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               1. Acceptatie van voorwaarden
             </h2>
             <p className="text-slate-700 mb-4">
@@ -25,7 +25,7 @@ export default function TermsPage() {
               Als u niet akkoord gaat, mag u de Dienst niet gebruiken.
             </p>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               2. Beschrijving van de dienst
             </h2>
             <p className="text-slate-700 mb-4">
@@ -38,7 +38,7 @@ export default function TermsPage() {
               <li>Credit-gebaseerde diensten aanbiedt</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               3. Account registratie
             </h2>
             <p className="text-slate-700 mb-4">
@@ -51,11 +51,11 @@ export default function TermsPage() {
               <li>Verantwoordelijk zijn voor alle activiteiten onder uw account</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               4. Abonnementen en betalingen
             </h2>
             
-            <h3 className="text-xl font-semibold text-slate-800 mt-6 mb-3">
+            <h3 className="text-xl font-semibold text-slate-600 mt-6 mb-3">
               4.1 Abonnementsplannen
             </h3>
             <p className="text-slate-700 mb-4">
@@ -68,7 +68,7 @@ export default function TermsPage() {
               <li><strong>Managed Service</strong> - Vanaf €499/maand (complete content service)</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-slate-800 mt-6 mb-3">
+            <h3 className="text-xl font-semibold text-slate-600 mt-6 mb-3">
               4.2 Credit systeem
             </h3>
             <ul className="list-disc pl-6 mb-4 text-slate-700">
@@ -78,7 +78,7 @@ export default function TermsPage() {
               <li>Credits zijn niet overdraagbaar of inwisselbaar voor contant geld</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-slate-800 mt-6 mb-3">
+            <h3 className="text-xl font-semibold text-slate-600 mt-6 mb-3">
               4.3 Betalingen
             </h3>
             <ul className="list-disc pl-6 mb-4 text-slate-700">
@@ -88,7 +88,7 @@ export default function TermsPage() {
               <li>Wij behouden ons het recht voor prijzen te wijzigen met 30 dagen kennisgeving</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-slate-800 mt-6 mb-3">
+            <h3 className="text-xl font-semibold text-slate-600 mt-6 mb-3">
               4.4 Opzeggen en terugbetalingen
             </h3>
             <ul className="list-disc pl-6 mb-4 text-slate-700">
@@ -99,7 +99,7 @@ export default function TermsPage() {
               <li>Terugbetalingen alleen bij technische problemen aan onze kant</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               5. Acceptabel gebruik
             </h2>
             <p className="text-slate-700 mb-4">
@@ -116,7 +116,7 @@ export default function TermsPage() {
               <li>Reverse engineering van onze dienst</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               6. AI gegenereerde content
             </h2>
             <p className="text-slate-700 mb-4">
@@ -130,7 +130,7 @@ export default function TermsPage() {
               <li>U moet voldoen aan copyright en intellectueel eigendom wetten</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               7. Intellectueel eigendom
             </h2>
             <p className="text-slate-700 mb-4">
@@ -140,7 +140,7 @@ export default function TermsPage() {
               <strong>Onze dienst:</strong> Writgo Media, logo's, en alle software zijn ons intellectueel eigendom.
             </p>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               8. Service beschikbaarheid
             </h2>
             <ul className="list-disc pl-6 mb-4 text-slate-700">
@@ -150,7 +150,7 @@ export default function TermsPage() {
               <li>Credits worden niet terugbetaald bij downtime</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               9. Aansprakelijkheid
             </h2>
             <p className="text-slate-700 mb-4">
@@ -166,14 +166,14 @@ export default function TermsPage() {
               Maximale aansprakelijkheid beperkt tot het bedrag betaald in de laatste 12 maanden.
             </p>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               10. Wijziging van voorwaarden
             </h2>
             <p className="text-slate-700 mb-4">
               Wij behouden ons het recht voor deze voorwaarden te wijzigen. Significante wijzigingen worden 30 dagen van tevoren aangekondigd via email.
             </p>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               11. Account opschorting en beëindiging
             </h2>
             <p className="text-slate-700 mb-4">
@@ -186,14 +186,14 @@ export default function TermsPage() {
               <li>Misbruik van de dienst</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               12. Toepasselijk recht
             </h2>
             <p className="text-slate-700 mb-4">
               Deze voorwaarden worden beheerst door Nederlands recht. Geschillen worden voorgelegd aan de bevoegde rechter in Nederland.
             </p>
 
-            <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 mt-8 mb-4">
               13. Contact
             </h2>
             <p className="text-slate-700 mb-4">

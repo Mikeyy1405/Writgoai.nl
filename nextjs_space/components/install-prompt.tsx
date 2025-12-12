@@ -124,7 +124,7 @@ export default function InstallPrompt() {
             <Download className="h-6 w-6" style={{ color: brand.accentColor || brand.primaryColor }} />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+            <h3 className="font-semibold text-gray-700 dark:text-gray-100 mb-1">
               Installeer {brand.companyName}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -158,7 +158,7 @@ export default function InstallPrompt() {
           <Download className="h-8 w-8" style={{ color: brand.accentColor || brand.primaryColor }} />
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+          <h3 className="font-semibold text-gray-700 dark:text-gray-100 mb-1">
             Installeer {brand.companyName}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">

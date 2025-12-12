@@ -234,9 +234,9 @@ export default function AutopilotSettings({ siteId }: AutopilotSettingsProps) {
           <CardContent className="pt-6">
             <div className="flex gap-3">
               <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="space-y-2 text-sm text-blue-900 dark:text-blue-100">
+              <div className="space-y-2 text-sm text-blue-700 dark:text-blue-100">
                 <p className="font-semibold">Hoe werkt Autopilot?</p>
-                <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200">
+                <ul className="list-disc list-inside space-y-1 text-blue-600 dark:text-blue-200">
                   <li>Autopilot selecteert automatisch artikelen uit je topical map</li>
                   <li>Artikelen worden op basis van prioriteit en zoekvolume gekozen</li>
                   <li>Content wordt volledig geoptimaliseerd voor SEO</li>

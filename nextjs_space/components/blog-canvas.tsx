@@ -1518,7 +1518,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleBold().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('bold') ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('bold') ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Vet (Ctrl+B)"
               >
@@ -1528,7 +1528,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('italic') ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('italic') ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Cursief (Ctrl+I)"
               >
@@ -1538,7 +1538,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('underline') ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('underline') ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Onderstreept (Ctrl+U)"
               >
@@ -1548,7 +1548,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleStrike().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('strike') ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('strike') ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Doorgestreept"
               >
@@ -1564,7 +1564,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Titel 1"
               >
@@ -1574,7 +1574,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Titel 2"
               >
@@ -1584,7 +1584,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Titel 3"
               >
@@ -1600,7 +1600,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('bulletList') ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('bulletList') ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Lijst met opsommingstekens"
               >
@@ -1610,7 +1610,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('orderedList') ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('orderedList') ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Genummerde lijst"
               >
@@ -1626,7 +1626,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Links uitlijnen"
               >
@@ -1636,7 +1636,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Centreren"
               >
@@ -1646,7 +1646,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Rechts uitlijnen"
               >
@@ -1656,7 +1656,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().setTextAlign('justify').run()}
-                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'justify' }) ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'justify' }) ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Uitvullen"
               >
@@ -1673,7 +1673,7 @@ Style: Modern, high-quality, visually appealing.
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`h-8 w-8 p-0 ${editor.isActive('link') ? 'bg-gray-100 text-gray-900' : ''}`}
+                    className={`h-8 w-8 p-0 ${editor.isActive('link') ? 'bg-gray-100 text-gray-700' : ''}`}
                     disabled={isGenerating}
                     title="Link toevoegen"
                   >
@@ -1808,7 +1808,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleCode().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('code') ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('code') ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Code"
               >
@@ -1819,7 +1819,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('blockquote') ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('blockquote') ? 'bg-gray-100 text-gray-700' : ''}`}
                 disabled={isGenerating}
                 title="Citaat"
               >
@@ -2105,7 +2105,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="h-8 text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                className="h-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                 title="Editor sluiten"
               >
                 <X className="w-4 h-4" />

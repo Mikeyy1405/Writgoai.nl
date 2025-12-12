@@ -93,7 +93,7 @@ export function SocialPreview({
                 <div className="text-xs text-gray-500">{url}</div>
               </div>
             </div>
-            <div className="text-blue-800 text-lg hover:underline cursor-pointer mb-1">
+            <div className="text-blue-600 text-lg hover:underline cursor-pointer mb-1">
               {truncate(title, 60)}
             </div>
             <div className="text-sm text-gray-600">
@@ -123,7 +123,7 @@ export function SocialPreview({
             )}
             <div className="p-3 bg-gray-50">
               <div className="text-xs text-gray-500 uppercase mb-1">WRITGO.NL</div>
-              <div className="text-base font-semibold text-gray-900 mb-1">
+              <div className="text-base font-semibold text-gray-700 mb-1">
                 {truncate(finalOgTitle, 70)}
               </div>
               <div className="text-sm text-gray-600">
@@ -176,7 +176,7 @@ export function SocialPreview({
               </div>
             )}
             <div className="p-3 border-t border-gray-200">
-              <div className="text-sm font-semibold text-gray-900 mb-1">
+              <div className="text-sm font-semibold text-gray-700 mb-1">
                 {truncate(finalTwitterTitle, 70)}
               </div>
               <div className="text-xs text-gray-600 mb-2">
@@ -233,7 +233,7 @@ export function SocialPreview({
               </div>
             )}
             <div className="p-3">
-              <div className="text-base font-semibold text-gray-900 mb-1">
+              <div className="text-base font-semibold text-gray-700 mb-1">
                 {truncate(finalOgTitle, 70)}
               </div>
               <div className="text-sm text-gray-600 mb-2">

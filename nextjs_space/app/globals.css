@@ -1317,3 +1317,70 @@
   }
 }
 
+
+/* ====================================================================
+   TEXT READABILITY & CONTRAST IMPROVEMENTS
+   ==================================================================== */
+
+/* Improve default text contrast */
+body {
+  @apply text-gray-900;
+}
+
+/* Override Tailwind's default gray colors for better readability */
+.text-gray-600 {
+  @apply !text-gray-700;
+}
+
+.text-gray-500 {
+  @apply !text-gray-600;
+}
+
+.text-gray-400 {
+  @apply !text-gray-500;
+}
+
+/* Improve blue text contrast */
+.text-blue-600 {
+  @apply !text-blue-700;
+}
+
+.text-blue-500 {
+  @apply !text-blue-600;
+}
+
+/* Improve link visibility */
+a:not(.no-underline) {
+  @apply text-blue-700 hover:text-blue-800;
+}
+
+/* Improve heading contrast */
+h1, h2, h3, h4, h5, h6 {
+  @apply text-gray-900 font-semibold;
+}
+
+/* Improve button text contrast */
+button {
+  @apply font-medium;
+}
+
+/* Secondary text should still be readable */
+.text-secondary {
+  @apply text-gray-700;
+}
+
+/* Muted text should have minimum readable contrast */
+.text-muted {
+  @apply text-gray-600;
+}
+
+/* Improve placeholder contrast */
+::placeholder {
+  @apply text-gray-500;
+}
+
+/* Improve disabled text contrast */
+.disabled,
+[disabled] {
+  @apply text-gray-600;
+}

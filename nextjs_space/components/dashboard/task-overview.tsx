@@ -58,7 +58,7 @@ export function TaskOverview({ tasks }: TaskOverviewProps) {
             return (
               <div key={task.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
                 <div className="flex items-start justify-between mb-3">
-                  <h4 className="font-medium text-gray-900 flex-1 pr-4">
+                  <h4 className="font-medium text-gray-700 flex-1 pr-4">
                     {task.title}
                   </h4>
                   <Badge 
