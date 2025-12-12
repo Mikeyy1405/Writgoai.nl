@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ContentPlanGenerator from '@/components/blog/ContentPlanGenerator';
+import WebsiteBasedTopicalMapGenerator from '@/components/blog/WebsiteBasedTopicalMapGenerator';
 
 interface BlogPost {
   id: string;
@@ -60,7 +61,7 @@ interface BlogPost {
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'list' | 'new' | 'ai-generate' | 'content-plan'>('list');
+  const [view, setView] = useState<'list' | 'new' | 'ai-generate' | 'content-plan' | 'website-topical-map'>('list');
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [generating, setGenerating] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
@@ -311,12 +312,32 @@ export default function AdminBlogPage() {
             {/* Quick Actions */}
             <div>
               <h2 className="text-xl font-bold text-white mb-4 px-2">Snelle Acties</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                {/* Website-Based Topical Map (NIEUW!) */}
+                <button
+                  onClick={() => setView('website-topical-map')}
+                  className="group relative bg-gradient-to-br from-cyan-500/20 to-blue-600/10 border-2 border-cyan-500/50 hover:border-cyan-400/70 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[120px] flex items-center gap-4 text-left"
+                >
+                  <div className="absolute top-2 right-2">
+                    <Badge className="bg-cyan-500/30 text-cyan-300 border-cyan-500/50 text-xs">
+                      ✨ NIEUW
+                    </Badge>
+                  </div>
+                  <div className="p-3 bg-cyan-500/20 rounded-xl group-hover:bg-cyan-500/30 transition-colors">
+                    <Globe className="w-7 h-7 text-cyan-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-white text-lg mb-1">Website Topical Map</h3>
+                    <p className="text-sm text-gray-400">Analyseer website + genereer topical map</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                </button>
                 
                 {/* AI Contentplan Generator */}
                 <button
                   onClick={() => setView('content-plan')}
-                  className="group relative bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 hover:border-blue-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] flex items-center gap-4 text-left"
+                  className="group relative bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 hover:border-blue-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[120px] flex items-center gap-4 text-left"
                 >
                   <div className="p-3 bg-blue-500/20 rounded-xl group-hover:bg-blue-500/30 transition-colors">
                     <ListTree className="w-7 h-7 text-blue-400" />
@@ -331,7 +352,7 @@ export default function AdminBlogPage() {
                 {/* AI Genereren */}
                 <button
                   onClick={() => setView('ai-generate')}
-                  className="group relative bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 hover:border-purple-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] flex items-center gap-4 text-left"
+                  className="group relative bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 hover:border-purple-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[120px] flex items-center gap-4 text-left"
                 >
                   <div className="p-3 bg-purple-500/20 rounded-xl group-hover:bg-purple-500/30 transition-colors">
                     <Sparkles className="w-7 h-7 text-purple-400" />
@@ -346,7 +367,7 @@ export default function AdminBlogPage() {
                 {/* Nieuw Artikel (Geavanceerd) */}
                 <button
                   onClick={() => router.push('/admin/blog/editor')}
-                  className="group relative bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/30 hover:border-orange-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[100px] flex items-center gap-4 text-left"
+                  className="group relative bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/30 hover:border-orange-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[120px] flex items-center gap-4 text-left"
                 >
                   <div className="p-3 bg-orange-500/20 rounded-xl group-hover:bg-orange-500/30 transition-colors">
                     <FileEdit className="w-7 h-7 text-orange-400" />
@@ -658,6 +679,38 @@ export default function AdminBlogPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* View: Website-Based Topical Map */}
+        {view === 'website-topical-map' && (
+          <div className="space-y-6">
+            {/* Header with back button */}
+            <Card className="bg-zinc-800/50 border-zinc-700">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl text-white flex items-center gap-3">
+                    <Globe className="w-6 h-6 text-cyan-400" />
+                    Website-Based Topical Map Generator
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setView('list')}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* Website-Based Topical Map Generator Component */}
+            <WebsiteBasedTopicalMapGenerator
+              onComplete={() => {
+                setView('list');
+                fetchPosts();
+              }}
+            />
+          </div>
         )}
 
         {/* View: Content Plan Generator */}
