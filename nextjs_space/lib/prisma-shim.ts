@@ -47,6 +47,8 @@ const TABLE_NAME_MAP: Record<string, string> = {
   autopilotConfig: 'AutopilotConfig',
   // Website Analysis table
   websiteAnalysis: 'WebsiteAnalysis',
+  // Getlate Integration tables
+  connectedSocialAccount: 'ConnectedSocialAccount',
 };
 
 // Create a Proxy that intercepts property access and returns table-specific handlers

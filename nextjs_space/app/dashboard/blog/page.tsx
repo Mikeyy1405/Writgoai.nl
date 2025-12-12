@@ -44,87 +44,138 @@ export default function ClientBlogPage() {
         </div>
       </div>
 
-      {/* Pipeline Steps */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold">
+      {/* Pipeline Steps - Correcte 5 stappen flow */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold text-sm">
               1
             </div>
-            <h3 className="font-semibold text-white">Website Analyseren</h3>
+            <h3 className="font-semibold text-white text-sm">Website Verbinden</h3>
           </div>
-          <p className="text-sm text-gray-400">
-            Laat AI je website analyseren om automatisch niche, doelgroep en tone te detecteren.
+          <p className="text-xs text-gray-400">
+            Koppel je WordPress website voor automatische publicatie
           </p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold text-sm">
               2
             </div>
-            <h3 className="font-semibold text-white">Content Plan Maken</h3>
+            <h3 className="font-semibold text-white text-sm">Content Map</h3>
           </div>
-          <p className="text-sm text-gray-400">
-            Genereer een topical authority map met pillar en cluster artikelen voor SEO dominantie.
+          <p className="text-xs text-gray-400">
+            Maak een topical authority map met AI
           </p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold text-sm">
               3
             </div>
-            <h3 className="font-semibold text-white">Autopilot Activeren</h3>
+            <h3 className="font-semibold text-white text-sm">Genereren</h3>
           </div>
-          <p className="text-sm text-gray-400">
-            Zet autopilot aan en laat het systeem automatisch artikelen genereren en publiceren.
+          <p className="text-xs text-gray-400">
+            Genereer artikelen met AI batch processing
+          </p>
+        </div>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold text-sm">
+              4
+            </div>
+            <h3 className="font-semibold text-white text-sm">Publiceren</h3>
+          </div>
+          <p className="text-xs text-gray-400">
+            Automatisch publiceren naar WordPress
+          </p>
+        </div>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold text-sm">
+              5
+            </div>
+            <h3 className="font-semibold text-white text-sm">Overzicht</h3>
+          </div>
+          <p className="text-xs text-gray-400">
+            Beheer je content bibliotheek
           </p>
         </div>
       </div>
 
-      {/* Website Analyzer */}
+      {/* Stap 1: Website Verbinden (WordPress) */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-[#FF9933]/10 rounded-lg">
+          <div className="w-8 h-8 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold">
+            1
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">WordPress Verbinden</h2>
+            <p className="text-sm text-gray-400">
+              Koppel je WordPress website voor automatische blog publicatie
+            </p>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+          <p className="text-sm text-gray-400 mb-4">
+            WordPress connectie zorgt ervoor dat gegenereerde artikelen automatisch worden gepubliceerd op je website.
+          </p>
+          <button className="px-4 py-2 bg-[#FF9933] text-white rounded-lg hover:bg-[#FF9933]/90 transition-colors">
+            WordPress Koppelen (Binnenkort)
+          </button>
+        </div>
+      </div>
+
+      {/* Stap 2: Content Map (Topical Authority Map) */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold">
+            2
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Topical Authority Map</h2>
+            <p className="text-sm text-gray-400">
+              Maak een complete content strategie met pillar en cluster artikelen
+            </p>
+          </div>
+        </div>
+        
+        {/* Website Analyzer voor content map input */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-5 h-5 text-[#FF9933]" />
+            <h3 className="font-semibold text-white">Optioneel: AI Website Analyzer</h3>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">AI Website Analyzer</h2>
-            <p className="text-sm text-gray-400">
-              Laat AI je website analyseren om content strategie te detecteren
-            </p>
-          </div>
+          <WebsiteAnalyzer clientId={clientId} onAnalysisComplete={setWebsiteAnalysis} />
         </div>
-        <WebsiteAnalyzer clientId={clientId} onAnalysisComplete={setWebsiteAnalysis} />
-      </div>
-
-      {/* Topical Authority Map Generator */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-[#FF9933]/10 rounded-lg">
+        
+        {/* Topical Map Generator */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
             <Zap className="w-5 h-5 text-[#FF9933]" />
+            <h3 className="font-semibold text-white">Content Map Generator</h3>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Content Plan Generator</h2>
-            <p className="text-sm text-gray-400">
-              Maak een topical authority map en genereer artikelen
-            </p>
-          </div>
+          <TopicalAuthorityMapGenerator websiteAnalysis={websiteAnalysis} />
         </div>
-        <TopicalAuthorityMapGenerator websiteAnalysis={websiteAnalysis} />
       </div>
 
-      {/* Blog Content Library */}
+      {/* Stap 3: Genereren (gebeurt via Topical Authority Map component) */}
+      {/* Stap 4: Publiceren (autopilot in Topical Authority Map component) */}
+
+      {/* Stap 5: Overzicht (Content Library) */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-[#FF9933]/10 rounded-lg">
-            <BookOpen className="w-5 h-5 text-[#FF9933]" />
+          <div className="w-8 h-8 rounded-full bg-[#FF9933]/10 flex items-center justify-center text-[#FF9933] font-bold">
+            5
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">Content Bibliotheek</h2>
             <p className="text-sm text-gray-400">
-              Beheer je gegenereerde blog artikelen
+              Overzicht van alle gegenereerde blog artikelen
             </p>
           </div>
         </div>

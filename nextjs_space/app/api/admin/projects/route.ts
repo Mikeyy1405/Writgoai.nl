@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma-shim';
+import { getlateClient } from '@/lib/getlate/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,16 +72,44 @@ export async function POST(request: Request) {
       );
     }
 
-    // Maak project aan
+    // Stap 1: Maak Getlate.dev Profile aan
+    let getlateProfile = null;
+    try {
+      // Genereer random kleur voor het profile
+      const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+      
+      const profileResponse = await getlateClient.createProfile(
+        data.name,
+        data.description || `Social media management for ${data.name}`,
+        randomColor
+      );
+      
+      getlateProfile = profileResponse.profile;
+      console.log('✓ Created Getlate profile:', getlateProfile._id);
+    } catch (error) {
+      console.error('Failed to create Getlate profile:', error);
+      // Continue without Getlate integration if it fails
+      console.warn('⚠️ Project will be created without Getlate integration');
+    }
+
+    // Stap 2: Maak WritGo project aan
     const project = await prisma.project.create({
       data: {
         clientId: client.id,
         name: data.name,
         websiteUrl: data.websiteUrl,
         description: data.description || null,
-        status: 'active'
+        status: 'active',
+        // Store Getlate profile info if successful
+        ...(getlateProfile && {
+          getlateProfileId: getlateProfile._id,
+          getlateProfileName: getlateProfile.name
+        })
       }
     });
+
+    console.log('✓ Created project:', project.id, 
+      getlateProfile ? `with Getlate profile ${getlateProfile._id}` : 'without Getlate profile');
 
     return NextResponse.json(project, { status: 201 });
   } catch (error) {

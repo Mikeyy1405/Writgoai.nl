@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma-shim';
+import { getlateClient } from '@/lib/getlate/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,10 +74,51 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete project
+    // Stap 1: Disconnect alle social media accounts via Getlate
+    if (project.getlateProfileId) {
+      try {
+        // Get alle connected accounts
+        const connectedAccounts = await prisma.connectedSocialAccount.findMany({
+          where: { projectId: params.id }
+        });
+
+        // Disconnect elk account
+        for (const account of connectedAccounts) {
+          try {
+            await getlateClient.disconnectAccount(account.getlateAccountId);
+            console.log('✓ Disconnected Getlate account:', account.getlateAccountId);
+          } catch (error) {
+            console.warn('Failed to disconnect account:', account.getlateAccountId, error);
+            // Continue met andere accounts
+          }
+        }
+
+        // Verwijder alle ConnectedSocialAccount records
+        await prisma.connectedSocialAccount.deleteMany({
+          where: { projectId: params.id }
+        });
+        console.log('✓ Deleted ConnectedSocialAccount records');
+
+      } catch (error) {
+        console.error('Failed to disconnect social accounts:', error);
+      }
+
+      // Stap 2: Verwijder Getlate profile
+      try {
+        await getlateClient.deleteProfile(project.getlateProfileId);
+        console.log('✓ Deleted Getlate profile:', project.getlateProfileId);
+      } catch (error) {
+        console.error('Failed to delete Getlate profile:', error);
+        // Continue met project deletion zelfs als Getlate delete faalt
+      }
+    }
+
+    // Stap 3: Delete WritGo project (CASCADE deletes alle related data)
     await prisma.project.delete({
       where: { id: params.id }
     });
+
+    console.log('✓ Deleted project:', params.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -58,87 +58,141 @@ export default function ClientSocialPage() {
         </div>
       </div>
 
-      {/* Pipeline Steps */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold">
+      {/* Pipeline Steps - Correcte 5 stappen flow */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-sm">
               1
             </div>
-            <h3 className="font-semibold text-white">Website Analyseren</h3>
+            <h3 className="font-semibold text-white text-sm">Socials Connecten</h3>
           </div>
-          <p className="text-sm text-gray-400">
-            Laat AI je website analyseren om automatisch niche, doelgroep en tone te detecteren.
+          <p className="text-xs text-gray-400">
+            Koppel je social media accounts via Getlate.dev
           </p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-sm">
               2
             </div>
-            <h3 className="font-semibold text-white">Social Media Plan</h3>
+            <h3 className="font-semibold text-white text-sm">Content Plan</h3>
           </div>
-          <p className="text-sm text-gray-400">
-            Genereer een social media strategie met content voor alle belangrijke platforms.
+          <p className="text-xs text-gray-400">
+            Maak een social media strategie met AI
           </p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-sm">
               3
             </div>
-            <h3 className="font-semibold text-white">Autopilot Activeren</h3>
+            <h3 className="font-semibold text-white text-sm">Posts Maken</h3>
           </div>
-          <p className="text-sm text-gray-400">
-            Zet autopilot aan en laat het systeem automatisch posts genereren en publiceren.
+          <p className="text-xs text-gray-400">
+            Genereer posts met AI voor alle platforms
+          </p>
+        </div>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-sm">
+              4
+            </div>
+            <h3 className="font-semibold text-white text-sm">Publiceren</h3>
+          </div>
+          <p className="text-xs text-gray-400">
+            Automatisch posten op gekoppelde socials
+          </p>
+        </div>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-sm">
+              5
+            </div>
+            <h3 className="font-semibold text-white text-sm">Statistieken</h3>
+          </div>
+          <p className="text-xs text-gray-400">
+            Bekijk performance en analytics
           </p>
         </div>
       </div>
 
-      {/* Website Analyzer */}
+      {/* Stap 1: Socials Connecten via Getlate.dev */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-purple-500/10 rounded-lg">
+          <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold">
+            1
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Social Media Koppelen</h2>
+            <p className="text-sm text-gray-400">
+              Verbind je social media accounts via Getlate.dev voor automatische publicatie
+            </p>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+          <p className="text-sm text-gray-400 mb-4">
+            Koppel LinkedIn, Instagram, Facebook, X (Twitter) en meer om automatisch posts te kunnen plaatsen.
+          </p>
+          <button 
+            onClick={() => window.location.href = '/dashboard/social/connect'}
+            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+          >
+            Social Media Accounts Koppelen
+          </button>
+        </div>
+      </div>
+
+      {/* Stap 2: Social Media Content Plan */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold">
+            2
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Social Media Strategie</h2>
+            <p className="text-sm text-gray-400">
+              Maak een complete social media content strategie met AI
+            </p>
+          </div>
+        </div>
+        
+        {/* Website Analyzer voor content strategie input */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-5 h-5 text-purple-400" />
+            <h3 className="font-semibold text-white">Optioneel: AI Website Analyzer</h3>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">AI Website Analyzer</h2>
-            <p className="text-sm text-gray-400">
-              Laat AI je website analyseren om social media strategie te detecteren
-            </p>
-          </div>
+          <WebsiteAnalyzer clientId={clientId} onAnalysisComplete={setWebsiteAnalysis} />
         </div>
-        <WebsiteAnalyzer clientId={clientId} onAnalysisComplete={setWebsiteAnalysis} />
-      </div>
-
-      {/* Social Media Pipeline */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-purple-500/10 rounded-lg">
+        
+        {/* Social Media Pipeline */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
             <Zap className="w-5 h-5 text-purple-400" />
+            <h3 className="font-semibold text-white">Strategie Generator</h3>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Social Media Strategie Generator</h2>
-            <p className="text-sm text-gray-400">
-              Maak een social media plan en genereer posts
-            </p>
-          </div>
+          <SocialMediaPipeline websiteAnalysis={websiteAnalysis} />
         </div>
-        <SocialMediaPipeline websiteAnalysis={websiteAnalysis} />
       </div>
 
-      {/* Social Media Content Library */}
+      {/* Stap 3: Posts Maken gebeurt via Social Media Pipeline component */}
+      {/* Stap 4: Publiceren gebeurt via autopilot in Social Media Pipeline */}
+
+      {/* Stap 5: Statistieken en Overzicht */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-purple-500/10 rounded-lg">
-            <Calendar className="w-5 h-5 text-purple-400" />
+          <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold">
+            5
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Content Kalender</h2>
+            <h2 className="text-xl font-bold text-white">Content Kalender & Statistieken</h2>
             <p className="text-sm text-gray-400">
-              Beheer je social media posts en planning
+              Overzicht van je social media posts en performance
             </p>
           </div>
         </div>
