@@ -214,6 +214,15 @@ export const prisma = new Proxy({} as any, {
       
       // create: Create a new record
       create: async ({ data, select, include }: any) => {
+        // Generate ID explicitly if not provided (fallback for database default)
+        // This ensures consistent behavior across all tables
+        if (!data.id) {
+          // Generate a UUID-style ID as TEXT (matching database pattern)
+          const crypto = require('crypto');
+          data.id = crypto.randomUUID();
+          console.log(`[Prisma Shim] Generated explicit ID for ${actualTableName}:`, data.id);
+        }
+        
         const { data: result, error } = await supabaseAdmin
           .from(actualTableName)
           .insert(data)
@@ -228,6 +237,27 @@ export const prisma = new Proxy({} as any, {
           console.error(`[Prisma Shim] - Error details: ${error.details}`);
           console.error(`[Prisma Shim] - Error hint: ${error.hint}`);
           console.error(`[Prisma Shim] - Data keys being inserted:`, Object.keys(data));
+          console.error(`[Prisma Shim] - Sample data values (first 3 keys):`, 
+            Object.entries(data).slice(0, 3).map(([k, v]) => 
+              `${k}=${typeof v === 'string' ? v.substring(0, 50) : v}`
+            ).join(', ')
+          );
+          
+          // Check for common RLS policy errors
+          if (error.code === '42501' || error.message?.includes('policy')) {
+            console.error(`[Prisma Shim] ⚠️  RLS POLICY ERROR - This might be a Row Level Security issue`);
+            console.error(`[Prisma Shim] ⚠️  Make sure the admin user has proper permissions to insert into ${actualTableName}`);
+          }
+          
+          // Check for foreign key constraint errors
+          if (error.code === '23503' || error.message?.includes('foreign key')) {
+            console.error(`[Prisma Shim] ⚠️  FOREIGN KEY ERROR - Referenced record might not exist`);
+          }
+          
+          // Check for unique constraint errors
+          if (error.code === '23505' || error.message?.includes('unique')) {
+            console.error(`[Prisma Shim] ⚠️  UNIQUE CONSTRAINT ERROR - Record with this value already exists`);
+          }
           
           // Try to stringify full error object (with size limit for performance)
           try {
@@ -244,6 +274,12 @@ export const prisma = new Proxy({} as any, {
           throw error;
         }
         
+        if (!result) {
+          console.error(`[Prisma Shim] Insert succeeded but no result returned for ${actualTableName}`);
+          throw new Error(`Insert succeeded but no result returned for ${actualTableName}`);
+        }
+        
+        console.log(`[Prisma Shim] Successfully created record in ${actualTableName} with id:`, result.id);
         return result;
       },
       

@@ -160,20 +160,31 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     console.log('[Client Creation API] Creating client...');
+    
+    // Prepare client data with explicit type conversions and NULL handling
+    const clientData = {
+      name: String(name).trim(),
+      email: String(email).toLowerCase().trim(),
+      password: hashedPassword,
+      companyName: companyName ? String(companyName).trim() : null,
+      website: website ? String(website).trim() : null,
+      subscriptionCredits: subscriptionCredits ? Number(parseFloat(String(subscriptionCredits))) : 0,
+      topUpCredits: topUpCredits ? Number(parseFloat(String(topUpCredits))) : 0,
+      subscriptionPlan: subscriptionPlan ? String(subscriptionPlan).trim() : null,
+      subscriptionStatus: null,
+      isUnlimited: Boolean(isUnlimited),
+      automationActive: false,
+      hasCompletedOnboarding: false
+    };
+    
+    console.log('[Client Creation API] Client data prepared:', {
+      ...clientData,
+      password: '[REDACTED]'
+    });
+    
     // Create client
     const client = await prisma.client.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        companyName: companyName || null,
-        website: website || null,
-        subscriptionCredits: subscriptionCredits ? parseFloat(subscriptionCredits) : 0,
-        topUpCredits: topUpCredits ? parseFloat(topUpCredits) : 0,
-        subscriptionPlan: subscriptionPlan || null,
-        isUnlimited: isUnlimited || false,
-        automationActive: false
-      }
+      data: clientData
     });
     
     console.log('[Client Creation API] Client created successfully:', client.id);
@@ -182,22 +193,40 @@ export async function POST(request: Request) {
     // This project will be used for all content, WordPress, and platform integrations
     // The client never sees "projects" in the UI, but the backend uses this for content management
     console.log('[Client Creation API] Creating default project...');
+    
+    const projectData = {
+      clientId: String(client.id),
+      name: String(companyName || name).trim(),
+      websiteUrl: String(website || 'https://example.com').trim(),
+      description: `Standaard project voor ${companyName || name}`,
+      isPrimary: true,
+      isActive: true,
+      targetAudience: null,
+      brandVoice: null,
+      niche: null,
+      keywords: [],
+      contentPillars: [],
+      writingStyle: null,
+      customInstructions: null,
+      personalInfo: null,
+      preferredProducts: [],
+      importantPages: null,
+      linkingGuidelines: null,
+      wordpressUrl: null,
+      wordpressUsername: null,
+      wordpressPassword: null,
+      wordpressCategory: null,
+      wordpressAutoPublish: false
+    };
+    
+    console.log('[Client Creation API] Project data prepared:', {
+      clientId: projectData.clientId,
+      name: projectData.name,
+      websiteUrl: projectData.websiteUrl
+    });
+    
     const defaultProject = await prisma.project.create({
-      data: {
-        clientId: client.id,
-        name: companyName || name, // Use company name as project name
-        websiteUrl: website || 'https://example.com', // Default URL if not provided
-        description: `Standaard project voor ${companyName || name}`,
-        isPrimary: true, // Mark as primary/default project
-        isActive: true,
-        targetAudience: null,
-        brandVoice: null,
-        niche: null,
-        keywords: [],
-        contentPillars: [],
-        writingStyle: null,
-        customInstructions: null
-      }
+      data: projectData
     });
     
     console.log(`[Client Creation API] SUCCESS - Client: ${client.email}, Project: ${defaultProject.id}`);
