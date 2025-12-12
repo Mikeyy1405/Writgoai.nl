@@ -58,6 +58,9 @@ async function createClient(config: IMAPConfig): Promise<ImapFlow> {
       pass: config.password,
     },
     logger: false, // Disable logging in production
+    tls: {
+      rejectUnauthorized: false, // Allow self-signed or mismatched certificates
+    },
   };
 
   const client = new ImapFlow(clientConfig);

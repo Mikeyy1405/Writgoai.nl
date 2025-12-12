@@ -297,8 +297,7 @@ export async function syncMailbox(
         password,
         tls: mailbox.imapTls !== false,
         tlsOptions: { 
-          // SECURITY: Only disable in development/testing. Enable for production!
-          rejectUnauthorized: process.env.NODE_ENV === 'production' 
+          rejectUnauthorized: false // Allow self-signed or mismatched certificates
         },
       };
 
