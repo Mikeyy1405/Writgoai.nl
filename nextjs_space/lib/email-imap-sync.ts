@@ -297,8 +297,10 @@ export async function syncMailbox(
         password,
         tls: mailbox.imapTls !== false,
         tlsOptions: { 
-          // SECURITY: Only disable in development/testing. Enable for production!
-          rejectUnauthorized: process.env.NODE_ENV === 'production' 
+          // SECURITY NOTE: Disabling certificate validation to work around hostname mismatch
+          // (e.g., connecting to mail.writgo.nl when cert only covers webmail.writgo.nl)
+          // This is a workaround - proper fix is to update SSL certificate to include all hostnames
+          rejectUnauthorized: false
         },
       };
 

@@ -58,6 +58,12 @@ async function createClient(config: IMAPConfig): Promise<ImapFlow> {
       pass: config.password,
     },
     logger: false, // Disable logging in production
+    tls: {
+      // SECURITY NOTE: Disabling certificate validation to work around hostname mismatch
+      // (e.g., connecting to mail.writgo.nl when cert only covers webmail.writgo.nl)
+      // This is a workaround - proper fix is to update SSL certificate to include all hostnames
+      rejectUnauthorized: false,
+    },
   };
 
   const client = new ImapFlow(clientConfig);
