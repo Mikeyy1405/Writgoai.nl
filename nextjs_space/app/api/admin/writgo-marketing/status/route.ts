@@ -20,7 +20,7 @@ export async function GET() {
     const { data: writgoClient, error: clientError } = await supabaseAdmin
       .from('Client')
       .select('*')
-      .or('email.eq.marketing@writgo.nl,companyName.eq.Writgo.nl')
+      .or('email.eq."marketing@writgo.nl",companyName.eq."Writgo.nl"')
       .limit(1)
       .single();
 
@@ -117,7 +117,7 @@ export async function GET() {
       title: string;
       platform_ids?: string[];
       status: string;
-      created_at: Date;
+      created_at: string;
     }
     
     let recentSocial: RecentSocialContent[] = [];
