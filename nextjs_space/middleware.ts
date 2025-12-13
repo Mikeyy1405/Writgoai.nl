@@ -40,7 +40,7 @@ export default withAuth(
     // ADMIN AUTH CHECK
     // ===================================
     // Admin-only routes
-    if (path.startsWith('/admin') || path.startsWith('/superadmin')) {
+    if (path.startsWith('/admin') || path.startsWith('/superadmin') || path.startsWith('/admin-portal')) {
       if (token?.role !== 'admin' && token?.role !== 'superadmin') {
         return NextResponse.redirect(new URL('/dashboard/overzicht', req.url));
       }
@@ -61,6 +61,7 @@ export default withAuth(
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/admin-portal/:path*',
     '/superadmin/:path*',
     '/client-portal/:path*',
     '/dashboard/:path*',
