@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import ClientSidebar from './ClientSidebar';
 import ClientMobileNav from './ClientMobileNav';
+import { ProjectProvider } from '@/lib/contexts/ProjectContext';
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode;
@@ -13,31 +14,33 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Desktop Sidebar - Hidden on mobile */}
-      <ClientSidebar />
+    <ProjectProvider>
+      <div className="flex min-h-screen bg-background">
+        {/* Desktop Sidebar - Hidden on mobile */}
+        <ClientSidebar />
 
-      {/* Mobile Navigation */}
-      <ClientMobileNav isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        {/* Mobile Navigation */}
+        <ClientMobileNav isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-auto">
-        {/* Mobile Menu Button - Only visible on mobile */}
-        <div className="lg:hidden sticky top-0 z-40 bg-zinc-900 border-b border-zinc-800 px-4 py-3">
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-2 rounded-lg hover:bg-zinc-800 text-white transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-auto">
+          {/* Mobile Menu Button - Only visible on mobile */}
+          <div className="lg:hidden sticky top-0 z-40 bg-zinc-900 border-b border-zinc-800 px-4 py-3">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-lg hover:bg-zinc-800 text-white transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
 
-        {/* Page Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </div>
-      </main>
-    </div>
+          {/* Page Content */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    </ProjectProvider>
   );
 }
