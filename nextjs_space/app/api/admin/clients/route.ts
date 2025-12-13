@@ -13,14 +13,19 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || !session.user) {
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin (optional - depends on your security requirements)
-    // For now, any authenticated user can access this endpoint
-    // You may want to add: const user = await prisma.user.findUnique({ where: { email: session.user.email }});
-    // And check: if (user?.role !== 'admin') { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }); }
+    // Check if user is admin - this is an admin-only endpoint
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email },
+      select: { role: true }
+    });
+    
+    if (user?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
     
     // Check for query parameters
     const { searchParams } = new URL(request.url);
@@ -122,9 +127,20 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || !session.user) {
+    if (!session || !session.user || !session.user.email) {
       console.log('[Client Creation API] Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is admin - only admins can create clients
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email },
+      select: { role: true }
+    });
+    
+    if (user?.role !== 'admin') {
+      console.log('[Client Creation API] Non-admin user attempted to create client');
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
     
     const body = await request.json();

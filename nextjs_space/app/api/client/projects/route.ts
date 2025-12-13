@@ -47,8 +47,8 @@ export async function GET() {
         }
       });
 
-      // Admin's own projects
-      const ownedProjects = adminClient?.projects.map((project: any) => ({
+      // Admin's own projects (handle case where admin doesn't have a client record)
+      const ownedProjects = (adminClient?.projects || []).map((project) => ({
         ...project,
         knowledgeBaseCount: project._count?.knowledgeBase || 0,
         savedContentCount: project._count?.savedContent || 0,
@@ -88,7 +88,7 @@ export async function GET() {
         }
       });
 
-      const collabProjects = collaboratorProjects.map((collab: any) => ({
+      const collabProjects = collaboratorProjects.map((collab) => ({
         ...collab.project,
         knowledgeBaseCount: collab.project._count?.knowledgeBase || 0,
         savedContentCount: collab.project._count?.savedContent || 0,
