@@ -316,6 +316,7 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
                         variant={isSelected ? 'default' : 'outline'}
                         onClick={() => togglePlatform(platform.id)}
                         className="justify-start text-xs sm:text-sm"
+                        title={platform.name}
                       >
                         <Icon className="h-4 w-4 mr-1 sm:mr-2" />
                         <span className="truncate">{platform.name}</span>

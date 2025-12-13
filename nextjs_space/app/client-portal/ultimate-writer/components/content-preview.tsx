@@ -139,30 +139,38 @@ export default function ContentPreview({
               <TabsTrigger
                 value="preview"
                 className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3"
+                aria-label="Preview tab"
               >
                 <Eye className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Preview</span>
+                <span className="sr-only sm:hidden">Preview</span>
               </TabsTrigger>
               <TabsTrigger
                 value="html"
                 className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3"
+                aria-label="HTML tab"
               >
                 <Code2 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                 <span className="hidden sm:inline">HTML</span>
+                <span className="sr-only sm:hidden">HTML</span>
               </TabsTrigger>
               <TabsTrigger
                 value="markdown"
                 className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3"
+                aria-label="Markdown tab"
               >
                 <FileCode className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Markdown</span>
+                <span className="sr-only sm:hidden">Markdown</span>
               </TabsTrigger>
               <TabsTrigger
                 value="stats"
                 className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3"
+                aria-label="Statistics tab"
               >
                 <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Stats</span>
+                <span className="sr-only sm:hidden">Stats</span>
               </TabsTrigger>
             </TabsList>
           </div>

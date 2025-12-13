@@ -171,6 +171,7 @@ export default function ClientRequestsPage() {
                 <span className={`flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${getStatusColor(request.status)}`}>
                   {getStatusIcon(request.status)}
                   <span className="hidden sm:inline">{getStatusLabel(request.status)}</span>
+                  <span className="sr-only sm:hidden">{getStatusLabel(request.status)}</span>
                 </span>
               </div>
 
