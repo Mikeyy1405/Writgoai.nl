@@ -64,8 +64,8 @@ export default function ProjectSelector({
   }, []);
 
   useEffect(() => {
-    if (value && projects.length > 0) {
-      const project = projects.find(p => p.id === value);
+    if (value && (projects || []).length > 0) {
+      const project = (projects || []).find(p => p.id === value);
       setSelectedProject(project || null);
     }
   }, [value, projects]);
@@ -140,7 +140,7 @@ export default function ProjectSelector({
     );
   }
 
-  if (projects.length === 0) {
+  if ((projects || []).length === 0) {
     return (
       <div className={`space-y-2 ${className}`}>
         <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-zinc-700 bg-zinc-900">
@@ -182,7 +182,7 @@ export default function ProjectSelector({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72 max-h-[70vh] overflow-y-auto bg-zinc-900 border-zinc-700">
         <DropdownMenuLabel className="text-gray-400 text-xs sticky top-0 bg-zinc-900 z-10">Selecteer een project</DropdownMenuLabel>
-        {projects.map((project) => (
+        {(projects || []).map((project) => (
           <DropdownMenuItem
             key={project.id}
             onClick={() => handleSelectProject(project)}

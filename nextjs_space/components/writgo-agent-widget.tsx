@@ -167,11 +167,11 @@ export default function WritgoAgentWidget() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
-  const activeProject = projects.find(p => p.id === activeProjectId);
+  const activeProject = (projects || []).find(p => p.id === activeProjectId);
 
   // Load projects when widget opens
   useEffect(() => {
-    if (isOpen && session && projects.length === 0) {
+    if (isOpen && session && (projects || []).length === 0) {
       loadProjects();
     }
   }, [isOpen, session]);
@@ -640,10 +640,10 @@ KRITIEK: Antwoord ALTIJD in het ${responseLanguage === 'nl' ? 'Nederlands' : 'En
         {showProjectMenu && (
             <div className="absolute top-full left-0 right-0 bg-gray-800 shadow-xl border border-gray-700 z-20 max-h-64 overflow-y-auto py-2 text-gray-200 rounded-b-xl mx-2 mt-1">
                 <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Selecteer Project</div>
-                {projects.length === 0 ? (
+                {(projects || []).length === 0 ? (
                   <div className="px-4 py-3 text-sm text-gray-400">Geen projecten gevonden</div>
                 ) : (
-                  projects.map(p => (
+                  (projects || []).map(p => (
                     <button 
                         key={p.id}
                         onClick={() => { setActiveProjectId(p.id); setShowProjectMenu(false); }}
