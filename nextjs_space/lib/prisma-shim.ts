@@ -45,6 +45,7 @@ const TABLE_NAME_MAP: Record<string, string> = {
   socialMediaPost: 'SocialMediaPost',
   // Autopilot Configuration table
   autopilotConfig: 'AutopilotConfig',
+  autopilotLog: 'AutopilotLog',
   // Website Analysis table
   websiteAnalysis: 'WebsiteAnalysis',
   // Getlate Integration tables
