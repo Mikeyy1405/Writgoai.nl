@@ -46,6 +46,8 @@ export default function ClientBlogPage() {
   const [keywords, setKeywords] = useState('');
   const [category, setCategory] = useState('AI & Content Marketing');
   const [autoPublish, setAutoPublish] = useState(false);
+  const [addInternalLinks, setAddInternalLinks] = useState(true);
+  const [addAffiliateLinks, setAddAffiliateLinks] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [phases, setPhases] = useState<GenerationPhase[]>(INITIAL_PHASES);
@@ -73,6 +75,8 @@ export default function ClientBlogPage() {
     setKeywords('');
     setCategory('AI & Content Marketing');
     setAutoPublish(false);
+    setAddInternalLinks(true);
+    setAddAffiliateLinks(true);
     setProgress(0);
     setPhases(INITIAL_PHASES.map(phase => ({ ...phase })));
     setShowSuccess(false);
@@ -105,6 +109,8 @@ export default function ClientBlogPage() {
           autoPublish,
           projectId: selectedProjectId,
           project: selectedProject,
+          addInternalLinks,
+          addAffiliateLinks,
         }),
       });
 
@@ -217,7 +223,7 @@ export default function ClientBlogPage() {
             {/* Project Selector */}
             <div className="space-y-2">
               <Label htmlFor="project" className="text-white">
-                Publiceren naar project
+                Project *
               </Label>
               <ProjectSelector
                 value={selectedProjectId}
@@ -229,25 +235,37 @@ export default function ClientBlogPage() {
                 showKnowledgeBase={true}
               />
               {selectedProject && (
-                <div className="flex items-center gap-2 mt-2">
-                  {selectedProject.wordpressUrl ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500">WordPress verbonden</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                      <span className="text-sm text-yellow-500">
-                        WordPress niet geconfigureerd.{' '}
-                        <Link 
-                          href="/client-portal/projects" 
-                          className="underline hover:text-yellow-400"
-                        >
-                          Configureer in project settings
-                        </Link>
-                      </span>
-                    </>
+                <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-2">
+                  <div className="flex items-center gap-2">
+                    {selectedProject.wordpressUrl ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-sm text-green-500">✅ WordPress verbonden</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                        <span className="text-sm text-yellow-500">
+                          WordPress niet geconfigureerd.{' '}
+                          <Link 
+                            href="/client-portal/projects" 
+                            className="underline hover:text-yellow-400"
+                          >
+                            Configureer
+                          </Link>
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {selectedProject.affiliateLinksCount && selectedProject.affiliateLinksCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-300">📍 {selectedProject.affiliateLinksCount} affiliate links</span>
+                    </div>
+                  )}
+                  {selectedProject.hasSitemap && selectedProject.sitemapUrlsCount && selectedProject.sitemapUrlsCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-300">🗺️ Sitemap geladen ({selectedProject.sitemapUrlsCount} URLs)</span>
+                    </div>
                   )}
                 </div>
               )}
@@ -300,21 +318,56 @@ export default function ClientBlogPage() {
               </Select>
             </div>
 
-            {/* Auto Publish Toggle */}
-            <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-              <div className="space-y-0.5">
-                <Label className="text-white">Direct publiceren naar WordPress</Label>
-                <p className="text-sm text-gray-400">
-                  {selectedProject?.wordpressUrl 
-                    ? 'Publiceert automatisch naar je WordPress site'
-                    : 'WordPress moet eerst geconfigureerd worden in je project'}
-                </p>
+            {/* Content Options */}
+            <div className="space-y-3">
+              {/* Internal Links Toggle */}
+              {selectedProject?.hasSitemap && (
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="space-y-0.5">
+                    <Label className="text-white">Voeg interne links toe (via sitemap)</Label>
+                    <p className="text-sm text-gray-400">
+                      Voegt automatisch relevante interne links toe aan de content
+                    </p>
+                  </div>
+                  <Switch
+                    checked={addInternalLinks}
+                    onCheckedChange={setAddInternalLinks}
+                  />
+                </div>
+              )}
+
+              {/* Affiliate Links Toggle */}
+              {selectedProject?.affiliateLinksCount && selectedProject.affiliateLinksCount > 0 && (
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="space-y-0.5">
+                    <Label className="text-white">Voeg affiliate links toe waar relevant</Label>
+                    <p className="text-sm text-gray-400">
+                      Integreert natuurlijk {selectedProject.affiliateLinksCount} affiliate links in de content
+                    </p>
+                  </div>
+                  <Switch
+                    checked={addAffiliateLinks}
+                    onCheckedChange={setAddAffiliateLinks}
+                  />
+                </div>
+              )}
+
+              {/* Auto Publish Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div className="space-y-0.5">
+                  <Label className="text-white">Direct publiceren naar WordPress</Label>
+                  <p className="text-sm text-gray-400">
+                    {selectedProject?.wordpressUrl 
+                      ? 'Publiceert automatisch naar je WordPress site'
+                      : 'WordPress moet eerst geconfigureerd worden in je project'}
+                  </p>
+                </div>
+                <Switch
+                  checked={autoPublish}
+                  onCheckedChange={setAutoPublish}
+                  disabled={!selectedProject?.wordpressUrl}
+                />
               </div>
-              <Switch
-                checked={autoPublish}
-                onCheckedChange={setAutoPublish}
-                disabled={!selectedProject?.wordpressUrl}
-              />
             </div>
 
             {/* Generate Button */}

@@ -26,6 +26,13 @@ export interface Project {
   wordpressUrl?: string;
   wordpressUsername?: string;
   wordpressPassword?: string;
+  wordpressCategory?: string;
+  affiliateLinksCount?: number;
+  sitemapUrlsCount?: number;
+  hasSitemap?: boolean;
+  brandVoice?: string;
+  niche?: string;
+  keywords?: string[];
 }
 
 interface ProjectSelectorProps {
@@ -200,14 +207,32 @@ export default function ProjectSelector({
               <div className="text-xs text-gray-400 truncate mt-0.5">
                 {project.websiteUrl.replace(/^https?:\/\//, '')}
               </div>
-              {showKnowledgeBase && project.knowledgeBaseCount && project.knowledgeBaseCount > 0 && (
-                <div className="flex items-center gap-1 mt-1">
-                  <BookOpen className="w-3 h-3 text-[#ff6b35]" />
-                  <span className="text-xs text-gray-400">
-                    {project.knowledgeBaseCount} items in kennisbank
-                  </span>
-                </div>
-              )}
+              <div className="flex flex-col gap-0.5 mt-1">
+                {project.wordpressUrl && (
+                  <div className="flex items-center gap-1">
+                    <Check className="w-3 h-3 text-green-500" />
+                    <span className="text-xs text-gray-400">WordPress verbonden</span>
+                  </div>
+                )}
+                {project.affiliateLinksCount && project.affiliateLinksCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-400">📍 {project.affiliateLinksCount} affiliate links</span>
+                  </div>
+                )}
+                {project.hasSitemap && project.sitemapUrlsCount && project.sitemapUrlsCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-400">🗺️ Sitemap geladen ({project.sitemapUrlsCount} URLs)</span>
+                  </div>
+                )}
+                {showKnowledgeBase && project.knowledgeBaseCount && project.knowledgeBaseCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <BookOpen className="w-3 h-3 text-[#ff6b35]" />
+                    <span className="text-xs text-gray-400">
+                      {project.knowledgeBaseCount} items in kennisbank
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             {selectedProject?.id === project.id && (
               <Check className="w-4 h-4 text-[#ff6b35] flex-shrink-0" />

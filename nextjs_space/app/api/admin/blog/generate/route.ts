@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { chatCompletion } from '@/lib/aiml-api';
 import { prisma } from '@/lib/db';
+import { publishToWordPress, getWordPressConfig } from '@/lib/wordpress-publisher';
 
 // Helper function to send SSE message
 function sendSSE(controller: ReadableStreamDefaultController, data: any) {
@@ -63,8 +64,24 @@ function buildBlogPrompt(params: {
   tone?: string;
   targetAudience?: string;
   project?: any;
+  sitemapUrls?: string[];
+  affiliateLinks?: any[];
+  addInternalLinks?: boolean;
+  addAffiliateLinks?: boolean;
 }): string {
-  const { articleTitle, keywords, targetWordCount, includeFAQ, tone, targetAudience, project } = params;
+  const { 
+    articleTitle, 
+    keywords, 
+    targetWordCount, 
+    includeFAQ, 
+    tone, 
+    targetAudience, 
+    project,
+    sitemapUrls = [],
+    affiliateLinks = [],
+    addInternalLinks = false,
+    addAffiliateLinks = false
+  } = params;
   
   const keywordsStr = Array.isArray(keywords) ? keywords.join(', ') : keywords || '';
   const wordCount = targetWordCount || 1500;
@@ -72,20 +89,47 @@ function buildBlogPrompt(params: {
   // Build project-specific context
   let projectContext = '';
   if (project) {
-    if (project.toneOfVoice) {
-      projectContext += `\n- Tone of Voice: ${project.toneOfVoice}`;
+    if (project.brandVoice || project.toneOfVoice) {
+      projectContext += `\n- Brand Voice/Tone of Voice: ${project.brandVoice || project.toneOfVoice}`;
     }
     if (project.targetAudience) {
       projectContext += `\n- Doelgroep: ${project.targetAudience}`;
+    }
+    if (project.niche) {
+      projectContext += `\n- Niche: ${project.niche}`;
     }
     if (project.additionalInfo) {
       projectContext += `\n- Brand context: ${project.additionalInfo}`;
     }
   }
 
+  // Build internal links context
+  let internalLinksContext = '';
+  if (addInternalLinks && sitemapUrls.length > 0) {
+    // Limit to first 20 URLs to avoid token overflow
+    const relevantUrls = sitemapUrls.slice(0, 20);
+    internalLinksContext = `\n\nINTERNE LINKS (voeg 2-4 relevante interne links toe in de content):
+${relevantUrls.map(url => `- ${url}`).join('\n')}
+
+BELANGRIJK: Integreer deze interne links natuurlijk in de tekst waar relevant. Gebruik beschrijvende anchor texts.`;
+  }
+
+  // Build affiliate links context
+  let affiliateLinksContext = '';
+  if (addAffiliateLinks && affiliateLinks.length > 0) {
+    // Limit to first 10 affiliate links to avoid token overflow
+    const relevantLinks = affiliateLinks.slice(0, 10);
+    affiliateLinksContext = `\n\nAFFILIATE LINKS (voeg 1-3 relevante product aanbevelingen toe):
+${relevantLinks.map((link: any) => 
+  `- ${link.anchorText}: ${link.url}${link.category ? ` (Categorie: ${link.category})` : ''}${link.keywords && link.keywords.length > 0 ? ` [Keywords: ${link.keywords.join(', ')}]` : ''}`
+).join('\n')}
+
+BELANGRIJK: Integreer deze affiliate links alleen waar ze natuurlijk passen en waarde toevoegen aan de lezer. Gebruik natuurlijke product aanbevelingen.`;
+  }
+
   // Determine target audience and tone
   const finalTargetAudience = targetAudience || project?.targetAudience || '';
-  const finalTone = tone || project?.toneOfVoice || 'professioneel maar toegankelijk';
+  const finalTone = tone || project?.brandVoice || project?.toneOfVoice || 'professioneel maar toegankelijk';
 
   return `Schrijf een complete, SEO-geoptimaliseerde blog post over "${articleTitle}".
 
@@ -118,7 +162,7 @@ BELANGRIJK:
 - Begin direct met de content (geen markdown formatting)
 - Gebruik alleen HTML tags
 - Geen introductiezinnen zoals "Hier is je blog post"
-- Start met <h1> titel en eindig met conclusie`;
+- Start met <h1> titel en eindig met conclusie${internalLinksContext}${affiliateLinksContext}`;
 }
 
 // POST - Generate blog content with streaming support
@@ -143,6 +187,8 @@ export async function POST(request: NextRequest) {
       autoPublish,
       projectId,
       project,
+      addInternalLinks,
+      addAffiliateLinks,
     } = body;
 
     const articleTitle = inputTitle || topic;
@@ -160,15 +206,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client niet gevonden' }, { status: 404 });
     }
 
-    // If projectId is provided, verify ownership
+    // Fetch full project details if projectId is provided
+    let projectDetails = null;
+    let sitemapUrls: string[] = [];
+    let affiliateLinks: any[] = [];
+
     if (projectId) {
-      const projectRecord = await prisma.project.findUnique({
-        where: { id: projectId }
+      projectDetails = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: {
+          affiliateLinks: {
+            where: {
+              isActive: true
+            }
+          }
+        }
       });
 
-      if (!projectRecord || projectRecord.clientId !== client.id) {
+      if (!projectDetails || projectDetails.clientId !== client.id) {
         return NextResponse.json({ error: 'Geen toegang tot dit project' }, { status: 403 });
       }
+
+      // Extract sitemap URLs if available
+      if (projectDetails.sitemap && typeof projectDetails.sitemap === 'object') {
+        const sitemapData = projectDetails.sitemap as any;
+        if (sitemapData.pages && Array.isArray(sitemapData.pages)) {
+          sitemapUrls = sitemapData.pages.map((page: any) => page.url || page);
+        }
+      }
+
+      // Get affiliate links
+      affiliateLinks = projectDetails.affiliateLinks || [];
     }
 
     // Check if streaming is supported
@@ -210,7 +278,11 @@ export async function POST(request: NextRequest) {
               includeFAQ,
               tone,
               targetAudience,
-              project,
+              project: projectDetails || project,
+              sitemapUrls,
+              affiliateLinks,
+              addInternalLinks,
+              addAffiliateLinks,
             });
 
             const response = await chatCompletion({
@@ -320,6 +392,63 @@ export async function POST(request: NextRequest) {
 
             sendSSE(controller, {
               phaseComplete: 'Opslaan',
+              progress: 90,
+            });
+
+            // Publish to WordPress if autoPublish is enabled and project has WordPress configured
+            let wordpressUrl = '';
+            if (autoPublish && projectId && projectDetails?.wordpressUrl) {
+              try {
+                sendSSE(controller, {
+                  phase: 'WordPress Publicatie',
+                  progress: 92,
+                  message: 'Publiceren naar WordPress...',
+                });
+
+                const wpConfig = await getWordPressConfig({ projectId });
+                
+                if (wpConfig) {
+                  const wpResult = await publishToWordPress(wpConfig, {
+                    title,
+                    content,
+                    excerpt,
+                    status: 'publish',
+                    tags: keywordsStr ? keywordsStr.split(',').map((k: string) => k.trim()) : [],
+                    seoTitle: title.substring(0, 60),
+                    seoDescription: excerpt.substring(0, 155),
+                    focusKeyword: keywordsStr?.split(',')[0]?.trim() || '',
+                  });
+
+                  wordpressUrl = wpResult.link;
+                  
+                  // Update blog post with WordPress URL
+                  await prisma.blogPost.update({
+                    where: { id: post.id },
+                    data: {
+                      wordpressUrl: wpResult.link,
+                      wordpressPostId: wpResult.id.toString(),
+                    }
+                  });
+
+                  sendSSE(controller, {
+                    phaseComplete: 'WordPress Publicatie',
+                    progress: 98,
+                    message: `Gepubliceerd op WordPress: ${wpResult.link}`,
+                  });
+                } else {
+                  console.warn('WordPress config not found for project');
+                }
+              } catch (wpError: any) {
+                console.error('WordPress publish error:', wpError);
+                sendSSE(controller, {
+                  phase: 'WordPress Publicatie',
+                  progress: 98,
+                  message: `WordPress publicatie mislukt: ${wpError.message}. Artikel is wel opgeslagen.`,
+                });
+              }
+            }
+
+            sendSSE(controller, {
               progress: 100,
             });
 
@@ -327,7 +456,10 @@ export async function POST(request: NextRequest) {
             sendSSE(controller, {
               complete: true,
               postId: post.id,
-              message: 'Artikel succesvol gegenereerd!',
+              wordpressUrl,
+              message: wordpressUrl 
+                ? `Artikel succesvol gegenereerd en gepubliceerd op WordPress!`
+                : 'Artikel succesvol gegenereerd!',
             });
 
             controller.close();
@@ -361,7 +493,11 @@ export async function POST(request: NextRequest) {
       includeFAQ: includeFAQ || false,
       tone,
       targetAudience,
-      project,
+      project: projectDetails || project,
+      sitemapUrls,
+      affiliateLinks,
+      addInternalLinks,
+      addAffiliateLinks,
     });
 
     const response = await chatCompletion({

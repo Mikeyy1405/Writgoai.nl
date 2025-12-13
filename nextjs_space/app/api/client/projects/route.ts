@@ -30,7 +30,8 @@ export async function GET() {
           _count: {
             select: {
               savedContent: true,
-              knowledgeBase: true
+              knowledgeBase: true,
+              affiliateLinks: true
             }
           },
           client: {
@@ -50,6 +51,9 @@ export async function GET() {
         ...project,
         knowledgeBaseCount: project._count?.knowledgeBase || 0,
         savedContentCount: project._count?.savedContent || 0,
+        affiliateLinksCount: project._count?.affiliateLinks || 0,
+        sitemapUrlsCount: project.sitemap?.pages?.length || 0,
+        hasSitemap: !!(project.sitemap && project.sitemap.pages && project.sitemap.pages.length > 0),
         clientName: project.client?.name,
         clientEmail: project.client?.email,
         isOwner: false,
@@ -75,7 +79,8 @@ export async function GET() {
             _count: {
               select: {
                 savedContent: true,
-                knowledgeBase: true
+                knowledgeBase: true,
+                affiliateLinks: true
               }
             }
           },
@@ -104,7 +109,8 @@ export async function GET() {
             _count: {
               select: {
                 savedContent: true,
-                knowledgeBase: true
+                knowledgeBase: true,
+                affiliateLinks: true
               }
             }
           }
@@ -117,6 +123,9 @@ export async function GET() {
       ...project,
       knowledgeBaseCount: project._count?.knowledgeBase || 0,
       savedContentCount: project._count?.savedContent || 0,
+      affiliateLinksCount: project._count?.affiliateLinks || 0,
+      sitemapUrlsCount: project.sitemap?.pages?.length || 0,
+      hasSitemap: !!(project.sitemap && project.sitemap.pages && project.sitemap.pages.length > 0),
       isOwner: true,
       isCollaborator: false,
       _count: undefined
@@ -127,6 +136,9 @@ export async function GET() {
       ...collab.project,
       knowledgeBaseCount: collab.project._count?.knowledgeBase || 0,
       savedContentCount: collab.project._count?.savedContent || 0,
+      affiliateLinksCount: collab.project._count?.affiliateLinks || 0,
+      sitemapUrlsCount: collab.project.sitemap?.pages?.length || 0,
+      hasSitemap: !!(collab.project.sitemap && collab.project.sitemap.pages && collab.project.sitemap.pages.length > 0),
       isOwner: false,
       isCollaborator: true,
       collaboratorRole: collab.role,
