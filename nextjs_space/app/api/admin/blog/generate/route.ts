@@ -129,10 +129,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Allow both admin and client users to generate blog posts
-    const isAdmin = session.user?.role === 'admin';
-    const isClient = session.user?.role === 'client' || !session.user?.role;
-
     const body = await request.json();
     const { 
       title: inputTitle,
@@ -355,13 +351,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback: Non-streaming response (legacy support)
+    // Note: This path returns the raw content without saving to database
     const keywordsStr = Array.isArray(keywords) ? keywords.join(', ') : keywords || '';
 
     const prompt = buildBlogPrompt({
       articleTitle,
       keywords,
       targetWordCount,
-      includeFAQ: false, // FAQ not supported in non-streaming mode for simplicity
+      includeFAQ: includeFAQ || false,
       tone,
       targetAudience,
       project,
