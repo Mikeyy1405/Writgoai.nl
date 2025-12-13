@@ -16,10 +16,16 @@ export async function GET(request: Request) {
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Check if user is admin (optional - depends on your security requirements)
+    // For now, any authenticated user can access this endpoint
+    // You may want to add: const user = await prisma.user.findUnique({ where: { email: session.user.email }});
+    // And check: if (user?.role !== 'admin') { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }); }
     
-    // Check for recent signups query parameter
+    // Check for query parameters
     const { searchParams } = new URL(request.url);
     const recentOnly = searchParams.get('recent') === 'true';
+    const includeAllProjects = searchParams.get('includeProjects') === 'true';
     
     if (recentOnly) {
       // Get clients registered in the last 30 days
@@ -37,7 +43,17 @@ export async function GET(request: Request) {
           _count: {
             select: { contentPieces: true }
           },
-          projects: {
+          projects: includeAllProjects ? {
+            select: {
+              id: true,
+              name: true,
+              websiteUrl: true,
+              wordpressUrl: true,
+              isPrimary: true,
+              isActive: true,
+              createdAt: true,
+            }
+          } : {
             where: { isPrimary: true },
             take: 1
           }
@@ -51,7 +67,7 @@ export async function GET(request: Request) {
           ...client,
           websiteUrl: defaultProject?.websiteUrl || client.website,
           projectId: defaultProject?.id,
-          projects: undefined // Remove projects array from response
+          projects: includeAllProjects ? (client as any).projects : undefined
         };
       });
       
@@ -64,7 +80,17 @@ export async function GET(request: Request) {
         _count: {
           select: { contentPieces: true }
         },
-        projects: {
+        projects: includeAllProjects ? {
+          select: {
+            id: true,
+            name: true,
+            websiteUrl: true,
+            wordpressUrl: true,
+            isPrimary: true,
+            isActive: true,
+            createdAt: true,
+          }
+        } : {
           where: { isPrimary: true },
           take: 1
         }
@@ -78,7 +104,7 @@ export async function GET(request: Request) {
         ...client,
         websiteUrl: defaultProject?.websiteUrl || client.website,
         projectId: defaultProject?.id,
-        projects: undefined // Remove projects array from response
+        projects: includeAllProjects ? (client as any).projects : undefined
       };
     });
     
