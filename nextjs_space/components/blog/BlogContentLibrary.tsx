@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { FileText, Calendar, Eye, Trash2, Edit } from 'lucide-react';
-import { useProject } from '@/lib/contexts/ProjectContext';
 import Link from 'next/link';
 
 interface BlogPost {
@@ -16,20 +15,18 @@ interface BlogPost {
 }
 
 export default function BlogContentLibrary() {
-  const { currentProject } = useProject();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (currentProject) {
-      fetchPosts();
-    }
-  }, [currentProject]);
+    fetchPosts();
+  }, []);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/blog?projectId=${currentProject?.id}`);
+      // Fetch without projectId - API will use clientId from session
+      const response = await fetch('/api/admin/blog');
       if (response.ok) {
         const data = await response.json();
         setPosts(data);
