@@ -56,7 +56,7 @@ function stripHtmlTags(html: string): string {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.role !== 'admin') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -72,12 +72,34 @@ export async function POST(request: NextRequest) {
       generateImages,
       includeFAQ,
       autoPublish,
+      projectId,
+      project,
     } = body;
 
     const articleTitle = inputTitle || topic;
     
     if (!articleTitle) {
       return NextResponse.json({ error: 'Titel of topic is verplicht' }, { status: 400 });
+    }
+
+    // Get client from session
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client niet gevonden' }, { status: 404 });
+    }
+
+    // If projectId is provided, verify ownership
+    if (projectId) {
+      const projectRecord = await prisma.project.findUnique({
+        where: { id: projectId }
+      });
+
+      if (!projectRecord || projectRecord.clientId !== client.id) {
+        return NextResponse.json({ error: 'Geen toegang tot dit project' }, { status: 403 });
+      }
     }
 
     // Check if streaming is supported
@@ -113,6 +135,20 @@ export async function POST(request: NextRequest) {
             const keywordsStr = Array.isArray(keywords) ? keywords.join(', ') : keywords || '';
             const wordCount = targetWordCount || 1500;
 
+            // Build project-specific context
+            let projectContext = '';
+            if (project) {
+              if (project.toneOfVoice) {
+                projectContext += `\n- Tone of Voice: ${project.toneOfVoice}`;
+              }
+              if (project.targetAudience) {
+                projectContext += `\n- Doelgroep: ${project.targetAudience}`;
+              }
+              if (project.additionalInfo) {
+                projectContext += `\n- Brand context: ${project.additionalInfo}`;
+              }
+            }
+
             const prompt = `Schrijf een complete, SEO-geoptimaliseerde blog post over "${articleTitle}".
 
 VERPLICHTE ELEMENTEN:
@@ -129,8 +165,8 @@ ${keywordsStr ? `- Focus keywords: ${keywordsStr}` : ''}
 - Natuurlijke keyword integratie (geen stuffing)
 - Informatieve, waardevolle content
 - Leesbare zinnen en alinea's
-${targetAudience ? `- Doelgroep: ${targetAudience}` : ''}
-${tone ? `- Tone: ${tone}` : '- Tone: professioneel maar toegankelijk'}
+${targetAudience ? `- Doelgroep: ${targetAudience}` : (project?.targetAudience ? `- Doelgroep: ${project.targetAudience}` : '')}
+${tone ? `- Tone: ${tone}` : (project?.toneOfVoice ? `- Tone: ${project.toneOfVoice}` : '- Tone: professioneel maar toegankelijk')}${projectContext}
 
 CONTENT VEREISTEN:
 - Minimaal ${wordCount} woorden
@@ -225,22 +261,30 @@ BELANGRIJK:
             });
 
             // Save to database
+            const postData: any = {
+              clientId: client.id,
+              title,
+              slug,
+              excerpt,
+              content,
+              category: category || 'AI & Content Marketing',
+              tags: keywordsStr ? keywordsStr.split(',').map((k: string) => k.trim()) : [],
+              status: autoPublish ? 'published' : 'draft',
+              publishedAt: autoPublish ? new Date() : null,
+              readingTimeMinutes,
+              wordCount: actualWordCount,
+              metaTitle: title.substring(0, 60),
+              metaDescription: excerpt.substring(0, 155),
+              focusKeyword: keywordsStr?.split(',')[0]?.trim() || '',
+            };
+
+            // Add projectId if provided
+            if (projectId) {
+              postData.projectId = projectId;
+            }
+
             const post = await prisma.blogPost.create({
-              data: {
-                title,
-                slug,
-                excerpt,
-                content,
-                category: category || 'AI & Content Marketing',
-                tags: keywordsStr ? keywordsStr.split(',').map((k: string) => k.trim()) : [],
-                status: autoPublish ? 'published' : 'draft',
-                publishedAt: autoPublish ? new Date() : null,
-                readingTimeMinutes,
-                wordCount: actualWordCount,
-                metaTitle: title.substring(0, 60),
-                metaDescription: excerpt.substring(0, 155),
-                focusKeyword: keywordsStr?.split(',')[0]?.trim() || '',
-              },
+              data: postData,
             });
 
             sendSSE(controller, {
@@ -279,6 +323,20 @@ BELANGRIJK:
     const keywordsStr = Array.isArray(keywords) ? keywords.join(', ') : keywords || '';
     const wordCount = targetWordCount || 1500;
 
+    // Build project-specific context
+    let projectContext = '';
+    if (project) {
+      if (project.toneOfVoice) {
+        projectContext += `\n- Tone of Voice: ${project.toneOfVoice}`;
+      }
+      if (project.targetAudience) {
+        projectContext += `\n- Doelgroep: ${project.targetAudience}`;
+      }
+      if (project.additionalInfo) {
+        projectContext += `\n- Brand context: ${project.additionalInfo}`;
+      }
+    }
+
     const prompt = `Schrijf een complete, SEO-geoptimaliseerde blog post over "${articleTitle}".
 
 VERPLICHTE ELEMENTEN:
@@ -294,8 +352,8 @@ ${keywordsStr ? `- Focus keywords: ${keywordsStr}` : ''}
 - Natuurlijke keyword integratie (geen stuffing)
 - Informatieve, waardevolle content
 - Leesbare zinnen en alinea's
-${targetAudience ? `- Doelgroep: ${targetAudience}` : ''}
-${tone ? `- Tone: ${tone}` : '- Tone: professioneel maar toegankelijk'}
+${targetAudience ? `- Doelgroep: ${targetAudience}` : (project?.targetAudience ? `- Doelgroep: ${project.targetAudience}` : '')}
+${tone ? `- Tone: ${tone}` : (project?.toneOfVoice ? `- Tone: ${project.toneOfVoice}` : '- Tone: professioneel maar toegankelijk')}${projectContext}
 
 CONTENT VEREISTEN:
 - Minimaal ${wordCount} woorden

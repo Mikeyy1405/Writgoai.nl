@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Rocket, BookOpen, Loader2, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Rocket, BookOpen, Loader2, CheckCircle2, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import ProjectSelector, { Project } from '@/components/project-selector';
 
 interface GenerationPhase {
   name: string;
@@ -39,6 +40,8 @@ const BlogContentLibrary = dynamic(() => import('@/components/blog/BlogContentLi
 
 export default function ClientBlogPage() {
   const { data: session } = useSession();
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [title, setTitle] = useState('');
   const [keywords, setKeywords] = useState('');
   const [category, setCategory] = useState('AI & Content Marketing');
@@ -100,6 +103,8 @@ export default function ClientBlogPage() {
           generateImages: true,
           includeFAQ: true,
           autoPublish,
+          projectId: selectedProjectId,
+          project: selectedProject,
         }),
       });
 
@@ -209,6 +214,46 @@ export default function ClientBlogPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         {!generating && !showSuccess ? (
           <div className="space-y-6">
+            {/* Project Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="project" className="text-white">
+                Publiceren naar project
+              </Label>
+              <ProjectSelector
+                value={selectedProjectId}
+                onChange={(projectId, project) => {
+                  setSelectedProjectId(projectId);
+                  setSelectedProject(project);
+                }}
+                autoSelectPrimary={true}
+                showKnowledgeBase={true}
+                label="Publiceren naar project"
+              />
+              {selectedProject && (
+                <div className="flex items-center gap-2 mt-2">
+                  {selectedProject.wordpressUrl ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-sm text-green-500">WordPress verbonden</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                      <span className="text-sm text-yellow-500">
+                        WordPress niet geconfigureerd.{' '}
+                        <Link 
+                          href="/client-portal/projects" 
+                          className="underline hover:text-yellow-400"
+                        >
+                          Configureer in project settings
+                        </Link>
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title" className="text-white">
@@ -261,12 +306,15 @@ export default function ClientBlogPage() {
               <div className="space-y-0.5">
                 <Label className="text-white">Direct publiceren naar WordPress</Label>
                 <p className="text-sm text-gray-400">
-                  Gebruikt WordPress connectie van je project
+                  {selectedProject?.wordpressUrl 
+                    ? 'Publiceert automatisch naar je WordPress site'
+                    : 'WordPress moet eerst geconfigureerd worden in je project'}
                 </p>
               </div>
               <Switch
                 checked={autoPublish}
                 onCheckedChange={setAutoPublish}
+                disabled={!selectedProject?.wordpressUrl}
               />
             </div>
 
