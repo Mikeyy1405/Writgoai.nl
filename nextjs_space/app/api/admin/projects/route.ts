@@ -58,13 +58,15 @@ export async function GET() {
     });
 
     // Transform projects to include computed fields
-    const transformedProjects = projects.map((project: any) => ({
-      ...project,
-      affiliateLinksCount: project._count?.affiliateLinks || 0,
-      sitemapUrlsCount: project.sitemap?.pages?.length || 0,
-      hasSitemap: !!(project.sitemap && project.sitemap.pages && project.sitemap.pages.length > 0),
-      _count: undefined, // Remove _count from response
-    }));
+    const transformedProjects = projects.map((project) => {
+      const { _count, ...projectWithoutCount } = project;
+      return {
+        ...projectWithoutCount,
+        affiliateLinksCount: _count?.affiliateLinks || 0,
+        sitemapUrlsCount: project.sitemap?.pages?.length || 0,
+        hasSitemap: !!(project.sitemap && project.sitemap.pages && project.sitemap.pages.length > 0),
+      };
+    });
 
     return NextResponse.json({ success: true, projects: transformedProjects });
   } catch (error) {
