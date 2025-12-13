@@ -157,27 +157,27 @@ export default function ClientManagementPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6 flex items-center justify-center min-h-[400px]">
+      <div className="container mx-auto p-3 sm:p-4 md:p-6 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-[#ff6b35]" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl">
-          <Users className="w-6 h-6 text-white" />
+    <div className="container mx-auto p-3 sm:p-4 md:p-6 max-w-7xl space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="p-2 sm:p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl">
+          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">Klanten Beheer</h1>
-          <p className="text-muted-foreground">Overzicht en beheer van alle klanten</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Klanten Beheer</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Overzicht en beheer van alle klanten</p>
         </div>
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="relative flex-1 max-w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             value={searchTerm}
@@ -186,24 +186,24 @@ export default function ClientManagementPage() {
             className="pl-10"
           />
         </div>
-        <Badge variant="secondary">{filteredClients.length} klanten</Badge>
+        <Badge variant="secondary" className="w-fit">{filteredClients.length} klanten</Badge>
       </div>
 
       {/* Clients Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredClients.map((client) => (
-          <Card key={client.id} className="p-6 hover:shadow-lg transition-shadow">
+          <Card key={client.id} className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
             <div className="space-y-4">
               {/* Header */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">{client.name}</h3>
-                  <p className="text-sm text-muted-foreground">{client.email}</p>
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-lg font-semibold truncate">{client.name}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{client.email}</p>
                   {client.companyName && (
-                    <p className="text-xs text-gray-400">{client.companyName}</p>
+                    <p className="text-xs text-gray-400 truncate">{client.companyName}</p>
                   )}
                 </div>
-                <Badge variant={client.subscriptionStatus === 'active' ? 'default' : 'secondary'}>
+                <Badge variant={client.subscriptionStatus === 'active' ? 'default' : 'secondary'} className="text-xs whitespace-nowrap">
                   {client.subscriptionPlan || 'Geen abonnement'}
                 </Badge>
               </div>
@@ -239,11 +239,12 @@ export default function ClientManagementPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-1 sm:gap-2 flex-wrap">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleAddCredits(client.id, 10)}
+                  className="text-xs px-2 sm:px-3"
                 >
                   +10
                 </Button>
@@ -251,6 +252,7 @@ export default function ClientManagementPage() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleAddCredits(client.id, 20)}
+                  className="text-xs px-2 sm:px-3"
                 >
                   +20
                 </Button>
@@ -258,6 +260,7 @@ export default function ClientManagementPage() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleAddCredits(client.id, 50)}
+                  className="text-xs px-2 sm:px-3"
                 >
                   +50
                 </Button>
@@ -265,6 +268,7 @@ export default function ClientManagementPage() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleAddCredits(client.id, 100)}
+                  className="text-xs px-2 sm:px-3"
                 >
                   +100
                 </Button>
@@ -272,6 +276,7 @@ export default function ClientManagementPage() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleAddCredits(client.id, 500)}
+                  className="text-xs px-2 sm:px-3"
                 >
                   +500
                 </Button>
@@ -332,10 +337,10 @@ export default function ClientManagementPage() {
         setCustomCreditsDialog({ ...customCreditsDialog, open });
         if (!open) setCustomAmount('');
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg mx-4 max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Credits toevoegen aan {customCreditsDialog.clientName}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">Credits toevoegen aan {customCreditsDialog.clientName}</DialogTitle>
+            <DialogDescription className="text-sm">
               Voer het aantal credits in dat je wilt toevoegen
             </DialogDescription>
           </DialogHeader>
@@ -398,10 +403,10 @@ export default function ClientManagementPage() {
 
       {/* Usage Dialog */}
       <Dialog open={usageDialog.open} onOpenChange={(open) => setUsageDialog({ ...usageDialog, open })}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-2xl mx-4 max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Gebruik overzicht - {usageDialog.client?.name}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">Gebruik overzicht - {usageDialog.client?.name}</DialogTitle>
+            <DialogDescription className="text-sm">
               Gedetailleerd overzicht van credits en content gebruik
             </DialogDescription>
           </DialogHeader>

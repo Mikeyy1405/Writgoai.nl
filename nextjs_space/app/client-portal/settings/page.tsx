@@ -57,17 +57,17 @@ export default function ClientPortalSettingsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-orange-500/20 p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-orange-500/20 p-4 sm:p-6 md:p-8">
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-xl bg-orange-500/20 border border-orange-500/30">
-              <Settings className="w-8 h-8 text-orange-500" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+            <div className="p-2 sm:p-3 rounded-xl bg-orange-500/20 border border-orange-500/30">
+              <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Instellingen</h1>
-              <p className="text-gray-400">Beheer je account en projecten</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Instellingen</h1>
+              <p className="text-sm sm:text-base text-gray-400">Beheer je account en projecten</p>
             </div>
           </div>
         </div>
@@ -80,17 +80,17 @@ export default function ClientPortalSettingsPage() {
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 bg-gray-900 border border-gray-800">
-          <TabsTrigger value="account" className="flex items-center gap-2 data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-500">
-            <User className="h-4 w-4" />
-            Account
+          <TabsTrigger value="account" className="flex items-center justify-center gap-1 sm:gap-2 data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-500 px-2 sm:px-4">
+            <User className="h-4 w-4 sm:h-4 sm:w-4" />
+            <span className="text-xs sm:text-sm">Account</span>
           </TabsTrigger>
-          <TabsTrigger value="projects" className="flex items-center gap-2 data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-500">
-            <FolderKanban className="h-4 w-4" />
-            Projecten
+          <TabsTrigger value="projects" className="flex items-center justify-center gap-1 sm:gap-2 data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-500 px-2 sm:px-4">
+            <FolderKanban className="h-4 w-4 sm:h-4 sm:w-4" />
+            <span className="text-xs sm:text-sm">Projecten</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="flex items-center gap-2 data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-500">
-            <CreditCard className="h-4 w-4" />
-            Billing
+          <TabsTrigger value="billing" className="flex items-center justify-center gap-1 sm:gap-2 data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-500 px-2 sm:px-4">
+            <CreditCard className="h-4 w-4 sm:h-4 sm:w-4" />
+            <span className="text-xs sm:text-sm">Billing</span>
           </TabsTrigger>
         </TabsList>
 

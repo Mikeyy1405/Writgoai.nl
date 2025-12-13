@@ -280,9 +280,9 @@ export default function AIChatPage() {
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
-        <div className="p-4 border-b">
+        <div className="p-3 sm:p-4 border-b">
           <div className="mb-3">
-            <h2 className="font-semibold text-sm flex items-center gap-2">
+            <h2 className="font-semibold text-xs sm:text-sm flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-orange-500" />
               WritGo AI Assistent
             </h2>
@@ -290,7 +290,7 @@ export default function AIChatPage() {
           <Button
             onClick={createNewConversation}
             disabled={creating}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-xs sm:text-sm"
           >
             {creating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -376,11 +376,11 @@ export default function AIChatPage() {
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t space-y-2">
+        <div className="p-3 sm:p-4 border-t space-y-2">
           {conversations.length > 0 && (
             <Button
               variant="destructive"
-              className="w-full"
+              className="w-full text-xs sm:text-sm"
               onClick={() => setDeleteAllDialogOpen(true)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
@@ -389,7 +389,7 @@ export default function AIChatPage() {
           )}
           <Button
             variant="outline"
-            className="w-full"
+            className="w-full text-xs sm:text-sm"
             onClick={() => router.push('/client-portal')}
           >
             Terug naar Dashboard
