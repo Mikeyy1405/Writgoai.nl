@@ -19,16 +19,13 @@ interface BlogPost {
   slug: string;
   excerpt: string;
   content: string;
-  featuredImage?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  focusKeyword?: string;
+  featured_image?: string;
+  meta_title?: string;
+  meta_description?: string;
   category: string;
   tags: string[];
-  publishedAt: string;
-  readingTimeMinutes: number;
-  views: number;
-  authorName: string;
+  published_at: string;
+  author_id?: string;
 }
 
 export default function BlogPostPage() {
@@ -68,7 +65,7 @@ export default function BlogPostPage() {
 
   const updateMetaTags = (post: BlogPost) => {
     // Update document title
-    document.title = post.metaTitle || post.title;
+    document.title = post.meta_title || post.title;
 
     // Update or create meta tags
     const updateMeta = (name: string, content: string) => {
@@ -85,31 +82,28 @@ export default function BlogPostPage() {
     };
 
     // SEO Meta Tags
-    updateMeta('description', post.metaDescription || post.excerpt);
-    if (post.focusKeyword) {
-      updateMeta('keywords', post.focusKeyword);
-    }
+    updateMeta('description', post.meta_description || post.excerpt);
 
     // Open Graph
-    updateMeta('og:title', post.metaTitle || post.title);
-    updateMeta('og:description', post.metaDescription || post.excerpt);
+    updateMeta('og:title', post.meta_title || post.title);
+    updateMeta('og:description', post.meta_description || post.excerpt);
     updateMeta('og:type', 'article');
     updateMeta('og:url', `https://WritgoAI.nl/blog/${post.slug}`);
-    if (post.featuredImage) {
-      updateMeta('og:image', post.featuredImage);
+    if (post.featured_image) {
+      updateMeta('og:image', post.featured_image);
     }
 
     // Twitter Card
     updateMeta('twitter:card', 'summary_large_image');
-    updateMeta('twitter:title', post.metaTitle || post.title);
-    updateMeta('twitter:description', post.metaDescription || post.excerpt);
-    if (post.featuredImage) {
-      updateMeta('twitter:image', post.featuredImage);
+    updateMeta('twitter:title', post.meta_title || post.title);
+    updateMeta('twitter:description', post.meta_description || post.excerpt);
+    if (post.featured_image) {
+      updateMeta('twitter:image', post.featured_image);
     }
 
     // Article specific
-    updateMeta('article:published_time', post.publishedAt);
-    updateMeta('article:author', post.authorName);
+    updateMeta('article:published_time', post.published_at);
+    updateMeta('article:author', 'WritgoAI');
     updateMeta('article:section', post.category);
     post.tags.forEach((tag) => {
       const tagMeta = document.createElement('meta');
@@ -122,17 +116,20 @@ export default function BlogPostPage() {
   const getStructuredData = () => {
     if (!post) return null;
 
+    const wordCount = post.content.split(/\s+/).length;
+    const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
+
     return {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
       headline: post.title,
       description: post.excerpt,
-      image: post.featuredImage || 'https://WritgoAI.nl/icon-512.png',
-      datePublished: post.publishedAt,
-      dateModified: post.publishedAt,
+      image: post.featured_image || 'https://WritgoAI.nl/icon-512.png',
+      datePublished: post.published_at,
+      dateModified: post.published_at,
       author: {
         '@type': 'Organization',
-        name: post.authorName,
+        name: 'WritgoAI',
         url: 'https://WritgoAI.nl',
       },
       publisher: {
@@ -149,8 +146,8 @@ export default function BlogPostPage() {
       },
       articleSection: post.category,
       keywords: post.tags.join(', '),
-      wordCount: post.content.split(/\s+/).length,
-      timeRequired: `PT${post.readingTimeMinutes}M`,
+      wordCount: wordCount,
+      timeRequired: `PT${readingTime}M`,
     };
   };
 
@@ -240,15 +237,11 @@ export default function BlogPostPage() {
           <div className="flex flex-wrap items-center gap-6 text-gray-400 mb-8 pb-8 border-b border-gray-800">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              <span>{formatDate(post.publishedAt)}</span>
+              <span>{formatDate(post.published_at)}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              <span>{post.readingTimeMinutes} min leestijd</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Eye className="w-5 h-5" />
-              <span>{post.views} views</span>
+              <span>{Math.ceil(post.content.split(/\s+/).length / 200)} min leestijd</span>
             </div>
             <Button
               variant="outline"
@@ -262,10 +255,10 @@ export default function BlogPostPage() {
           </div>
 
           {/* Featured Image */}
-          {post.featuredImage && (
+          {post.featured_image && (
             <div className="relative aspect-video bg-gray-800 rounded-xl overflow-hidden mb-12 shadow-lg ring-1 ring-gray-800">
               <Image
-                src={post.featuredImage}
+                src={post.featured_image}
                 alt={post.title}
                 fill
                 className="object-cover"
@@ -333,7 +326,7 @@ export default function BlogPostPage() {
               </div>
               <div>
                 <h4 className="font-semibold text-white">
-                  {post.authorName}
+                  WritgoAI Team
                 </h4>
                 <p className="text-gray-400 text-sm">
                   Expert in AI-gedreven content marketing
