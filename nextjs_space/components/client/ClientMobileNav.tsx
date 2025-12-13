@@ -12,14 +12,15 @@ import {
   Settings,
   LogOut,
   Sparkles,
-  X
+  X,
+  LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavItem {
   href: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   description?: string;
 }
 

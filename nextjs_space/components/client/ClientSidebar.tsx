@@ -11,13 +11,14 @@ import {
   Calendar,
   Settings,
   LogOut,
-  Sparkles 
+  Sparkles,
+  LucideIcon
 } from 'lucide-react';
 
 interface NavItem {
   href: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   description?: string;
 }
 
