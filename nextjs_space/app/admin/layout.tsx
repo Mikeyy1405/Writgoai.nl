@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminLayoutClient from '@/components/admin/AdminLayoutClient';
 
 export default async function AdminLayout({
   children,
@@ -21,14 +21,5 @@ export default async function AdminLayout({
     redirect('/client-portal');
   }
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+  return <AdminLayoutClient>{children}</AdminLayoutClient>;
 }

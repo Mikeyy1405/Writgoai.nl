@@ -11,13 +11,14 @@ import {
   Calendar,
   Settings,
   LogOut,
-  Sparkles 
+  Sparkles,
+  LucideIcon
 } from 'lucide-react';
 
 interface NavItem {
   href: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   description?: string;
 }
 
@@ -71,7 +72,7 @@ export default function ClientSidebar() {
   };
 
   return (
-    <div className="w-64 bg-gray-900 text-white min-h-screen flex flex-col border-r border-gray-800">
+    <div className="hidden lg:flex w-64 bg-gray-900 text-white min-h-screen flex-col border-r border-gray-800">
       {/* Logo */}
       <div className="p-6 border-b border-gray-800">
         <Link href="/dashboard" className="flex items-center gap-2">
