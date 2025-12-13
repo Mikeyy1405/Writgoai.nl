@@ -1,320 +1,387 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Sparkles, Globe, Loader2, Eye, Send, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Sparkles, Globe, Loader2, Eye, Send, Facebook, Instagram, Twitter, Linkedin, Share2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-interface Project {
-  id: string;
-  name: string;
-  niche?: string;
-  targetAudience?: string;
-  brandVoice?: string;
-  getlateProfileId?: string;
-}
-
-interface SocialPost {
+interface GeneratedPost {
   platform: string;
   content: string;
-  hashtags?: string;
+  hashtags: string[];
+  characterCount: number;
+  maxCharacters: number;
 }
 
-const PLATFORMS = [
-  { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'text-blue-600' },
-  { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'text-pink-600' },
-  { id: 'twitter', name: 'Twitter/X', icon: Twitter, color: 'text-black' },
-  { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'text-blue-700' },
-];
+interface ContentItem {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+}
 
-export default function SocialContentPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [topic, setTopic] = useState('');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['facebook', 'instagram']);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedPosts, setGeneratedPosts] = useState<SocialPost[]>([]);
-  const [mode, setMode] = useState<'create' | 'preview'>('create');
-  const [isPublishing, setIsPublishing] = useState(false);
+const platformConfig = {
+  facebook: {
+    name: 'Facebook',
+    icon: Facebook,
+    maxChars: 63206,
+    color: 'bg-blue-600',
+    description: 'Longer posts with engagement focus'
+  },
+  instagram: {
+    name: 'Instagram',
+    icon: Instagram,
+    maxChars: 2200,
+    color: 'bg-gradient-to-r from-purple-500 to-pink-500',
+    description: 'Visual-focused with hashtags'
+  },
+  twitter: {
+    name: 'X (Twitter)',
+    icon: Twitter,
+    maxChars: 280,
+    color: 'bg-black',
+    description: 'Short, punchy messages'
+  },
+  linkedin: {
+    name: 'LinkedIn',
+    icon: Linkedin,
+    maxChars: 3000,
+    color: 'bg-blue-700',
+    description: 'Professional tone'
+  }
+};
 
-  useEffect(() => {
-    fetchProjects();
+export default function SocialMediaPage() {
+  const [content, setContent] = useState<ContentItem[]>([]);
+  const [selectedContent, setSelectedContent] = useState<string>('');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['facebook', 'instagram', 'twitter', 'linkedin']);
+  const [tone, setTone] = useState<string>('professional');
+  const [customPrompt, setCustomPrompt] = useState<string>('');
+  const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [previewPost, setPreviewPost] = useState<GeneratedPost | null>(null);
+
+  const fetchContent = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/content');
+      if (response.ok) {
+        const data = await response.json();
+        setContent(data.content || []);
+      }
+    } catch (error) {
+      console.error('Error fetching content:', error);
+    } finally {
+      setIsLoadingContent(false);
+    }
   }, []);
 
-  async function fetchProjects() {
-    try {
-      const response = await fetch('/api/admin/projects');
-      const data = await response.json();
-      setProjects(data.projects || []);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    }
-  }
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
 
-  async function generateSocialPosts() {
-    if (!selectedProjectId || !topic || selectedPlatforms.length === 0) return;
-
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/admin/content/generate-social', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId: selectedProjectId,
-          topic,
-          platforms: selectedPlatforms,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setGeneratedPosts(data.posts);
-        setMode('preview');
-      }
-    } catch (error) {
-      console.error('Error generating social posts:', error);
-    } finally {
-      setIsGenerating(false);
-    }
-  }
-
-  async function publishToGetlate() {
-    if (generatedPosts.length === 0 || !selectedProjectId) return;
-
-    setIsPublishing(true);
-    try {
-      const response = await fetch('/api/admin/content/publish-social', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId: selectedProjectId,
-          posts: generatedPosts,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        alert('✅ Social posts gepubliceerd via Getlate.dev!');
-        // Reset form
-        setGeneratedPosts([]);
-        setMode('create');
-        setTopic('');
-      }
-    } catch (error) {
-      console.error('Error publishing social posts:', error);
-    } finally {
-      setIsPublishing(false);
-    }
-  }
-
-  const selectedProject = projects.find(p => p.id === selectedProjectId);
-
-  function togglePlatform(platformId: string) {
+  const togglePlatform = (platform: string) => {
     setSelectedPlatforms(prev =>
-      prev.includes(platformId)
-        ? prev.filter(p => p !== platformId)
-        : [...prev, platformId]
+      prev.includes(platform)
+        ? prev.filter(p => p !== platform)
+        : [...prev, platform]
     );
-  }
+  };
+
+  const generatePosts = async () => {
+    if (!selectedContent && !customPrompt) {
+      toast.error('Please select content or enter a custom prompt');
+      return;
+    }
+
+    if (selectedPlatforms.length === 0) {
+      toast.error('Please select at least one platform');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const contentItem = content.find(c => c.id === selectedContent);
+      
+      const response = await fetch('/api/admin/content/social/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceContent: contentItem?.content || customPrompt,
+          sourceTitle: contentItem?.title || 'Custom Content',
+          platforms: selectedPlatforms,
+          tone,
+          customInstructions: customPrompt && selectedContent ? customPrompt : undefined
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to generate posts');
+
+      const data = await response.json();
+      setGeneratedPosts(data.posts);
+      toast.success('Social media posts generated!');
+    } catch (error) {
+      console.error('Error generating posts:', error);
+      toast.error('Failed to generate posts');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
+  const shareToSocial = (platform: string, content: string) => {
+    const encodedContent = encodeURIComponent(content);
+    let url = '';
+
+    switch (platform) {
+      case 'facebook':
+        url = `https://www.facebook.com/sharer/sharer.php?quote=${encodedContent}`;
+        break;
+      case 'twitter':
+        url = `https://twitter.com/intent/tweet?text=${encodedContent}`;
+        break;
+      case 'linkedin':
+        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodedContent}`;
+        break;
+      default:
+        toast.info('Please copy and paste manually for this platform');
+        return;
+    }
+
+    window.open(url, '_blank', 'width=600,height=400');
+  };
 
   return (
-    <div className="space-y-6 p-8">
-      {/* Header */}
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Social Media Post Generator</h1>
-        <p className="text-gray-600 mt-2">Maak AI-gegenereerde social content voor al je platforms</p>
+        <h1 className="text-3xl font-bold">Social Media Generator</h1>
+        <p className="text-muted-foreground mt-2">
+          Generate platform-optimized social media posts from your content
+        </p>
       </div>
 
-      {mode === 'create' ? (
-        <div className="bg-white rounded-lg border p-8 space-y-6">
-          {/* Project Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              <Globe className="w-4 h-4 inline mr-2" />
-              Selecteer Project
-            </label>
-            <select
-              value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Input Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Content Source
+            </CardTitle>
+            <CardDescription>
+              Select existing content or enter custom text
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Existing Content</Label>
+              <Select value={selectedContent} onValueChange={setSelectedContent}>
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoadingContent ? "Loading..." : "Choose content to transform"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {content.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.title} ({item.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Custom Prompt / Additional Instructions</Label>
+              <Textarea
+                placeholder="Enter your content or additional instructions for the AI..."
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tone</Label>
+              <Select value={tone} onValueChange={setTone}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="professional">Professional</SelectItem>
+                  <SelectItem value="casual">Casual</SelectItem>
+                  <SelectItem value="humorous">Humorous</SelectItem>
+                  <SelectItem value="inspirational">Inspirational</SelectItem>
+                  <SelectItem value="educational">Educational</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Platforms</Label>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(platformConfig).map(([key, config]) => {
+                  const Icon = config.icon;
+                  const isSelected = selectedPlatforms.includes(key);
+                  return (
+                    <Button
+                      key={key}
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => togglePlatform(key)}
+                      className="gap-2"
+                    >
+                      <Icon className="h-4 w-4" />
+                      {config.name}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Button
+              onClick={generatePosts}
+              disabled={isLoading || (!selectedContent && !customPrompt)}
+              className="w-full"
             >
-              <option value="">Kies een project...</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                  {!project.getlateProfileId && ' (⚠️ Socials niet verbonden)'}
-                </option>
-              ))}
-            </select>
-            {selectedProject && (
-              <div className="mt-3 p-4 bg-gray-50 rounded-lg space-y-1 text-sm">
-                {selectedProject.niche && (
-                  <p><strong>Niche:</strong> {selectedProject.niche}</p>
-                )}
-                {selectedProject.targetAudience && (
-                  <p><strong>Doelgroep:</strong> {selectedProject.targetAudience}</p>
-                )}
-                {selectedProject.brandVoice && (
-                  <p><strong>Tone:</strong> {selectedProject.brandVoice}</p>
-                )}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Posts
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Output Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              Generated Posts
+            </CardTitle>
+            <CardDescription>
+              Platform-optimized content ready to share
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {generatedPosts.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Generated posts will appear here</p>
               </div>
-            )}
-          </div>
-
-          {/* Platform Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-3">
-              Selecteer Platforms
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {PLATFORMS.map((platform) => {
-                const Icon = platform.icon;
-                const isSelected = selectedPlatforms.includes(platform.id);
-                
-                return (
-                  <button
-                    key={platform.id}
-                    onClick={() => togglePlatform(platform.id)}
-                    className={`
-                      flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all
-                      ${isSelected 
-                        ? 'border-orange-500 bg-orange-50' 
-                        : 'border-gray-300 bg-white hover:border-gray-400'
-                      }
-                    `}
-                  >
-                    <Icon className={`w-8 h-8 ${isSelected ? 'text-orange-600' : platform.color}`} />
-                    <span className={`text-sm font-medium ${isSelected ? 'text-orange-900' : 'text-gray-700'}`}>
-                      {platform.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Topic Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Onderwerp / Topic
-            </label>
-            <textarea
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="bijv. Lancering van nieuw product, tip over SEO, motiverende quote..."
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-            />
-          </div>
-
-          {/* Generate Button */}
-          <button
-            onClick={generateSocialPosts}
-            disabled={!selectedProjectId || !topic || selectedPlatforms.length === 0 || isGenerating}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Genereren...</span>
-              </>
             ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                <span>Genereer Social Posts ({selectedPlatforms.length} platforms)</span>
-              </>
-            )}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Preview */}
-          <div className="bg-white rounded-lg border p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                <Eye className="w-6 h-6 inline mr-2" />
-                Preview ({generatedPosts.length} posts)
-              </h2>
-              <button
-                onClick={() => {
-                  setMode('create');
-                  setGeneratedPosts([]);
-                }}
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                ← Terug
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {generatedPosts.map((post, index) => {
-                const platformData = PLATFORMS.find(p => p.id === post.platform);
-                const Icon = platformData?.icon || Share2;
-                
-                return (
-                  <div key={index} className="border rounded-lg p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Icon className={`w-5 h-5 ${platformData?.color}`} />
-                      <span className="font-semibold text-gray-900">{platformData?.name}</span>
-                    </div>
-                    
-                    <textarea
-                      value={post.content}
-                      onChange={(e) => {
-                        const updatedPosts = [...generatedPosts];
-                        updatedPosts[index].content = e.target.value;
-                        setGeneratedPosts(updatedPosts);
-                      }}
-                      rows={6}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-3"
-                    />
-                    
-                    {post.hashtags && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Hashtags</label>
-                        <input
-                          type="text"
-                          value={post.hashtags}
-                          onChange={(e) => {
-                            const updatedPosts = [...generatedPosts];
-                            updatedPosts[index].hashtags = e.target.value;
-                            setGeneratedPosts(updatedPosts);
-                          }}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
-                        />
+              <Tabs defaultValue={generatedPosts[0]?.platform}>
+                <TabsList className="w-full flex-wrap h-auto">
+                  {generatedPosts.map((post) => {
+                    const config = platformConfig[post.platform as keyof typeof platformConfig];
+                    const Icon = config?.icon;
+                    return (
+                      <TabsTrigger key={post.platform} value={post.platform} className="gap-2">
+                        {Icon && <Icon className="h-4 w-4" />}
+                        {config?.name}
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+                {generatedPosts.map((post) => {
+                  const config = platformConfig[post.platform as keyof typeof platformConfig];
+                  return (
+                    <TabsContent key={post.platform} value={post.platform} className="space-y-4">
+                      <div className="rounded-lg border p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline">
+                            {post.characterCount} / {post.maxCharacters} characters
+                          </Badge>
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={() => setPreviewPost(post)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Preview: {config?.name}</DialogTitle>
+                                  <DialogDescription>
+                                    How your post will appear
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="rounded-lg border p-4 bg-muted/50">
+                                  <p className="whitespace-pre-wrap">{post.content}</p>
+                                  {post.hashtags.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-1">
+                                      {post.hashtags.map((tag, i) => (
+                                        <span key={i} className="text-blue-500 text-sm">
+                                          #{tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(
+                                post.content + (post.hashtags.length > 0 ? '\n\n' + post.hashtags.map(t => `#${t}`).join(' ') : '')
+                              )}
+                            >
+                              Copy
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => shareToSocial(post.platform, post.content)}
+                            >
+                              <Send className="h-4 w-4 mr-1" />
+                              Share
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="whitespace-pre-wrap text-sm">{post.content}</p>
+                        {post.hashtags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-2 border-t">
+                            {post.hashtags.map((tag, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Publish Button */}
-              <div className="pt-6 border-t">
-                <button
-                  onClick={publishToGetlate}
-                  disabled={isPublishing || !selectedProject?.getlateProfileId}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isPublishing ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Publiceren...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      <span>Publiceer via Getlate.dev</span>
-                    </>
-                  )}
-                </button>
-                {!selectedProject?.getlateProfileId && (
-                  <p className="text-sm text-red-600 mt-2 text-center">
-                    ⚠️ Socials niet verbonden aan dit project
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+                    </TabsContent>
+                  );
+                })}
+              </Tabs>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
