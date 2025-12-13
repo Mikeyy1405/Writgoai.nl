@@ -59,138 +59,39 @@ export interface AdminNavSection {
  */
 
 /**
- * VEREENVOUDIGDE ADMIN NAVIGATIE
- * Van 19+ items naar 8-10 essentiële items
+ * ULTRA-VEREENVOUDIGDE ADMIN NAVIGATIE
+ * Focus op multi-project content management voor 200 websites
  */
 export const adminNavSections: AdminNavSection[] = [
   // ======================================
-  // SECTIE 1: OVERZICHT (1 item)
+  // HOOFDNAVIGATIE (4 items)
   // ======================================
   {
-    title: 'Overzicht',
+    title: 'Hoofdmenu',
     items: [
       {
         label: 'Dashboard',
-        href: '/admin/dashboard',
+        href: '/admin',
         icon: LayoutDashboard,
-        description: 'MRR, klanten, content overzicht',
+        description: 'Overzicht',
       },
-    ],
-  },
-  
-  // ======================================
-  // SECTIE 2: KLANTEN (1 item)
-  // ======================================
-  {
-    title: 'Klanten',
-    items: [
       {
-        label: 'Klanten Beheer',
-        href: '/admin/klanten',
-        icon: Users,
-        description: 'Alle klanten beheren',
-      },
-    ],
-  },
-  
-  // ======================================
-  // SECTIE 3: PROJECTEN (1 item)
-  // ======================================
-  {
-    title: 'Projecten',
-    items: [
-      {
-        label: 'Projecten Beheer',
+        label: 'Projecten',
         href: '/admin/projects',
         icon: Globe,
-        description: 'Multi-project management',
+        description: '200 websites beheren',
       },
-    ],
-  },
-  
-  // ======================================
-  // SECTIE 4: CONTENT & SOCIAL MEDIA (2 items)
-  // ======================================
-  {
-    title: 'Content & Social Media',
-    items: [
       {
-        label: 'Blog Management',
-        href: '/admin/blog',
+        label: 'Content',
+        href: '/admin/content',
         icon: FileText,
-        description: 'Blog posts voor klanten',
+        description: 'Blog & Social posts maken',
       },
       {
-        label: 'Social Media',
-        href: '/admin/social',
+        label: 'Gepubliceerd',
+        href: '/admin/published',
         icon: Share2,
-        description: 'Social media strategie & content',
-      },
-    ],
-  },
-  
-  // ======================================
-  // SECTIE 5: FINANCIEEL (2 items)
-  // ======================================
-  {
-    title: 'Financieel',
-    items: [
-      {
-        label: 'Overzicht',
-        href: '/admin/financieel',
-        icon: DollarSign,
-        description: 'MRR, winst, kosten',
-      },
-      {
-        label: 'Facturen',
-        href: '/admin/invoices',
-        icon: DollarSign,
-        description: 'Facturatie',
-      },
-    ],
-  },
-  
-  // ======================================
-  // SECTIE 6: STATISTIEKEN (1 item)
-  // ======================================
-  {
-    title: 'Statistieken',
-    items: [
-      {
-        label: 'Analytics',
-        href: '/admin/statistieken',
-        icon: BarChart3,
-        description: 'KPIs en performance',
-      },
-    ],
-  },
-  
-  // ======================================
-  // SECTIE 7: EMAIL (optioneel - 1 item)
-  // ======================================
-  ...(isFeatureEnabled('ADMIN_EMAIL_INBOX') ? [{
-    title: 'Email',
-    items: [
-      {
-        label: 'Email Manager',
-        href: '/admin/email/inbox',
-        icon: Mail,
-        description: 'Inbox met AI features',
-      },
-    ],
-  }] : []),
-  
-  // ======================================
-  // SECTIE 8: INSTELLINGEN (1 item)
-  // ======================================
-  {
-    title: 'Instellingen',
-    items: [
-      {
-        label: 'Instellingen',
-        href: '/admin/instellingen',
-        icon: Settings,
-        description: 'Systeem configuratie',
+        description: 'Gepubliceerde content',
       },
     ],
   },
@@ -211,13 +112,13 @@ export function isAdminNavActive(href: string, pathname: string): boolean {
   // For exact matches
   if (href === pathname) return true;
   
-  // For /admin/dashboard, also match /admin and /admin/
-  if (href === '/admin/dashboard' && (pathname === '/admin' || pathname === '/admin/')) {
+  // For /admin root, also match /admin/
+  if (href === '/admin' && pathname === '/admin/') {
     return true;
   }
   
   // For other paths, check if pathname starts with href
-  if (href !== '/admin/dashboard' && pathname.startsWith(href)) {
+  if (href !== '/admin' && pathname.startsWith(href)) {
     return true;
   }
   

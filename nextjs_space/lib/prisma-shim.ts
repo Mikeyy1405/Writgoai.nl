@@ -19,6 +19,7 @@ const TABLE_NAME_MAP: Record<string, string> = {
   project: 'Project',
   // Content & Brand tables
   blogPost: 'BlogPost',
+  socialMediaPost: 'SocialMediaPost',
   brandSettings: 'BrandSettings',
   savedContent: 'SavedContent',
   video: 'Video',
@@ -33,21 +34,6 @@ const TABLE_NAME_MAP: Record<string, string> = {
   emailThread: 'EmailThread',
   emailAutoReplyConfig: 'EmailAutoReplyConfig',
   emailDraft: 'EmailDraft',
-  // Content Plan tables
-  contentPlan: 'ContentPlan',
-  contentPlanItem: 'ContentPlanItem',
-  // Topical Authority Map tables
-  topicalAuthorityMap: 'TopicalAuthorityMap',
-  topicalMapArticle: 'TopicalMapArticle',
-  batchJob: 'BatchJob',
-  // Social Media Pipeline tables
-  socialMediaStrategy: 'SocialMediaStrategy',
-  socialMediaPost: 'SocialMediaPost',
-  // Autopilot Configuration table
-  autopilotConfig: 'AutopilotConfig',
-  autopilotLog: 'AutopilotLog',
-  // Website Analysis table
-  websiteAnalysis: 'WebsiteAnalysis',
   // Getlate Integration tables
   connectedSocialAccount: 'ConnectedSocialAccount',
   // Project-based system tables
