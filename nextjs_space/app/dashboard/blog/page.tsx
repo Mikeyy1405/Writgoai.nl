@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Rocket, BookOpen, Loader2, CheckCircle2, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Rocket, BookOpen, Loader2, CheckCircle2, ChevronRight, CheckCircle, AlertTriangle, Globe, ChevronDown, Check } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import ProjectSelector, { Project } from '@/components/project-selector';
+import { useProject } from '@/lib/contexts/ProjectContext';
 
 interface GenerationPhase {
   name: string;
@@ -40,8 +48,7 @@ const BlogContentLibrary = dynamic(() => import('@/components/blog/BlogContentLi
 
 export default function ClientBlogPage() {
   const { data: session } = useSession();
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const { projects, currentProject, switchProject, loading: projectsLoading } = useProject();
   const [title, setTitle] = useState('');
   const [keywords, setKeywords] = useState('');
   const [category, setCategory] = useState('AI & Content Marketing');
@@ -107,8 +114,8 @@ export default function ClientBlogPage() {
           generateImages: true,
           includeFAQ: true,
           autoPublish,
-          projectId: selectedProjectId,
-          project: selectedProject,
+          projectId: currentProject?.id,
+          project: currentProject,
           addInternalLinks,
           addAffiliateLinks,
         }),
@@ -225,48 +232,97 @@ export default function ClientBlogPage() {
               <Label htmlFor="project" className="text-white">
                 Project *
               </Label>
-              <ProjectSelector
-                value={selectedProjectId}
-                onChange={(projectId, project) => {
-                  setSelectedProjectId(projectId);
-                  setSelectedProject(project);
-                }}
-                autoSelectPrimary={true}
-                showKnowledgeBase={true}
-              />
-              {selectedProject && (
+              {projectsLoading ? (
+                <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-900">
+                  <Globe className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-300">Laden...</span>
+                </div>
+              ) : projects.length === 0 ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-zinc-700 bg-zinc-900">
+                    <AlertTriangle className="w-4 h-4 text-[#ff6b35]" />
+                    <span className="text-sm text-gray-300">Geen projecten aangemaakt</span>
+                  </div>
+                  <Link href="/dashboard/projects/new">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full border-[#ff6b35] text-[#ff6b35] hover:bg-[#ff6b35] hover:text-white"
+                    >
+                      <Globe className="w-4 h-4 mr-2" />
+                      Maak je eerste project aan
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full flex items-center justify-between gap-2 bg-zinc-900 border-zinc-700 hover:border-[#ff6b35] hover:bg-zinc-800 text-white"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Globe className={`w-4 h-4 flex-shrink-0 ${currentProject ? 'text-[#ff6b35]' : 'text-gray-400'}`} />
+                        <span className="truncate text-sm">
+                          {currentProject ? currentProject.name : 'Selecteer project'}
+                        </span>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-72 max-h-[70vh] overflow-y-auto bg-zinc-900 border-zinc-700">
+                    <DropdownMenuLabel className="text-gray-400 text-xs sticky top-0 bg-zinc-900 z-10">Selecteer een project</DropdownMenuLabel>
+                    {projects.map((project) => (
+                      <DropdownMenuItem
+                        key={project.id}
+                        onClick={() => switchProject(project.id)}
+                        className="flex items-start justify-between cursor-pointer hover:bg-zinc-800 text-white p-3"
+                      >
+                        <div className="flex-1 min-w-0 mr-2">
+                          <div className="font-medium text-sm flex items-center gap-2">
+                            {project.name}
+                          </div>
+                          {project.websiteUrl && (
+                            <div className="text-xs text-gray-400 truncate mt-0.5">
+                              {project.websiteUrl.replace(/^https?:\/\//, '')}
+                            </div>
+                          )}
+                        </div>
+                        {currentProject?.id === project.id && (
+                          <Check className="w-4 h-4 text-[#ff6b35] flex-shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator className="bg-zinc-700" />
+                    <DropdownMenuItem asChild>
+                      <Link 
+                        href="/dashboard/projects" 
+                        className="cursor-pointer hover:bg-zinc-800 text-[#ff6b35] text-sm flex items-center gap-2"
+                      >
+                        <Globe className="w-3 h-3" />
+                        Beheer projecten
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {currentProject && (
                 <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-2">
                   <div className="flex items-center gap-2">
-                    {selectedProject.wordpressUrl ? (
+                    {currentProject.websiteUrl ? (
                       <>
                         <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-green-500">✅ WordPress verbonden</span>
+                        <span className="text-sm text-green-500">✅ Project geselecteerd: {currentProject.name}</span>
                       </>
                     ) : (
                       <>
                         <AlertTriangle className="w-4 h-4 text-yellow-500" />
                         <span className="text-sm text-yellow-500">
-                          WordPress niet geconfigureerd.{' '}
-                          <Link 
-                            href="/client-portal/projects" 
-                            className="underline hover:text-yellow-400"
-                          >
-                            Configureer
-                          </Link>
+                          Project heeft geen website URL
                         </span>
                       </>
                     )}
                   </div>
-                  {selectedProject.affiliateLinksCount && selectedProject.affiliateLinksCount > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-300">📍 {selectedProject.affiliateLinksCount} affiliate links</span>
-                    </div>
-                  )}
-                  {selectedProject.hasSitemap && selectedProject.sitemapUrlsCount && selectedProject.sitemapUrlsCount > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-300">🗺️ Sitemap geladen ({selectedProject.sitemapUrlsCount} URLs)</span>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -321,51 +377,47 @@ export default function ClientBlogPage() {
             {/* Content Options */}
             <div className="space-y-3">
               {/* Internal Links Toggle */}
-              {selectedProject?.hasSitemap && selectedProject?.sitemapUrlsCount && selectedProject.sitemapUrlsCount > 0 && (
-                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <div className="space-y-0.5">
-                    <Label className="text-white">Voeg interne links toe (via sitemap)</Label>
-                    <p className="text-sm text-gray-400">
-                      Voegt automatisch relevante interne links toe aan de content
-                    </p>
-                  </div>
-                  <Switch
-                    checked={addInternalLinks}
-                    onCheckedChange={setAddInternalLinks}
-                  />
+              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div className="space-y-0.5">
+                  <Label className="text-white">Voeg interne links toe (via sitemap)</Label>
+                  <p className="text-sm text-gray-400">
+                    Voegt automatisch relevante interne links toe aan de content
+                  </p>
                 </div>
-              )}
+                <Switch
+                  checked={addInternalLinks}
+                  onCheckedChange={setAddInternalLinks}
+                />
+              </div>
 
               {/* Affiliate Links Toggle */}
-              {selectedProject?.affiliateLinksCount && selectedProject.affiliateLinksCount > 0 && (
-                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <div className="space-y-0.5">
-                    <Label className="text-white">Voeg affiliate links toe waar relevant</Label>
-                    <p className="text-sm text-gray-400">
-                      Integreert natuurlijk {selectedProject.affiliateLinksCount} affiliate links in de content
-                    </p>
-                  </div>
-                  <Switch
-                    checked={addAffiliateLinks}
-                    onCheckedChange={setAddAffiliateLinks}
-                  />
+              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div className="space-y-0.5">
+                  <Label className="text-white">Voeg affiliate links toe waar relevant</Label>
+                  <p className="text-sm text-gray-400">
+                    Integreert natuurlijk affiliate links in de content waar relevant
+                  </p>
                 </div>
-              )}
+                <Switch
+                  checked={addAffiliateLinks}
+                  onCheckedChange={setAddAffiliateLinks}
+                />
+              </div>
 
               {/* Auto Publish Toggle */}
               <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
                 <div className="space-y-0.5">
                   <Label className="text-white">Direct publiceren naar WordPress</Label>
                   <p className="text-sm text-gray-400">
-                    {selectedProject?.wordpressUrl 
-                      ? 'Publiceert automatisch naar je WordPress site'
-                      : 'WordPress moet eerst geconfigureerd worden in je project'}
+                    {currentProject 
+                      ? 'Publiceert automatisch naar je WordPress site (indien geconfigureerd)'
+                      : 'Selecteer eerst een project'}
                   </p>
                 </div>
                 <Switch
                   checked={autoPublish}
                   onCheckedChange={setAutoPublish}
-                  disabled={!selectedProject?.wordpressUrl}
+                  disabled={!currentProject}
                 />
               </div>
             </div>
