@@ -172,13 +172,13 @@ export function isAdminNavActive(href: string, pathname: string): boolean {
   // For exact matches
   if (href === pathname) return true;
   
-  // For /admin root, also match /admin/
-  if (href === '/admin' && pathname === '/admin/') {
+  // For /admin/dashboard, also match /admin and /admin/
+  if (href === '/admin/dashboard' && (pathname === '/admin' || pathname === '/admin/')) {
     return true;
   }
   
   // For other paths, check if pathname starts with href
-  if (href !== '/admin' && pathname.startsWith(href)) {
+  if (href !== '/admin/dashboard' && pathname.startsWith(href)) {
     return true;
   }
   
