@@ -27,8 +27,11 @@ export interface Project {
   wordpressUsername?: string;
   wordpressPassword?: string;
   wordpressCategory?: string;
+  /** Number of active affiliate links configured for this project */
   affiliateLinksCount?: number;
+  /** Number of URLs found in the project's sitemap */
   sitemapUrlsCount?: number;
+  /** Whether the project has a valid sitemap with URLs */
   hasSitemap?: boolean;
   brandVoice?: string;
   niche?: string;

@@ -53,6 +53,10 @@ function stripHtmlTags(html: string): string {
   return text.trim();
 }
 
+// Constants for AI prompt limits
+const MAX_SITEMAP_URLS = 20; // Maximum sitemap URLs to include in prompt
+const MAX_AFFILIATE_LINKS = 10; // Maximum affiliate links to include in prompt
+
 /**
  * Build AI prompt for blog generation with project context
  */
@@ -106,8 +110,8 @@ function buildBlogPrompt(params: {
   // Build internal links context
   let internalLinksContext = '';
   if (addInternalLinks && sitemapUrls.length > 0) {
-    // Limit to first 20 URLs to avoid token overflow
-    const relevantUrls = sitemapUrls.slice(0, 20);
+    // Limit URLs to avoid token overflow
+    const relevantUrls = sitemapUrls.slice(0, MAX_SITEMAP_URLS);
     internalLinksContext = `\n\nINTERNE LINKS (voeg 2-4 relevante interne links toe in de content):
 ${relevantUrls.map(url => `- ${url}`).join('\n')}
 
@@ -117,8 +121,8 @@ BELANGRIJK: Integreer deze interne links natuurlijk in de tekst waar relevant. G
   // Build affiliate links context
   let affiliateLinksContext = '';
   if (addAffiliateLinks && affiliateLinks.length > 0) {
-    // Limit to first 10 affiliate links to avoid token overflow
-    const relevantLinks = affiliateLinks.slice(0, 10);
+    // Limit affiliate links to avoid token overflow
+    const relevantLinks = affiliateLinks.slice(0, MAX_AFFILIATE_LINKS);
     affiliateLinksContext = `\n\nAFFILIATE LINKS (voeg 1-3 relevante product aanbevelingen toe):
 ${relevantLinks.map((link: any) => 
   `- ${link.anchorText}: ${link.url}${link.category ? ` (Categorie: ${link.category})` : ''}${link.keywords && link.keywords.length > 0 ? ` [Keywords: ${link.keywords.join(', ')}]` : ''}`
@@ -231,7 +235,14 @@ export async function POST(request: NextRequest) {
       if (projectDetails.sitemap && typeof projectDetails.sitemap === 'object') {
         const sitemapData = projectDetails.sitemap as any;
         if (sitemapData.pages && Array.isArray(sitemapData.pages)) {
-          sitemapUrls = sitemapData.pages.map((page: any) => page.url || page);
+          sitemapUrls = sitemapData.pages
+            .map((page: any) => {
+              // Handle both string URLs and objects with url property
+              if (typeof page === 'string') return page;
+              if (page && typeof page === 'object' && page.url) return page.url;
+              return null;
+            })
+            .filter((url): url is string => url !== null && typeof url === 'string');
         }
       }
 
@@ -436,7 +447,12 @@ export async function POST(request: NextRequest) {
                     message: `Gepubliceerd op WordPress: ${wpResult.link}`,
                   });
                 } else {
-                  console.warn('WordPress config not found for project');
+                  console.warn(`WordPress config not found for project ${projectId}. Please configure WordPress credentials in project settings.`);
+                  sendSSE(controller, {
+                    phase: 'WordPress Publicatie',
+                    progress: 98,
+                    message: 'WordPress credentials niet gevonden. Configureer deze in project instellingen.',
+                  });
                 }
               } catch (wpError: any) {
                 console.error('WordPress publish error:', wpError);

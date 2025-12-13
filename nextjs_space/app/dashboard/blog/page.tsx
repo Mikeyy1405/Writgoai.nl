@@ -321,7 +321,7 @@ export default function ClientBlogPage() {
             {/* Content Options */}
             <div className="space-y-3">
               {/* Internal Links Toggle */}
-              {selectedProject?.hasSitemap && (
+              {selectedProject?.hasSitemap && selectedProject?.sitemapUrlsCount && selectedProject.sitemapUrlsCount > 0 && (
                 <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
                   <div className="space-y-0.5">
                     <Label className="text-white">Voeg interne links toe (via sitemap)</Label>
