@@ -52,6 +52,75 @@ function stripHtmlTags(html: string): string {
   return text.trim();
 }
 
+/**
+ * Build AI prompt for blog generation with project context
+ */
+function buildBlogPrompt(params: {
+  articleTitle: string;
+  keywords: any;
+  targetWordCount: number;
+  includeFAQ: boolean;
+  tone?: string;
+  targetAudience?: string;
+  project?: any;
+}): string {
+  const { articleTitle, keywords, targetWordCount, includeFAQ, tone, targetAudience, project } = params;
+  
+  const keywordsStr = Array.isArray(keywords) ? keywords.join(', ') : keywords || '';
+  const wordCount = targetWordCount || 1500;
+
+  // Build project-specific context
+  let projectContext = '';
+  if (project) {
+    if (project.toneOfVoice) {
+      projectContext += `\n- Tone of Voice: ${project.toneOfVoice}`;
+    }
+    if (project.targetAudience) {
+      projectContext += `\n- Doelgroep: ${project.targetAudience}`;
+    }
+    if (project.additionalInfo) {
+      projectContext += `\n- Brand context: ${project.additionalInfo}`;
+    }
+  }
+
+  // Determine target audience and tone
+  const finalTargetAudience = targetAudience || project?.targetAudience || '';
+  const finalTone = tone || project?.toneOfVoice || 'professioneel maar toegankelijk';
+
+  return `Schrijf een complete, SEO-geoptimaliseerde blog post over "${articleTitle}".
+
+VERPLICHTE ELEMENTEN:
+1. Titel (H1) - pakkend en keyword-rijk
+2. Inleiding (150-200 woorden) - hook de lezer
+3. Minimaal 4 hoofdsecties met H2 headers
+4. Subsecties met H3 headers waar relevant
+5. Conclusie (100-150 woorden)
+6. Call-to-action (probeer WritgoAI gratis)
+${includeFAQ ? '7. FAQ sectie met minimaal 5 vragen en antwoorden' : ''}
+
+SEO VEREISTEN:
+${keywordsStr ? `- Focus keywords: ${keywordsStr}` : ''}
+- Natuurlijke keyword integratie (geen stuffing)
+- Informatieve, waardevolle content
+- Leesbare zinnen en alinea's
+${finalTargetAudience ? `- Doelgroep: ${finalTargetAudience}` : ''}
+- Tone: ${finalTone}${projectContext}
+
+CONTENT VEREISTEN:
+- Minimaal ${wordCount} woorden
+- Gebruik praktische voorbeelden
+- Voeg tips en best practices toe
+- Schrijf in het Nederlands
+- Geen marketing buzzwords of clichés
+- Schrijf in HTML formaat met juiste tags (<p>, <h2>, <h3>, etc.)
+
+BELANGRIJK:
+- Begin direct met de content (geen markdown formatting)
+- Gebruik alleen HTML tags
+- Geen introductiezinnen zoals "Hier is je blog post"
+- Start met <h1> titel en eindig met conclusie`;
+}
+
 // POST - Generate blog content with streaming support
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +128,10 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Allow both admin and client users to generate blog posts
+    const isAdmin = session.user?.role === 'admin';
+    const isClient = session.user?.role === 'client' || !session.user?.role;
 
     const body = await request.json();
     const { 
@@ -133,54 +206,16 @@ export async function POST(request: NextRequest) {
             });
 
             const keywordsStr = Array.isArray(keywords) ? keywords.join(', ') : keywords || '';
-            const wordCount = targetWordCount || 1500;
 
-            // Build project-specific context
-            let projectContext = '';
-            if (project) {
-              if (project.toneOfVoice) {
-                projectContext += `\n- Tone of Voice: ${project.toneOfVoice}`;
-              }
-              if (project.targetAudience) {
-                projectContext += `\n- Doelgroep: ${project.targetAudience}`;
-              }
-              if (project.additionalInfo) {
-                projectContext += `\n- Brand context: ${project.additionalInfo}`;
-              }
-            }
-
-            const prompt = `Schrijf een complete, SEO-geoptimaliseerde blog post over "${articleTitle}".
-
-VERPLICHTE ELEMENTEN:
-1. Titel (H1) - pakkend en keyword-rijk
-2. Inleiding (150-200 woorden) - hook de lezer
-3. Minimaal 4 hoofdsecties met H2 headers
-4. Subsecties met H3 headers waar relevant
-5. Conclusie (100-150 woorden)
-6. Call-to-action (probeer WritgoAI gratis)
-${includeFAQ ? '7. FAQ sectie met minimaal 5 vragen en antwoorden' : ''}
-
-SEO VEREISTEN:
-${keywordsStr ? `- Focus keywords: ${keywordsStr}` : ''}
-- Natuurlijke keyword integratie (geen stuffing)
-- Informatieve, waardevolle content
-- Leesbare zinnen en alinea's
-${targetAudience ? `- Doelgroep: ${targetAudience}` : (project?.targetAudience ? `- Doelgroep: ${project.targetAudience}` : '')}
-${tone ? `- Tone: ${tone}` : (project?.toneOfVoice ? `- Tone: ${project.toneOfVoice}` : '- Tone: professioneel maar toegankelijk')}${projectContext}
-
-CONTENT VEREISTEN:
-- Minimaal ${wordCount} woorden
-- Gebruik praktische voorbeelden
-- Voeg tips en best practices toe
-- Schrijf in het Nederlands
-- Geen marketing buzzwords of clichés
-- Schrijf in HTML formaat met juiste tags (<p>, <h2>, <h3>, etc.)
-
-BELANGRIJK:
-- Begin direct met de content (geen markdown formatting)
-- Gebruik alleen HTML tags
-- Geen introductiezinnen zoals "Hier is je blog post"
-- Start met <h1> titel en eindig met conclusie`;
+            const prompt = buildBlogPrompt({
+              articleTitle,
+              keywords,
+              targetWordCount,
+              includeFAQ,
+              tone,
+              targetAudience,
+              project,
+            });
 
             const response = await chatCompletion({
               messages: [{ role: 'user', content: prompt }],
@@ -321,53 +356,16 @@ BELANGRIJK:
 
     // Fallback: Non-streaming response (legacy support)
     const keywordsStr = Array.isArray(keywords) ? keywords.join(', ') : keywords || '';
-    const wordCount = targetWordCount || 1500;
 
-    // Build project-specific context
-    let projectContext = '';
-    if (project) {
-      if (project.toneOfVoice) {
-        projectContext += `\n- Tone of Voice: ${project.toneOfVoice}`;
-      }
-      if (project.targetAudience) {
-        projectContext += `\n- Doelgroep: ${project.targetAudience}`;
-      }
-      if (project.additionalInfo) {
-        projectContext += `\n- Brand context: ${project.additionalInfo}`;
-      }
-    }
-
-    const prompt = `Schrijf een complete, SEO-geoptimaliseerde blog post over "${articleTitle}".
-
-VERPLICHTE ELEMENTEN:
-1. Titel (H1) - pakkend en keyword-rijk
-2. Inleiding (150-200 woorden) - hook de lezer
-3. Minimaal 4 hoofdsecties met H2 headers
-4. Subsecties met H3 headers waar relevant
-5. Conclusie (100-150 woorden)
-6. Call-to-action (probeer WritgoAI gratis)
-
-SEO VEREISTEN:
-${keywordsStr ? `- Focus keywords: ${keywordsStr}` : ''}
-- Natuurlijke keyword integratie (geen stuffing)
-- Informatieve, waardevolle content
-- Leesbare zinnen en alinea's
-${targetAudience ? `- Doelgroep: ${targetAudience}` : (project?.targetAudience ? `- Doelgroep: ${project.targetAudience}` : '')}
-${tone ? `- Tone: ${tone}` : (project?.toneOfVoice ? `- Tone: ${project.toneOfVoice}` : '- Tone: professioneel maar toegankelijk')}${projectContext}
-
-CONTENT VEREISTEN:
-- Minimaal ${wordCount} woorden
-- Gebruik praktische voorbeelden
-- Voeg tips en best practices toe
-- Schrijf in het Nederlands
-- Geen marketing buzzwords of clichés
-- Schrijf in HTML formaat met juiste tags (<p>, <h2>, <h3>, etc.)
-
-BELANGRIJK:
-- Begin direct met de content (geen markdown formatting)
-- Gebruik alleen HTML tags
-- Geen introductiezinnen zoals "Hier is je blog post"
-- Start met <h1> titel en eindig met conclusie`;
+    const prompt = buildBlogPrompt({
+      articleTitle,
+      keywords,
+      targetWordCount,
+      includeFAQ: false, // FAQ not supported in non-streaming mode for simplicity
+      tone,
+      targetAudience,
+      project,
+    });
 
     const response = await chatCompletion({
       messages: [{ role: 'user', content: prompt }],

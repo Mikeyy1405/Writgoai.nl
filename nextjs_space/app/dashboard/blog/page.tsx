@@ -227,7 +227,6 @@ export default function ClientBlogPage() {
                 }}
                 autoSelectPrimary={true}
                 showKnowledgeBase={true}
-                label="Publiceren naar project"
               />
               {selectedProject && (
                 <div className="flex items-center gap-2 mt-2">
