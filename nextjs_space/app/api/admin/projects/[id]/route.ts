@@ -20,12 +20,26 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get the client to verify ownership
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
     const project = await prisma.project.findUnique({
       where: { id: params.id }
     });
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Verify project ownership
+    if (project.clientId !== client.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     return NextResponse.json(project);
@@ -194,15 +208,28 @@ export async function PUT(
 
     const data = await request.json();
 
+    // Build update data object with only provided fields
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.websiteUrl !== undefined) updateData.websiteUrl = data.websiteUrl;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.niche !== undefined) updateData.niche = data.niche;
+    if (data.targetAudience !== undefined) updateData.targetAudience = data.targetAudience;
+    if (data.brandVoice !== undefined) updateData.brandVoice = data.brandVoice;
+    if (data.writingStyle !== undefined) updateData.writingStyle = data.writingStyle;
+    if (data.customInstructions !== undefined) updateData.customInstructions = data.customInstructions;
+    if (data.wordpressUrl !== undefined) updateData.wordpressUrl = data.wordpressUrl;
+    if (data.wordpressUsername !== undefined) updateData.wordpressUsername = data.wordpressUsername;
+    if (data.wordpressPassword !== undefined) updateData.wordpressPassword = data.wordpressPassword;
+    if (data.wordpressCategory !== undefined) updateData.wordpressCategory = data.wordpressCategory;
+    if (data.wordpressAutoPublish !== undefined) updateData.wordpressAutoPublish = data.wordpressAutoPublish;
+    if (data.settings !== undefined) updateData.settings = data.settings;
+
     // Update project
     const updatedProject = await prisma.project.update({
       where: { id: params.id },
-      data: {
-        name: data.name,
-        websiteUrl: data.websiteUrl,
-        description: data.description,
-        status: data.status
-      }
+      data: updateData
     });
 
     return NextResponse.json(updatedProject);
