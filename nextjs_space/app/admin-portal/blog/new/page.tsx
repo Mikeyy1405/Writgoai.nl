@@ -295,7 +295,7 @@ export default function NewBlogPostPage() {
                       alt="Preview"
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                        (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
                   </div>

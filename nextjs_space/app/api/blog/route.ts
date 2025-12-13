@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
     if (!status) {
       query = query.eq('status', 'published').not('published_at', 'is', null);
     } else if (status !== 'all') {
-      // For admin filtering
+      // For admin filtering - validate status value
+      const validStatuses = ['draft', 'published'];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json({ error: 'Invalid status filter' }, { status: 400 });
+      }
       query = query.eq('status', status);
     }
 
@@ -98,11 +102,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if slug already exists
-    const { data: existing } = await supabaseAdmin
+    const { data: existing, error: existingError } = await supabaseAdmin
       .from('blog_posts')
       .select('id')
       .eq('slug', slug)
-      .single();
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('Error checking slug uniqueness:', existingError);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
 
     if (existing) {
       return NextResponse.json(

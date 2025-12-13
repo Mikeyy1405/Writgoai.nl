@@ -57,11 +57,16 @@ export async function PUT(
 
     // Check if new slug conflicts with another post
     if (newSlug && newSlug !== params.slug) {
-      const { data: existing } = await supabaseAdmin
+      const { data: existing, error: existingError } = await supabaseAdmin
         .from('blog_posts')
         .select('id')
         .eq('slug', newSlug)
-        .single();
+        .maybeSingle();
+
+      if (existingError) {
+        console.error('Error checking slug uniqueness:', existingError);
+        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      }
 
       if (existing) {
         return NextResponse.json(

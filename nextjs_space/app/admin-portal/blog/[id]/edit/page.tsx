@@ -35,7 +35,7 @@ interface BlogPost {
   excerpt: string;
   featured_image: string;
   category: string;
-  tags: string[];
+  tags: string[] | string;
   meta_title: string;
   meta_description: string;
   status: 'draft' | 'published';
@@ -327,7 +327,7 @@ export default function EditBlogPostPage() {
                       alt="Preview"
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                        (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
                   </div>
@@ -374,7 +374,7 @@ export default function EditBlogPostPage() {
                 <Input
                   value={tagsString}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, tags: e.target.value as any }))
+                    setFormData((prev) => ({ ...prev, tags: e.target.value }))
                   }
                   placeholder="ai, content, marketing"
                   className="bg-zinc-900 border-zinc-700 text-white"
