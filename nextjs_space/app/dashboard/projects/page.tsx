@@ -38,7 +38,7 @@ export default function ProjectsPage() {
   const [loadingStats, setLoadingStats] = useState(false);
 
   // Filter projects based on search
-  const filteredProjects = projects.filter(project =>
+  const filteredProjects = (projects || []).filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.websiteUrl?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -49,7 +49,7 @@ export default function ProjectsPage() {
       setLoadingStats(true);
       const stats: Record<string, number> = {};
       
-      for (const project of projects) {
+      for (const project of projects || []) {
         try {
           const response = await fetch(`/api/admin/projects/${project.id}/posts/count`);
           if (response.ok) {
@@ -65,7 +65,7 @@ export default function ProjectsPage() {
       setLoadingStats(false);
     }
 
-    if (projects.length > 0) {
+    if ((projects || []).length > 0) {
       loadStats();
     }
   }, [projects]);
@@ -91,7 +91,7 @@ export default function ProjectsPage() {
     }
   };
 
-  const activeProjects = projects.filter(p => p.status === 'active').length;
+  const activeProjects = (projects || []).filter(p => p.status === 'active').length;
   const totalPosts = Object.values(projectStats).reduce((sum, count) => sum + count, 0);
 
   return (
@@ -117,7 +117,7 @@ export default function ProjectsPage() {
               <FolderKanban className="w-6 h-6 text-[#FF9933]" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-white">{projects.length}</p>
+          <p className="text-2xl font-bold text-white">{(projects || []).length}</p>
           <p className="text-sm text-gray-400">Totaal Projecten</p>
         </div>
 

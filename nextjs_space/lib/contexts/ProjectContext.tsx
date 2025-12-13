@@ -47,20 +47,22 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       }
       
       const data = await response.json();
-      setProjects(data);
+      // Extract projects array from API response
+      const projectsArray = Array.isArray(data) ? data : (data.projects || []);
+      setProjects(projectsArray);
       
       // If no current project but we have projects, set the first one
-      if (!currentProject && data.length > 0) {
+      if (!currentProject && projectsArray.length > 0) {
         const lastProjectId = localStorage.getItem(PROJECT_STORAGE_KEY);
         const projectToSet = lastProjectId 
-          ? data.find((p: Project) => p.id === lastProjectId) || data[0]
-          : data[0];
+          ? projectsArray.find((p: Project) => p.id === lastProjectId) || projectsArray[0]
+          : projectsArray[0];
         
         setCurrentProject(projectToSet);
         localStorage.setItem(PROJECT_STORAGE_KEY, projectToSet.id);
       }
       
-      return data;
+      return projectsArray;
     } catch (err: any) {
       console.error('Failed to fetch projects:', err);
       setError(err.message || 'Failed to load projects');
