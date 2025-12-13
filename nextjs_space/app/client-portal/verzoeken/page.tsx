@@ -101,7 +101,7 @@ export default function ClientRequestsPage() {
 
   if (loading || status === 'loading') {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] p-8">
+      <div className="min-h-screen bg-[#0a0a0a] p-3 sm:p-4 md:p-6 lg:p-8">
         <div className="animate-pulse space-y-6">
           <div className="h-12 bg-white/10 rounded w-1/3"></div>
           {[1, 2, 3].map(i => (
@@ -113,27 +113,27 @@ export default function ClientRequestsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8">
+    <div className="min-h-screen bg-[#0a0a0a] p-3 sm:p-4 md:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3 sm:gap-4">
           <Link
             href="/client-portal"
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-400" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-purple-400" />
+            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
               Mijn Verzoeken
             </h1>
-            <p className="text-gray-400">Overzicht van al je ingediende verzoeken</p>
+            <p className="text-sm sm:text-base text-gray-400">Overzicht van al je ingediende verzoeken</p>
           </div>
         </div>
         <Link
           href="/client-portal/nieuw-verzoek"
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs sm:text-sm w-full sm:w-auto justify-center"
         >
           <Plus className="w-4 h-4" />
           Nieuw Verzoek
@@ -158,23 +158,24 @@ export default function ClientRequestsPage() {
           requests.map((request) => (
             <div
               key={request.id}
-              className="bg-white/5 border border-white/10 rounded-xl p-6"
+              className="bg-white/5 border border-white/10 rounded-xl p-4 sm:p-6"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl">{getTypeIcon(request.type)}</span>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">{request.title}</h3>
-                    <p className="text-gray-400 mt-1 line-clamp-2">{request.description}</p>
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 mb-4">
+                <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                  <span className="text-2xl sm:text-3xl">{getTypeIcon(request.type)}</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-semibold text-white break-words">{request.title}</h3>
+                    <p className="text-sm sm:text-base text-gray-400 mt-1 line-clamp-2">{request.description}</p>
                   </div>
                 </div>
-                <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(request.status)}`}>
+                <span className={`flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${getStatusColor(request.status)}`}>
                   {getStatusIcon(request.status)}
-                  {getStatusLabel(request.status)}
+                  <span className="hidden sm:inline">{getStatusLabel(request.status)}</span>
+                  <span className="sr-only sm:hidden">{getStatusLabel(request.status)}</span>
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-4 text-sm text-gray-400">
+              <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
                 {request.budget && (
                   <span className="flex items-center gap-1">
                     <Euro className="w-4 h-4" />

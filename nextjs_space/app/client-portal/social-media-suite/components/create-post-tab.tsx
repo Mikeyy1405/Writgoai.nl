@@ -254,11 +254,11 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Show when started from idea */}
       {initialIdea && (
         <Card className="bg-gradient-to-r from-orange-500/10 to-orange-600/5 border-orange-500/30">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -304,7 +304,7 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
               {/* Platform Selection */}
               <div className="space-y-2">
                 <Label>Platforms (multi-select)</Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {PLATFORMS.map((platform) => {
                     const Icon = platform.icon;
                     const isSelected = selectedPlatforms.includes(platform.id);
@@ -315,10 +315,11 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
                         type="button"
                         variant={isSelected ? 'default' : 'outline'}
                         onClick={() => togglePlatform(platform.id)}
-                        className="justify-start"
+                        className="justify-start text-xs sm:text-sm"
+                        title={platform.name}
                       >
-                        <Icon className="h-4 w-4 mr-2" />
-                        {platform.name}
+                        <Icon className="h-4 w-4 mr-1 sm:mr-2" />
+                        <span className="truncate">{platform.name}</span>
                       </Button>
                     );
                   })}
@@ -407,9 +408,9 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
             </CardHeader>
             <CardContent className="space-y-4">
               {Object.keys(generatedContent).length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Genereer content om een preview te zien</p>
+                <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                  <Sparkles className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm sm:text-base">Genereer content om een preview te zien</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -421,7 +422,7 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
                     if (!content) return null;
 
                     return (
-                      <div key={platformId} className="border rounded-lg p-4 space-y-3">
+                      <div key={platformId} className="border rounded-lg p-3 sm:p-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             {Icon && (
@@ -445,25 +446,27 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
                           {content}
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => copyToClipboard(platformId, content)}
+                            className="w-full sm:w-auto"
                           >
                             {copied === platformId ? (
                               <Check className="h-4 w-4 mr-1" />
                             ) : (
                               <Copy className="h-4 w-4 mr-1" />
                             )}
-                            Kopiëren
+                            <span className="text-xs sm:text-sm">Kopiëren</span>
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => publishPost(platformId)}
+                            className="w-full sm:w-auto"
                           >
                             <Send className="h-4 w-4 mr-1" />
-                            Publiceren
+                            <span className="text-xs sm:text-sm">Publiceren</span>
                           </Button>
                         </div>
                       </div>
