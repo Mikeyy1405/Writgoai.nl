@@ -10,6 +10,11 @@ export interface Project {
   status: string;
   createdAt: string;
   updatedAt?: string;
+  wordpressUrl?: string | null;
+  wordpressUsername?: string | null;
+  affiliateLinksCount?: number;
+  sitemapUrlsCount?: number;
+  hasSitemap?: boolean;
 }
 
 interface ProjectContextType {
