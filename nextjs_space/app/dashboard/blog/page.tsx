@@ -61,13 +61,17 @@ export default function ClientBlogPage() {
     });
   };
 
+  const processKeywords = (keywords: string): string[] | undefined => {
+    return keywords.trim() ? keywords.split(',').map(k => k.trim()).filter(Boolean) : undefined;
+  };
+
   const resetForm = () => {
     setTitle('');
     setKeywords('');
     setCategory('AI & Content Marketing');
     setAutoPublish(false);
     setProgress(0);
-    setPhases(INITIAL_PHASES);
+    setPhases(INITIAL_PHASES.map(phase => ({ ...phase })));
     setShowSuccess(false);
   };
 
@@ -90,7 +94,7 @@ export default function ClientBlogPage() {
         },
         body: JSON.stringify({
           title,
-          keywords: keywords.trim() ? keywords.split(',').map(k => k.trim()).filter(Boolean) : undefined,
+          keywords: processKeywords(keywords),
           category,
           targetWordCount: 1500,
           generateImages: true,
