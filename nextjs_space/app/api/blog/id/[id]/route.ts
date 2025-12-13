@@ -1,18 +1,24 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, getSupabaseClient } from '@/lib/supabase';
 
-// GET - Specifieke blog post ophalen by slug
+// GET - Get specific blog post by ID (admin)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
+    const supabase = getSupabaseClient();
+    
+    // Check authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { data: post, error } = await supabaseAdmin
       .from('blog_posts')
       .select('*')
-      .eq('slug', params.slug)
-      .eq('status', 'published')
+      .eq('id', params.id)
       .single();
 
     if (error || !post) {
@@ -26,10 +32,10 @@ export async function GET(
   }
 }
 
-// PUT - Update blog post by slug (admin only)
+// PUT - Update blog post by ID (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const supabase = getSupabaseClient();
@@ -43,7 +49,7 @@ export async function PUT(
     const body = await request.json();
     const {
       title,
-      slug: newSlug,
+      slug,
       content,
       excerpt,
       featured_image,
@@ -56,11 +62,12 @@ export async function PUT(
     } = body;
 
     // Check if new slug conflicts with another post
-    if (newSlug && newSlug !== params.slug) {
+    if (slug) {
       const { data: existing, error: existingError } = await supabaseAdmin
         .from('blog_posts')
         .select('id')
-        .eq('slug', newSlug)
+        .eq('slug', slug)
+        .neq('id', params.id)
         .maybeSingle();
 
       if (existingError) {
@@ -78,7 +85,7 @@ export async function PUT(
 
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
-    if (newSlug !== undefined) updateData.slug = newSlug;
+    if (slug !== undefined) updateData.slug = slug;
     if (content !== undefined) updateData.content = content;
     if (excerpt !== undefined) updateData.excerpt = excerpt;
     if (featured_image !== undefined) updateData.featured_image = featured_image;
@@ -89,7 +96,7 @@ export async function PUT(
         const { data: currentPost } = await supabaseAdmin
           .from('blog_posts')
           .select('published_at')
-          .eq('slug', params.slug)
+          .eq('id', params.id)
           .single();
         
         if (!currentPost?.published_at) {
@@ -106,7 +113,7 @@ export async function PUT(
     const { data: post, error } = await supabaseAdmin
       .from('blog_posts')
       .update(updateData)
-      .eq('slug', params.slug)
+      .eq('id', params.id)
       .select()
       .single();
 
@@ -125,10 +132,10 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete blog post by slug (admin only)
+// DELETE - Delete blog post by ID (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const supabase = getSupabaseClient();
@@ -142,7 +149,7 @@ export async function DELETE(
     const { error } = await supabaseAdmin
       .from('blog_posts')
       .delete()
-      .eq('slug', params.slug);
+      .eq('id', params.id);
 
     if (error) {
       throw error;

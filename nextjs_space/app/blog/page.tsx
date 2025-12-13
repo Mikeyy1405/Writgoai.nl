@@ -15,12 +15,10 @@ interface BlogPost {
   title: string;
   slug: string;
   excerpt: string;
-  featuredImage?: string;
+  featured_image?: string;
   category: string;
   tags: string[];
-  publishedAt: string;
-  readingTimeMinutes: number;
-  views: number;
+  published_at: string;
 }
 
 export default function BlogPage() {
@@ -134,13 +132,13 @@ export default function BlogPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
-              <Link key={post.id} href={`/${post.slug}`}>
+              <Link key={post.id} href={`/blog/${post.slug}`}>
                 <Card className="h-full hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 overflow-hidden group cursor-pointer bg-gray-900/50 border-gray-800 hover:border-orange-500/50">
                   {/* Featured Image */}
-                  {post.featuredImage ? (
+                  {post.featured_image ? (
                     <div className="relative aspect-video bg-gray-800">
                       <Image
-                        src={post.featuredImage}
+                        src={post.featured_image}
                         alt={post.title}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -174,15 +172,7 @@ export default function BlogPage() {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        <span>{formatDate(post.publishedAt)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{post.readingTimeMinutes} min</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Eye className="w-4 h-4" />
-                        <span>{post.views}</span>
+                        <span>{formatDate(post.published_at)}</span>
                       </div>
                     </div>
 
