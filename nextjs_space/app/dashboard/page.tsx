@@ -4,7 +4,7 @@ import { FileText, Share2, TrendingUp, Settings } from 'lucide-react';
 export default function ClientDashboard() {
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-100 mb-8">
+      <h1 className="text-3xl font-bold text-white mb-8">
         Mijn Dashboard
       </h1>
 
@@ -69,13 +69,13 @@ function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${colors[color]}`}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
-      <p className="text-2xl font-bold text-gray-100">{value}</p>
+      <p className="text-2xl font-bold text-white">{value}</p>
       <p className="text-sm text-gray-400">{title}</p>
     </div>
   );
@@ -92,10 +92,10 @@ function QuickLink({ href, title, description, icon: Icon }: QuickLinkProps) {
   return (
     <Link
       href={href}
-      className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 hover:border-[#FF9933] transition-all"
+      className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 hover:bg-zinc-800 hover:border-[#FF9933] transition-all"
     >
       <Icon className="w-8 h-8 text-[#FF9933] mb-4" />
-      <h3 className="text-lg font-semibold text-gray-100 mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
       <p className="text-sm text-gray-400">{description}</p>
     </Link>
   );

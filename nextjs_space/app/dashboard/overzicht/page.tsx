@@ -184,7 +184,7 @@ export default function OverzichtPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF9933] mx-auto mb-4"></div>
-          <p className="text-gray-500">Dashboard laden...</p>
+          <p className="text-gray-400">Dashboard laden...</p>
         </div>
       </div>
     );
@@ -197,30 +197,34 @@ export default function OverzichtPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-700 mb-2">
+        <h1 className="text-3xl font-bold text-white mb-2">
           👋 Welkom terug, {session?.user?.name || 'Gebruiker'}!
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-400">
           Je GROEI pakket is actief en draait automatisch.
         </p>
       </div>
 
       {/* System Status */}
-      <Card className="border-${statusColor}-200 bg-${statusColor}-50">
+      <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <div className={`w-3 h-3 rounded-full bg-${statusColor}-500 mt-1 animate-pulse`} />
+            <div className={`w-3 h-3 rounded-full ${
+              systemStatus.overall === 'active' ? 'bg-green-500' :
+              systemStatus.overall === 'warning' ? 'bg-yellow-500' :
+              'bg-red-500'
+            } mt-1 animate-pulse`} />
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-700 mb-2">
+              <h3 className="font-semibold text-white mb-2">
                 {systemStatus.overall === 'active' ? '🟢 SYSTEEM STATUS: ACTIEF' : 
                  systemStatus.overall === 'warning' ? '🟠 SYSTEEM STATUS: WAARSCHUWING' :
                  '🔴 SYSTEEM STATUS: FOUT'}
               </h3>
-              <p className="text-gray-700 text-sm mb-4">{systemStatus.message}</p>
+              <p className="text-gray-300 text-sm mb-4">{systemStatus.message}</p>
               
               {systemStatus.nextSocialPost && (
                 <div className="space-y-1 text-sm">
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-gray-400">
                     <Calendar className="w-4 h-4" />
                     <span>Volgende social post: {formatDistanceToNow(new Date(systemStatus.nextSocialPost), { addSuffix: true, locale: nl })}</span>
                   </div>
@@ -234,13 +238,13 @@ export default function OverzichtPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* This Month */}
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-500">DEZE MAAND</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-400">DEZE MAAND</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-gray-700">{stats.thisMonth.posts} posts</div>
-            <div className="space-y-1 text-sm text-gray-600">
+            <div className="text-2xl font-bold text-white">{stats.thisMonth.posts} posts</div>
+            <div className="space-y-1 text-sm text-gray-300">
               <div>{stats.thisMonth.articles} artikelen</div>
               <div>{stats.thisMonth.videos} videos</div>
               <div className="font-medium text-[#FF9933]">{stats.thisMonth.platforms} platforms actief</div>
@@ -249,13 +253,13 @@ export default function OverzichtPage() {
         </Card>
 
         {/* This Week */}
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-500">DEZE WEEK</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-400">DEZE WEEK</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-gray-700">{stats.thisWeek.posts} posts</div>
-            <div className="space-y-1 text-sm text-gray-600">
+            <div className="text-2xl font-bold text-white">{stats.thisWeek.posts} posts</div>
+            <div className="space-y-1 text-sm text-gray-300">
               <div>{stats.thisWeek.articles} artikelen</div>
               <div>{stats.thisWeek.videos} videos</div>
               <div className="flex items-center gap-1 text-[#FF9933] font-medium">
@@ -267,26 +271,26 @@ export default function OverzichtPage() {
         </Card>
 
         {/* Today */}
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-500">VANDAAG</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-400">VANDAAG</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="text-2xl font-bold text-gray-700">{stats.today.posts} posts</div>
-            <div className="space-y-1 text-sm text-gray-600">
+            <div className="text-2xl font-bold text-white">{stats.today.posts} posts</div>
+            <div className="space-y-1 text-sm text-gray-300">
               <div>{stats.today.articles} artikelen</div>
               <div>{stats.today.videos} videos</div>
-              <div className="text-green-600 font-medium">Actief</div>
+              <div className="text-green-500 font-medium">Actief</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Connected Platforms */}
-      <Card>
+      <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">🎯 Je Verbonden Platforms</CardTitle>
-          <Button asChild variant="outline" size="sm">
+          <CardTitle className="text-lg text-white">🎯 Je Verbonden Platforms</CardTitle>
+          <Button asChild variant="outline" size="sm" className="border-zinc-700 hover:bg-zinc-800 text-white">
             <Link href="/dashboard/platforms">
               <Plus className="w-4 h-4 mr-2" />
               Voeg platform toe
@@ -295,7 +299,7 @@ export default function OverzichtPage() {
         </CardHeader>
         <CardContent>
           {platforms.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-400">
               <p>Nog geen platforms verbonden.</p>
               <Button asChild className="mt-4" variant="outline">
                 <Link href="/dashboard/platforms">Verbind je eerste platform</Link>
@@ -306,28 +310,28 @@ export default function OverzichtPage() {
               {platforms.map((platform) => (
                 <div
                   key={platform.platform}
-                  className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-[#FF9933]/50 hover:bg-gray-50 transition-all"
+                  className="flex items-center justify-between p-4 rounded-lg border border-zinc-700 hover:border-[#FF9933]/50 hover:bg-zinc-800 transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#FF9933]/20 to-[#FFAD33]/20 flex items-center justify-center">
-                      <span className="text-xl">{platform.display_name.charAt(0)}</span>
+                      <span className="text-xl text-white">{platform.display_name.charAt(0)}</span>
                     </div>
                     <div>
-                      <div className="font-medium text-gray-700">{platform.display_name}</div>
-                      <div className="text-sm text-gray-500">{platform.username}</div>
+                      <div className="font-medium text-white">{platform.display_name}</div>
+                      <div className="text-sm text-gray-400">{platform.username}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      platform.status === 'active' ? 'bg-green-100 text-green-700' :
-                      platform.status === 'warning' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
+                      platform.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                      platform.status === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
                     }`}>
                       {platform.status === 'active' ? '✅ Actief' :
                        platform.status === 'warning' ? '⚠️ Waarschuwing' :
                        '❌ Error'}
                     </span>
-                    <Button asChild variant="ghost" size="sm">
+                    <Button asChild variant="ghost" size="sm" className="hover:bg-zinc-800 text-gray-400">
                       <Link href="/dashboard/platforms">
                         <ExternalLink className="w-4 h-4" />
                       </Link>
@@ -341,13 +345,13 @@ export default function OverzichtPage() {
       </Card>
 
       {/* Recent Activity */}
-      <Card>
+      <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-lg flex items-center gap-2 text-white">
             <Activity className="w-5 h-5" />
             Recente Activiteit
           </CardTitle>
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm" className="hover:bg-zinc-800 text-gray-400">
             <Link href="/dashboard/content">
               Bekijk alle content
               <ExternalLink className="w-4 h-4 ml-2" />
@@ -356,17 +360,17 @@ export default function OverzichtPage() {
         </CardHeader>
         <CardContent>
           {recentActivity.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-400">
               Nog geen recente activiteit.
             </div>
           ) : (
             <div className="space-y-3">
               {recentActivity.slice(0, 10).map((activity, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-800 transition-colors">
                   <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700">{activity.description}</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-sm text-white">{activity.description}</p>
+                    <p className="text-xs text-gray-400 mt-1">
                       {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true, locale: nl })}
                       {activity.platform && ` • ${activity.platform}`}
                     </p>
