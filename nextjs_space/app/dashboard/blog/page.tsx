@@ -30,6 +30,13 @@ interface GenerationPhase {
   message?: string;
 }
 
+const INITIAL_PHASES: GenerationPhase[] = [
+  { name: 'SERP Analyse', status: 'pending', message: 'Top Google resultaten analyseren...' },
+  { name: 'Content Generatie', status: 'pending', message: 'SEO-geoptimaliseerde content schrijven...' },
+  { name: 'SEO & Afbeeldingen', status: 'pending', message: 'Meta data optimaliseren...' },
+  { name: 'Opslaan', status: 'pending', message: 'Content opslaan...' },
+];
+
 export default function ClientBlogPage() {
   const { data: session } = useSession();
   const [title, setTitle] = useState('');
@@ -38,19 +45,20 @@ export default function ClientBlogPage() {
   const [autoPublish, setAutoPublish] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [phases, setPhases] = useState<GenerationPhase[]>([
-    { name: 'SERP Analyse', status: 'pending', message: 'Top Google resultaten analyseren...' },
-    { name: 'Content Generatie', status: 'pending', message: 'SEO-geoptimaliseerde content schrijven...' },
-    { name: 'SEO & Afbeeldingen', status: 'pending', message: 'Meta data optimaliseren...' },
-    { name: 'Opslaan', status: 'pending', message: 'Content opslaan...' },
-  ]);
+  const [phases, setPhases] = useState<GenerationPhase[]>(INITIAL_PHASES);
   const [showSuccess, setShowSuccess] = useState(false);
   const [refreshLibrary, setRefreshLibrary] = useState(0);
 
-  const updatePhase = (index: number, updates: Partial<GenerationPhase>) => {
-    setPhases(prev => prev.map((phase, i) => 
-      i === index ? { ...phase, ...updates } : phase
-    ));
+  const updatePhaseByName = (phaseName: string, updates: Partial<GenerationPhase>) => {
+    setPhases(currentPhases => {
+      const phaseIndex = currentPhases.findIndex(p => p.name === phaseName);
+      if (phaseIndex !== -1) {
+        return currentPhases.map((phase, i) => 
+          i === phaseIndex ? { ...phase, ...updates } : phase
+        );
+      }
+      return currentPhases;
+    });
   };
 
   const resetForm = () => {
@@ -59,12 +67,7 @@ export default function ClientBlogPage() {
     setCategory('AI & Content Marketing');
     setAutoPublish(false);
     setProgress(0);
-    setPhases([
-      { name: 'SERP Analyse', status: 'pending', message: 'Top Google resultaten analyseren...' },
-      { name: 'Content Generatie', status: 'pending', message: 'SEO-geoptimaliseerde content schrijven...' },
-      { name: 'SEO & Afbeeldingen', status: 'pending', message: 'Meta data optimaliseren...' },
-      { name: 'Opslaan', status: 'pending', message: 'Content opslaan...' },
-    ]);
+    setPhases(INITIAL_PHASES);
     setShowSuccess(false);
   };
 
@@ -121,15 +124,7 @@ export default function ClientBlogPage() {
               const data = JSON.parse(line.slice(6));
               
               if (data.phase) {
-                setPhases(currentPhases => {
-                  const phaseIndex = currentPhases.findIndex(p => p.name === data.phase);
-                  if (phaseIndex !== -1) {
-                    return currentPhases.map((phase, i) => 
-                      i === phaseIndex ? { ...phase, status: 'in-progress' as const, message: data.message } : phase
-                    );
-                  }
-                  return currentPhases;
-                });
+                updatePhaseByName(data.phase, { status: 'in-progress', message: data.message });
               }
 
               if (data.progress) {
@@ -137,15 +132,7 @@ export default function ClientBlogPage() {
               }
 
               if (data.phaseComplete) {
-                setPhases(currentPhases => {
-                  const phaseIndex = currentPhases.findIndex(p => p.name === data.phaseComplete);
-                  if (phaseIndex !== -1) {
-                    return currentPhases.map((phase, i) => 
-                      i === phaseIndex ? { ...phase, status: 'completed' as const } : phase
-                    );
-                  }
-                  return currentPhases;
-                });
+                updatePhaseByName(data.phaseComplete, { status: 'completed' });
               }
 
               if (data.complete) {
@@ -173,10 +160,12 @@ export default function ClientBlogPage() {
       console.error('Generation error:', error);
       toast.error(error.message || 'Kon artikel niet genereren');
       
-      const currentPhase = phases.findIndex(p => p.status === 'in-progress');
-      if (currentPhase !== -1) {
-        updatePhase(currentPhase, { status: 'failed' });
-      }
+      // Mark current in-progress phase as failed
+      setPhases(currentPhases => 
+        currentPhases.map(phase => 
+          phase.status === 'in-progress' ? { ...phase, status: 'failed' as const } : phase
+        )
+      );
     } finally {
       setGenerating(false);
     }
