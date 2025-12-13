@@ -61,32 +61,42 @@ export async function POST(
 
     const tokenData = await tokenResponse.json();
 
-    // Test if we can use the API with a simple search
-    const testSearchUrl = 'https://api.bol.com/retailer/v10/products?q=laptop&limit=1';
+    // Authentication successful - for affiliate API, we primarily need the token
+    // The affiliate API (catalog/search) is different from retailer API
+    // We'll verify we can make a basic catalog search request
+    const catalogSearchUrl = 'https://api.bol.com/catalog/v4/search?q=test&limit=1';
     
-    const searchResponse = await fetch(testSearchUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`,
-        'Accept': 'application/vnd.retailer.v10+json',
-      },
-    });
+    try {
+      const searchResponse = await fetch(catalogSearchUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Accept': 'application/json',
+        },
+      });
 
-    if (!searchResponse.ok) {
-      console.error('Bol.com API test search failed:', searchResponse.status);
-      return NextResponse.json(
-        { 
-          success: true, 
-          message: 'Authenticatie gelukt, maar API toegang beperkt. Controleer je API rechten.',
-          warning: true
-        }
-      );
+      if (!searchResponse.ok) {
+        console.log('Bol.com catalog API test had issues:', searchResponse.status);
+        // Authentication works, but catalog access may be limited - this is still a success
+        return NextResponse.json({
+          success: true,
+          message: 'Authenticatie gelukt! Bol.com credentials zijn correct.',
+          warning: 'Mogelijk beperkte API toegang - controleer je affiliate rechten als je problemen ervaart.'
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Bol.com API verbinding succesvol getest!',
+      });
+    } catch (apiError) {
+      // If catalog test fails, authentication still worked
+      console.log('Catalog test failed but auth succeeded:', apiError);
+      return NextResponse.json({
+        success: true,
+        message: 'Authenticatie gelukt! Bol.com credentials zijn correct.',
+      });
     }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Bol.com API verbinding succesvol getest!',
-    });
   } catch (error: any) {
     console.error('Bol.com connection test error:', error);
     

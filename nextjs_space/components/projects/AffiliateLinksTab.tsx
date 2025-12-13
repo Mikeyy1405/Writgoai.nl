@@ -365,7 +365,7 @@ export default function AffiliateLinksTab({ projectId }: { projectId: string }) 
                       <div className="flex flex-wrap gap-1">
                         {link.keywords.map((keyword, i) => (
                           <span key={i} className="text-xs text-gray-500">
-                            {keyword}{i < link.keywords!.length - 1 ? ',' : ''}
+                            {keyword}{i < link.keywords.length - 1 ? ',' : ''}
                           </span>
                         ))}
                       </div>

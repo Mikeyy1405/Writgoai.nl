@@ -30,7 +30,7 @@ interface KnowledgeItem {
 const KNOWLEDGE_TYPES = [
   { value: 'document', label: 'Document', icon: FileText },
   { value: 'faq', label: 'FAQ', icon: AlertCircle },
-  { value: 'guideline', label: 'Richtlijn', icon: CheckCircle },
+  { value: 'guideline', label: 'Guideline', icon: CheckCircle },
   { value: 'brand_voice', label: 'Brand Voice', icon: BookOpen },
 ];
 

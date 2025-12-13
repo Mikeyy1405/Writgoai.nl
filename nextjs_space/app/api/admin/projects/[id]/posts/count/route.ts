@@ -29,6 +29,8 @@ export async function GET(
     return NextResponse.json({ count });
   } catch (error) {
     console.error('Error counting posts:', error);
+    // Return 0 count for graceful degradation (non-critical error)
+    // The UI can still function without post counts
     return NextResponse.json({ count: 0 });
   }
 }
