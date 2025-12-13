@@ -23,49 +23,97 @@ export async function GET() {
 
     const isAdmin = user?.role === 'admin';
 
-    // If admin, return all projects
+    // CHANGED: Admin now sees ONLY their own projects + collaborator projects (not all projects)
+    // Try to find admin's client record (may not exist for all admins)
     if (isAdmin) {
-      const allProjects = await prisma.project.findMany({
+      const adminClient = await prisma.client.findUnique({
+        where: { email: session.user.email },
         include: {
-          _count: {
-            select: {
-              savedContent: true,
-              knowledgeBase: true,
-              affiliateLinks: true
-            }
-          },
-          client: {
-            select: {
-              name: true,
-              email: true
-            }
+          projects: {
+            include: {
+              _count: {
+                select: {
+                  savedContent: true,
+                  knowledgeBase: true,
+                  affiliateLinks: true
+                }
+              }
+            },
+            orderBy: [
+              { isPrimary: 'desc' },
+              { createdAt: 'desc' }
+            ]
           }
-        },
-        orderBy: [
-          { isPrimary: 'desc' },
-          { createdAt: 'desc' }
-        ]
+        }
       });
 
-      const transformedProjects = allProjects.map((project: any) => ({
+      // Admin's own projects (handle case where admin doesn't have a client record)
+      if (!adminClient) {
+        console.log(`[Projects API] Admin user ${session.user.email} does not have a client record`);
+      }
+      const ownedProjects = (adminClient?.projects || []).map((project) => ({
         ...project,
         knowledgeBaseCount: project._count?.knowledgeBase || 0,
         savedContentCount: project._count?.savedContent || 0,
         affiliateLinksCount: project._count?.affiliateLinks || 0,
         sitemapUrlsCount: project.sitemap?.pages?.length || 0,
         hasSitemap: !!(project.sitemap && project.sitemap.pages && project.sitemap.pages.length > 0),
-        clientName: project.client?.name,
-        clientEmail: project.client?.email,
-        isOwner: false,
+        isOwner: true,
         isCollaborator: false,
+        _count: undefined
+      })) || [];
+
+      // Projects where admin is a collaborator
+      const collaboratorProjects = await prisma.projectCollaborator.findMany({
+        where: {
+          email: session.user.email,
+          status: 'active',
+          revokedAt: null,
+        },
+        include: {
+          project: {
+            include: {
+              _count: {
+                select: {
+                  savedContent: true,
+                  knowledgeBase: true,
+                  affiliateLinks: true
+                }
+              },
+              client: {
+                select: {
+                  name: true,
+                  email: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const collabProjects = collaboratorProjects.map((collab) => ({
+        ...collab.project,
+        knowledgeBaseCount: collab.project._count?.knowledgeBase || 0,
+        savedContentCount: collab.project._count?.savedContent || 0,
+        affiliateLinksCount: collab.project._count?.affiliateLinks || 0,
+        sitemapUrlsCount: collab.project.sitemap?.pages?.length || 0,
+        hasSitemap: !!(collab.project.sitemap && collab.project.sitemap.pages && collab.project.sitemap.pages.length > 0),
+        isOwner: false,
+        isCollaborator: true,
+        collaboratorRole: collab.role,
+        sharedBy: collab.project.client?.email,
+        sharedByName: collab.project.client?.name,
         _count: undefined,
         client: undefined
       }));
 
+      // Combine both lists (owned projects first, then collaborator projects)
+      const allProjects = [...ownedProjects, ...collabProjects];
+
       return NextResponse.json({
-        projects: transformedProjects,
-        ownedCount: 0,
-        collaboratorCount: 0,
+        projects: allProjects,
+        ownedCount: ownedProjects.length,
+        collaboratorCount: collabProjects.length,
         isAdmin: true,
       });
     }

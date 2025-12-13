@@ -13,13 +13,24 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || !session.user) {
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Check if user is admin - this is an admin-only endpoint
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email },
+      select: { role: true }
+    });
     
-    // Check for recent signups query parameter
+    if (user?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+    
+    // Check for query parameters
     const { searchParams } = new URL(request.url);
     const recentOnly = searchParams.get('recent') === 'true';
+    const includeAllProjects = searchParams.get('includeProjects') === 'true';
     
     if (recentOnly) {
       // Get clients registered in the last 30 days
@@ -37,7 +48,17 @@ export async function GET(request: Request) {
           _count: {
             select: { contentPieces: true }
           },
-          projects: {
+          projects: includeAllProjects ? {
+            select: {
+              id: true,
+              name: true,
+              websiteUrl: true,
+              wordpressUrl: true,
+              isPrimary: true,
+              isActive: true,
+              createdAt: true,
+            }
+          } : {
             where: { isPrimary: true },
             take: 1
           }
@@ -51,7 +72,7 @@ export async function GET(request: Request) {
           ...client,
           websiteUrl: defaultProject?.websiteUrl || client.website,
           projectId: defaultProject?.id,
-          projects: undefined // Remove projects array from response
+          projects: includeAllProjects ? (client as any).projects : undefined
         };
       });
       
@@ -64,7 +85,17 @@ export async function GET(request: Request) {
         _count: {
           select: { contentPieces: true }
         },
-        projects: {
+        projects: includeAllProjects ? {
+          select: {
+            id: true,
+            name: true,
+            websiteUrl: true,
+            wordpressUrl: true,
+            isPrimary: true,
+            isActive: true,
+            createdAt: true,
+          }
+        } : {
           where: { isPrimary: true },
           take: 1
         }
@@ -78,7 +109,7 @@ export async function GET(request: Request) {
         ...client,
         websiteUrl: defaultProject?.websiteUrl || client.website,
         projectId: defaultProject?.id,
-        projects: undefined // Remove projects array from response
+        projects: includeAllProjects ? (client as any).projects : undefined
       };
     });
     
@@ -96,9 +127,20 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || !session.user) {
+    if (!session || !session.user || !session.user.email) {
       console.log('[Client Creation API] Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is admin - only admins can create clients
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email },
+      select: { role: true }
+    });
+    
+    if (user?.role !== 'admin') {
+      console.log('[Client Creation API] Non-admin user attempted to create client');
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
     
     const body = await request.json();

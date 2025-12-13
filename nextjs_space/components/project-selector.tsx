@@ -36,6 +36,16 @@ export interface Project {
   brandVoice?: string;
   niche?: string;
   keywords?: string[];
+  /** Whether the current user owns this project */
+  isOwner?: boolean;
+  /** Whether the current user is a collaborator on this project */
+  isCollaborator?: boolean;
+  /** Role of the collaborator (if isCollaborator is true) */
+  collaboratorRole?: string;
+  /** Email of the person who shared this project (if isCollaborator is true) */
+  sharedBy?: string;
+  /** Name of the person who shared this project (if isCollaborator is true) */
+  sharedByName?: string;
 }
 
 interface ProjectSelectorProps {
@@ -206,10 +216,20 @@ export default function ProjectSelector({
                     Primair
                   </span>
                 )}
+                {project.isCollaborator && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    Gedeeld
+                  </span>
+                )}
               </div>
               <div className="text-xs text-gray-400 truncate mt-0.5">
                 {project.websiteUrl.replace(/^https?:\/\//, '')}
               </div>
+              {project.isCollaborator && project.sharedByName && (
+                <div className="text-xs text-blue-400/70 mt-0.5">
+                  Gedeeld door: {project.sharedByName}
+                </div>
+              )}
               <div className="flex flex-col gap-0.5 mt-1">
                 {project.wordpressUrl && (
                   <div className="flex items-center gap-1">
