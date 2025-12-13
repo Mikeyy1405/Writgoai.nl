@@ -20,12 +20,26 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get the client to verify ownership
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
     const project = await prisma.project.findUnique({
       where: { id: params.id }
     });
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Verify project ownership
+    if (project.clientId !== client.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     return NextResponse.json(project);

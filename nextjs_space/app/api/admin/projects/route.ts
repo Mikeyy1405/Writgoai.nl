@@ -13,9 +13,40 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get the client to ensure data isolation
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    // Only fetch projects belonging to this client
     const projects = await prisma.project.findMany({
-      where: { isActive: true },
+      where: { 
+        clientId: client.id,
+        isActive: true 
+      },
       orderBy: { createdAt: 'desc' },
+      // Exclude sensitive fields from response
+      select: {
+        id: true,
+        clientId: true,
+        name: true,
+        websiteUrl: true,
+        description: true,
+        status: true,
+        niche: true,
+        targetAudience: true,
+        brandVoice: true,
+        writingStyle: true,
+        customInstructions: true,
+        createdAt: true,
+        updatedAt: true,
+        // Explicitly exclude sensitive fields:
+        // wordpressPassword, settings (contains API secrets)
+      }
     });
 
     return NextResponse.json({ success: true, projects });
@@ -33,16 +64,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { name, siteUrl, niche, targetAudience, brandVoice, wordpressUrl, wordpressUsername, wordpressPassword, getlateProfileId, getlateAccessToken, clientId } = body;
+    // Get the client from session to ensure security
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email }
+    });
 
-    if (!name || !clientId) {
-      return NextResponse.json({ error: 'Name and clientId are required' }, { status: 400 });
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
+    const body = await request.json();
+    const { name, siteUrl, niche, targetAudience, brandVoice, wordpressUrl, wordpressUsername, wordpressPassword, getlateProfileId, getlateAccessToken } = body;
+
+    if (!name) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    // Always use the authenticated client's ID, never trust client-provided clientId
     const project = await prisma.project.create({
       data: {
-        clientId,
+        clientId: client.id,  // Use authenticated client's ID
         name,
         siteUrl,
         niche,
