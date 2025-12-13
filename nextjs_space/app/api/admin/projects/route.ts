@@ -74,7 +74,21 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, siteUrl, niche, targetAudience, brandVoice, wordpressUrl, wordpressUsername, wordpressPassword, getlateProfileId, getlateAccessToken } = body;
+    const { 
+      name, 
+      websiteUrl,  // Accept websiteUrl from frontend
+      siteUrl,     // Keep for backwards compatibility
+      description, // Accept description
+      status,      // Accept status
+      niche, 
+      targetAudience, 
+      brandVoice, 
+      wordpressUrl, 
+      wordpressUsername, 
+      wordpressPassword, 
+      getlateProfileId, 
+      getlateAccessToken 
+    } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -85,7 +99,9 @@ export async function POST(request: Request) {
       data: {
         clientId: client.id,  // Use authenticated client's ID
         name,
-        siteUrl,
+        websiteUrl: websiteUrl || siteUrl || '',     // Accept both, prefer websiteUrl, empty string if not provided
+        description,                                  // New field
+        status: status || 'active',                  // New field with default
         niche,
         targetAudience,
         brandVoice,
