@@ -15,7 +15,7 @@ export default function FirstProjectModal() {
   const [error, setError] = useState('');
 
   // Only show if no projects exist and not loading
-  const shouldShow = !loading && projects.length === 0;
+  const shouldShow = !loading && (projects || []).length === 0;
 
   if (!shouldShow) {
     return null;

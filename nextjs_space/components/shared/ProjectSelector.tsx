@@ -17,7 +17,7 @@ export default function ProjectSelector() {
     );
   }
 
-  if (projects.length === 0) {
+  if ((projects || []).length === 0) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
         <div className="flex items-center gap-3">
@@ -43,7 +43,7 @@ export default function ProjectSelector() {
           }}
           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none bg-white pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
         >
-          {projects.map((project) => (
+          {(projects || []).map((project) => (
             <option key={project.id} value={project.id}>
               {project.name}
             </option>

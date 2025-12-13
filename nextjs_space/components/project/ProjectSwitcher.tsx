@@ -97,7 +97,7 @@ export default function ProjectSwitcher() {
               <div className="text-xs font-medium text-gray-400 px-2 py-1 uppercase">
                 Mijn Projecten
               </div>
-              {projects.map((project) => (
+              {(projects || []).map((project) => (
                 <button
                   key={project.id}
                   onClick={() => handleProjectSelect(project.id)}
