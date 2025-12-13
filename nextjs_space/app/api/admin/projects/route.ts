@@ -100,16 +100,16 @@ export async function POST(request: Request) {
         clientId: client.id,  // Use authenticated client's ID
         name,
         websiteUrl: websiteUrl || siteUrl || '',     // Accept both, prefer websiteUrl, empty string if not provided
-        description: description || null,            // New
-        status: status || 'active',                  // New with default
-        niche: niche || null,
-        targetAudience: targetAudience || null,
-        brandVoice: brandVoice || null,
-        wordpressUrl: wordpressUrl || null,
-        wordpressUsername: wordpressUsername || null,
-        wordpressPassword: wordpressPassword || null,
-        getlateProfileId: getlateProfileId || null,
-        getlateAccessToken: getlateAccessToken || null,
+        description,                                  // New field
+        status: status || 'active',                  // New field with default
+        niche,
+        targetAudience,
+        brandVoice,
+        wordpressUrl,
+        wordpressUsername,
+        wordpressPassword,
+        getlateProfileId,
+        getlateAccessToken,
         isActive: true,
       },
     });
