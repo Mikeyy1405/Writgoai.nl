@@ -309,20 +309,25 @@ export default function ClientBlogPage() {
               {currentProject && (
                 <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-2">
                   <div className="flex items-center gap-2">
-                    {currentProject.websiteUrl ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-green-500">✅ Project geselecteerd: {currentProject.name}</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                        <span className="text-sm text-yellow-500">
-                          Project heeft geen website URL
-                        </span>
-                      </>
-                    )}
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span className="text-sm text-green-500">✅ Project geselecteerd: {currentProject.name}</span>
                   </div>
+                  {currentProject.wordpressUrl && (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-sm text-gray-300">WordPress verbonden</span>
+                    </div>
+                  )}
+                  {currentProject.affiliateLinksCount && currentProject.affiliateLinksCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-300">📍 {currentProject.affiliateLinksCount} affiliate links</span>
+                    </div>
+                  )}
+                  {currentProject.hasSitemap && currentProject.sitemapUrlsCount && currentProject.sitemapUrlsCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-300">🗺️ Sitemap geladen ({currentProject.sitemapUrlsCount} URLs)</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -377,47 +382,51 @@ export default function ClientBlogPage() {
             {/* Content Options */}
             <div className="space-y-3">
               {/* Internal Links Toggle */}
-              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Voeg interne links toe (via sitemap)</Label>
-                  <p className="text-sm text-gray-400">
-                    Voegt automatisch relevante interne links toe aan de content
-                  </p>
+              {currentProject?.hasSitemap && currentProject?.sitemapUrlsCount && currentProject.sitemapUrlsCount > 0 && (
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="space-y-0.5">
+                    <Label className="text-white">Voeg interne links toe (via sitemap)</Label>
+                    <p className="text-sm text-gray-400">
+                      Voegt automatisch relevante interne links toe aan de content
+                    </p>
+                  </div>
+                  <Switch
+                    checked={addInternalLinks}
+                    onCheckedChange={setAddInternalLinks}
+                  />
                 </div>
-                <Switch
-                  checked={addInternalLinks}
-                  onCheckedChange={setAddInternalLinks}
-                />
-              </div>
+              )}
 
               {/* Affiliate Links Toggle */}
-              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Voeg affiliate links toe waar relevant</Label>
-                  <p className="text-sm text-gray-400">
-                    Integreert natuurlijk affiliate links in de content waar relevant
-                  </p>
+              {currentProject?.affiliateLinksCount && currentProject.affiliateLinksCount > 0 && (
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="space-y-0.5">
+                    <Label className="text-white">Voeg affiliate links toe waar relevant</Label>
+                    <p className="text-sm text-gray-400">
+                      Integreert natuurlijk {currentProject.affiliateLinksCount} affiliate links in de content
+                    </p>
+                  </div>
+                  <Switch
+                    checked={addAffiliateLinks}
+                    onCheckedChange={setAddAffiliateLinks}
+                  />
                 </div>
-                <Switch
-                  checked={addAffiliateLinks}
-                  onCheckedChange={setAddAffiliateLinks}
-                />
-              </div>
+              )}
 
               {/* Auto Publish Toggle */}
               <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
                 <div className="space-y-0.5">
                   <Label className="text-white">Direct publiceren naar WordPress</Label>
                   <p className="text-sm text-gray-400">
-                    {currentProject 
-                      ? 'Publiceert automatisch naar je WordPress site (indien geconfigureerd)'
-                      : 'Selecteer eerst een project'}
+                    {currentProject?.wordpressUrl 
+                      ? 'Publiceert automatisch naar je WordPress site'
+                      : 'WordPress moet eerst geconfigureerd worden in je project'}
                   </p>
                 </div>
                 <Switch
                   checked={autoPublish}
                   onCheckedChange={setAutoPublish}
-                  disabled={!currentProject}
+                  disabled={!currentProject?.wordpressUrl}
                 />
               </div>
             </div>

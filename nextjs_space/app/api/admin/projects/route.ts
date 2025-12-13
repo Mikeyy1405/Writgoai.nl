@@ -44,12 +44,29 @@ export async function GET() {
         customInstructions: true,
         createdAt: true,
         updatedAt: true,
+        wordpressUrl: true,
+        wordpressUsername: true,
+        sitemap: true,
+        _count: {
+          select: {
+            affiliateLinks: true,
+          }
+        },
         // Explicitly exclude sensitive fields:
         // wordpressPassword, settings (contains API secrets)
       }
     });
 
-    return NextResponse.json({ success: true, projects });
+    // Transform projects to include computed fields
+    const transformedProjects = projects.map((project: any) => ({
+      ...project,
+      affiliateLinksCount: project._count?.affiliateLinks || 0,
+      sitemapUrlsCount: project.sitemap?.pages?.length || 0,
+      hasSitemap: !!(project.sitemap && project.sitemap.pages && project.sitemap.pages.length > 0),
+      _count: undefined, // Remove _count from response
+    }));
+
+    return NextResponse.json({ success: true, projects: transformedProjects });
   } catch (error) {
     console.error('Error fetching projects:', error);
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
