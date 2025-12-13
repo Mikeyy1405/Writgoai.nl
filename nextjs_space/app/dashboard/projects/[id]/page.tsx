@@ -650,35 +650,17 @@ function WordPressTab({ project, onSave, saving }: { project: any; onSave: (data
   );
 }
 
+// Import tab components
+import AffiliateLinksTab from '@/components/projects/AffiliateLinksTab';
+import KnowledgeBaseTab from '@/components/projects/KnowledgeBaseTab';
+
 // Placeholder components for other tabs (to be implemented)
 function AffiliateTab({ projectId }: { projectId: string }) {
-  return (
-    <div className="text-center py-12">
-      <LinkIcon className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-      <h3 className="text-xl font-semibold text-white mb-2">Affiliate & Links</h3>
-      <p className="text-gray-400">
-        Beheer je affiliate links en preferred products.
-      </p>
-      <p className="text-sm text-gray-500 mt-4">
-        Deze functionaliteit wordt binnenkort toegevoegd.
-      </p>
-    </div>
-  );
+  return <AffiliateLinksTab projectId={projectId} />;
 }
 
 function KnowledgeTab({ projectId }: { projectId: string }) {
-  return (
-    <div className="text-center py-12">
-      <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-      <h3 className="text-xl font-semibold text-white mb-2">Knowledge Base</h3>
-      <p className="text-gray-400">
-        Upload en beheer brand guidelines, FAQ's en andere documenten.
-      </p>
-      <p className="text-sm text-gray-500 mt-4">
-        Deze functionaliteit wordt binnenkort toegevoegd.
-      </p>
-    </div>
-  );
+  return <KnowledgeBaseTab projectId={projectId} />;
 }
 
 function SocialTab({ project }: { project: any }) {
