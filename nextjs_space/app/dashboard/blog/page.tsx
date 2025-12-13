@@ -19,11 +19,6 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 
-// Dynamically import heavy components
-const BlogContentLibrary = dynamic(() => import('@/components/blog/BlogContentLibrary'), {
-  loading: () => <div className="animate-pulse bg-gray-800 rounded-lg h-96"></div>
-});
-
 interface GenerationPhase {
   name: string;
   status: 'pending' | 'in-progress' | 'completed' | 'failed';
@@ -37,6 +32,11 @@ const INITIAL_PHASES: GenerationPhase[] = [
   { name: 'Opslaan', status: 'pending', message: 'Content opslaan...' },
 ];
 
+// Dynamically import heavy components
+const BlogContentLibrary = dynamic(() => import('@/components/blog/BlogContentLibrary'), {
+  loading: () => <div className="animate-pulse bg-gray-800 rounded-lg h-96"></div>
+});
+
 export default function ClientBlogPage() {
   const { data: session } = useSession();
   const [title, setTitle] = useState('');
@@ -47,7 +47,7 @@ export default function ClientBlogPage() {
   const [progress, setProgress] = useState(0);
   const [phases, setPhases] = useState<GenerationPhase[]>(INITIAL_PHASES);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [refreshLibrary, setRefreshLibrary] = useState(0);
+  const [libraryKey, setLibraryKey] = useState(Date.now());
 
   const updatePhaseByName = (phaseName: string, updates: Partial<GenerationPhase>) => {
     setPhases(currentPhases => {
@@ -90,7 +90,7 @@ export default function ClientBlogPage() {
         },
         body: JSON.stringify({
           title,
-          keywords: keywords.split(',').map(k => k.trim()).filter(Boolean),
+          keywords: keywords.trim() ? keywords.split(',').map(k => k.trim()).filter(Boolean) : undefined,
           category,
           targetWordCount: 1500,
           generateImages: true,
@@ -143,7 +143,7 @@ export default function ClientBlogPage() {
                 setShowSuccess(true);
                 toast.success('Artikel succesvol gegenereerd!');
                 // Refresh the library to show the new article
-                setRefreshLibrary(prev => prev + 1);
+                setLibraryKey(Date.now());
                 return;
               }
 
@@ -353,7 +353,7 @@ export default function ClientBlogPage() {
             Overzicht van alle gegenereerde blog artikelen
           </p>
         </div>
-        <BlogContentLibrary key={refreshLibrary} />
+        <BlogContentLibrary key={libraryKey} />
       </div>
     </div>
   );
