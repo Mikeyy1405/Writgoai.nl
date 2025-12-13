@@ -24,7 +24,7 @@ export async function GET() {
     const isAdmin = user?.role === 'admin';
 
     // CHANGED: Admin now sees ONLY their own projects + collaborator projects (not all projects)
-    // Admin should have a client record too - find it
+    // Try to find admin's client record (may not exist for all admins)
     if (isAdmin) {
       const adminClient = await prisma.client.findUnique({
         where: { email: session.user.email },

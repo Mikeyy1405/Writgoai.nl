@@ -218,7 +218,7 @@ export default function ProjectSelector({
                 )}
                 {project.isCollaborator && (
                   <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    👥 Gedeeld
+                    Gedeeld
                   </span>
                 )}
               </div>
