@@ -29,6 +29,11 @@ import {
   Settings,
   Globe,
   LucideIcon,
+  FolderKanban,
+  Calendar,
+  Receipt,
+  Repeat,
+  CreditCard,
 } from 'lucide-react';
 import { isFeatureEnabled } from './feature-flags';
 
@@ -59,39 +64,94 @@ export interface AdminNavSection {
  */
 
 /**
- * ULTRA-VEREENVOUDIGDE ADMIN NAVIGATIE
- * Focus op multi-project content management voor 200 websites
+ * ADMIN NAVIGATIE - IDENTIEK AAN CLIENT + ADMIN ITEMS
+ * Client items eerst, daarna admin-specifieke items
  */
 export const adminNavSections: AdminNavSection[] = [
   // ======================================
-  // HOOFDNAVIGATIE (4 items)
+  // CLIENT NAVIGATIE (basis items)
   // ======================================
   {
-    title: 'Hoofdmenu',
+    title: 'Content Platform',
     items: [
       {
         label: 'Dashboard',
-        href: '/admin',
+        href: '/admin/dashboard',
         icon: LayoutDashboard,
         description: 'Overzicht',
       },
       {
-        label: 'Projecten',
+        label: 'Mijn Projecten',
         href: '/admin/projects',
-        icon: Globe,
-        description: '200 websites beheren',
+        icon: FolderKanban,
+        description: 'Websites beheren',
       },
       {
-        label: 'Content',
-        href: '/admin/content',
+        label: 'Blog Content',
+        href: '/admin/blog',
         icon: FileText,
-        description: 'Blog & Social posts maken',
+        description: 'Blogs & artikelen',
       },
       {
-        label: 'Gepubliceerd',
-        href: '/admin/published',
+        label: 'Social Media',
+        href: '/admin/social',
         icon: Share2,
-        description: 'Gepubliceerde content',
+        description: 'Social posts',
+      },
+      {
+        label: 'Content Kalender',
+        href: '/admin/kalender',
+        icon: Calendar,
+        description: 'Planning overzicht',
+      },
+      {
+        label: 'Instellingen',
+        href: '/admin/settings',
+        icon: Settings,
+        description: 'Account & voorkeuren',
+      },
+    ],
+  },
+  // ======================================
+  // ADMIN SPECIFIEKE ITEMS
+  // ======================================
+  {
+    title: 'Admin',
+    items: [
+      {
+        label: 'Klanten',
+        href: '/admin/clients',
+        icon: Users,
+        description: 'Klantenbeheer',
+      },
+      {
+        label: 'Email Manager',
+        href: '/admin/emails',
+        icon: Mail,
+        description: 'Email beheer',
+      },
+    ],
+  },
+  {
+    title: 'Financieel',
+    items: [
+      {
+        label: 'Facturen',
+        href: '/admin/financien/facturen',
+        icon: Receipt,
+        description: 'Facturen overzicht',
+      },
+      {
+        label: 'Abonnementen',
+        href: '/admin/financien/abonnementen',
+        icon: Repeat,
+        description: 'Abonnementen',
+      },
+      {
+        label: 'Affiliate Payouts',
+        href: '/admin/affiliate-payouts',
+        icon: CreditCard,
+        description: 'Uitbetalingen',
       },
     ],
   },
@@ -112,13 +172,13 @@ export function isAdminNavActive(href: string, pathname: string): boolean {
   // For exact matches
   if (href === pathname) return true;
   
-  // For /admin root, also match /admin/
-  if (href === '/admin' && pathname === '/admin/') {
+  // For /admin/dashboard, also match /admin and /admin/
+  if (href === '/admin/dashboard' && (pathname === '/admin' || pathname === '/admin/')) {
     return true;
   }
   
   // For other paths, check if pathname starts with href
-  if (href !== '/admin' && pathname.startsWith(href)) {
+  if (href !== '/admin/dashboard' && pathname.startsWith(href)) {
     return true;
   }
   

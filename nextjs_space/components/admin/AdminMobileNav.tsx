@@ -43,7 +43,7 @@ export default function AdminMobileNav({ isOpen, onClose }: AdminMobileNavProps)
                 <Sparkles className="w-6 h-6 text-orange-500" />
                 <div>
                   <span className="text-2xl font-bold text-white">WritGo</span>
-                  <p className="text-xs text-gray-400 mt-0.5">Admin Panel</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Content Platform</p>
                 </div>
               </Link>
               <button
