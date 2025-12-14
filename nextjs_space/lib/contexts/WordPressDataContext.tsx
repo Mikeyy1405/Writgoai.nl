@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { SitemapData } from '@/lib/sitemap-loader';
+import { useProject } from './ProjectContext';
 
 export interface WordPressCategory {
   id: number;
@@ -44,6 +45,7 @@ interface WordPressDataContextType {
   loading: boolean;
   error: string | null;
   loadWordPressData: (projectId: string) => Promise<void>;
+  refreshData: () => Promise<void>;
   clearData: () => void;
 }
 
@@ -58,9 +60,11 @@ interface CachedData {
 }
 
 export function WordPressDataProvider({ children }: { children: React.ReactNode }) {
+  const { currentProject } = useProject();
   const [data, setData] = useState<WordPressData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastProjectId, setLastProjectId] = useState<string | null>(null);
 
   // Load data from cache
   const loadFromCache = useCallback((projectId: string): WordPressData | null => {
@@ -167,17 +171,34 @@ export function WordPressDataProvider({ children }: { children: React.ReactNode 
     }
   }, [loadFromCache, saveToCache]);
 
+  // Refresh data for current project
+  const refreshData = useCallback(async () => {
+    if (currentProject?.id) {
+      await loadWordPressData(currentProject.id);
+    }
+  }, [currentProject?.id, loadWordPressData]);
+
   // Clear data
   const clearData = useCallback(() => {
     setData(null);
     setError(null);
   }, []);
 
+  // Auto-load WordPress data when project changes
+  useEffect(() => {
+    if (currentProject?.id && currentProject.id !== lastProjectId) {
+      console.log('[WordPressData] Project changed to:', currentProject.name, '- loading WordPress data...');
+      setLastProjectId(currentProject.id);
+      loadWordPressData(currentProject.id);
+    }
+  }, [currentProject?.id, currentProject?.name, lastProjectId, loadWordPressData]);
+
   const value: WordPressDataContextType = {
     data,
     loading,
     error,
     loadWordPressData,
+    refreshData,
     clearData,
   };
 
