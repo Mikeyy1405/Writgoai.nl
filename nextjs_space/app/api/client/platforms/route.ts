@@ -126,12 +126,12 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || !session.user?.id) {
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please log in.' },
-        { status: 401 }
+        { error: auth.error },
+        { status: auth.status }
       );
     }
 
