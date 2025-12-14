@@ -1,10 +1,12 @@
 'use client';
 
 import { useProject } from '@/lib/contexts/ProjectContext';
-import { ChevronDown, Loader2, FolderKanban } from 'lucide-react';
+import { useWordPressData } from '@/lib/contexts/WordPressDataContext';
+import { ChevronDown, Loader2, FolderKanban, Database } from 'lucide-react';
 
 export default function ProjectSelector() {
   const { currentProject, projects, switchProject, loading } = useProject();
+  const { loading: wpLoading, data: wpData, error: wpError } = useWordPressData();
 
   if (loading) {
     return (
@@ -53,6 +55,31 @@ export default function ProjectSelector() {
       </div>
       {currentProject?.description && (
         <p className="text-xs text-gray-500 mt-2">{currentProject.description}</p>
+      )}
+      
+      {/* WordPress Data Loading Indicator */}
+      {wpLoading && (
+        <div className="mt-3 flex items-center gap-2 text-xs text-orange-600">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          <span>WordPress gegevens laden...</span>
+        </div>
+      )}
+      
+      {/* WordPress Data Summary */}
+      {!wpLoading && wpData && (
+        <div className="mt-3 flex items-center gap-2 text-xs text-green-600">
+          <Database className="w-3 h-3" />
+          <span>
+            {wpData.categories.length} categorieën, {wpData.posts.length} posts, {wpData.pages.length} pagina's
+          </span>
+        </div>
+      )}
+      
+      {/* WordPress Error */}
+      {wpError && (
+        <div className="mt-3 text-xs text-red-600">
+          WordPress niet beschikbaar
+        </div>
       )}
     </div>
   );

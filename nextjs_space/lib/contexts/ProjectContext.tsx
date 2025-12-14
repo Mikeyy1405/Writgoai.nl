@@ -99,7 +99,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     setCurrentProject(project);
     localStorage.setItem(PROJECT_STORAGE_KEY, projectId);
     
-    // Dispatch event for other components to react
+    // Dispatch event for other components to react (including WordPress data loading)
     window.dispatchEvent(new CustomEvent(PROJECT_EVENT, { 
       detail: { projectId, project } 
     }));

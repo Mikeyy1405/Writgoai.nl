@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Globe, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { useWordPressData } from '@/lib/contexts/WordPressDataContext';
 
 interface WordPressPublisherDialogProps {
   open: boolean;
@@ -129,6 +130,9 @@ export default function WordPressPublisherDialog({
   featuredImageUrl: initialFeaturedImage,
   onPublishSuccess,
 }: WordPressPublisherDialogProps) {
+  // Use WordPress data from context
+  const { data: wpData, loading: wpLoading } = useWordPressData();
+  
   const [loading, setLoading] = useState(false);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(false);
@@ -239,6 +243,15 @@ export default function WordPressPublisherDialog({
   const loadCategories = async () => {
     if (!selectedProjectId) return;
     
+    // First, try to use categories from WordPress data context
+    // Use context data even if empty (empty array is still valid WordPress data)
+    if (wpData?.categories !== undefined) {
+      console.log('[WordPressPublisher] Using categories from context:', wpData.categories.length);
+      setCategories(wpData.categories);
+      return;
+    }
+    
+    // Fallback to API call if context data is not available
     setLoadingCategories(true);
     try {
       // Load categories for the selected project
