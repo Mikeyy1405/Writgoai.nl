@@ -1,7 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 import { generateDailyContentForClient } from '@/lib/professional-content-generator';
 
@@ -10,10 +9,17 @@ export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Niet geauthenticeerd' }, { status: 401 });
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
+
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
 
     const { contentId, contentType } = await req.json();
 
@@ -37,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify ownership
-    if (content.clientId !== session.user.id) {
+    if (content.clientId !== clientId) {
       return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
     }
 
@@ -53,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     // Update the day number in content plan back to 'not generated'
     const client = await prisma.client.findUnique({
-      where: { id: session.user.id },
+      where: { id: clientId },
       select: { contentPlan: true }
     });
 
@@ -65,14 +71,14 @@ export async function POST(req: NextRequest) {
         plan[dayIndex].generated = false;
         
         await prisma.client.update({
-          where: { id: session.user.id },
+          where: { id: clientId },
           data: { contentPlan: plan }
         });
       }
     }
 
     // Generate new content for this day
-    const result = await generateDailyContentForClient(session.user.id);
+    const result = await generateDailyContentForClient(clientId);
 
     if (!result) {
       return NextResponse.json({

@@ -8,33 +8,38 @@ export const dynamic = "force-dynamic";
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const auth = await getAuthenticatedClient();
     
-    if (!session || !session.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
 
-    console.log('🗑️  Clearing all chat history for client:', session.user.id);
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
+
+    console.log('🗑️  Clearing all chat history for client:', clientId);
 
     // Delete all messages first (due to foreign key constraint)
     await prisma.chatMessage.deleteMany({
       where: {
         conversation: {
-          clientId: session.user.id,
+          clientId,
         },
       },
     });
 
     // Then delete all conversations
     const deletedConversations = await prisma.conversation.deleteMany({
-      where: { clientId: session.user.id },
+      where: { clientId },
     });
 
     await prisma.$disconnect();
