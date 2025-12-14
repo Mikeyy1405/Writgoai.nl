@@ -1,21 +1,26 @@
 import { NextResponse } from 'next/server';
 
 export const dynamic = "force-dynamic";
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const auth = await getAuthenticatedClient();
     
-    if (!session || !session.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: auth.status }
+      );
     }
+
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
     
     const client = await prisma.client.findUnique({
-      where: { id: session.user.id },
+      where: { id: clientId },
       select: {
         id: true,
         name: true,

@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import {
   getClientSubscription,
   updateClientSubscription,
@@ -23,16 +22,17 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || !session.user?.id) {
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please log in.' },
-        { status: 401 }
+        { error: auth.error },
+        { status: auth.status }
       );
     }
 
-    const clientId = session.user.id;
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
     const subscription = await getClientSubscription(clientId);
 
     if (!subscription) {
@@ -66,16 +66,17 @@ export async function GET() {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || !session.user?.id) {
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please log in.' },
-        { status: 401 }
+        { error: auth.error },
+        { status: auth.status }
       );
     }
 
-    const clientId = session.user.id;
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
     const updates: ClientSubscriptionUpdate = await request.json();
 
     // Validate updates
