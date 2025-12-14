@@ -15,10 +15,10 @@ export default function ClientNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/blog', label: 'Blogs', icon: FileText },
-    { href: '/dashboard/social', label: 'Social Media', icon: Share2 },
-    { href: '/dashboard/settings', label: 'Instellingen', icon: Settings },
+    { href: '/client-portal', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/client-portal/content-hub', label: 'Blogs', icon: FileText },
+    { href: '/client-portal/social-media-suite', label: 'Social Media', icon: Share2 },
+    { href: '/client-portal/settings', label: 'Instellingen', icon: Settings },
   ];
 
   return (
@@ -26,7 +26,7 @@ export default function ClientNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center">
+          <Link href="/client-portal" className="flex items-center">
             <span className="text-2xl font-bold text-[#FF9933]">WritGo</span>
           </Link>
 
