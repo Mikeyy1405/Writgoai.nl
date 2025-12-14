@@ -1,7 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 
 
@@ -10,13 +9,20 @@ export const dynamic = 'force-dynamic';
 // GET - Haal alle automations op voor client
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
 
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
+
     const automations = await prisma.contentAutomation.findMany({
-      where: { clientId: session.user.id },
+      where: { clientId },
       include: {
         project: {
           select: {
@@ -44,10 +50,17 @@ export async function GET(req: NextRequest) {
 // POST - Maak nieuwe automation
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
+
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
 
     const body = await req.json();
     const {
@@ -72,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     const automation = await prisma.contentAutomation.create({
       data: {
-        clientId: session.user.id,
+        clientId,
         projectId: projectId || null,
         frequency,
         dayOfWeek: dayOfWeek || null,

@@ -2,8 +2,7 @@
 
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { generateMediaImage, generateMediaVideo } from '@/lib/media-generator';
 import { getVideoModelById } from '@/lib/video-models';
 import { prisma } from '@/lib/db';
@@ -11,9 +10,13 @@ import { deductCredits } from '@/lib/credits';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
 
     const { content, mediaType, style, videoModel } = await req.json();
@@ -25,7 +28,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const clientId = (session.user as any).id;
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
 
     let mediaUrl: string;
     let costInCredits = 0;

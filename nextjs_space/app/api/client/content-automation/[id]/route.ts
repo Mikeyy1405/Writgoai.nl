@@ -1,7 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 
 
@@ -13,17 +12,24 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
+
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
 
     const { id } = params;
     const body = await req.json();
 
     // Verify ownership
     const existing = await prisma.contentAutomation.findFirst({
-      where: { id, clientId: session.user.id },
+      where: { id, clientId },
     });
 
     if (!existing) {
@@ -79,16 +85,23 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
+
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
 
     const { id } = params;
 
     // Verify ownership
     const existing = await prisma.contentAutomation.findFirst({
-      where: { id, clientId: session.user.id },
+      where: { id, clientId },
     });
 
     if (!existing) {

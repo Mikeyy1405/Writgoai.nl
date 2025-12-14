@@ -11,8 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 import { hasEnoughCredits, deductCredits, CREDIT_COSTS } from '@/lib/credits';
 import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
@@ -46,17 +45,18 @@ export async function POST(request: NextRequest) {
         
         controller.enqueue(sendProgress(5, 'Bezig met authenticatie...'));
         
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
+        const auth = await getAuthenticatedClient();
+        if (isAuthError(auth)) {
           controller.enqueue(sendProgress(0, '❌ Niet geautoriseerd', { 
-            error: 'Niet geautoriseerd' 
+            error: auth.error 
           }));
           streamClosed = true;
           controller.close();
           return;
         }
 
-        const clientId = session.user.id;
+        // Use client.id (from Client table), NOT session.user.id
+        const clientId = auth.client.id;
         
         // Parse request body
         const body = await request.json();

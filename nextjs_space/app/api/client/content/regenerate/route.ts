@@ -1,21 +1,23 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { generateDailyContentForClient } from '@/lib/daily-content-generator-v2';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const auth = await getAuthenticatedClient();
     
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
     
-    const body = await request.json();
-    const clientId = body.clientId || session.user.id;
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
     
     console.log('🔄 Regenerating content for client:', clientId);
     
