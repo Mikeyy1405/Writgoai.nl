@@ -186,12 +186,12 @@ export function WordPressDataProvider({ children }: { children: React.ReactNode 
 
   // Auto-load WordPress data when project changes
   useEffect(() => {
-    if (currentProject?.id && currentProject.id !== lastProjectId) {
-      console.log('[WordPressData] Project changed to:', currentProject.name, '- loading WordPress data...');
+    if (currentProject?.id && currentProject.id !== lastProjectId && !loading) {
+      console.log('[WordPressData] Project changed, loading WordPress data...');
       setLastProjectId(currentProject.id);
       loadWordPressData(currentProject.id);
     }
-  }, [currentProject?.id, currentProject?.name, lastProjectId, loadWordPressData]);
+  }, [currentProject?.id, lastProjectId, loading, loadWordPressData]);
 
   const value: WordPressDataContextType = {
     data,

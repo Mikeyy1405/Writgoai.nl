@@ -42,6 +42,9 @@ export function useWordPressSitemap() {
   return { sitemap: data?.sitemap, loading };
 }
 
+const MIN_WORD_LENGTH = 3;
+const MAX_LINK_LIMIT = 50;
+
 /**
  * Hook to find relevant internal links for a given topic
  * Uses simple keyword matching to find relevant posts/pages from the sitemap
@@ -53,8 +56,11 @@ export function useInternalLinks(topic?: string, limit: number = 5) {
     return [];
   }
   
+  // Validate and constrain limit
+  const safeLimit = Math.min(Math.max(1, limit), MAX_LINK_LIMIT);
+  
   // Simple relevance matching
-  const topicWords = topic.toLowerCase().split(' ').filter(word => word.length > 3);
+  const topicWords = topic.toLowerCase().split(' ').filter(word => word.length > MIN_WORD_LENGTH);
   
   return data.sitemap.pages
     .filter(page => page.type === 'post')
@@ -73,5 +79,5 @@ export function useInternalLinks(topic?: string, limit: number = 5) {
     })
     .filter(page => page.relevance > 0)
     .sort((a, b) => b.relevance - a.relevance)
-    .slice(0, limit);
+    .slice(0, safeLimit);
 }
