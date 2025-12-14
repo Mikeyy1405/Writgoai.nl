@@ -34,37 +34,37 @@ export default function ClientMobileNav({ isOpen, onClose }: ClientMobileNavProp
 
   const navItems: NavItem[] = [
     { 
-      href: '/client-portal', 
+      href: '/dashboard/overzicht', 
       label: 'Dashboard', 
       icon: LayoutDashboard,
       description: 'Overzicht' 
     },
     { 
-      href: '/client-portal/projects', 
+      href: '/dashboard/projects', 
       label: 'Mijn Projecten', 
       icon: FolderKanban,
       description: 'Websites beheren' 
     },
     { 
-      href: '/client-portal/content-hub', 
+      href: '/dashboard/content-hub', 
       label: 'Blog Content', 
       icon: FileText,
       description: 'Blogs & artikelen' 
     },
     { 
-      href: '/client-portal/social-media-suite', 
+      href: '/dashboard/social-media-suite', 
       label: 'Social Media', 
       icon: Share2,
       description: 'Social posts' 
     },
     { 
-      href: '/client-portal/content-kalender', 
+      href: '/dashboard/content-kalender', 
       label: 'Content Kalender', 
       icon: Calendar,
       description: 'Planning overzicht' 
     },
     { 
-      href: '/client-portal/settings', 
+      href: '/dashboard/settings', 
       label: 'Instellingen', 
       icon: Settings,
       description: 'Account & voorkeuren' 
@@ -72,8 +72,8 @@ export default function ClientMobileNav({ isOpen, onClose }: ClientMobileNavProp
   ];
 
   const isActive = (href: string) => {
-    if (href === '/client-portal') {
-      return pathname === '/client-portal' || pathname === '/client-portal/';
+    if (href === '/dashboard/overzicht') {
+      return pathname === '/dashboard/overzicht' || pathname === '/dashboard/overzicht/';
     }
     return pathname.startsWith(href);
   };
@@ -102,7 +102,7 @@ export default function ClientMobileNav({ isOpen, onClose }: ClientMobileNavProp
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <Link href="/client-portal" onClick={onClose} className="flex items-center gap-2">
+              <Link href="/dashboard/overzicht" onClick={onClose} className="flex items-center gap-2">
                 <Sparkles className="w-6 h-6 text-orange-500" />
                 <div>
                   <span className="text-2xl font-bold text-white">WritGo</span>
