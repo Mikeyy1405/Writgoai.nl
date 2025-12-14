@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { publishToWordPressEnhanced } from '@/lib/wordpress-publisher-enhanced';
+import { WordPressClient } from '@/lib/content-hub/wordpress-client';
+import { generateYoastMeta } from '@/lib/content-hub/seo-optimizer';
 
 /**
  * POST /api/content-hub/publish-wordpress
