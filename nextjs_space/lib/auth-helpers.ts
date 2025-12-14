@@ -3,6 +3,12 @@
  * 
  * Provides consistent client lookup and authentication patterns
  * to avoid session.user.id vs client.id confusion.
+ * 
+ * SECURITY NOTE:
+ * - getAuthenticatedClient() returns the Client record for the authenticated user
+ * - This works for both regular clients AND admin users who have client records
+ * - The function ensures data isolation by requiring a valid Client table record
+ * - Use this instead of session.user.id to ensure correct client lookup
  */
 
 import { getServerSession } from 'next-auth';
