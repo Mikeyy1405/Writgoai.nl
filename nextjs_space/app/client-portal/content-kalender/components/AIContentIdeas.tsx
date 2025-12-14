@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Sparkles, Loader2, Calendar, PenTool, Target, TrendingUp, AlertCircle } from 'lucide-react';
-import { Project } from '@/lib/contexts/ProjectContext';
 
 interface ContentIdea {
   title: string;
@@ -26,12 +25,11 @@ interface ContentIdea {
 
 interface AIContentIdeasProps {
   projectId: string | null;
-  project: Project | null;
   onWriteNow: (idea: ContentIdea) => void;
   onPlanIdea: (idea: ContentIdea) => void;
 }
 
-export default function AIContentIdeas({ projectId, project, onWriteNow, onPlanIdea }: AIContentIdeasProps) {
+export default function AIContentIdeas({ projectId, onWriteNow, onPlanIdea }: AIContentIdeasProps) {
   const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +126,7 @@ export default function AIContentIdeas({ projectId, project, onWriteNow, onPlanI
           🤖 AI Content Ideeën
         </CardTitle>
         <CardDescription className="text-zinc-400">
-          Genereer verse content ideeën voor {project?.name || 'je project'}
+          Genereer verse content ideeën voor je project
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

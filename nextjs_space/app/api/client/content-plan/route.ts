@@ -163,8 +163,28 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const itemId = searchParams.get('id');
 
-    if (!itemId) {
-      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    if (!itemId || typeof itemId !== 'string') {
+      return NextResponse.json({ error: 'Valid item ID is required' }, { status: 400 });
+    }
+
+    // Get client ID from session
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    // Verify ownership before deleting
+    const item = await prisma.savedContent.findUnique({
+      where: { id: itemId },
+      select: { clientId: true }
+    });
+
+    if (!item || item.clientId !== client.id) {
+      return NextResponse.json({ error: 'Item not found or unauthorized' }, { status: 404 });
     }
 
     await prisma.savedContent.delete({

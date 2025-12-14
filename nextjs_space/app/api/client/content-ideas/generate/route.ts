@@ -13,13 +13,26 @@ export async function POST(req: NextRequest) {
 
     const { projectId } = await req.json();
     
-    if (!projectId) {
-      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
+    if (!projectId || typeof projectId !== 'string') {
+      return NextResponse.json({ error: 'Valid project ID is required' }, { status: 400 });
     }
     
-    // Get project details
+    // Get client ID from session
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+    
+    // Get project details and verify ownership
     const project = await prisma.project.findUnique({
-      where: { id: projectId },
+      where: { 
+        id: projectId,
+        clientId: client.id // Ensure project belongs to the client
+      },
       select: {
         id: true,
         name: true,

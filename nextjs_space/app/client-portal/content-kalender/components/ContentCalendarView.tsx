@@ -156,7 +156,10 @@ export default function ContentCalendarView({ projectId, items, onRefresh }: Con
           </div>
         </div>
         <CardDescription className="text-zinc-400">
-          {items.length} geplande items deze maand
+          {items.filter(item => {
+            const itemDate = new Date(item.scheduledFor);
+            return itemDate.getMonth() === month && itemDate.getFullYear() === year;
+          }).length} geplande items deze maand
         </CardDescription>
       </CardHeader>
       <CardContent>

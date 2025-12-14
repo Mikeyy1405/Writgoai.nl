@@ -57,9 +57,11 @@ export default function ContentKalenderPage() {
   const handleWriteNow = (idea: any) => {
     // Navigate to blog generator with idea
     const params = new URLSearchParams({
-      topic: idea.title,
-      focusKeyword: idea.focusKeyword,
-      contentType: idea.contentType,
+      from: 'research',
+      title: idea.title,
+      keyword: idea.focusKeyword,
+      contentType: idea.searchIntent || 'informational',
+      projectId: currentProject?.id || '',
     });
     router.push(`/client-portal/blog-generator?${params.toString()}`);
   };
@@ -118,7 +120,6 @@ export default function ContentKalenderPage() {
         ) : (
           <AIContentIdeas 
             projectId={currentProject?.id || null}
-            project={currentProject}
             onWriteNow={handleWriteNow}
             onPlanIdea={handlePlanIdea}
           />
