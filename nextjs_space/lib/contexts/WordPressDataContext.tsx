@@ -203,15 +203,15 @@ export function useWordPressData() {
  * Usage: Call this in components that need WordPress data to stay synced with the current project
  */
 export function useWordPressDataSync(currentProjectId: string | null) {
-  const { loadWordPressData } = useWordPressData();
-  const [lastProjectId, setLastProjectId] = React.useState<string | null>(null);
+  const { loadWordPressData, loading } = useWordPressData();
+  const [lastProjectId, setLastProjectId] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    // Load data when project changes
-    if (currentProjectId && currentProjectId !== lastProjectId) {
+  useEffect(() => {
+    // Load data when project changes and not already loading
+    if (currentProjectId && currentProjectId !== lastProjectId && !loading) {
       console.log('[useWordPressDataSync] Project changed, loading WordPress data for:', currentProjectId);
       loadWordPressData(currentProjectId);
       setLastProjectId(currentProjectId);
     }
-  }, [currentProjectId, lastProjectId, loadWordPressData]);
+  }, [currentProjectId, lastProjectId, loadWordPressData, loading]);
 }

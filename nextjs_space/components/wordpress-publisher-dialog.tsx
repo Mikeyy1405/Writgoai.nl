@@ -244,7 +244,8 @@ export default function WordPressPublisherDialog({
     if (!selectedProjectId) return;
     
     // First, try to use categories from WordPress data context
-    if (wpData?.categories && wpData.categories.length > 0) {
+    // Use context data even if empty (empty array is still valid WordPress data)
+    if (wpData?.categories !== undefined) {
       console.log('[WordPressPublisher] Using categories from context:', wpData.categories.length);
       setCategories(wpData.categories);
       return;

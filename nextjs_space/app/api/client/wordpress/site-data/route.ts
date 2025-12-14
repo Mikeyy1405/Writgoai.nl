@@ -8,6 +8,13 @@ import { loadWordPressSitemap } from '@/lib/sitemap-loader';
 export const dynamic = "force-dynamic";
 
 /**
+ * Helper function to strip HTML tags from text
+ */
+function stripHtmlTags(html: string): string {
+  return html.replace(/<[^>]*>/g, '');
+}
+
+/**
  * API endpoint to load complete WordPress site data for a project
  * Includes: categories, posts, pages, tags, and sitemap
  */
@@ -49,18 +56,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if WordPress is configured for this project
+    // Return 200 with empty data to distinguish from actual errors
     if (!project.wordpressUrl || !project.wordpressUsername || !project.wordpressPassword) {
-      return NextResponse.json(
-        { 
-          error: 'WordPress niet geconfigureerd voor dit project',
-          categories: [],
-          posts: [],
-          pages: [],
-          tags: [],
-          sitemap: null,
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        categories: [],
+        posts: [],
+        pages: [],
+        tags: [],
+        sitemap: null,
+      });
     }
 
     const config = {
@@ -111,7 +115,7 @@ export async function POST(request: NextRequest) {
         id: post.id,
         title: post.title?.rendered || 'Untitled',
         link: post.link,
-        excerpt: post.excerpt?.rendered?.replace(/<[^>]*>/g, ''),
+        excerpt: post.excerpt?.rendered ? stripHtmlTags(post.excerpt.rendered) : undefined,
         status: post.status,
       }));
     }
@@ -123,7 +127,7 @@ export async function POST(request: NextRequest) {
         id: page.id,
         title: page.title?.rendered || 'Untitled',
         link: page.link,
-        excerpt: page.excerpt?.rendered?.replace(/<[^>]*>/g, ''),
+        excerpt: page.excerpt?.rendered ? stripHtmlTags(page.excerpt.rendered) : undefined,
         status: page.status,
       }));
     }
