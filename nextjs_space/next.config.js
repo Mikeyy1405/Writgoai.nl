@@ -86,11 +86,6 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/client-portal/content-kalender',
-        destination: '/client-portal/content-planner',
-        permanent: true,
-      },
-      {
         source: '/client-portal/content-plan-generator',
         destination: '/client-portal/content-planner',
         permanent: true,
