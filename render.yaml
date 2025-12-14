@@ -1,59 +1,102 @@
+# Render.com Configuration for WritgoAI
+# https://render.com/docs/yaml-spec
+
 services:
+  # Main Web Application
   - type: web
-    name: writgoai
+    name: writgoai-web
     env: node
     region: frankfurt
     plan: starter
-    rootDir: nextjs_space
-    
-    # OPTIMIZED BUILD COMMAND
-    # - Frozen lockfile for faster, deterministic installs
-    # - Skip optional dependencies (like playwright)
-    # - Prisma generate and db push
-    # - Next.js build with standalone output
-    buildCommand: |
-      yarn install --frozen-lockfile --production=false --network-timeout 100000 && \
-      yarn prisma generate && \
-      yarn prisma db push && \
-      yarn build
-    
-    # OPTIMIZED START COMMAND
-    # With standalone output, we can start directly from .next/standalone
-    startCommand: node .next/standalone/nextjs_space/server.js
-    
-    # ENVIRONMENT VARIABLES
+    buildCommand: cd nextjs_space && npm install && npm run build
+    startCommand: cd nextjs_space && npm start
     envVars:
-      - key: NODE_VERSION
-        value: 22.16.0
       - key: NODE_ENV
         value: production
-      - key: NEXT_OUTPUT_MODE
-        value: standalone
-      # Optimize Node.js memory usage
-      - key: NODE_OPTIONS
-        value: "--max-old-space-size=4096"
-      # Skip Prisma telemetry for faster builds
-      - key: CHECKPOINT_DISABLE
-        value: "1"
-      - key: PRISMA_SKIP_POSTINSTALL_GENERATE
-        value: "false"
-      - fromGroup: writgo-env-vars
+      - key: PORT
+        value: 3000
+      - fromGroup: writgoai-env
+    healthCheckPath: /api/health
     
-    # BUILD OPTIMIZATIONS
-    # Cache directories to speed up subsequent builds
-    buildFilter:
-      paths:
-        - nextjs_space/package.json
-        - nextjs_space/yarn.lock
-        - nextjs_space/.yarnrc.yml
-        - nextjs_space/prisma/**
-        - nextjs_space/next.config.js
-        - nextjs_space/tsconfig.json
-        - nextjs_space/tailwind.config.ts
-        - nextjs_space/postcss.config.js
-      ignoredPaths:
-        - nextjs_space/node_modules/**
-        - nextjs_space/.next/**
-        - "**/*.md"
-        - "**/.vscode/**"
-        - "**/.git/**"
+  # Cron Job 1: Daily Content Generation (9:00 UTC = 10:00 CET)
+  - type: cron
+    name: writgoai-daily-content
+    env: node
+    region: frankfurt
+    schedule: "0 9 * * *"  # Every day at 9:00 UTC
+    buildCommand: echo "Cron job - no build needed"
+    startCommand: |
+      curl -X POST \
+        -H "Authorization: Bearer $CRON_SECRET" \
+        -H "Content-Type: application/json" \
+        $NEXTAUTH_URL/api/cron/daily-content-generation
+    envVars:
+      - fromGroup: writgoai-env
+      
+  # Cron Job 2: Publish Scheduled Articles (every hour)
+  - type: cron
+    name: writgoai-publish-scheduled
+    env: node
+    region: frankfurt
+    schedule: "0 * * * *"  # Every hour
+    buildCommand: echo "Cron job - no build needed"
+    startCommand: |
+      curl -X POST \
+        -H "Authorization: Bearer $CRON_SECRET" \
+        -H "Content-Type: application/json" \
+        $NEXTAUTH_URL/api/cron/publish-scheduled-articles
+    envVars:
+      - fromGroup: writgoai-env
+
+  # Cron Job 3: Autopilot Projects (twice daily: 6:00 and 18:00 UTC)
+  - type: cron
+    name: writgoai-autopilot-morning
+    env: node
+    region: frankfurt
+    schedule: "0 6 * * *"  # Every day at 6:00 UTC (morning)
+    buildCommand: echo "Cron job - no build needed"
+    startCommand: |
+      curl -X POST \
+        -H "Authorization: Bearer $CRON_SECRET" \
+        -H "Content-Type: application/json" \
+        $NEXTAUTH_URL/api/cron/autopilot-projects
+    envVars:
+      - fromGroup: writgoai-env
+
+  - type: cron
+    name: writgoai-autopilot-evening
+    env: node
+    region: frankfurt
+    schedule: "0 18 * * *"  # Every day at 18:00 UTC (evening)
+    buildCommand: echo "Cron job - no build needed"
+    startCommand: |
+      curl -X POST \
+        -H "Authorization: Bearer $CRON_SECRET" \
+        -H "Content-Type: application/json" \
+        $NEXTAUTH_URL/api/cron/autopilot-projects
+    envVars:
+      - fromGroup: writgoai-env
+
+# Environment Variable Groups
+# Note: Create this group in Render Dashboard with all environment variables
+envVarGroups:
+  - name: writgoai-env
+    envVars:
+      - key: NEXTAUTH_URL
+        sync: false  # Set manually in Render Dashboard
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: AIML_API_KEY
+        sync: false
+      - key: LATE_DEV_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
