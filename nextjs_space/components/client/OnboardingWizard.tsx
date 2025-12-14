@@ -214,7 +214,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
             <Link
-              href="/dashboard/platforms"
+              href="/client-portal/social-media-suite"
               className="p-6 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 hover:border-purple-500/40 rounded-lg transition-all group"
             >
               <Share2 className="h-8 w-8 text-purple-400 mb-3 mx-auto" />
@@ -223,7 +223,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             </Link>
 
             <Link
-              href="/dashboard/content"
+              href="/client-portal/content-hub"
               className="p-6 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/40 rounded-lg transition-all group"
             >
               <FileText className="h-8 w-8 text-orange-400 mb-3 mx-auto" />

@@ -34,7 +34,7 @@ export function AdminComplexHeader({ onMobileMenuToggle }: AdminComplexHeaderPro
       <div className="flex items-center gap-3">
         {/* Quick Actions - Switch to Client View */}
         <Link
-          href="/dashboard"
+          href="/client-portal"
           className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-gray-100 hover:bg-gray-800 rounded-lg transition-colors"
         >
           <User className="w-4 h-4" />

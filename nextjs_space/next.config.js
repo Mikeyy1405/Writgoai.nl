@@ -20,10 +20,15 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      // Dashboard routes
+      // Dashboard routes - redirect to client-portal
       {
-        source: '/dashboard/blogs',
-        destination: '/dashboard/blog',
+        source: '/dashboard',
+        destination: '/client-portal',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/:path*',
+        destination: '/client-portal/:path*',
         permanent: true,
       },
       // Writer routes - redirect to ultimate-writer
@@ -97,11 +102,6 @@ const nextConfig = {
         permanent: true,
       },
       // Existing content-hub redirects
-      {
-        source: '/client-portal/blog-generator',
-        destination: '/client-portal/content-hub',
-        permanent: false,
-      },
       {
         source: '/client-portal/topical-mapping',
         destination: '/client-portal/content-hub',
