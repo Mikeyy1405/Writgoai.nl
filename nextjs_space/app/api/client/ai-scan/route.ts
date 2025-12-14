@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -11,11 +10,17 @@ export async function POST(request: NextRequest) {
   let fetchError: string | null = null;
   
   try {
-    const session = await getServerSession(authOptions);
+    const auth = await getAuthenticatedClient();
     
-    if (!session || session.user.role !== 'client') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
+
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
 
     const { websiteUrl } = await request.json();
 
@@ -232,7 +237,7 @@ BELANGRIJK:
 
     // Update or create AI profile with comprehensive scan data
     const existingProfile = await prisma.clientAISettings.findUnique({
-      where: { clientId: session.user.id },
+      where: { clientId },
     });
 
     // Extract key fields from the comprehensive analysis
@@ -260,13 +265,13 @@ BELANGRIJK:
 
     if (existingProfile) {
       await prisma.clientAISettings.update({
-        where: { clientId: session.user.id },
+        where: { clientId },
         data: profileData,
       });
     } else {
       await prisma.clientAISettings.create({
         data: {
-          clientId: session.user.id,
+          clientId,
           ...profileData,
         },
       });
