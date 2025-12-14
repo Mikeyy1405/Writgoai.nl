@@ -6,19 +6,23 @@ export const dynamic = "force-dynamic";
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 
 // GET - Check job status
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
 
-    const clientId = session.user.id;
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
     const url = new URL(req.url);
     const jobId = url.searchParams.get('jobId');
 
@@ -65,12 +69,17 @@ export async function GET(req: NextRequest) {
 // POST - Create a new background job
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
+      return NextResponse.json(
+        { error: auth.error }, 
+        { status: auth.status }
+      );
     }
 
-    const clientId = session.user.id;
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
     const body = await req.json();
     const { type, input, conversationId } = body;
 

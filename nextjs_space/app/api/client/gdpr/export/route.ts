@@ -9,23 +9,23 @@ export const dynamic = "force-dynamic";
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getAuthenticatedClient, isAuthError } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id || session.user.role !== 'client') {
+    const auth = await getAuthenticatedClient();
+    
+    if (isAuthError(auth)) {
       return NextResponse.json(
-        { error: 'Ongeautoriseerd' },
-        { status: 401 }
+        { error: auth.error },
+        { status: auth.status }
       );
     }
 
-    const clientId = session.user.id;
+    // Use client.id (from Client table), NOT session.user.id
+    const clientId = auth.client.id;
 
     // Haal ALLE data op van deze client
     const clientData = await prisma.client.findUnique({
