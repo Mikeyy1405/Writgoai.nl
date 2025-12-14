@@ -23,6 +23,24 @@ interface ContentIdea {
   sources: string[];
 }
 
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  guide: '📚 Gids',
+  listicle: '📝 Lijst',
+  howto: '🔧 How-to',
+  review: '⭐ Review',
+  comparison: '⚖️ Vergelijking',
+  news: '📰 Nieuws',
+  opinion: '💭 Mening',
+  tutorial: '🎓 Tutorial',
+  'case-study': '📊 Case Study',
+  infographic: '📈 Infographic',
+  interview: '🎤 Interview',
+  checklist: '✅ Checklist',
+  definition: '📖 Definitie',
+  tools: '🛠️ Tools',
+  trends: '🔥 Trends',
+};
+
 interface AIContentIdeasProps {
   projectId: string | null;
   onWriteNow: (idea: ContentIdea) => void;
@@ -85,24 +103,7 @@ export default function AIContentIdeas({ projectId, onWriteNow, onPlanIdea }: AI
   };
 
   const getContentTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      guide: '📚 Gids',
-      listicle: '📝 Lijst',
-      howto: '🔧 How-to',
-      review: '⭐ Review',
-      comparison: '⚖️ Vergelijking',
-      news: '📰 Nieuws',
-      opinion: '💭 Mening',
-      tutorial: '🎓 Tutorial',
-      'case-study': '📊 Case Study',
-      infographic: '📈 Infographic',
-      interview: '🎤 Interview',
-      checklist: '✅ Checklist',
-      definition: '📖 Definitie',
-      tools: '🛠️ Tools',
-      trends: '🔥 Trends',
-    };
-    return labels[type] || type;
+    return CONTENT_TYPE_LABELS[type] || type;
   };
 
   if (!projectId) {

@@ -40,9 +40,8 @@ export default function ContentCalendarView({ projectId, items, onRefresh }: Con
     const daysInMonth = lastDay.getDate();
     
     // Get first day of week (0 = Sunday, 1 = Monday, etc.)
-    let firstDayOfWeek = firstDay.getDay();
     // Convert Sunday (0) to 7 for easier calculation
-    firstDayOfWeek = firstDayOfWeek === 0 ? 7 : firstDayOfWeek;
+    const firstDayOfWeek = firstDay.getDay() || 7;
     
     const days: Array<{ date: Date | null; isCurrentMonth: boolean }> = [];
     

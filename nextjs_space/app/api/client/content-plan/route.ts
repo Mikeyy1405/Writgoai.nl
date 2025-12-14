@@ -163,8 +163,8 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const itemId = searchParams.get('id');
 
-    if (!itemId || typeof itemId !== 'string') {
-      return NextResponse.json({ error: 'Valid item ID is required' }, { status: 400 });
+    if (!itemId) {
+      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
     }
 
     // Get client ID from session
