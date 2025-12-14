@@ -20,17 +20,6 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      // Dashboard routes - redirect to client-portal
-      {
-        source: '/dashboard',
-        destination: '/client-portal',
-        permanent: true,
-      },
-      {
-        source: '/dashboard/:path*',
-        destination: '/client-portal/:path*',
-        permanent: true,
-      },
       // Writer routes - redirect to ultimate-writer
       {
         source: '/client-portal/ai-writer',
