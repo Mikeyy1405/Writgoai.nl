@@ -94,11 +94,8 @@ export function featureGateMiddleware(request: NextRequest) {
     },
     
     // CLIENT ROUTES
-    {
-      path: '/client-portal',
-      flag: FEATURE_FLAGS.CLIENT_OLD_PORTAL,
-      redirectTo: '/dashboard/overzicht',
-    },
+    // NOTE: /client-portal redirect wordt afgehandeld in middleware.ts
+    // Om redirect loops te voorkomen, checken we hier GEEN feature gate voor /client-portal
     {
       path: '/client/ultimate-writer',
       flag: FEATURE_FLAGS.CLIENT_ULTIMATE_WRITER,
@@ -156,7 +153,7 @@ export function isFeatureAccessible(featurePath: string): boolean {
   const blockedFeatures: FeatureRoute[] = [
     { path: '/admin/projects', flag: FEATURE_FLAGS.ADMIN_PROJECTS, redirectTo: '' },
     { path: '/admin/seo', flag: FEATURE_FLAGS.ADMIN_SEO_TOOLS, redirectTo: '' },
-    { path: '/client-portal', flag: FEATURE_FLAGS.CLIENT_OLD_PORTAL, redirectTo: '' },
+    // NOTE: /client-portal is handled by middleware.ts redirect
     // Add more as needed
   ];
   

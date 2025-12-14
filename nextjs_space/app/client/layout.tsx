@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { UnifiedLayout } from '@/components/dashboard/unified-layout';
 import WritgoAgentWidget from '@/components/writgo-agent-widget';
-import { getNavItems, isUserAdmin } from '@/lib/navigation-config';
+import { getClientNavItems } from '@/lib/client-navigation-simple';
 
-export default function ClientSuitesLayout({
+export default function ClientLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -38,18 +38,18 @@ export default function ClientSuitesLayout({
   }
 
   // Check if user is admin
-  const isAdmin = isUserAdmin(session?.user?.email, session?.user?.role);
+  const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'superadmin';
   
-  // Get navigation items based on admin status
-  const navItems = getNavItems(isAdmin);
+  // Get simplified client navigation items
+  const navItems = getClientNavItems();
 
   return (
     <>
       <UnifiedLayout
         navItems={navItems}
         isAdmin={isAdmin}
-        headerTitle="Writgo Suites"
-        headerDescription="Professionele content tools in één platform"
+        headerTitle="Client Portal"
+        headerDescription="Jouw persoonlijke content dashboard"
       >
         {children}
       </UnifiedLayout>

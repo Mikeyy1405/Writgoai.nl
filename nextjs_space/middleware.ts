@@ -1,3 +1,15 @@
+/**
+ * WRITGO.NL MIDDLEWARE - ROUTING & AUTHENTICATION
+ * 
+ * Duidelijke routing structuur:
+ * - /admin/*     = Admin routes (content management, clients, financials, etc.)
+ * - /client/*    = Client portal routes (overzicht, content, platforms, account)
+ * - /dashboard/* = Legacy routes (wordt geredirect naar /client/*)
+ * 
+ * Role-based access:
+ * - Admin/Superadmin → Toegang tot /admin/* en /client/*
+ * - Client → Alleen toegang tot /client/*
+ */
 
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
@@ -19,32 +31,52 @@ export default withAuth(
     }
 
     // ===================================
-    // OLD PORTAL REDIRECT
+    // LEGACY REDIRECTS
     // ===================================
-    // Redirect old client portal to new dashboard
+    // Old /client-portal → New /client structure
     if (path.startsWith('/client-portal')) {
-      return NextResponse.redirect(new URL('/dashboard/overzicht', req.url));
+      // Map old routes to new structure
+      if (path === '/client-portal' || path === '/client-portal/dashboard') {
+        return NextResponse.redirect(new URL('/client/overzicht', req.url));
+      }
+      // Redirect all other old portal routes to overview
+      return NextResponse.redirect(new URL('/client/overzicht', req.url));
+    }
+
+    // Old /dashboard → New /client structure
+    if (path.startsWith('/dashboard')) {
+      // Map specific dashboard routes to new client routes
+      const dashboardToClientMap: Record<string, string> = {
+        '/dashboard/overzicht': '/client/overzicht',
+        '/dashboard/content': '/client/content',
+        '/dashboard/platforms': '/client/platforms',
+        '/dashboard/account': '/client/account',
+      };
+
+      const newPath = dashboardToClientMap[path];
+      if (newPath) {
+        return NextResponse.redirect(new URL(newPath, req.url));
+      }
+
+      // Default: redirect to client overview
+      return NextResponse.redirect(new URL('/client/overzicht', req.url));
     }
 
     // ===================================
-    // LEGACY ROUTE REDIRECTS
+    // ROLE-BASED ACCESS CONTROL
     // ===================================
-    // Redirect old writer routes to Ultimate Writer (deprecated)
-    if (path === '/client-portal/blog-writer' || 
-        path === '/client-portal/ai-writer' || 
-        path === '/client-portal/content-writer') {
-      return NextResponse.redirect(new URL('/dashboard/overzicht', req.url));
-    }
+    const isAdmin = token?.role === 'admin' || token?.role === 'superadmin';
 
-    // ===================================
-    // ADMIN AUTH CHECK
-    // ===================================
-    // Admin-only routes
+    // ADMIN ROUTES - Only for admin/superadmin
     if (path.startsWith('/admin') || path.startsWith('/superadmin') || path.startsWith('/admin-portal')) {
-      if (token?.role !== 'admin' && token?.role !== 'superadmin') {
-        return NextResponse.redirect(new URL('/dashboard/overzicht', req.url));
+      if (!isAdmin) {
+        // Non-admin users trying to access admin routes → redirect to client portal
+        return NextResponse.redirect(new URL('/client/overzicht', req.url));
       }
     }
+
+    // CLIENT ROUTES - Accessible to everyone (clients and admins)
+    // No additional checks needed - if authenticated, they can access /client/*
 
     return NextResponse.next();
   },
@@ -60,11 +92,16 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    // Admin routes
     '/admin/:path*',
     '/admin-portal/:path*',
     '/superadmin/:path*',
+    
+    // Client routes (new structure)
+    '/client/:path*',
+    
+    // Legacy routes (will be redirected)
     '/client-portal/:path*',
     '/dashboard/:path*',
-    '/client/:path*',
   ],
 };
