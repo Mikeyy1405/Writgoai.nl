@@ -9,6 +9,7 @@ import {
   generateComparisonPrompt,
   generateImagePrompt 
 } from '@/lib/writgo-prompt';
+import { autoSaveToLibrary } from '@/lib/content-library-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -311,10 +312,40 @@ export async function POST(request: NextRequest) {
 
     console.log('[Quick Generate] ✅ SUCCESS! Article saved:', blogPost.id);
 
+    // STEP 6: Ook opslaan in SavedContent (Content Library)
+    console.log('[Quick Generate] Saving to Content Library...');
+    
+    const saveResult = await autoSaveToLibrary({
+      clientId: client.id,
+      type: 'blog',
+      title,
+      content: articleContent,
+      contentHtml: articleContent,
+      category: contentType === 'review' ? 'review' : contentType === 'bestlist' ? 'bestlist' : contentType === 'comparison' ? 'comparison' : 'article',
+      tags: [keyword, toneOfVoice, contentType],
+      description: `${contentType} gegenereerd met Quick Generate`,
+      keywords: [keyword],
+      metaDesc: title,
+      slug,
+      thumbnailUrl: images[0] || null,
+      imageUrls: images,
+      projectId: project?.id || null,
+      language: 'NL',
+    });
+
+    let contentId: string | undefined;
+    if (saveResult.success && saveResult.contentId) {
+      contentId = saveResult.contentId;
+      console.log('[Quick Generate] ✅ Saved to Content Library:', contentId);
+    } else {
+      console.warn('[Quick Generate] ⚠️ Content Library save result:', saveResult.message);
+    }
+
     return NextResponse.json({
       success: true,
       article: {
         id: blogPost.id,
+        contentId, // NEW: Content Library ID
         title,
         slug,
         content: articleContent,
