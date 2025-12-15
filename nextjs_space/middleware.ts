@@ -19,6 +19,9 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
+    
+    // Role check - declare early for use throughout middleware
+    const isAdmin = token?.role === 'admin' || token?.role === 'superadmin';
 
     // ===================================
     // FEATURE GATE CHECK (FIRST)
@@ -83,8 +86,6 @@ export default withAuth(
     // ===================================
     // ROLE-BASED ACCESS CONTROL
     // ===================================
-    const isAdmin = token?.role === 'admin' || token?.role === 'superadmin';
-
     // ADMIN ROUTES - Only for admin/superadmin
     if (path.startsWith('/admin') || path.startsWith('/superadmin') || path.startsWith('/admin-portal')) {
       if (!isAdmin) {
