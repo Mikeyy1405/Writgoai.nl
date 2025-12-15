@@ -152,19 +152,94 @@ BELANGRIJK:
 
     let topics = [];
     try {
-      // Parse de response
+      // Parse de response met meerdere fallback strategieën
       const content = response.content || '';
-      // Verwijder markdown code blocks als die er zijn
-      const jsonMatch = content.match(/\[\s*\{[\s\S]*\}\s*\]/);
-      if (jsonMatch) {
-        topics = JSON.parse(jsonMatch[0]);
-      } else {
-        topics = JSON.parse(content);
+      console.log('[WordPress Analyze] Raw AI response length:', content.length);
+      
+      // Strategie 1: Verwijder markdown code blocks (```json ... ```)
+      let cleanedContent = content;
+      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (codeBlockMatch) {
+        cleanedContent = codeBlockMatch[1];
+        console.log('[WordPress Analyze] Found markdown code block');
       }
+      
+      // Strategie 2: Extract JSON array met regex
+      const jsonMatch = cleanedContent.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (jsonMatch) {
+        try {
+          topics = JSON.parse(jsonMatch[0]);
+          console.log('[WordPress Analyze] Successfully parsed JSON array');
+        } catch (e) {
+          console.log('[WordPress Analyze] JSON array parse failed, trying next strategy');
+        }
+      }
+      
+      // Strategie 3: Probeer directe parse als nog geen topics
+      if (topics.length === 0) {
+        try {
+          topics = JSON.parse(cleanedContent.trim());
+          console.log('[WordPress Analyze] Successfully parsed direct JSON');
+        } catch (e) {
+          console.log('[WordPress Analyze] Direct JSON parse failed');
+        }
+      }
+      
+      // Strategie 4: Probeer JSON te repareren (incomplete JSON)
+      if (topics.length === 0) {
+        try {
+          // Probeer incomplete JSON te repareren door missing closing brackets toe te voegen
+          let repairedJson = cleanedContent.trim();
+          
+          // Tel opening en closing brackets
+          const openBrackets = (repairedJson.match(/\[/g) || []).length;
+          const closeBrackets = (repairedJson.match(/\]/g) || []).length;
+          const openBraces = (repairedJson.match(/\{/g) || []).length;
+          const closeBraces = (repairedJson.match(/\}/g) || []).length;
+          
+          // Voeg missende brackets toe
+          if (openBraces > closeBraces) {
+            repairedJson += '}'.repeat(openBraces - closeBraces);
+          }
+          if (openBrackets > closeBrackets) {
+            repairedJson += ']'.repeat(openBrackets - closeBrackets);
+          }
+          
+          topics = JSON.parse(repairedJson);
+          console.log('[WordPress Analyze] Successfully parsed repaired JSON');
+        } catch (e) {
+          console.log('[WordPress Analyze] JSON repair failed');
+        }
+      }
+      
+      // Valideer dat we een array hebben
+      if (!Array.isArray(topics) || topics.length === 0) {
+        console.error('[WordPress Analyze] No valid topics array found');
+        console.error('[WordPress Analyze] Response preview:', content.substring(0, 500));
+        throw new Error('Invalid AI response format');
+      }
+      
+      // Valideer topic structuur
+      topics = topics.filter(topic => {
+        return topic.title && 
+               topic.description && 
+               Array.isArray(topic.keywords) && 
+               topic.priority;
+      });
+      
+      if (topics.length === 0) {
+        throw new Error('No valid topics found in response');
+      }
+      
     } catch (error) {
       console.error('[WordPress Analyze] Error parsing AI response:', error);
+      console.error('[WordPress Analyze] Response content:', response.content?.substring(0, 1000));
       return NextResponse.json(
-        { error: 'Kon AI response niet verwerken' },
+        { 
+          error: 'Kon AI response niet verwerken',
+          details: error instanceof Error ? error.message : 'Unknown parsing error',
+          rawResponse: response.content?.substring(0, 500) + '...'
+        },
         { status: 500 }
       );
     }

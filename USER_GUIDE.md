@@ -356,6 +356,142 @@ Ja, we gebruiken encryptie en delen nooit je data.
 
 ---
 
+## ⚡ Quick Generate - Nieuw!
+
+### Wat is Quick Generate?
+**Quick Generate** is de snelste manier om content te maken - zonder content plan! Perfect voor als je snel een artikel nodig hebt.
+
+### Hoe werkt het?
+
+#### Stap 1: Ga naar Quick Generate
+1. Klik op **"⚡ Quick Generate"** in de sidebar
+2. Of navigeer naar `/generate`
+
+#### Stap 2: Vul Details In
+Je ziet een simpel formulier met:
+- **Keyword/Titel** (verplicht): Waar gaat je artikel over?
+  - Voorbeeld: "Beste fitness tips voor beginners"
+- **Project** (optioneel): Koppel aan een bestaand project
+- **Toon**: Kies hoe je artikel klinkt
+  - Professioneel
+  - Casual
+  - Vriendelijk
+- **Lengte**: Hoe lang moet het artikel zijn?
+  - Kort (~500 woorden)
+  - Gemiddeld (~1000 woorden)
+  - Lang (~1500 woorden)
+
+#### Stap 3: Klik op "Genereer Artikel"
+AI doet nu het volgende automatisch:
+1. ✅ **Keyword Research** - Analyseert je keyword
+2. ✅ **Outline Maken** - Creëert een SEO-vriendelijke structuur
+3. ✅ **Artikel Schrijven** - Schrijft het volledige artikel
+4. ✅ **SEO Metadata** - Voegt titel, meta description en keywords toe
+5. ✅ **Featured Image** - Genereert een prompt voor een featured image
+6. ✅ **Opslaan** - Slaat op als draft in je account
+
+#### Stap 4: Bekijk Preview
+Na 30-60 seconden zie je:
+- **Preview** van je gegenereerde artikel
+- **Titel** en **Meta Description**
+- **Keywords** die gebruikt zijn
+- **Word Count**
+- **Content Preview** (eerste 1000 karakters)
+
+#### Stap 5: Bewerk of Publiceer
+- **Bekijk & Bewerk**: Opent het artikel in de editor
+- **Nieuw Artikel**: Start opnieuw met een nieuw keyword
+
+### Wanneer Quick Generate Gebruiken?
+
+✅ **Gebruik Quick Generate wanneer:**
+- Je snel een artikel nodig hebt
+- Je geen tijd hebt voor een content plan
+- Je een specifiek onderwerp wilt behandelen
+- Je wilt experimenteren met verschillende topics
+
+❌ **Gebruik Content Plan wanneer:**
+- Je een complete content strategie wilt
+- Je meerdere gerelateerde artikelen wilt maken
+- Je je WordPress site wilt analyseren
+- Je SEO content gaps wilt vinden
+
+### Tips voor Beste Resultaten
+
+1. **Specifieke Keywords**: 
+   - ✅ Goed: "Beste yoga oefeningen voor rugpijn"
+   - ❌ Minder goed: "yoga"
+
+2. **Relevante Toon**:
+   - **Blog**: Vriendelijk of Casual
+   - **Business**: Professioneel
+   - **Tutorial**: Professioneel of Vriendelijk
+
+3. **Juiste Lengte**:
+   - **Kort (500w)**: Quick tips, listicles
+   - **Gemiddeld (1000w)**: Standard blog posts
+   - **Lang (1500w)**: In-depth guides, tutorials
+
+4. **Project Koppelen**:
+   - Koppel aan een project voor betere organisatie
+   - Helpt met SEO consistency
+   - Makkelijker terug te vinden
+
+### Wat Gebeurt Er Achter de Schermen?
+
+Quick Generate gebruikt geavanceerde AI om:
+
+1. **Keyword Analyse**
+   - Competitor research
+   - Search intent bepalen
+   - Related keywords vinden
+
+2. **Content Planning**
+   - SEO-vriendelijke structuur
+   - Logical heading flow (H2, H3)
+   - Engaging introduction & conclusion
+
+3. **Content Writing**
+   - Natuurlijke schrijfstijl
+   - SEO-optimized (maar niet overly)
+   - Engaging en informatief
+   - Correct grammar & spelling
+
+4. **SEO Optimization**
+   - Meta title & description
+   - Keyword density
+   - Internal linking suggestions
+   - Featured image prompt
+
+### Verschillen: Quick Generate vs Content Plan
+
+| Feature | Quick Generate | Content Plan |
+|---------|---------------|--------------|
+| **Snelheid** | ⚡ 30-60 sec | 📝 2-3 min |
+| **Planning** | ❌ Niet nodig | ✅ Ja |
+| **Aantal Topics** | 1 artikel | 15-20 ideeën |
+| **WordPress Analyse** | ❌ | ✅ |
+| **Batch Genereren** | ❌ | ✅ |
+| **Beste Voor** | Snel & Simpel | Strategie & Planning |
+
+### Status Bar Tijdens Generatie
+
+Tijdens het genereren zie je een real-time status bar met:
+1. **Stap 1**: Keyword research - AI analyseert je keyword
+2. **Stap 2**: Outline maken - Structuur wordt gemaakt
+3. **Stap 3**: Artikel schrijven - Content wordt gegenereerd
+4. **Stap 4**: SEO metadata - Optimalisatie wordt toegevoegd
+5. **Stap 5**: Featured image - Image prompt wordt gemaakt
+6. **Stap 6**: Artikel opslaan - Wordt opgeslagen als draft
+7. **Stap 7**: Klaar! ✅ - Je artikel is beschikbaar
+
+Elke stap toont:
+- ✅ Voltooid: Groene vinkje
+- 🔄 Bezig: Oranje spinner
+- ❌ Error: Rood kruis met foutmelding
+
+---
+
 ## 🎊 Klaar om te Starten!
 
 Je hebt nu alles wat je nodig hebt om WritGoAI te gebruiken!
@@ -370,6 +506,68 @@ Je hebt nu alles wat je nodig hebt om WritGoAI te gebruiken!
 
 ---
 
-**Versie:** 3.0 (Simplified)  
+---
+
+## 🎨 Nieuw Design (December 2024)
+
+### Wat is er veranderd?
+
+WritGoAI heeft een volledig nieuw design gekregen:
+
+#### 🌑 Altijd Donker Thema
+- **Pure zwarte achtergrond** (#000000)
+- **Witte tekst** voor maximale leesbaarheid
+- **Geen licht thema meer** - altijd donker voor je ogen
+
+#### 🍊 Oranje Accent Kleuren
+- **Primair Oranje**: #FF6B35 (bright orange)
+- **Secundair Oranje**: #FF8C42 (lighter)
+- **Tertiair Oranje**: #FFA500 (gold)
+- Gebruikt voor:
+  - Buttons
+  - Links
+  - Actieve states
+  - Progress bars
+  - Accenten
+
+#### 📱 Verbeterde Leesbaarheid
+- **Grotere tekst**: Minimum 15px voor body text
+- **Betere contrast**: Wit op zwart
+- **Duidelijke headings**: Altijd wit
+- **Grotere knoppen**: Makkelijker te klikken
+
+#### ✨ Gradient Effecten
+- **Oranje naar Roze gradient** voor belangrijke elementen
+- **Glow effecten** bij hover
+- **Smooth transitions** tussen states
+
+### Waar zie je het nieuwe design?
+
+Het nieuwe design is actief in:
+- ✅ **Content Plan** pagina
+- ✅ **Quick Generate** pagina
+- ✅ **Projecten** pagina
+- ✅ **Alle simplified pages**
+
+### Design Principes
+
+1. **Donker = Beter voor je ogen**
+   - Minder oogvermoeidheid
+   - Betere focus
+   - Moderne uitstraling
+
+2. **Oranje = Energie & Creativiteit**
+   - Opvallend maar niet schreeuwend
+   - Past bij content creatie
+   - Moderne tech vibe
+
+3. **Wit = Duidelijkheid**
+   - Maximale leesbaarheid
+   - Geen middelgrijs meer
+   - Contrast = readability
+
+---
+
+**Versie:** 3.1 (Simplified + Dark Orange Theme)  
 **Laatst bijgewerkt:** December 15, 2024  
 **Need help?** support@writgo.nl

@@ -69,15 +69,30 @@ const config: Config = {
           DEFAULT: 'hsl(var(--writgo-orange))',
           light: 'hsl(var(--writgo-orange-light))',
         },
-        // 2024 Orange/Blue Dark Mode Color Palette
-        'writgo-primary': '#FF6B00',      // Primary Orange
-        'writgo-secondary': '#3B82F6',    // Secondary Blue
-        'deep-space': '#0A0A0F',          // Background
-        'surface': '#18181B',              // Cards, sections
-        'border-dark': '#27272A',          // Borders, dividers
-        'pearl-white': '#FFFFFF',          // Main text (white)
-        'text-muted': '#A1A1AA',           // Muted text, labels
-        'accent-light': '#FFEDD5',         // Soft orange for subtle highlights
+        // 🎨 WritgoAI 2024 Dark + Orange Theme
+        'writgo-primary': '#FF6B35',      // Primary Orange (bright)
+        'writgo-secondary': '#FF8C42',    // Secondary Orange (lighter)
+        'writgo-tertiary': '#FFA500',     // Tertiary Orange (gold)
+        'deep-space': '#000000',          // Background (pure black)
+        'surface': '#121212',             // Cards, sections (very dark gray)
+        'surface-light': '#1A1A1A',       // Lighter cards
+        'border-dark': '#333333',         // Borders, dividers
+        'pearl-white': '#FFFFFF',         // Main text (pure white)
+        'text-light': '#F5F5F5',          // Light text (off-white)
+        'text-muted': '#A1A1AA',          // Muted text, labels
+        'accent-light': '#FFF5E6',        // Soft orange for subtle highlights
+        'orange': {
+          50: '#FFF5E6',
+          100: '#FFE6CC',
+          200: '#FFCC99',
+          300: '#FFB366',
+          400: '#FF9933',
+          500: '#FF6B35',  // Primary
+          600: '#E65A2E',
+          700: '#CC4A26',
+          800: '#B33B1F',
+          900: '#992B17',
+        },
       },
       keyframes: {
         'accordion-down': {

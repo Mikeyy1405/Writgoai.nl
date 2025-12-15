@@ -212,74 +212,74 @@
 
 @layer base {
   :root {
-    /* 🎨 WritgoAI Dark Theme - Default (altijd donker!) */
-    --background: 0 0% 7%;            /* Donker zwart-grijs #121212 */
-    --foreground: 0 0% 98%;           /* Bijna wit tekst #FAFAFA */
+    /* 🎨 WritgoAI Dark Theme - ALWAYS DARK MODE */
+    --background: 0 0% 0%;            /* Pure black #000000 */
+    --foreground: 0 0% 100%;          /* Pure white #FFFFFF */
     
-    --card: 0 0% 10%;                 /* Donkere cards #1A1A1A */
-    --card-foreground: 0 0% 98%;      /* Witte tekst */
+    --card: 0 0% 7%;                  /* Very dark gray #121212 */
+    --card-foreground: 0 0% 100%;     /* White text */
     
-    --popover: 0 0% 10%;              /* Donkere popovers */
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 7%;               /* Very dark gray */
+    --popover-foreground: 0 0% 100%;
     
-    /* WritgoAI Orange #FF9933 - Primair merk kleur */
-    --primary: 25 100% 60%;           /* #FF9933 oranje */
-    --primary-foreground: 0 0% 100%;  /* Witte tekst op oranje */
+    /* WritgoAI Orange - Primary Brand Color */
+    --primary: 22 100% 60%;           /* #FF6B35 bright orange */
+    --primary-foreground: 0 0% 100%;  /* White text on orange */
     
-    --secondary: 0 0% 15%;            /* Donkergrijs #262626 */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 13%;            /* Dark gray #212121 */
+    --secondary-foreground: 0 0% 100%;
     
-    --muted: 0 0% 15%;                /* Donkergrijs */
-    --muted-foreground: 0 0% 60%;     /* Grijze tekst */
+    --muted: 0 0% 13%;                /* Dark gray */
+    --muted-foreground: 0 0% 65%;     /* Light gray text */
     
-    --accent: 25 100% 60%;            /* Oranje accent */
+    --accent: 22 100% 60%;            /* Orange accent */
     --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 84% 60%;         /* Rood voor errors */
+    --destructive: 0 84% 60%;         /* Red for errors */
     --destructive-foreground: 0 0% 100%;
     
-    --border: 0 0% 20%;               /* Donkere border #333333 */
-    --input: 0 0% 15%;                /* Donkere inputs */
-    --ring: 25 100% 60%;              /* Oranje focus ring */
+    --border: 0 0% 20%;               /* Dark border #333333 */
+    --input: 0 0% 7%;                 /* Very dark inputs */
+    --ring: 22 100% 60%;              /* Orange focus ring */
     
     --radius: 0.5rem;
     
-    /* 🎨 WritgoAI Brand Kleuren */
-    --writgo-orange: 25 100% 60%;           /* #FF9933 hoofdkleur */
-    --writgo-orange-hover: 25 100% 65%;     /* Lichter oranje bij hover */
-    --writgo-orange-light: 25 100% 12%;     /* Donker oranje achtergrond */
-    --writgo-gray: 0 0% 98%;                /* Bijna wit #FAFAFA */
-    --writgo-gray-light: 0 0% 15%;          /* Donkergrijs #262626 */
-    --writgo-gray-medium: 0 0% 60%;         /* Medium grijs voor subtekst */
+    /* 🎨 WritgoAI Brand Colors */
+    --writgo-orange: 22 100% 60%;           /* #FF6B35 */
+    --writgo-orange-hover: 22 100% 65%;     /* Lighter orange on hover */
+    --writgo-orange-light: 22 100% 12%;     /* Dark orange background */
+    --writgo-gray: 0 0% 100%;               /* Pure white */
+    --writgo-gray-light: 0 0% 20%;          /* Dark gray #333333 */
+    --writgo-gray-medium: 0 0% 65%;         /* Medium gray for subtext */
   }
 
   .dark {
-    /* Dark mode = default */
-    --background: 0 0% 7%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 25 100% 60%;
+    /* Dark mode is the default and only theme */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 22 100% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 25 100% 60%;
+    --secondary: 0 0% 13%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 22 100% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 20%;
-    --input: 0 0% 15%;
-    --ring: 25 100% 60%;
-    --writgo-orange: 25 100% 60%;
-    --writgo-orange-hover: 25 100% 65%;
-    --writgo-orange-light: 25 100% 12%;
-    --writgo-gray: 0 0% 98%;
-    --writgo-gray-light: 0 0% 15%;
-    --writgo-gray-medium: 0 0% 60%;
+    --input: 0 0% 7%;
+    --ring: 22 100% 60%;
+    --writgo-orange: 22 100% 60%;
+    --writgo-orange-hover: 22 100% 65%;
+    --writgo-orange-light: 22 100% 12%;
+    --writgo-gray: 0 0% 100%;
+    --writgo-gray-light: 0 0% 20%;
+    --writgo-gray-medium: 0 0% 65%;
   }
 }
 
