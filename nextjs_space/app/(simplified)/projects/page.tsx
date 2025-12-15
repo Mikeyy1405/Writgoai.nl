@@ -10,6 +10,8 @@ interface Project {
   name: string;
   websiteUrl: string | null;
   description: string | null;
+  wordpressUrl?: string | null;
+  wordpressUsername?: string | null;
   createdAt: string;
 }
 
@@ -99,12 +101,16 @@ export default function ProjectsPage() {
       name: project.name,
       websiteUrl: project.websiteUrl || '',
       description: project.description || '',
-      wordpressUrl: '',
-      wordpressUsername: '',
-      wordpressPassword: '',
+      wordpressUrl: project.wordpressUrl || '',
+      wordpressUsername: project.wordpressUsername || '',
+      wordpressPassword: '', // Password is never returned for security
       wordpressCategory: '',
     });
     setShowNewProject(true);
+    // If WordPress URL exists, open the WordPress section
+    if (project.wordpressUrl) {
+      setWpSectionOpen(true);
+    }
   };
 
   const handleDeleteProject = async (projectId: string, projectName: string) => {
@@ -261,6 +267,11 @@ export default function ProjectsPage() {
                   />
                   <p className="text-xs text-gray-500 mt-2">
                     💡 Maak een Application Password aan in WordPress → Gebruikers → Profiel → Application Passwords
+                    {editingProject && newProject.wordpressUrl && (
+                      <span className="block mt-1">
+                        ℹ️ Laat leeg om het huidige wachtwoord te behouden
+                      </span>
+                    )}
                   </p>
                 </div>
 
