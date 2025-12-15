@@ -5,11 +5,21 @@
  */
 
 /**
+ * Type representing a Supabase/PostgREST error
+ */
+export interface SupabaseError {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+}
+
+/**
  * Check if a Supabase error is due to a missing table
  * @param error The error from Supabase query
  * @returns true if the error indicates a missing table
  */
-export function isMissingTableError(error: any): boolean {
+export function isMissingTableError(error: SupabaseError | null | undefined): boolean {
   if (!error) return false;
   
   // PGRST205 is the Supabase error code for "table not found"
@@ -28,7 +38,7 @@ export function isMissingTableError(error: any): boolean {
  * @param error The error from Supabase query
  * @returns true if the error indicates no rows were found
  */
-export function isNoRowsError(error: any): boolean {
+export function isNoRowsError(error: SupabaseError | null | undefined): boolean {
   if (!error) return false;
   return error.code === 'PGRST116';
 }
