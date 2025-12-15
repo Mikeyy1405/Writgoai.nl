@@ -51,6 +51,32 @@ const MANUAL_STEPS: ProgressStep[] = [
   { id: 'complete', label: 'Klaar! ✅', status: 'pending' },
 ];
 
+// Helper function to get priority badge styling and text
+function getPriorityBadge(priority: string) {
+  switch (priority.toLowerCase()) {
+    case 'high':
+      return {
+        className: 'bg-red-500/20 text-red-400 border border-red-500/30',
+        text: '🔥 HIGH'
+      };
+    case 'medium':
+      return {
+        className: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
+        text: '🟡 MEDIUM'
+      };
+    case 'low':
+      return {
+        className: 'bg-green-500/20 text-green-400 border border-green-500/30',
+        text: '🟢 LOW'
+      };
+    default:
+      return {
+        className: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
+        text: priority.toUpperCase()
+      };
+  }
+}
+
 export default function ContentPlanPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -413,17 +439,14 @@ export default function ContentPlanPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold ${
-                            topic.priority === 'high'
-                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                              : topic.priority === 'medium'
-                              ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                              : 'bg-green-500/20 text-green-400 border border-green-500/30'
-                          }`}
-                        >
-                          {topic.priority === 'high' ? '🔥 HIGH' : topic.priority === 'medium' ? '🟡 MEDIUM' : '🟢 LOW'}
-                        </span>
+                        {(() => {
+                          const badge = getPriorityBadge(topic.priority);
+                          return (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold ${badge.className}`}>
+                              {badge.text}
+                            </span>
+                          );
+                        })()}
                         <h3 className="text-lg font-semibold text-white flex-1">
                           {topic.title}
                         </h3>
@@ -448,7 +471,7 @@ export default function ContentPlanPage() {
                       </div>
                       
                       {/* Reason (if available from WordPress analysis) */}
-                      {topic.reason && topic.reason.trim() !== '' && topic.reason !== topic.description && (
+                      {topic.reason && topic.reason.trim() !== '' && (
                         <p className="text-xs text-gray-500 italic">
                           💡 {topic.reason}
                         </p>
@@ -458,9 +481,14 @@ export default function ContentPlanPage() {
                     {/* Write Article Button */}
                     <button
                       onClick={() => {
-                        const keywordsParam = encodeURIComponent(topic.keywords.join(','));
-                        const titleParam = encodeURIComponent(topic.title);
-                        router.push(`/generate?title=${titleParam}&keywords=${keywordsParam}`);
+                        if (!topic.title || !topic.keywords || topic.keywords.length === 0) {
+                          console.error('Invalid topic data for navigation');
+                          return;
+                        }
+                        const params = new URLSearchParams();
+                        params.set('title', topic.title);
+                        params.set('keywords', topic.keywords.join(','));
+                        router.push(`/generate?${params.toString()}`);
                       }}
                       className="flex-shrink-0 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold py-2 px-4 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all flex items-center gap-2 whitespace-nowrap"
                     >
