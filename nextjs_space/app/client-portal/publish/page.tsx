@@ -35,9 +35,9 @@ export default function PublishHub() {
     {
       id: 'youtube',
       title: 'YouTube',
-      description: 'Upload video content direct naar YouTube',
+      description: 'Genereer en upload video content',
       icon: <Video className="w-8 h-8" />,
-      href: '/client-portal/video-creator-pro',
+      href: '/client-portal/video',
       status: 'active',
     },
     {

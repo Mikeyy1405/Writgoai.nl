@@ -254,7 +254,7 @@ export default function ClientDashboard() {
             </Link>
             
             <Link 
-              href="/client-portal/video-generator" 
+              href="/client-portal/video" 
               className="flex items-center gap-3 p-4 bg-zinc-800/30 hover:bg-emerald-500/10 border border-zinc-700/50 hover:border-emerald-500/30 rounded-xl transition-all group relative"
             >
               <Video className="w-5 h-5 text-emerald-400" />

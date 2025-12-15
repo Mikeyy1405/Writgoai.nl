@@ -79,7 +79,7 @@ export default function MediaSuitePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/client-portal/video-generator">
+              <Link href="/client-portal/video">
                 <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
                   Start Video Maken
                 </Button>
@@ -123,7 +123,7 @@ export default function MediaSuitePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/client-portal/video-generator?mode=autopilot">
+              <Link href="/client-portal/video?mode=autopilot">
                 <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
                   Activeer Autopilot
                 </Button>
