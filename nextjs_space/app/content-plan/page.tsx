@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import SimplifiedLayout from '@/components/SimplifiedLayout';
-import { Sparkles, Loader2, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Sparkles, Loader2, Check, ChevronDown, ChevronUp, Globe, Keyboard } from 'lucide-react';
 
 interface Topic {
   title: string;
   description: string;
   keywords: string[];
   priority: 'high' | 'medium' | 'low';
+  reason?: string;
 }
 
 interface ContentPlan {
@@ -16,22 +17,29 @@ interface ContentPlan {
   source: string;
   name: string;
   plan: {
-    keyword: string;
+    keyword?: string;
+    source?: string;
+    analyzedUrl?: string;
+    existingPosts?: number;
     topics: Topic[];
     generatedAt: string;
   };
   lastGenerated: string;
 }
 
+type GenerationMode = 'manual' | 'auto';
+
 export default function ContentPlanPage() {
+  const [mode, setMode] = useState<GenerationMode>('manual');
   const [keyword, setKeyword] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState<{ keyword: string; topics: Topic[] } | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<{ keyword?: string; source?: string; analyzedUrl?: string; existingPosts?: number; topics: Topic[] } | null>(null);
   const [plans, setPlans] = useState<ContentPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     fetchPlans();
@@ -65,34 +73,65 @@ export default function ContentPlanPage() {
   };
 
   const handleGenerate = async () => {
-    if (!keyword.trim()) return;
+    if (mode === 'manual' && !keyword.trim()) return;
+    if (mode === 'auto' && !selectedProject) {
+      setError('Selecteer eerst een project om de WordPress site te analyseren');
+      return;
+    }
 
     setGenerating(true);
+    setError('');
+
     try {
-      const response = await fetch('/api/simplified/content-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          keyword: keyword.trim(),
-          projectId: selectedProject || undefined,
-        }),
-      });
+      let response;
+      
+      if (mode === 'manual') {
+        // Handmatige keyword-based generatie
+        response = await fetch('/api/simplified/content-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            keyword: keyword.trim(),
+            projectId: selectedProject || undefined,
+          }),
+        });
+      } else {
+        // Automatische WordPress analyse
+        response = await fetch('/api/simplified/content-plan/analyze-wordpress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: selectedProject,
+          }),
+        });
+      }
 
       if (!response.ok) {
-        throw new Error('Failed to generate plan');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate plan');
       }
 
       const data = await response.json();
-      setCurrentPlan({
-        keyword: data.keyword,
-        topics: data.topics,
-      });
+      
+      if (mode === 'manual') {
+        setCurrentPlan({
+          keyword: data.keyword,
+          topics: data.topics,
+        });
+      } else {
+        setCurrentPlan({
+          source: data.source,
+          analyzedUrl: data.analyzedUrl,
+          existingPosts: data.existingPosts,
+          topics: data.topics,
+        });
+      }
 
       // Refresh plans list
       fetchPlans();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating plan:', error);
-      alert('Er ging iets mis bij het genereren van het content plan.');
+      setError(error.message || 'Er ging iets mis bij het genereren van het content plan.');
     } finally {
       setGenerating(false);
     }
@@ -136,59 +175,153 @@ export default function ContentPlanPage() {
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <h2 className="text-xl font-bold text-slate-800 mb-4">🎯 Nieuw Content Plan</h2>
           
+          {/* Mode Tabs */}
+          <div className="flex space-x-2 mb-6 border-b border-slate-200">
+            <button
+              onClick={() => {
+                setMode('manual');
+                setError('');
+              }}
+              className={`px-4 py-2 flex items-center space-x-2 border-b-2 transition-colors ${
+                mode === 'manual'
+                  ? 'border-orange-500 text-orange-600 font-semibold'
+                  : 'border-transparent text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              <Keyboard className="w-4 h-4" />
+              <span>Handmatig</span>
+            </button>
+            <button
+              onClick={() => {
+                setMode('auto');
+                setError('');
+              }}
+              className={`px-4 py-2 flex items-center space-x-2 border-b-2 transition-colors ${
+                mode === 'auto'
+                  ? 'border-orange-500 text-orange-600 font-semibold'
+                  : 'border-transparent text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              <Globe className="w-4 h-4" />
+              <span>Automatisch (WordPress)</span>
+            </button>
+          </div>
+
+          {/* Mode Description */}
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            {mode === 'manual' ? (
+              <p className="text-sm text-blue-800">
+                <strong>Handmatige modus:</strong> Voer een keyword in en AI genereert een content plan met gerelateerde topics.
+              </p>
+            ) : (
+              <p className="text-sm text-blue-800">
+                <strong>Automatische modus:</strong> AI analyseert je WordPress site, identificeert content gaps en genereert automatisch relevante topics.
+              </p>
+            )}
+          </div>
+
+          {/* Project Selection */}
           {projects.length > 0 && (
             <div className="mb-4">
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Koppel aan project (optioneel)
+                {mode === 'auto' ? 'Selecteer project *' : 'Koppel aan project (optioneel)'}
               </label>
               <select
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                required={mode === 'auto'}
               >
-                <option value="">Geen project (opslaan in account)</option>
+                <option value="">{mode === 'auto' ? 'Selecteer een project...' : 'Geen project (opslaan in account)'}</option>
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name}
+                    {project.websiteUrl && ` - ${project.websiteUrl}`}
                   </option>
                 ))}
               </select>
+              {mode === 'auto' && !selectedProject && (
+                <p className="text-xs text-slate-500 mt-1">
+                  ℹ️ Selecteer een project met een WordPress URL
+                </p>
+              )}
             </div>
           )}
 
-          <div className="flex space-x-3">
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleGenerate()}
-              placeholder="Voer een keyword in (bijv. 'fitness tips')"
-              className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              disabled={generating}
-            />
+          {/* Manual Mode Input */}
+          {mode === 'manual' && (
+            <div className="flex space-x-3">
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleGenerate()}
+                placeholder="Voer een keyword in (bijv. 'fitness tips')"
+                className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                disabled={generating}
+              />
+              <button
+                onClick={handleGenerate}
+                disabled={generating || !keyword.trim()}
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-lg flex items-center space-x-2 hover:shadow-xl transition-shadow disabled:opacity-50"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Genereren...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    <span>Genereer Plan</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Auto Mode Button */}
+          {mode === 'auto' && (
             <button
               onClick={handleGenerate}
-              disabled={generating || !keyword.trim()}
-              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-lg flex items-center space-x-2 hover:shadow-xl transition-shadow disabled:opacity-50"
+              disabled={generating || !selectedProject}
+              className="w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-lg flex items-center justify-center space-x-2 hover:shadow-xl transition-shadow disabled:opacity-50"
             >
               {generating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Genereren...</span>
+                  <span>WordPress analyseren...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5" />
-                  <span>Genereer Plan</span>
+                  <Globe className="w-5 h-5" />
+                  <span>Analyseer WordPress & Genereer Plan</span>
                 </>
               )}
             </button>
-          </div>
+          )}
 
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">❌ {error}</p>
+            </div>
+          )}
+
+          {/* Loading State */}
           {generating && (
             <div className="mt-4 text-center text-sm text-slate-600">
-              <p>AI genereert een topical authority map voor "{keyword}"...</p>
-              <p className="text-xs mt-1">Dit kan 10-20 seconden duren</p>
+              {mode === 'manual' ? (
+                <>
+                  <p>AI genereert een topical authority map voor "{keyword}"...</p>
+                  <p className="text-xs mt-1">Dit kan 10-20 seconden duren</p>
+                </>
+              ) : (
+                <>
+                  <p>AI analyseert je WordPress site en identificeert content gaps...</p>
+                  <p className="text-xs mt-1">Dit kan 20-30 seconden duren</p>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -199,11 +332,29 @@ export default function ContentPlanPage() {
             <div className="flex items-center space-x-3 mb-4">
               <Check className="w-6 h-6 text-green-500" />
               <h2 className="text-2xl font-bold text-slate-800">
-                Content Plan: {currentPlan.keyword}
+                {currentPlan.keyword 
+                  ? `Content Plan: ${currentPlan.keyword}`
+                  : `WordPress Content Plan`
+                }
               </h2>
             </div>
+            
+            {currentPlan.source === 'wordpress-analysis' && (
+              <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-green-800">
+                  ✅ <strong>WordPress Analyse Voltooid</strong>
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  📊 Geanalyseerde site: {currentPlan.analyzedUrl}
+                </p>
+                <p className="text-xs text-green-700">
+                  📝 Bestaande posts: {currentPlan.existingPosts}
+                </p>
+              </div>
+            )}
+            
             <p className="text-slate-600 mb-4">
-              {currentPlan.topics.length} topics gegenereerd
+              {currentPlan.topics.length} nieuwe topics gegenereerd
             </p>
             <div className="space-y-3">
               {currentPlan.topics.map((topic, index) => (
@@ -222,6 +373,11 @@ export default function ContentPlanPage() {
                     </span>
                   </div>
                   <p className="text-sm text-slate-600 mb-2">{topic.description}</p>
+                  {topic.reason && (
+                    <p className="text-xs text-blue-600 mb-2 italic">
+                      💡 {topic.reason}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     {topic.keywords.map((kw, i) => (
                       <span
@@ -256,10 +412,16 @@ export default function ContentPlanPage() {
                   >
                     <div className="text-left">
                       <h3 className="font-bold text-slate-800">
-                        {plan.plan.keyword}
+                        {plan.plan.keyword || 'WordPress Analyse'}
+                        {plan.plan.source === 'wordpress-analysis' && (
+                          <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                            WordPress
+                          </span>
+                        )}
                       </h3>
                       <p className="text-sm text-slate-500">
                         {plan.name} • {plan.plan.topics.length} topics
+                        {plan.plan.analyzedUrl && ` • ${plan.plan.analyzedUrl}`}
                       </p>
                     </div>
                     {expandedPlan === plan.id ? (

@@ -86,18 +86,53 @@ Een project = Een WordPress website waar je content naar publiceert
 
 ### 3. 📝 Content Plan
 **Wat doet dit:**
-AI genereert automatisch content ideeën op basis van een keyword
+AI genereert automatisch content ideeën - nu met TWEE opties!
 
+#### **Optie A: Handmatige Modus (Keyword-based)**
 **Hoe gebruik je het:**
-1. Voer een **keyword** in (bijv. "gezond eten")
-2. Klik op **"Genereer Plan"**
-3. AI maakt 5-10 content topics voor je
-4. Bekijk de topics en kies welke je wilt gebruiken
+1. Selecteer de tab **"Handmatig"**
+2. (Optioneel) Kies een project
+3. Voer een **keyword** in (bijv. "gezond eten")
+4. Klik op **"Genereer Plan"**
+5. AI maakt 15-20 content topics voor je
 
 **Tips voor goede keywords:**
 - ✅ Specifiek: "fitness tips voor beginners" 
 - ✅ Niche: "plantaardige recepten"
 - ❌ Te breed: "sport" of "eten"
+
+#### **Optie B: Automatische Modus (WordPress Analyse)** ⭐ NIEUW!
+**Wat doet dit:**
+AI analyseert automatisch je WordPress site en genereert content ideeën op basis van content gaps!
+
+**Hoe gebruik je het:**
+1. Selecteer de tab **"Automatisch (WordPress)"**
+2. Kies een project met een WordPress URL
+3. Klik op **"Analyseer WordPress & Genereer Plan"**
+4. AI doet automatisch:
+   - 📊 Scrapet je WordPress site (laatste 50 posts)
+   - 🔍 Analyseert bestaande content, categorieën en tags
+   - 🎯 Identificeert content gaps (onderwerpen die ontbreken)
+   - ✨ Genereert 15-20 nieuwe, relevante content topics
+   - 💡 Geeft per topic uitleg waarom het relevant is
+
+**Voordelen van WordPress Analyse:**
+- ✅ Geen handmatige keyword input nodig
+- ✅ AI begrijpt je niche automatisch
+- ✅ Genereert topics die perfect passen bij je site
+- ✅ Vult content gaps die je nog niet hebt behandeld
+- ✅ Volledig geautomatiseerd proces
+
+**Vereisten:**
+- Je moet een project hebben met een WordPress URL
+- WordPress REST API moet beschikbaar zijn (standaard enabled)
+- Minimaal een paar posts op je WordPress site
+
+**Wat zie je in de resultaten:**
+- Aantal posts geanalyseerd
+- De WordPress URL die geanalyseerd is
+- 15-20 nieuwe content topics
+- Per topic: waarom het relevant is en welke content gap het vult
 
 **Wat gebeurt er:**
 - AI analyseert trending onderwerpen
