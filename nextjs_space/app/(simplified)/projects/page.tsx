@@ -12,6 +12,7 @@ interface Project {
   description: string | null;
   wordpressUrl?: string | null;
   wordpressUsername?: string | null;
+  wordpressCategory?: string | null;
   createdAt: string;
 }
 
@@ -104,7 +105,7 @@ export default function ProjectsPage() {
       wordpressUrl: project.wordpressUrl || '',
       wordpressUsername: project.wordpressUsername || '',
       wordpressPassword: '', // Password is never returned for security
-      wordpressCategory: '',
+      wordpressCategory: project.wordpressCategory || '',
     });
     setShowNewProject(true);
     // If WordPress URL exists, open the WordPress section

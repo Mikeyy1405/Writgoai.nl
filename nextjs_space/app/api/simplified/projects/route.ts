@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
         description: true,
         wordpressUrl: true,
         wordpressUsername: true,
+        wordpressCategory: true,
         wordpressAutoPublish: true,
         isActive: true,
         createdAt: true,

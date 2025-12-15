@@ -108,6 +108,14 @@ export async function PUT(
     const body = await request.json();
     const { name, websiteUrl, wordpressUrl, wordpressUsername, wordpressPassword, wordpressCategory, description } = body;
 
+    // Validate required fields
+    if (name !== undefined && !name) {
+      return NextResponse.json(
+        { error: 'Project naam is verplicht' },
+        { status: 400 }
+      );
+    }
+
     // Haal client op
     const client = await prisma.client.findUnique({
       where: { email: session.user.email },
@@ -153,7 +161,16 @@ export async function PUT(
     }
 
     // Build update data
-    const updateData: any = {
+    const updateData: {
+      name?: string;
+      websiteUrl?: string | null;
+      description?: string | null;
+      wordpressUrl?: string | null;
+      wordpressUsername?: string | null;
+      wordpressPassword?: string;
+      wordpressCategory?: string | null;
+      updatedAt: Date;
+    } = {
       updatedAt: new Date(),
     };
 
