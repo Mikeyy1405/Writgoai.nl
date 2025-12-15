@@ -35,7 +35,6 @@ import {
   Repeat,
   CreditCard,
 } from 'lucide-react';
-import { isFeatureEnabled } from './feature-flags';
 
 export interface AdminNavItem {
   label: string;
