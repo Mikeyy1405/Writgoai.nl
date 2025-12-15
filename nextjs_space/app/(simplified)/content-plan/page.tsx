@@ -4,12 +4,33 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { ProgressStatusBar, useProgressSteps, ProgressStep } from '@/components/simplified/ProgressStatusBar';
-import { Sparkles, Globe, Loader2 } from 'lucide-react';
+import { Sparkles, Globe, Loader2, ArrowRight, FileText } from 'lucide-react';
 
 interface Project {
   id: string;
   name: string;
   websiteUrl: string | null;
+}
+
+interface ContentPlanTopic {
+  title: string;
+  description: string;
+  keywords: string[];
+  priority: string;
+  reason?: string;
+}
+
+interface ContentPlan {
+  id: string;
+  source: string;
+  name: string;
+  plan: {
+    source: string;
+    keyword?: string;
+    topics: ContentPlanTopic[];
+    generatedAt: string;
+  };
+  lastGenerated: string;
 }
 
 const WORDPRESS_STEPS: ProgressStep[] = [
@@ -30,6 +51,32 @@ const MANUAL_STEPS: ProgressStep[] = [
   { id: 'complete', label: 'Klaar! ✅', status: 'pending' },
 ];
 
+// Helper function to get priority badge styling and text
+function getPriorityBadge(priority: string) {
+  switch (priority.toLowerCase()) {
+    case 'high':
+      return {
+        className: 'bg-red-500/20 text-red-400 border border-red-500/30',
+        text: '🔥 HIGH'
+      };
+    case 'medium':
+      return {
+        className: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
+        text: '🟡 MEDIUM'
+      };
+    case 'low':
+      return {
+        className: 'bg-green-500/20 text-green-400 border border-green-500/30',
+        text: '🟢 LOW'
+      };
+    default:
+      return {
+        className: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
+        text: priority.toUpperCase()
+      };
+  }
+}
+
 export default function ContentPlanPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -39,6 +86,11 @@ export default function ContentPlanPage() {
   const [mode, setMode] = useState<'wordpress' | 'manual'>('manual');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // New state for content plan display
+  const [contentPlanItems, setContentPlanItems] = useState<ContentPlanTopic[]>([]);
+  const [existingPlans, setExistingPlans] = useState<ContentPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
 
   const { steps: wpSteps, setStepStatus: setWpStepStatus, resetSteps: resetWpSteps } = useProgressSteps(WORDPRESS_STEPS);
   const { steps: manualSteps, setStepStatus: setManualStepStatus, resetSteps: resetManualSteps } = useProgressSteps(MANUAL_STEPS);
@@ -48,7 +100,21 @@ export default function ContentPlanPage() {
 
   useEffect(() => {
     fetchProjects();
+    fetchExistingPlans();
   }, []);
+
+  // Load content plan when selected plan changes
+  useEffect(() => {
+    if (selectedPlanId && existingPlans.length > 0) {
+      const plan = existingPlans.find(p => p.id === selectedPlanId);
+      if (plan?.plan?.topics) {
+        setContentPlanItems(plan.plan.topics);
+      }
+    } else if (!selectedPlanId) {
+      // Clear items when no plan is selected
+      setContentPlanItems([]);
+    }
+  }, [selectedPlanId, existingPlans]);
 
   const fetchProjects = async () => {
     try {
@@ -59,6 +125,23 @@ export default function ContentPlanPage() {
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
+    }
+  };
+
+  const fetchExistingPlans = async () => {
+    try {
+      const res = await fetch('/api/simplified/content-plan');
+      if (res.ok) {
+        const data = await res.json();
+        setExistingPlans(data.plans || []);
+        
+        // Auto-select first plan if available
+        if (data.plans && data.plans.length > 0) {
+          setSelectedPlanId(data.plans[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching existing plans:', error);
     }
   };
 
@@ -112,10 +195,11 @@ export default function ContentPlanPage() {
       setStepStatus('save', 'completed');
       setStepStatus('complete', 'completed', 'Je content plan is klaar om mee te werken!');
 
-      // Redirect naar generate page na 2 seconden
-      setTimeout(() => {
-        router.push('/generate');
-      }, 2000);
+      // Update state with generated topics
+      setContentPlanItems(data.topics || []);
+      
+      // Refresh existing plans to include the new one
+      await fetchExistingPlans();
     } catch (error: any) {
       console.error('Error:', error);
       setError(error.message || 'Er is iets misgegaan');
@@ -181,10 +265,11 @@ export default function ContentPlanPage() {
       setStepStatus('save', 'completed');
       setStepStatus('complete', 'completed', 'Je content plan is klaar!');
 
-      // Redirect naar generate page na 2 seconden
-      setTimeout(() => {
-        router.push('/generate');
-      }, 2000);
+      // Update state with generated topics
+      setContentPlanItems(data.topics || []);
+      
+      // Refresh existing plans to include the new one
+      await fetchExistingPlans();
     } catch (error: any) {
       console.error('Error:', error);
       setError(error.message || 'Er is iets misgegaan');
@@ -307,6 +392,139 @@ export default function ContentPlanPage() {
         {loading && (
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
             <ProgressStatusBar steps={currentSteps} />
+          </div>
+        )}
+
+        {/* Existing Plans Section */}
+        {!loading && existingPlans.length > 0 && (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-white">Bestaande Content Plans</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Selecteer een content plan om te bekijken
+              </label>
+              <select
+                value={selectedPlanId}
+                onChange={(e) => setSelectedPlanId(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">-- Selecteer een plan --</option>
+                {existingPlans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} {plan.plan.keyword ? `(${plan.plan.keyword})` : ''} - {new Date(plan.lastGenerated).toLocaleDateString('nl-NL')}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Content Plan Items Display */}
+        {!loading && contentPlanItems.length > 0 && (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                📋 Content Plan Items ({contentPlanItems.length} topics)
+              </h2>
+            </div>
+            
+            <div className="space-y-3">
+              {contentPlanItems.map((topic, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-900 border border-gray-700 rounded-lg p-5 space-y-3 hover:border-gray-600 transition-all"
+                >
+                  {/* Priority Badge and Title */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const badge = getPriorityBadge(topic.priority);
+                          return (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold ${badge.className}`}>
+                              {badge.text}
+                            </span>
+                          );
+                        })()}
+                        <h3 className="text-lg font-semibold text-white flex-1">
+                          {topic.title}
+                        </h3>
+                      </div>
+                      
+                      {/* Description */}
+                      <p className="text-gray-400 text-sm leading-relaxed">
+                        {topic.description}
+                      </p>
+                      
+                      {/* Keywords */}
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-xs text-gray-500 font-medium">Keywords:</span>
+                        {topic.keywords.map((keyword, kidx) => (
+                          <span
+                            key={kidx}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-gray-800 text-gray-300 border border-gray-700"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {/* Reason (if available from WordPress analysis) */}
+                      {topic.reason && topic.reason.trim() !== '' && (
+                        <p className="text-xs text-gray-500 italic">
+                          💡 {topic.reason}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Write Article Button */}
+                    <button
+                      onClick={() => {
+                        if (!topic.title || !topic.keywords || topic.keywords.length === 0) {
+                          console.error('Invalid topic data for navigation');
+                          return;
+                        }
+                        const params = new URLSearchParams();
+                        params.set('title', topic.title);
+                        params.set('keywords', topic.keywords.join(','));
+                        router.push(`/generate?${params.toString()}`);
+                      }}
+                      className="flex-shrink-0 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold py-2 px-4 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <span>Schrijf artikel</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && contentPlanItems.length === 0 && existingPlans.length === 0 && (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-12 text-center">
+            <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-400 mb-2">
+              Nog geen content plan
+            </h3>
+            <p className="text-gray-500">
+              Genereer je eerste content plan met een keyword of WordPress analyse
+            </p>
+          </div>
+        )}
+
+        {/* Empty State - Plan selected but no items */}
+        {!loading && contentPlanItems.length === 0 && existingPlans.length > 0 && selectedPlanId && (
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-12 text-center">
+            <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-400 mb-2">
+              Geen topics in dit plan
+            </h3>
+            <p className="text-gray-500">
+              Selecteer een ander plan of genereer een nieuw content plan
+            </p>
           </div>
         )}
       </div>
