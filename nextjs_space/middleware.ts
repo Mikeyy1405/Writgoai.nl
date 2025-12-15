@@ -1,101 +1,38 @@
 /**
- * WRITGO.NL MIDDLEWARE - ROUTING & AUTHENTICATION
+ * WRITGO.NL SIMPLIFIED MIDDLEWARE
  * 
- * Duidelijke routing structuur:
- * - /admin/*     = Admin routes (content management, clients, financials, etc.)
- * - /client/*    = Client portal routes (overzicht, content, platforms, account)
- * - /dashboard/* = Legacy routes (wordt geredirect naar /client/*)
- * 
- * Role-based access:
- * - Admin/Superadmin → Toegang tot /admin/* en /client/*
- * - Client → Alleen toegang tot /client/*
+ * SUPER SIMPEL - Geen admin/client scheiding meer!
+ * Iedereen heeft dezelfde interface met 6 functies:
+ * - / (Dashboard)
+ * - /projects (Projecten)
+ * - /content-plan (Content Planning)
+ * - /generate (Content Genereren)
+ * - /publish (Publiceren)
+ * - /stats (Statistieken)
  */
 
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import { featureGateMiddleware } from '@/middleware/feature-gate';
 
 export default withAuth(
   function middleware(req) {
-    const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
-    
-    // Role check - declare early for use throughout middleware
-    const isAdmin = token?.role === 'admin' || token?.role === 'superadmin';
-
-    // ===================================
-    // FEATURE GATE CHECK (FIRST)
-    // ===================================
-    // Block access to disabled features before auth check
-    const featureGateResponse = featureGateMiddleware(req);
-    if (featureGateResponse.status === 307 || featureGateResponse.status === 308) {
-      // Feature is disabled, redirect
-      return featureGateResponse;
-    }
 
     // ===================================
     // LEGACY REDIRECTS
     // ===================================
-    // Old /client-portal → New /client structure
-    if (path.startsWith('/client-portal')) {
-      // Map old routes to new structure
-      if (path === '/client-portal' || path === '/client-portal/dashboard') {
-        return NextResponse.redirect(new URL('/client/overzicht', req.url));
-      }
-      // Redirect all other old portal routes to overview
-      return NextResponse.redirect(new URL('/client/overzicht', req.url));
+    // Alle oude routes → dashboard
+    if (
+      path.startsWith('/admin') || 
+      path.startsWith('/client') || 
+      path.startsWith('/client-portal') || 
+      path.startsWith('/dashboard') ||
+      path.startsWith('/admin-portal') ||
+      path.startsWith('/superadmin')
+    ) {
+      console.log(`🔄 Redirecting legacy route ${path} → /`);
+      return NextResponse.redirect(new URL('/', req.url));
     }
-
-    // Old /dashboard → Role-based redirect
-    if (path.startsWith('/dashboard')) {
-      // Admins go to admin dashboard, clients go to client portal
-      if (isAdmin) {
-        // Map specific dashboard routes for admins
-        const dashboardToAdminMap: Record<string, string> = {
-          '/dashboard': '/admin/dashboard',
-          '/dashboard/overzicht': '/admin/dashboard',
-        };
-
-        const newPath = dashboardToAdminMap[path];
-        if (newPath) {
-          return NextResponse.redirect(new URL(newPath, req.url));
-        }
-
-        // Default: redirect to admin dashboard
-        return NextResponse.redirect(new URL('/admin/dashboard', req.url));
-      } else {
-        // Map specific dashboard routes for clients
-        const dashboardToClientMap: Record<string, string> = {
-          '/dashboard': '/client/overzicht',
-          '/dashboard/overzicht': '/client/overzicht',
-          '/dashboard/content': '/client/content',
-          '/dashboard/platforms': '/client/platforms',
-          '/dashboard/account': '/client/account',
-        };
-
-        const newPath = dashboardToClientMap[path];
-        if (newPath) {
-          return NextResponse.redirect(new URL(newPath, req.url));
-        }
-
-        // Default: redirect to client overview
-        return NextResponse.redirect(new URL('/client/overzicht', req.url));
-      }
-    }
-
-    // ===================================
-    // ROLE-BASED ACCESS CONTROL
-    // ===================================
-    // ADMIN ROUTES - Only for admin/superadmin
-    if (path.startsWith('/admin') || path.startsWith('/superadmin') || path.startsWith('/admin-portal')) {
-      if (!isAdmin) {
-        // Non-admin users trying to access admin routes → redirect to client portal
-        return NextResponse.redirect(new URL('/client/overzicht', req.url));
-      }
-    }
-
-    // CLIENT ROUTES - Accessible to everyone (clients and admins)
-    // No additional checks needed - if authenticated, they can access /client/*
 
     return NextResponse.next();
   },
@@ -111,15 +48,19 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // Admin routes
+    // Nieuwe simpele routes (protected)
+    '/',
+    '/projects/:path*',
+    '/content-plan/:path*',
+    '/generate/:path*',
+    '/publish/:path*',
+    '/stats/:path*',
+    
+    // Legacy routes (redirect naar /)
     '/admin/:path*',
     '/admin-portal/:path*',
     '/superadmin/:path*',
-    
-    // Client routes (new structure)
     '/client/:path*',
-    
-    // Legacy routes (will be redirected)
     '/client-portal/:path*',
     '/dashboard/:path*',
   ],

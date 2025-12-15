@@ -4,8 +4,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 
-// Admin emails that should get admin privileges
-const adminEmails = ['info@writgoai.nl', 'info@writgo.nl'];
+// SIMPLIFIED AUTH - Geen admin/client onderscheid meer!
+// Iedereen is gewoon 'user' en krijgt alle functionaliteit
 
 export const authOptions: NextAuthOptions = {
   // Note: PrismaAdapter removed - using Supabase with custom callbacks
@@ -41,7 +41,7 @@ export const authOptions: NextAuthOptions = {
               id: user.id,
               email: user.email,
               name: user.name,
-              role: user.role || 'admin',
+              role: 'user', // Iedereen is nu 'user'
             };
           }
         }
@@ -60,14 +60,11 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (isPasswordValid) {
-            // Special handling for admin emails - give admin role
-            const role = adminEmails.includes(client.email.toLowerCase()) ? 'admin' : 'client';
-            
             return {
               id: client.id,
               email: client.email,
               name: client.name,
-              role: role,
+              role: 'user', // Iedereen is nu 'user'
             };
           }
         }
@@ -111,7 +108,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role || 'admin',
+          role: 'user', // Iedereen is nu 'user'
         };
       },
     }),
@@ -147,14 +144,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Ongeldige inloggegevens');
         }
 
-        // Special handling for admin emails - give admin role
-        const role = adminEmails.includes(client.email.toLowerCase()) ? 'admin' : 'client';
-
         return {
           id: client.id,
           email: client.email,
           name: client.name,
-          role: role,
+          role: 'user', // Iedereen is nu 'user'
         };
       },
     }),
