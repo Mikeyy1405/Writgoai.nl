@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         websiteUrl: true,
+        description: true,
         wordpressUrl: true,
         wordpressUsername: true,
         wordpressAutoPublish: true,
@@ -64,11 +65,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, wordpressUrl, wordpressUsername, wordpressPassword, getLateDevApiKey } = body;
+    const { name, websiteUrl, wordpressUrl, wordpressUsername, wordpressPassword, getLateDevApiKey, description } = body;
 
-    if (!name || !wordpressUrl || !wordpressUsername || !wordpressPassword) {
+    // Only name is required
+    if (!name) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Project naam is verplicht' },
         { status: 400 }
       );
     }
@@ -82,34 +84,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    // Test WordPress connectie
-    try {
-      const wpTestUrl = `${wordpressUrl}/wp-json/wp/v2/posts?per_page=1`;
-      const wpResponse = await fetch(wpTestUrl, {
-        headers: {
-          'Authorization': `Basic ${Buffer.from(`${wordpressUsername}:${wordpressPassword}`).toString('base64')}`,
-        },
-      });
+    // Helper to check if all WordPress credentials are provided
+    const hasCompleteWordPressCredentials = wordpressUrl && wordpressUsername && wordpressPassword;
+    
+    // Test WordPress connectie alleen als alle credentials aanwezig zijn
+    if (hasCompleteWordPressCredentials) {
+      try {
+        const wpTestUrl = `${wordpressUrl}/wp-json/wp/v2/posts?per_page=1`;
+        const wpResponse = await fetch(wpTestUrl, {
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${wordpressUsername}:${wordpressPassword}`).toString('base64')}`,
+          },
+        });
 
-      if (!wpResponse.ok) {
-        throw new Error('WordPress connection failed');
+        if (!wpResponse.ok) {
+          throw new Error('WordPress connection failed');
+        }
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'WordPress connection failed. Check your credentials.' },
+          { status: 400 }
+        );
       }
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'WordPress connection failed. Check your credentials.' },
-        { status: 400 }
-      );
     }
 
-    // Maak project aan
+    // Maak project aan (werkt nu ook zonder WordPress)
     const project = await prisma.project.create({
       data: {
         clientId: client.id,
         name,
-        websiteUrl: wordpressUrl,
-        wordpressUrl,
-        wordpressUsername,
-        wordpressPassword,
+        // websiteUrl priority: explicit websiteUrl > wordpressUrl > null
+        websiteUrl: websiteUrl || wordpressUrl || null,
+        description: description || null,
+        wordpressUrl: wordpressUrl || null,
+        wordpressUsername: wordpressUsername || null,
+        wordpressPassword: wordpressPassword || null,
         isActive: true,
         isPrimary: false,
       },
