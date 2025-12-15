@@ -50,11 +50,19 @@ function createHeartbeat() {
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   
+  // Heartbeat interval to prevent timeouts (needs to be in outer scope for cancel handler)
+  let heartbeatInterval: NodeJS.Timeout | null = null;
+  
+  // Ensure cleanup in all scenarios
+  const cleanupHeartbeat = () => {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+  };
+
   const stream = new ReadableStream({
     async start(controller) {
-      // Heartbeat interval to prevent timeouts
-      let heartbeatInterval: NodeJS.Timeout | null = null;
-      
       try {
         // Parse request
         const body: VideoGenerationRequest = await request.json();
@@ -110,7 +118,7 @@ export async function POST(request: NextRequest) {
             controller.enqueue(encoder.encode(createHeartbeat()));
           } catch (error) {
             // Client disconnected, clear heartbeat
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            cleanupHeartbeat();
           }
         }, 10000); // Every 10 seconds
 
@@ -129,7 +137,7 @@ export async function POST(request: NextRequest) {
             message: `Niet genoeg credits. ${type} video generatie kost ${creditCost} credits.`
           })));
           controller.close();
-          if (heartbeatInterval) clearInterval(heartbeatInterval);
+          cleanupHeartbeat();
           return;
         }
 
@@ -141,6 +149,11 @@ export async function POST(request: NextRequest) {
 
         let videoResult: any = null;
         let videoId: string | null = null;
+
+        // Helper function to detect Dutch language
+        const isDutchLanguage = (lang: string): boolean => {
+          return lang.toLowerCase().includes('dutch') || lang.toLowerCase().includes('nl');
+        };
 
         // Route based on type
         if (type === 'simple') {
@@ -254,8 +267,7 @@ export async function POST(request: NextRequest) {
           })));
 
           // Generate voiceover if needed
-          const isDutch = language.toLowerCase().includes('dutch') || language.toLowerCase().includes('nl');
-          const selectedVoiceId = voiceId || (isDutch ? VOICES.laura : VOICES.rachel);
+          const selectedVoiceId = voiceId || (isDutchLanguage(language) ? VOICES.laura : VOICES.rachel);
 
           controller.enqueue(encoder.encode(createStreamUpdate('status', {
             message: '🎬 Video wordt geassembleerd...',
@@ -352,8 +364,7 @@ export async function POST(request: NextRequest) {
             })));
 
             // Generate voiceover
-            const isDutch = language.toLowerCase().includes('dutch') || language.toLowerCase().includes('nl');
-            const selectedVoiceId = voiceId || (isDutch ? VOICES.laura : VOICES.rachel);
+            const selectedVoiceId = voiceId || (isDutchLanguage(language) ? VOICES.laura : VOICES.rachel);
 
             const voiceover = await videoCreator.generateVoiceover({
               script: videoScript,
@@ -432,20 +443,26 @@ export async function POST(request: NextRequest) {
         })));
 
         // Clear heartbeat
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        cleanupHeartbeat();
         controller.close();
 
       } catch (error: any) {
         console.error('Video generation error:', error);
         
         // Clear heartbeat on error
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        cleanupHeartbeat();
         
         controller.enqueue(encoder.encode(createStreamUpdate('error', {
           message: `Video generatie mislukt: ${error.message}`
         })));
         controller.close();
       }
+    },
+    cancel() {
+      // Cleanup when stream is cancelled (e.g., client disconnects)
+      cleanupHeartbeat();
+    }
+  });
     }
   });
 

@@ -591,7 +591,7 @@ export default function UnifiedVideoPage() {
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-gray-300">
                   <div>
-                    <p className="font-semibold text-white mb-1">Simple ({getCreditCost()} credits)</p>
+                    <p className="font-semibold text-white mb-1">Simple (10 credits)</p>
                     <p>Snelle AI video generatie met Luma AI. Duur: 1-2 minuten.</p>
                   </div>
                   <div>
