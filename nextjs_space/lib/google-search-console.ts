@@ -40,7 +40,8 @@ export class GoogleSearchConsole {
     // Support both GOOGLE_SEARCH_CONSOLE_* and GOOGLE_* environment variables
     const clientId = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_SEARCH_CONSOLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+    // Construct redirect URI from NEXTAUTH_URL
+    const redirectUri = `${process.env.NEXTAUTH_URL}/api/integrations/google-search-console/callback`;
 
     if (!clientId || !clientSecret) {
       console.error('[Google OAuth] Missing credentials');
@@ -70,7 +71,8 @@ export class GoogleSearchConsole {
     // Support both GOOGLE_SEARCH_CONSOLE_* and GOOGLE_* environment variables
     const clientId = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_SEARCH_CONSOLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+    // Construct redirect URI from NEXTAUTH_URL
+    const redirectUri = `${process.env.NEXTAUTH_URL}/api/integrations/google-search-console/callback`;
 
     if (!clientId || !clientSecret) {
       console.error('[Google OAuth] Missing credentials for auth URL');
@@ -78,6 +80,8 @@ export class GoogleSearchConsole {
       console.error('[Google OAuth] GOOGLE_CLIENT_ID:', !!process.env.GOOGLE_CLIENT_ID);
       throw new Error('Google OAuth credentials not configured');
     }
+
+    console.log('[Google OAuth] Auth URL redirect URI:', redirectUri);
 
     const oauth2Client = new google.auth.OAuth2(
       clientId,
@@ -104,7 +108,8 @@ export class GoogleSearchConsole {
     // Support both GOOGLE_SEARCH_CONSOLE_* and GOOGLE_* environment variables
     const clientId = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_SEARCH_CONSOLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+    // Construct redirect URI from NEXTAUTH_URL
+    const redirectUri = `${process.env.NEXTAUTH_URL}/api/integrations/google-search-console/callback`;
 
     if (!clientId || !clientSecret) {
       console.error('[Google OAuth] Missing credentials for token exchange');
@@ -112,6 +117,8 @@ export class GoogleSearchConsole {
       console.error('[Google OAuth] GOOGLE_CLIENT_ID:', !!process.env.GOOGLE_CLIENT_ID);
       throw new Error('Google OAuth credentials not configured');
     }
+
+    console.log('[Google OAuth] Token exchange redirect URI:', redirectUri);
 
     const oauth2Client = new google.auth.OAuth2(
       clientId,

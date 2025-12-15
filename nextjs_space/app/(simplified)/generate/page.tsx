@@ -28,11 +28,9 @@ interface ContentPlan {
 }
 
 const QUICK_GENERATE_STEPS: ProgressStep[] = [
-  { id: 'research', label: 'Keyword research', status: 'pending' },
-  { id: 'outline', label: 'Outline maken', status: 'pending' },
-  { id: 'write', label: 'Artikel schrijven', status: 'pending' },
-  { id: 'seo', label: 'SEO metadata toevoegen', status: 'pending' },
-  { id: 'image', label: 'Featured image prompt genereren', status: 'pending' },
+  { id: 'writgo', label: 'Artikel met Writgo regels genereren', status: 'pending' },
+  { id: 'images', label: 'Flux Pro afbeeldingen genereren', status: 'pending' },
+  { id: 'links', label: 'Interne links toevoegen', status: 'pending' },
   { id: 'save', label: 'Artikel opslaan', status: 'pending' },
   { id: 'complete', label: 'Klaar! ✅', status: 'pending' },
 ];
@@ -45,11 +43,12 @@ export default function QuickGeneratePage() {
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
   const [keyword, setKeyword] = useState('');
   const [selectedProject, setSelectedProject] = useState<string>('');
-  const [tone, setTone] = useState<'professional' | 'casual' | 'friendly'>('professional');
+  const [tone, setTone] = useState<'professioneel' | 'casual' | 'informatief' | 'enthousiast'>('professioneel');
   const [length, setLength] = useState<'short' | 'medium' | 'long'>('medium');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generatedArticle, setGeneratedArticle] = useState<any>(null);
+  const [publishing, setPublishing] = useState(false);
 
   const { steps, setStepStatus, resetSteps } = useProgressSteps(QUICK_GENERATE_STEPS);
 
@@ -124,18 +123,8 @@ export default function QuickGeneratePage() {
     resetSteps();
 
     try {
-      // Stap 1: Keyword research
-      setStepStatus('research', 'in_progress', 'Analyseren van keyword en concurrent content...');
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Stap 2: Outline maken
-      setStepStatus('research', 'completed');
-      setStepStatus('outline', 'in_progress', 'SEO-vriendelijke outline wordt gemaakt...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Stap 3: Artikel schrijven
-      setStepStatus('outline', 'completed');
-      setStepStatus('write', 'in_progress', 'AI schrijft je artikel...');
+      // Stap 1: Writgo artikel genereren
+      setStepStatus('writgo', 'in_progress', 'Schrijven met Writgo regels (1500 woorden, 100% menselijk)...');
 
       const response = await fetch('/api/simplified/generate/quick', {
         method: 'POST',
@@ -143,8 +132,7 @@ export default function QuickGeneratePage() {
         body: JSON.stringify({
           keyword: keyword.trim(),
           projectId: selectedProject || undefined,
-          tone,
-          length,
+          toneOfVoice: tone,
         }),
       });
 
@@ -154,24 +142,24 @@ export default function QuickGeneratePage() {
         throw new Error(data.error || 'Failed to generate article');
       }
 
-      // Stap 4: SEO metadata
-      setStepStatus('write', 'completed', `${data.article.wordCount} woorden geschreven`);
-      setStepStatus('seo', 'in_progress', 'SEO metadata wordt toegevoegd...');
+      // Stap 2: Afbeeldingen
+      setStepStatus('writgo', 'completed', `${data.article.wordCount} woorden geschreven`);
+      setStepStatus('images', 'in_progress', `${data.article.imageCount} Flux Pro afbeeldingen worden gegenereerd...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Stap 3: Interne links
+      setStepStatus('images', 'completed', `${data.article.imageCount} afbeeldingen toegevoegd`);
+      setStepStatus('links', 'in_progress', 'Interne links worden toegevoegd...');
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Stap 5: Featured image
-      setStepStatus('seo', 'completed');
-      setStepStatus('image', 'in_progress', 'Featured image prompt wordt gegenereerd...');
+      // Stap 4: Opslaan
+      setStepStatus('links', 'completed', `${data.article.internalLinksCount} interne links toegevoegd`);
+      setStepStatus('save', 'in_progress', 'Artikel wordt opgeslagen...');
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Stap 6: Opslaan
-      setStepStatus('image', 'completed');
-      setStepStatus('save', 'in_progress', 'Artikel wordt opgeslagen als draft...');
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Stap 7: Klaar
+      // Stap 5: Klaar
       setStepStatus('save', 'completed');
-      setStepStatus('complete', 'completed', 'Je artikel is klaar om te publiceren!');
+      setStepStatus('complete', 'completed', '✅ Artikel klaar om te kopiëren of publiceren!');
 
       setGeneratedArticle(data.article);
     } catch (error: any) {
@@ -183,6 +171,43 @@ export default function QuickGeneratePage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyArticle = () => {
+    if (!generatedArticle?.content) return;
+    navigator.clipboard.writeText(generatedArticle.content);
+    alert('✅ Artikel gekopieerd naar klembord!');
+  };
+
+  const handlePublishToWordPress = async () => {
+    if (!generatedArticle?.id || !selectedProject) {
+      alert('❌ Selecteer eerst een project met WordPress instellingen');
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      const response = await fetch('/api/simplified/publish/wordpress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId: generatedArticle.id,
+          projectId: selectedProject,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to publish to WordPress');
+      }
+
+      alert(`✅ Artikel gepubliceerd op WordPress!\n\nURL: ${data.wordpressUrl}`);
+    } catch (error: any) {
+      alert(`❌ Fout bij publiceren: ${error.message}`);
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -373,56 +398,51 @@ export default function QuickGeneratePage() {
                 )}
               </div>
 
-              {/* Tone Selection */}
+              {/* Tone Selection - Writgo Tones */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Toon van het artikel
+                  Tone of Voice (Writgo regels)
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['professional', 'casual', 'friendly'].map((t) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'professioneel', label: 'Professioneel', desc: 'Zakelijk en betrouwbaar' },
+                    { value: 'casual', label: 'Casual', desc: 'Ontspannen en toegankelijk' },
+                    { value: 'informatief', label: 'Informatief', desc: 'Educatief en helder' },
+                    { value: 'enthousiast', label: 'Enthousiast', desc: 'Energiek en positief' },
+                  ].map((t) => (
                     <button
-                      key={t}
-                      onClick={() => setTone(t as any)}
-                      className={`py-2 px-4 rounded-lg border-2 transition-all ${
-                        tone === t
-                          ? 'border-orange-500 bg-orange-500/10 text-orange-500'
-                          : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'
+                      key={t.value}
+                      onClick={() => setTone(t.value as any)}
+                      className={`py-3 px-4 rounded-lg border-2 transition-all text-left ${
+                        tone === t.value
+                          ? 'border-orange-500 bg-orange-500/10'
+                          : 'border-gray-700 bg-gray-900 hover:border-gray-600'
                       }`}
                       disabled={loading}
                     >
-                      {t === 'professional' && 'Professioneel'}
-                      {t === 'casual' && 'Casual'}
-                      {t === 'friendly' && 'Vriendelijk'}
+                      <div className={`font-semibold text-sm ${tone === t.value ? 'text-orange-500' : 'text-white'}`}>
+                        {t.label}
+                      </div>
+                      <div className="text-xs text-gray-400">{t.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Length Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Lengte van het artikel
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: 'short', label: 'Kort', words: '~500' },
-                    { value: 'medium', label: 'Gemiddeld', words: '~1000' },
-                    { value: 'long', label: 'Lang', words: '~1500' },
-                  ].map((l) => (
-                    <button
-                      key={l.value}
-                      onClick={() => setLength(l.value as any)}
-                      className={`py-3 px-4 rounded-lg border-2 transition-all ${
-                        length === l.value
-                          ? 'border-orange-500 bg-orange-500/10 text-orange-500'
-                          : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'
-                      }`}
-                      disabled={loading}
-                    >
-                      <div className="font-semibold">{l.label}</div>
-                      <div className="text-xs opacity-75">{l.words} woorden</div>
-                    </button>
-                  ))}
+              {/* Writgo Info */}
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <span className="text-2xl">✨</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-green-400 mb-1">Writgo Regels Actief</h3>
+                    <ul className="text-xs text-gray-300 space-y-1">
+                      <li>• 1500 woorden, 100% menselijk scoren</li>
+                      <li>• E-E-A-T geoptimaliseerd voor Google</li>
+                      <li>• Flux Pro afbeeldingen (1 per 500 woorden)</li>
+                      <li>• Automatische interne links</li>
+                      <li>• Verboden woorden gefilterd</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
 
@@ -444,20 +464,7 @@ export default function QuickGeneratePage() {
               </button>
             </div>
 
-            {/* Info Box */}
-            {!loading && !generatedArticle && (
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-blue-400 mb-2">💡 Hoe werkt het?</h3>
-                <ul className="text-xs text-gray-400 space-y-1">
-                  <li>• AI doet keyword research</li>
-                  <li>• Maakt een SEO-vriendelijke outline</li>
-                  <li>• Schrijft een volledig artikel</li>
-                  <li>• Voegt SEO metadata toe</li>
-                  <li>• Genereert featured image prompt</li>
-                  <li>• Slaat op als draft in je account</li>
-                </ul>
-              </div>
-            )}
+
           </div>
 
           {/* Right: Progress & Preview */}
@@ -479,7 +486,7 @@ export default function QuickGeneratePage() {
                   </h2>
                   <span className="text-sm text-green-400 flex items-center space-x-1">
                     <Check className="w-4 h-4" />
-                    <span>Gegenereerd</span>
+                    <span>Gegenereerd met Writgo</span>
                   </span>
                 </div>
 
@@ -489,50 +496,53 @@ export default function QuickGeneratePage() {
                     <div className="text-lg font-semibold text-white">{generatedArticle.title}</div>
                   </div>
 
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">Meta Description:</div>
-                    <div className="text-sm text-gray-300">{generatedArticle.excerpt}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">Keywords:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {generatedArticle.keywords?.map((kw: string, i: number) => (
-                        <span
-                          key={i}
-                          className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded"
-                        >
-                          {kw}
-                        </span>
-                      ))}
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-3 pt-2">
+                    <div className="bg-gray-900 rounded-lg p-3 text-center">
+                      <div className="text-xs text-gray-400 mb-1">📝 Woorden</div>
+                      <div className="text-lg font-bold text-white">{generatedArticle.wordCount}</div>
                     </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">Word Count:</div>
-                    <div className="text-sm text-gray-300">{generatedArticle.wordCount} woorden</div>
+                    <div className="bg-gray-900 rounded-lg p-3 text-center">
+                      <div className="text-xs text-gray-400 mb-1">🖼️ Afbeeldingen</div>
+                      <div className="text-lg font-bold text-white">{generatedArticle.imageCount}</div>
+                    </div>
+                    <div className="bg-gray-900 rounded-lg p-3 text-center">
+                      <div className="text-xs text-gray-400 mb-1">🔗 Links</div>
+                      <div className="text-lg font-bold text-white">{generatedArticle.internalLinksCount || 0}</div>
+                    </div>
                   </div>
 
                   <div className="pt-4 border-t border-gray-700">
                     <div className="text-xs text-gray-400 mb-2">Content Preview:</div>
                     <div
-                      className="text-sm text-gray-300 max-h-96 overflow-y-auto prose prose-invert prose-sm"
+                      className="text-sm text-gray-300 max-h-96 overflow-y-auto prose prose-invert prose-sm bg-white/5 p-4 rounded"
                       dangerouslySetInnerHTML={{
-                        __html: generatedArticle.content.substring(0, 1000) + '...',
+                        __html: generatedArticle.content.substring(0, 2000) + '...',
                       }}
                     />
                   </div>
                 </div>
 
-                <div className="flex space-x-2 pt-4">
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-3 pt-4">
                   <button
-                    onClick={() => {
-                      window.open(`/admin/blog/editor?id=${generatedArticle.id}`, '_blank');
-                    }}
-                    className="flex-1 bg-orange-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-orange-600 transition-all"
+                    onClick={handleCopyArticle}
+                    className="bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center space-x-2"
                   >
-                    Bekijk & Bewerk
+                    <span>📋</span>
+                    <span>Kopieer HTML</span>
                   </button>
+                  <button
+                    onClick={handlePublishToWordPress}
+                    disabled={publishing || !selectedProject}
+                    className="bg-orange-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-orange-600 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span>🚀</span>
+                    <span>{publishing ? 'Publiceren...' : 'Publiceer naar WordPress'}</span>
+                  </button>
+                </div>
+
+                <div className="flex space-x-2">
                   <button
                     onClick={() => {
                       setGeneratedArticle(null);

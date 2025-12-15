@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
 import { createClient } from '@supabase/supabase-js';
+import { generateWritgoPrompt, generateImagePrompt } from '@/lib/writgo-prompt';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,7 @@ const supabase = createClient(
 
 /**
  * POST /api/simplified/generate/quick
- * Quick Generate - Genereer een volledig artikel zonder content plan
+ * Quick Generate - Genereer een volledig artikel met Writgo regels, Flux Pro afbeeldingen, en interne links
  */
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { keyword, projectId, tone = 'professional', length = 'medium' } = body;
+    const { keyword, projectId, toneOfVoice = 'professioneel' } = body;
 
     if (!keyword?.trim()) {
       return NextResponse.json(
@@ -39,7 +39,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Quick Generate] Starting for keyword: ${keyword}`);
+    console.log('[Quick Generate] Starting...');
+    console.log('[Quick Generate] Keyword:', keyword);
+    console.log('[Quick Generate] Tone:', toneOfVoice);
 
     // ✅ Haal client op via SUPABASE
     const { data: client, error: clientError } = await supabase
@@ -68,183 +70,160 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Bepaal word count op basis van length
-    let targetWords = 1000;
-    switch (length) {
-      case 'short':
-        targetWords = 500;
-        break;
-      case 'medium':
-        targetWords = 1000;
-        break;
-      case 'long':
-        targetWords = 1500;
-        break;
-    }
+    // ✅ Haal bestaande artikelen op voor interne links
+    const { data: existingArticles } = await supabase
+      .from('BlogPost')
+      .select('id, title, slug, content')
+      .eq('clientId', client.id)
+      .eq('status', 'published')
+      .limit(20);
 
-    // Stap 1: Keyword Research & Outline
-    console.log('[Quick Generate] Step 1: Keyword research & outline');
-    const outlinePrompt = `Je bent een SEO expert en content writer.
+    console.log('[Quick Generate] Found', existingArticles?.length || 0, 'existing articles for internal links');
 
-TAAK: Creëer een SEO-geoptimaliseerde outline voor een artikel over "${keyword}"
+    // STEP 1: Genereer artikel met Writgo prompt
+    console.log('[Quick Generate] Generating article with Writgo rules...');
 
-TOON VAN HET ARTIKEL: ${tone}
-LENGTE: ${length} (~${targetWords} woorden)
+    const writgoPrompt = generateWritgoPrompt(keyword, toneOfVoice);
 
-Genereer:
-1. Een pakkende, SEO-vriendelijke titel
-2. Een meta description (150-160 karakters)
-3. 5-7 gerelateerde keywords
-4. Een gedetailleerde outline met H2 en H3 headings
-5. Featured image prompt voor AI image generator
-
-Format je antwoord als JSON:
-{
-  "title": "...",
-  "metaDescription": "...",
-  "keywords": ["..."],
-  "outline": [
-    { "type": "h2", "text": "...", "subsections": ["h3 text 1", "h3 text 2"] }
-  ],
-  "featuredImagePrompt": "..."
-}
-
-BELANGRIJK:
-- Titel moet pakkend en SEO-vriendelijk zijn
-- Outline moet logisch en compleet zijn
-- Keywords moeten relevant zijn
-- Image prompt moet beschrijvend zijn voor een AI image generator`;
-
-    const outlineResponse = await chatCompletion({
-      model: TEXT_MODELS.GPT5_CHAT,
-      messages: [{ role: 'user', content: outlinePrompt }],
-      temperature: 0.7,
-      max_tokens: 2000,
+    const articleResponse = await fetch('https://api.aimlapi.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.AIML_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5-20250929',
+        messages: [{ role: 'user', content: writgoPrompt }],
+        temperature: 0.7,
+        max_tokens: 4000
+      })
     });
 
-    let outline;
-    try {
-      // ✅ FIX: Extract content from correct response structure
-      // AIML API returns: { choices: [{ message: { content: "..." } }] }
-      const content = outlineResponse.choices?.[0]?.message?.content || '';
-      
-      console.log('[Quick Generate] Outline response length:', content.length);
-      console.log('[Quick Generate] Outline preview:', content.substring(0, 200));
-      
-      if (!content) {
-        console.error('[Quick Generate] ❌ EMPTY CONTENT! Response structure:', {
-          hasChoices: !!outlineResponse.choices,
-          choicesLength: outlineResponse.choices?.length || 0,
-          responseKeys: Object.keys(outlineResponse)
-        });
-        throw new Error('Empty AI response');
-      }
-      
-      // Extract JSON from response
-      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      const cleanedContent = codeBlockMatch ? codeBlockMatch[1] : content;
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-      
-      if (jsonMatch) {
-        outline = JSON.parse(jsonMatch[0]);
-      } else {
-        outline = JSON.parse(cleanedContent.trim());
-      }
-      
-      console.log('[Quick Generate] ✅ Outline parsed successfully');
-      console.log('[Quick Generate] Title:', outline.title);
-      
-    } catch (error) {
-      console.error('[Quick Generate] Error parsing outline:', error);
-      console.error('[Quick Generate] Response content preview:', outlineResponse.choices?.[0]?.message?.content?.substring(0, 500));
-      return NextResponse.json(
-        { 
-          error: 'Kon outline niet verwerken',
-          details: error instanceof Error ? error.message : 'Unknown parsing error'
-        },
-        { status: 500 }
-      );
+    if (!articleResponse.ok) {
+      throw new Error(`AIML API error: ${articleResponse.statusText}`);
     }
 
-    console.log('[Quick Generate] Step 2: Generating article content');
-    
-    // Stap 2: Genereer het volledige artikel
-    const articlePrompt = `Je bent een expert content writer.
-
-TAAK: Schrijf een volledig, SEO-geoptimaliseerd artikel gebaseerd op deze outline.
-
-TITEL: ${outline.title}
-TOON: ${tone}
-LENGTE: ~${targetWords} woorden
-KEYWORDS: ${outline.keywords.join(', ')}
-
-OUTLINE:
-${outline.outline.map((section: any) => `
-${section.text}
-${section.subsections ? section.subsections.map((sub: string) => `  - ${sub}`).join('\n') : ''}
-`).join('\n')}
-
-INSTRUCTIES:
-- Schrijf in een ${tone} toon
-- Gebruik de keywords natuurlijk door het artikel heen
-- Maak het boeiend en informatief
-- Gebruik korte paragrafen (2-3 zinnen)
-- Voeg bullet points toe waar relevant
-- Schrijf ongeveer ${targetWords} woorden
-- Begin NIET met een inleiding zoals "In dit artikel...", maar duik direct in het onderwerp
-- Eindig met een sterke conclusie
-
-FORMAT:
-Gebruik HTML formatting:
-- <h2> voor hoofdsecties
-- <h3> voor subsecties
-- <p> voor paragrafen
-- <ul><li> voor bullet points
-- <strong> voor belangrijke punten
-
-Geef ALLEEN de HTML content terug, geen extra tekst.`;
-
-    const articleResponse = await chatCompletion({
-      model: TEXT_MODELS.GPT5_CHAT,
-      messages: [{ role: 'user', content: articlePrompt }],
-      temperature: 0.7,
-      max_tokens: 4000,
-    });
-
-    // ✅ FIX: Extract content from correct response structure
-    const articleContent = articleResponse.choices?.[0]?.message?.content || '';
-    
-    if (!articleContent) {
-      console.error('[Quick Generate] ❌ Empty article content!');
-      return NextResponse.json(
-        { error: 'Failed to generate article content' },
-        { status: 500 }
-      );
-    }
+    const articleData = await articleResponse.json();
+    let articleContent = articleData.choices?.[0]?.message?.content || '';
 
     console.log('[Quick Generate] Article generated, length:', articleContent.length);
 
-    // Stap 3: Sla artikel op in database via SUPABASE
-    console.log('[Quick Generate] Step 3: Saving article');
-    
+    // Clean HTML (remove code blocks if present)
+    articleContent = articleContent
+      .replace(/```html\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim();
+
+    // Extract title from H1
+    const titleMatch = articleContent.match(/<h1[^>]*>(.*?)<\/h1>/i);
+    const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '').trim() : keyword;
+
+    // STEP 2: Genereer afbeeldingen (1 per 500 woorden met Flux Pro)
+    console.log('[Quick Generate] Generating images with Flux Pro...');
+
+    const wordCount = articleContent.split(/\s+/).length;
+    const imageCount = Math.ceil(wordCount / 500);
+    const images: string[] = [];
+
+    // Extract H2 sections voor image context
+    const h2Matches = articleContent.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi);
+    const sections = Array.from(h2Matches).map(m => m[1].replace(/<[^>]*>/g, '').trim());
+
+    for (let i = 0; i < Math.min(imageCount, 3); i++) {
+      const section = sections[i] || keyword;
+      const imagePrompt = generateImagePrompt(section, keyword);
+
+      try {
+        const imageResponse = await fetch('https://api.aimlapi.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.AIML_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'flux-pro',
+            prompt: imagePrompt,
+            width: 1024,
+            height: 576,
+            num_inference_steps: 30
+          })
+        });
+
+        if (imageResponse.ok) {
+          const imageData = await imageResponse.json();
+          const imageUrl = imageData.data?.[0]?.url;
+          if (imageUrl) {
+            images.push(imageUrl);
+            console.log('[Quick Generate] Image', i + 1, 'generated');
+          }
+        }
+      } catch (imageError) {
+        console.error('[Quick Generate] Image generation failed:', imageError);
+      }
+    }
+
+    // STEP 3: Insert afbeeldingen in content
+    if (images.length > 0) {
+      const paragraphs = articleContent.split('</p>');
+      const insertInterval = Math.floor(paragraphs.length / images.length);
+
+      images.forEach((imageUrl, index) => {
+        const insertIndex = (index + 1) * insertInterval;
+        if (insertIndex < paragraphs.length) {
+          paragraphs[insertIndex] += `\n<figure><img src="${imageUrl}" alt="${keyword} - afbeelding ${index + 1}" /><figcaption>Afbeelding ${index + 1}: ${sections[index] || keyword}</figcaption></figure>\n`;
+        }
+      });
+
+      articleContent = paragraphs.join('</p>');
+    }
+
+    // STEP 4: Voeg interne links toe
+    let internalLinksCount = 0;
+    if (existingArticles && existingArticles.length > 0) {
+      // Vind relevante artikelen en voeg links toe
+      existingArticles.slice(0, 3).forEach(article => {
+        if (article.slug) {
+          const linkText = article.title.split(' ').slice(0, 3).join(' ');
+          const regex = new RegExp(`\\b${linkText}\\b`, 'i');
+          if (regex.test(articleContent)) {
+            articleContent = articleContent.replace(
+              regex,
+              `<a href="/${article.slug}">${linkText}</a>`
+            );
+            internalLinksCount++;
+          }
+        }
+      });
+    }
+
+    console.log('[Quick Generate] Added', internalLinksCount, 'internal links');
+
+    // STEP 5: Sla artikel op
+    console.log('[Quick Generate] Saving article...');
+
+    const slug = title.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
     const { data: blogPost, error: blogPostError } = await supabase
       .from('BlogPost')
       .insert({
-        title: outline.title,
+        title,
+        slug,
         content: articleContent,
-        excerpt: outline.metaDescription,
-        seoKeywords: outline.keywords.join(', '),
         status: 'draft',
         clientId: client.id,
         projectId: project?.id || null,
+        seoKeywords: keyword,
         metadata: {
-          generatedBy: 'quick-generate',
+          generatedBy: 'quick-generate-writgo',
           keyword,
-          tone,
-          length,
-          wordCount: articleContent.split(/\s+/).length,
-          outline: outline.outline,
-          featuredImagePrompt: outline.featuredImagePrompt,
+          toneOfVoice,
+          wordCount,
+          imageCount: images.length,
+          images,
+          internalLinksCount,
+          writgoRules: true,
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -263,29 +242,30 @@ Geef ALLEEN de HTML content terug, geen extra tekst.`;
       );
     }
 
-    console.log(`[Quick Generate] Blog post created: ${blogPost.id}`);
-
-    // Optioneel: Genereer featured image (asynchroon)
-    // TODO: Implement image generation with DALL-E or similar
+    console.log('[Quick Generate] ✅ SUCCESS! Article saved:', blogPost.id);
 
     return NextResponse.json({
       success: true,
       article: {
         id: blogPost.id,
-        title: blogPost.title,
-        content: blogPost.content,
-        excerpt: blogPost.excerpt,
-        keywords: outline.keywords,
-        wordCount: articleContent.split(/\s+/).length,
-        featuredImagePrompt: outline.featuredImagePrompt,
+        title,
+        slug,
+        content: articleContent,
+        keyword,
+        wordCount,
+        imageCount: images.length,
+        images,
+        internalLinksCount,
       },
+      message: '✅ Artikel succesvol gegenereerd met Writgo regels!'
     });
-  } catch (error) {
-    console.error('[Quick Generate] Error:', error);
+
+  } catch (error: any) {
+    console.error('[Quick Generate] ERROR:', error);
     return NextResponse.json(
       {
-        error: 'Failed to generate article',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: error.message || 'Failed to generate article',
+        details: error.stack
       },
       { status: 500 }
     );
