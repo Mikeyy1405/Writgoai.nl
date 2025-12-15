@@ -1,16 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
 import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
 import {
-
   scrapeWordPressSite,
   generateContentSummary,
   extractTopicsFromAnalysis,
 } from '@/lib/wordpress-scraper';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
+
+// ✅ ONLY SUPABASE - NO PRISMA
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 /**
  * Parse HTML table to extract topics
@@ -73,24 +84,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Haal client op
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
+    // ✅ Haal client op via SUPABASE
+    const { data: client, error: clientError } = await supabase
+      .from('Client')
+      .select('*')
+      .eq('email', session.user.email)
+      .single();
 
-    if (!client) {
+    if (clientError || !client) {
+      console.error('[WordPress Analyze] Client not found:', clientError);
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    // Haal project op met WordPress URL
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        clientId: client.id,
-      },
-    });
+    // ✅ Haal project op via SUPABASE
+    const { data: project, error: projectError } = await supabase
+      .from('Project')
+      .select('*')
+      .eq('id', projectId)
+      .eq('clientId', client.id)
+      .single();
 
-    if (!project) {
+    if (projectError || !project) {
+      console.error('[WordPress Analyze] Project not found:', projectError);
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
@@ -256,13 +271,13 @@ BELANGRIJK:
     console.log(`[WordPress Analyze] Updating project with content plan...`);
     
     try {
-      // Direct Supabase update to avoid Prisma shim issues
-      const { supabaseAdmin } = require('@/lib/supabase');
-      const { data: updatedProject, error: updateError } = await supabaseAdmin
+      // ✅ Direct Supabase update
+      const { data: updatedProject, error: updateError } = await supabase
         .from('Project')
         .update({
           contentPlan: contentPlanData,
           lastPlanGenerated: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .eq('id', projectId)
         .select()
@@ -270,13 +285,20 @@ BELANGRIJK:
 
       if (updateError) {
         console.error('[WordPress Analyze] Update error:', updateError);
+        console.error('[WordPress Analyze] Update error details:', JSON.stringify(updateError, null, 2));
         throw updateError;
       }
 
       console.log(`[WordPress Analyze] ✅ Successfully updated project with ${topics.length} topics`);
     } catch (updateError: any) {
       console.error('[WordPress Analyze] Failed to update project:', updateError);
-      // Continue anyway - we still want to return the topics
+      return NextResponse.json(
+        { 
+          error: 'Failed to save content plan',
+          details: updateError.message || 'Unknown error',
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

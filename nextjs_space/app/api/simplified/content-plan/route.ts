@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
 import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
+
+// ✅ ONLY SUPABASE - NO PRISMA
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 /**
  * Parse HTML table to extract topics
@@ -64,12 +76,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Haal client op
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
+    // ✅ Haal client op via SUPABASE
+    const { data: client, error: clientError } = await supabase
+      .from('Client')
+      .select('*')
+      .eq('email', session.user.email)
+      .single();
 
-    if (!client) {
+    if (clientError || !client) {
+      console.error('[Content Plan] Client not found:', clientError);
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
@@ -167,15 +182,14 @@ BELANGRIJK:
     console.log(`[Content Plan] Saving content plan...`);
     
     try {
-      // Direct Supabase update to avoid Prisma shim issues
-      const { supabaseAdmin } = require('@/lib/supabase');
-      
+      // ✅ Direct Supabase update
       if (projectId) {
-        const { data: updatedProject, error: updateError } = await supabaseAdmin
+        const { data: updatedProject, error: updateError } = await supabase
           .from('Project')
           .update({
             contentPlan: contentPlanData,
             lastPlanGenerated: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           })
           .eq('id', projectId)
           .select()
@@ -183,17 +197,19 @@ BELANGRIJK:
 
         if (updateError) {
           console.error('[Content Plan] Project update error:', updateError);
+          console.error('[Content Plan] Update error details:', JSON.stringify(updateError, null, 2));
           throw updateError;
         }
 
         console.log(`[Content Plan] ✅ Successfully updated project with ${topics.length} topics`);
       } else {
         // Sla op in client als er geen project is
-        const { data: updatedClient, error: updateError } = await supabaseAdmin
+        const { data: updatedClient, error: updateError } = await supabase
           .from('Client')
           .update({
             contentPlan: contentPlanData,
             lastPlanGenerated: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           })
           .eq('id', client.id)
           .select()
@@ -201,6 +217,7 @@ BELANGRIJK:
 
         if (updateError) {
           console.error('[Content Plan] Client update error:', updateError);
+          console.error('[Content Plan] Update error details:', JSON.stringify(updateError, null, 2));
           throw updateError;
         }
 
@@ -208,7 +225,13 @@ BELANGRIJK:
       }
     } catch (updateError: any) {
       console.error('[Content Plan] Failed to save content plan:', updateError);
-      // Continue anyway - we still want to return the topics
+      return NextResponse.json(
+        { 
+          error: 'Failed to save content plan',
+          details: updateError.message || 'Unknown error',
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
@@ -237,28 +260,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Haal client op
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
+    // ✅ Haal client op via SUPABASE
+    const { data: client, error: clientError } = await supabase
+      .from('Client')
+      .select('*')
+      .eq('email', session.user.email)
+      .single();
 
-    if (!client) {
+    if (clientError || !client) {
+      console.error('[Content Plan GET] Client not found:', clientError);
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    // Haal content plans op van client en alle projecten
-    const projects = await prisma.project.findMany({
-      where: {
-        clientId: client.id,
-        contentPlan: { not: null },
-      },
-      select: {
-        id: true,
-        name: true,
-        contentPlan: true,
-        lastPlanGenerated: true,
-      },
-    });
+    // ✅ Haal content plans op van client en alle projecten via SUPABASE
+    const { data: projects, error: projectsError } = await supabase
+      .from('Project')
+      .select('id, name, contentPlan, lastPlanGenerated')
+      .eq('clientId', client.id)
+      .not('contentPlan', 'is', null);
 
     const plans = [];
 
@@ -274,19 +293,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Project plans
-    projects.forEach((project) => {
-      plans.push({
-        id: project.id,
-        source: 'project',
-        name: project.name,
-        plan: project.contentPlan,
-        lastGenerated: project.lastPlanGenerated,
+    if (projects && projects.length > 0) {
+      projects.forEach((project: any) => {
+        plans.push({
+          id: project.id,
+          source: 'project',
+          name: project.name,
+          plan: project.contentPlan,
+          lastGenerated: project.lastPlanGenerated,
+        });
       });
-    });
+    }
 
     return NextResponse.json({ plans });
   } catch (error) {
-    console.error('Error fetching content plans:', error);
+    console.error('[Content Plan GET] Error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch content plans' },
       { status: 500 }

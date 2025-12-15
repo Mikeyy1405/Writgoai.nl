@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
 import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
+
+// ✅ ONLY SUPABASE - NO PRISMA
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 /**
  * POST /api/simplified/generate/quick
@@ -29,24 +41,31 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Quick Generate] Starting for keyword: ${keyword}`);
 
-    // Haal client op
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
+    // ✅ Haal client op via SUPABASE
+    const { data: client, error: clientError } = await supabase
+      .from('Client')
+      .select('*')
+      .eq('email', session.user.email)
+      .single();
 
-    if (!client) {
+    if (clientError || !client) {
+      console.error('[Quick Generate] Client not found:', clientError);
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    // Optioneel: Haal project op als opgegeven
+    // ✅ Optioneel: Haal project op via SUPABASE
     let project = null;
     if (projectId) {
-      project = await prisma.project.findFirst({
-        where: {
-          id: projectId,
-          clientId: client.id,
-        },
-      });
+      const { data: projectData, error: projectError } = await supabase
+        .from('Project')
+        .select('*')
+        .eq('id', projectId)
+        .eq('clientId', client.id)
+        .single();
+      
+      if (projectData && !projectError) {
+        project = projectData;
+      }
     }
 
     // Bepaal word count op basis van length
@@ -105,7 +124,22 @@ BELANGRIJK:
 
     let outline;
     try {
-      const content = outlineResponse.content || '';
+      // ✅ FIX: Extract content from correct response structure
+      // AIML API returns: { choices: [{ message: { content: "..." } }] }
+      const content = outlineResponse.choices?.[0]?.message?.content || '';
+      
+      console.log('[Quick Generate] Outline response length:', content.length);
+      console.log('[Quick Generate] Outline preview:', content.substring(0, 200));
+      
+      if (!content) {
+        console.error('[Quick Generate] ❌ EMPTY CONTENT! Response structure:', {
+          hasChoices: !!outlineResponse.choices,
+          choicesLength: outlineResponse.choices?.length || 0,
+          responseKeys: Object.keys(outlineResponse)
+        });
+        throw new Error('Empty AI response');
+      }
+      
       // Extract JSON from response
       const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
       const cleanedContent = codeBlockMatch ? codeBlockMatch[1] : content;
@@ -116,10 +150,18 @@ BELANGRIJK:
       } else {
         outline = JSON.parse(cleanedContent.trim());
       }
+      
+      console.log('[Quick Generate] ✅ Outline parsed successfully');
+      console.log('[Quick Generate] Title:', outline.title);
+      
     } catch (error) {
       console.error('[Quick Generate] Error parsing outline:', error);
+      console.error('[Quick Generate] Response content preview:', outlineResponse.choices?.[0]?.message?.content?.substring(0, 500));
       return NextResponse.json(
-        { error: 'Kon outline niet verwerken' },
+        { 
+          error: 'Kon outline niet verwerken',
+          details: error instanceof Error ? error.message : 'Unknown parsing error'
+        },
         { status: 500 }
       );
     }
@@ -169,13 +211,25 @@ Geef ALLEEN de HTML content terug, geen extra tekst.`;
       max_tokens: 4000,
     });
 
-    const articleContent = articleResponse.content || '';
+    // ✅ FIX: Extract content from correct response structure
+    const articleContent = articleResponse.choices?.[0]?.message?.content || '';
+    
+    if (!articleContent) {
+      console.error('[Quick Generate] ❌ Empty article content!');
+      return NextResponse.json(
+        { error: 'Failed to generate article content' },
+        { status: 500 }
+      );
+    }
 
-    // Stap 3: Sla artikel op in database
+    console.log('[Quick Generate] Article generated, length:', articleContent.length);
+
+    // Stap 3: Sla artikel op in database via SUPABASE
     console.log('[Quick Generate] Step 3: Saving article');
     
-    const blogPost = await prisma.blogPost.create({
-      data: {
+    const { data: blogPost, error: blogPostError } = await supabase
+      .from('BlogPost')
+      .insert({
         title: outline.title,
         content: articleContent,
         excerpt: outline.metaDescription,
@@ -192,8 +246,22 @@ Geef ALLEEN de HTML content terug, geen extra tekst.`;
           outline: outline.outline,
           featuredImagePrompt: outline.featuredImagePrompt,
         },
-      },
-    });
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (blogPostError || !blogPost) {
+      console.error('[Quick Generate] Failed to save blog post:', blogPostError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to save article',
+          details: blogPostError?.message || 'Unknown error'
+        },
+        { status: 500 }
+      );
+    }
 
     console.log(`[Quick Generate] Blog post created: ${blogPost.id}`);
 
