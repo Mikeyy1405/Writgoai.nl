@@ -72,10 +72,12 @@ export default function SettingsTab({ projectId }: SettingsTabProps) {
       const data = await response.json();
       
       if (data.authUrl) {
-        // Redirect to OAuth
+        toast.success('Redirecting...', { id: 'connect' });
+        // Redirect to OAuth - loading state will persist through navigation which is expected
         window.location.href = data.authUrl;
       } else {
         toast.error('Geen authenticatie URL ontvangen', { id: 'connect' });
+        setConnecting(null);
       }
     } catch (error: any) {
       console.error('Error connecting account:', error);

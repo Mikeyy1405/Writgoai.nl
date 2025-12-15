@@ -95,13 +95,21 @@ export default function PostsTab({ projectId, refreshTrigger }: PostsTabProps) {
     if (!confirm(`Weet je zeker dat je ${selectedPosts.size} post(s) wilt verwijderen?`)) return;
 
     try {
-      await Promise.all(
+      const results = await Promise.allSettled(
         Array.from(selectedPosts).map((postId) =>
           fetch(`/api/client/social/${postId}`, { method: 'DELETE' })
         )
       );
 
-      toast.success(`${selectedPosts.size} post(s) verwijderd`);
+      const successful = results.filter((r) => r.status === 'fulfilled' && r.value.ok).length;
+      const failed = results.length - successful;
+
+      if (failed === 0) {
+        toast.success(`${successful} post(s) verwijderd`);
+      } else {
+        toast.warning(`${successful} post(s) verwijderd, ${failed} mislukt`);
+      }
+
       setSelectedPosts(new Set());
       loadPosts();
     } catch (error: any) {

@@ -52,9 +52,12 @@ export async function GET(req: NextRequest) {
       orderBy: { scheduledFor: 'asc' },
     });
 
-    // Group by day
+    // Group by day (skip posts without scheduledFor date)
     const queueByDay = queue.reduce((acc, post) => {
-      const day = post.scheduledFor?.toISOString().split('T')[0] || 'unknown';
+      if (!post.scheduledFor) {
+        return acc; // Skip posts without a scheduled date
+      }
+      const day = post.scheduledFor.toISOString().split('T')[0];
       if (!acc[day]) {
         acc[day] = [];
       }

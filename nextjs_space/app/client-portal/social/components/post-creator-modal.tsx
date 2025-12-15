@@ -113,15 +113,23 @@ export default function PostCreatorModal({
       );
 
       const responses = await Promise.all(promises);
-      const allSuccess = responses.every((r) => r.ok);
+      const successful = responses.filter((r) => r.ok);
+      const failed = responses.length - successful.length;
 
-      if (!allSuccess) {
-        throw new Error('Some posts failed to create');
+      if (failed > 0) {
+        const failedPlatforms = selectedPlatforms.filter((_, i) => !responses[i].ok);
+        toast.warning(
+          `${successful.length} post(s) aangemaakt, ${failed} mislukt voor: ${failedPlatforms.join(', ')}`,
+          { id: 'create' }
+        );
+      } else {
+        toast.success(`${selectedPlatforms.length} post(s) aangemaakt!`, { id: 'create' });
       }
 
-      toast.success(`${selectedPlatforms.length} post(s) aangemaakt!`, { id: 'create' });
-      onPostCreated();
-      handleClose();
+      if (successful.length > 0) {
+        onPostCreated();
+        handleClose();
+      }
     } catch (error: any) {
       console.error('Error creating post:', error);
       toast.error('Kon post(s) niet aanmaken', { id: 'create' });

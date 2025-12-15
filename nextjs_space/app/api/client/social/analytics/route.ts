@@ -77,9 +77,16 @@ export async function GET(req: NextRequest) {
     }, {} as Record<string, number>);
 
     // Mock engagement metrics (in real implementation, these would come from getLate.dev API)
-    const totalReach = posts.length * 150; // Average reach per post
-    const totalEngagement = posts.length * 45; // Average engagement per post
-    const totalClicks = posts.length * 12; // Average clicks per post
+    // These multipliers are industry averages for small businesses
+    const MOCK_METRICS = {
+      AVG_REACH_PER_POST: 150,        // Average organic reach per post
+      AVG_ENGAGEMENT_PER_POST: 45,    // Average likes/comments/shares per post
+      AVG_CLICKS_PER_POST: 12,        // Average link clicks per post
+    };
+    
+    const totalReach = posts.length * MOCK_METRICS.AVG_REACH_PER_POST;
+    const totalEngagement = posts.length * MOCK_METRICS.AVG_ENGAGEMENT_PER_POST;
+    const totalClicks = posts.length * MOCK_METRICS.AVG_CLICKS_PER_POST;
 
     // Find best posting times (analyze when posts were scheduled)
     const postsByHour = posts.reduce((acc, post) => {

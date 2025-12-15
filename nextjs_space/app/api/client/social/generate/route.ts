@@ -89,9 +89,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate credits needed
-    const contentCredits = platforms.length === 1 ? 5 : 10;
-    const imageCredits = generateImage ? 10 : 0;
-    const videoCredits = generateVideo ? 25 : 0;
+    const CREDITS = {
+      SINGLE_PLATFORM: 5,
+      MULTI_PLATFORM: 10,
+      IMAGE: 10,
+      VIDEO: 25,
+    };
+    
+    const contentCredits = platforms.length === 1 ? CREDITS.SINGLE_PLATFORM : CREDITS.MULTI_PLATFORM;
+    const imageCredits = generateImage ? CREDITS.IMAGE : 0;
+    const videoCredits = generateVideo ? CREDITS.VIDEO : 0;
     const totalCredits = contentCredits + imageCredits + videoCredits;
 
     // Track usage for billing
