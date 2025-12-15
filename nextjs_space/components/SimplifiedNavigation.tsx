@@ -9,6 +9,7 @@ import {
   Calendar, 
   Sparkles, 
   Send, 
+  TrendingUp,
   BarChart3,
   Settings,
   LogOut
@@ -20,12 +21,13 @@ import {
  * Desktop: Fixed sidebar links (altijd zichtbaar)
  * Mobiel: Slide-in sidebar met hamburger menu
  * 
- * 7 functies:
+ * 8 functies:
  * - 🏠 Dashboard
  * - 📁 Mijn Projecten
  * - 📝 Content Plan
  * - ✨ Genereren
  * - 🚀 Publiceren
+ * - 📱 Social Media
  * - 📊 Statistieken
  * - ⚙️ Instellingen
  */
@@ -36,6 +38,7 @@ const menuItems = [
   { href: '/content-plan', label: 'Content Plan', icon: Calendar },
   { href: '/generate', label: 'Genereren', icon: Sparkles },
   { href: '/publish', label: 'Publiceren', icon: Send },
+  { href: '/social-media', label: 'Social Media', icon: TrendingUp },
   { href: '/stats', label: 'Statistieken', icon: BarChart3 },
   { href: '/settings', label: 'Instellingen', icon: Settings },
 ];
