@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { ProgressStatusBar, useProgressSteps, ProgressStep } from '@/components/simplified/ProgressStatusBar';
-import { Zap, FileText, Eye, Check, Calendar, Sparkles } from 'lucide-react';
+import { Zap, FileText, Eye, Check, Calendar, Sparkles, Edit } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -64,6 +65,7 @@ const CONTENT_TYPES = [
 
 export default function QuickGeneratePage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [mode, setMode] = useState<'quick' | 'from-plan'>('quick');
   const [projects, setProjects] = useState<Project[]>([]);
   const [contentPlans, setContentPlans] = useState<any[]>([]);
@@ -649,7 +651,7 @@ export default function QuickGeneratePage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-3 pt-4">
+                <div className="grid grid-cols-3 gap-3 pt-4">
                   <button
                     onClick={handleCopyArticle}
                     className="bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center space-x-2"
@@ -665,6 +667,15 @@ export default function QuickGeneratePage() {
                     <span>🚀</span>
                     <span>{publishing ? 'Publiceren...' : 'Publiceer naar WordPress'}</span>
                   </button>
+                  {generatedArticle?.contentId && (
+                    <button
+                      onClick={() => router.push(`/client-portal/content-library/${generatedArticle.contentId}/edit`)}
+                      className="bg-green-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-600 transition-all flex items-center justify-center space-x-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Bekijk in Editor</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex space-x-2">
