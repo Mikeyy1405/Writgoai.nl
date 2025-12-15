@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import AdminSidebar from './AdminSidebar';
 import AdminMobileNav from './AdminMobileNav';
+import { PortalSwitcher } from '@/components/PortalSwitcher';
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;
@@ -22,15 +23,26 @@ export default function AdminLayoutClient({ children }: AdminLayoutClientProps) 
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-auto">
-        {/* Mobile Menu Button - Only visible on mobile */}
-        <div className="lg:hidden sticky top-0 z-40 bg-zinc-900 border-b border-zinc-800 px-4 py-3">
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-2 rounded-lg hover:bg-zinc-800 text-white transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+        {/* Header Bar - Visible on all screen sizes */}
+        <div className="sticky top-0 z-40 bg-zinc-900 border-b border-zinc-800 px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Mobile Menu Button - Only on mobile */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-zinc-800 text-white transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            
+            {/* Desktop spacer */}
+            <div className="hidden lg:block flex-1" />
+            
+            {/* Portal Switcher - Visible on all screen sizes */}
+            <div className="ml-auto">
+              <PortalSwitcher />
+            </div>
+          </div>
         </div>
 
         {/* Page Content */}

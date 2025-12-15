@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,7 +69,19 @@ function LoginRegisterForm() {
         toast.error(result.error);
       } else if (result?.ok) {
         toast.success('Welkom terug!');
-        router.push('/dashboard');
+        
+        // Fetch session to get user role
+        const sessionResponse = await fetch('/api/auth/session');
+        const session = await sessionResponse.json();
+        
+        // Redirect based on role
+        const userRole = session?.user?.role;
+        if (userRole === 'admin' || userRole === 'superadmin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/client/overzicht');
+        }
+        
         router.refresh();
       }
     } catch (err) {

@@ -43,23 +43,41 @@ export default withAuth(
       return NextResponse.redirect(new URL('/client/overzicht', req.url));
     }
 
-    // Old /dashboard → New /client structure
+    // Old /dashboard → Role-based redirect
     if (path.startsWith('/dashboard')) {
-      // Map specific dashboard routes to new client routes
-      const dashboardToClientMap: Record<string, string> = {
-        '/dashboard/overzicht': '/client/overzicht',
-        '/dashboard/content': '/client/content',
-        '/dashboard/platforms': '/client/platforms',
-        '/dashboard/account': '/client/account',
-      };
+      // Admins go to admin dashboard, clients go to client portal
+      if (isAdmin) {
+        // Map specific dashboard routes for admins
+        const dashboardToAdminMap: Record<string, string> = {
+          '/dashboard': '/admin/dashboard',
+          '/dashboard/overzicht': '/admin/dashboard',
+        };
 
-      const newPath = dashboardToClientMap[path];
-      if (newPath) {
-        return NextResponse.redirect(new URL(newPath, req.url));
+        const newPath = dashboardToAdminMap[path];
+        if (newPath) {
+          return NextResponse.redirect(new URL(newPath, req.url));
+        }
+
+        // Default: redirect to admin dashboard
+        return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+      } else {
+        // Map specific dashboard routes for clients
+        const dashboardToClientMap: Record<string, string> = {
+          '/dashboard': '/client/overzicht',
+          '/dashboard/overzicht': '/client/overzicht',
+          '/dashboard/content': '/client/content',
+          '/dashboard/platforms': '/client/platforms',
+          '/dashboard/account': '/client/account',
+        };
+
+        const newPath = dashboardToClientMap[path];
+        if (newPath) {
+          return NextResponse.redirect(new URL(newPath, req.url));
+        }
+
+        // Default: redirect to client overview
+        return NextResponse.redirect(new URL('/client/overzicht', req.url));
       }
-
-      // Default: redirect to client overview
-      return NextResponse.redirect(new URL('/client/overzicht', req.url));
     }
 
     // ===================================
@@ -85,7 +103,7 @@ export default withAuth(
       authorized: ({ token }) => !!token,
     },
     pages: {
-      signIn: '/client-login',
+      signIn: '/inloggen',
     },
   }
 );

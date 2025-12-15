@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ChevronDown, LogOut, Settings, User, Menu } from 'lucide-react';
 import Link from 'next/link';
+import { PortalSwitcher } from '@/components/PortalSwitcher';
 
 interface DashboardHeaderProps {
   onMobileMenuToggle?: () => void;
@@ -46,6 +47,11 @@ export function DashboardHeader({
               )}
             </div>
           )}
+        </div>
+
+        {/* Center: Portal Switcher (for admins) */}
+        <div className="flex-1 flex justify-center px-4">
+          <PortalSwitcher />
         </div>
 
         {/* Right: User Menu */}
