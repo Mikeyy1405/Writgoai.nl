@@ -29,32 +29,34 @@ export const dynamic = 'force-dynamic';
 // Credit costs voor unified generator
 const GENERATOR_CREDIT_COST = CREDIT_COSTS.BLOG_POST; // 70 credits
 
-// Global heartbeat interval
-let heartbeatInterval: NodeJS.Timeout | null = null;
+// Type for heartbeat state per request
+interface HeartbeatState {
+  interval: NodeJS.Timeout | null;
+}
 
-// Start heartbeat om verbinding open te houden
-const startHeartbeat = (writer: WritableStreamDefaultWriter, encoder: TextEncoder) => {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-  }
+// Start heartbeat om verbinding open te houden (per-request)
+const startHeartbeat = (controller: ReadableStreamDefaultController, encoder: TextEncoder): HeartbeatState => {
+  const state: HeartbeatState = { interval: null };
   
-  heartbeatInterval = setInterval(async () => {
+  state.interval = setInterval(async () => {
     try {
-      await writer.write(encoder.encode(`: heartbeat\n\n`));
+      controller.enqueue(encoder.encode(`: heartbeat\n\n`));
     } catch (e) {
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-        heartbeatInterval = null;
+      if (state.interval) {
+        clearInterval(state.interval);
+        state.interval = null;
       }
     }
   }, 15000); // Elke 15 seconden
+  
+  return state;
 };
 
 // Stop heartbeat
-const stopHeartbeat = () => {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
+const stopHeartbeat = (state: HeartbeatState) => {
+  if (state.interval) {
+    clearInterval(state.interval);
+    state.interval = null;
   }
 };
 
@@ -74,14 +76,10 @@ export async function POST(request: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      let writer: WritableStreamDefaultWriter | null = null;
+      // Start heartbeat for this request
+      const heartbeatState = startHeartbeat(controller, encoder);
       
       try {
-        // Get writer for heartbeat
-        writer = controller as any;
-        
-        // Start heartbeat
-        startHeartbeat(writer, encoder);
         
         // ═══════════════════════════════════════════════════════
         // 1. AUTHENTICATION & INPUT VALIDATION
@@ -95,7 +93,7 @@ export async function POST(request: NextRequest) {
             error: auth.error,
             done: true
           }));
-          stopHeartbeat();
+          stopHeartbeat(heartbeatState);
           streamClosed = true;
           controller.close();
           return;
@@ -125,7 +123,7 @@ export async function POST(request: NextRequest) {
             error: 'Onderwerp is verplicht',
             done: true
           }));
-          stopHeartbeat();
+          stopHeartbeat(heartbeatState);
           streamClosed = true;
           controller.close();
           return;
@@ -137,7 +135,7 @@ export async function POST(request: NextRequest) {
             error: `Taal ${language} wordt niet ondersteund`,
             done: true
           }));
-          stopHeartbeat();
+          stopHeartbeat(heartbeatState);
           streamClosed = true;
           controller.close();
           return;
@@ -216,7 +214,7 @@ export async function POST(request: NextRequest) {
             creditsNeeded: totalCost,
             done: true
           }));
-          stopHeartbeat();
+          stopHeartbeat(heartbeatState);
           streamClosed = true;
           controller.close();
           return;
@@ -294,7 +292,7 @@ Format the output as valid HTML. Do NOT include <html>, <head>, or <body> tags, 
             error: userMessage,
             done: true
           }));
-          stopHeartbeat();
+          stopHeartbeat(heartbeatState);
           streamClosed = true;
           controller.close();
           return;
@@ -406,13 +404,13 @@ Format the output as valid HTML. Do NOT include <html>, <head>, or <body> tags, 
         console.log(`✅ Unified content generation complete!`);
         
         // Stop heartbeat on success
-        stopHeartbeat();
+        stopHeartbeat(heartbeatState);
         
       } catch (error: any) {
         console.error('❌ Unified generator error:', error);
         
         // Stop heartbeat on error
-        stopHeartbeat();
+        stopHeartbeat(heartbeatState);
         
         if (!streamClosed) {
           // Determine user-friendly error message
@@ -433,7 +431,7 @@ Format the output as valid HTML. Do NOT include <html>, <head>, or <body> tags, 
           }));
         }
       } finally {
-        stopHeartbeat();
+        stopHeartbeat(heartbeatState);
         streamClosed = true;
         controller.close();
       }

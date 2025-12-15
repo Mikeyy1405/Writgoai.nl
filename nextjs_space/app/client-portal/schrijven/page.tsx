@@ -50,6 +50,7 @@ export default function SchrijvenPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<GenerationProgress>({ progress: 0, message: '' });
   const [generatedContentId, setGeneratedContentId] = useState<string | null>(null);
+  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Load projects
   useEffect(() => {
@@ -57,6 +58,15 @@ export default function SchrijvenPage() {
       loadProjects();
     }
   }, [status]);
+
+  // Cleanup redirect timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout);
+      }
+    };
+  }, [redirectTimeout]);
 
   const loadProjects = async () => {
     try {
@@ -134,9 +144,10 @@ export default function SchrijvenPage() {
                   toast.success('Content succesvol gegenereerd! 🎉');
                   
                   // Redirect naar content library na 2 seconden
-                  setTimeout(() => {
+                  const timeout = setTimeout(() => {
                     router.push('/client-portal/content-library');
                   }, 2000);
+                  setRedirectTimeout(timeout);
                 } else if (data.error) {
                   toast.error(data.error);
                 }
@@ -150,7 +161,16 @@ export default function SchrijvenPage() {
     } catch (error: any) {
       console.error('Generation error:', error);
       
-      if (retryCount < MAX_RETRIES && error.message?.includes('fetch')) {
+      // Check for network/connection errors more comprehensively
+      const isNetworkError = 
+        error.name === 'TypeError' ||
+        error.name === 'NetworkError' ||
+        error.message?.toLowerCase().includes('fetch') ||
+        error.message?.toLowerCase().includes('network') ||
+        error.message?.toLowerCase().includes('connection') ||
+        error.message?.toLowerCase().includes('timeout');
+      
+      if (retryCount < MAX_RETRIES && isNetworkError) {
         toast.info(`Verbinding verloren, opnieuw proberen... (${retryCount + 1}/${MAX_RETRIES})`);
         await new Promise(r => setTimeout(r, 2000));
         return generateContent(retryCount + 1);
@@ -160,7 +180,7 @@ export default function SchrijvenPage() {
       setProgress({ 
         progress: 0, 
         message: 'Fout opgetreden', 
-        error: error.message,
+        error: error.message || 'Onbekende fout',
         done: true 
       });
     } finally {
