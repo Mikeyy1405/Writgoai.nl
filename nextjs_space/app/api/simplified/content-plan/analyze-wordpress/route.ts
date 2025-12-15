@@ -242,22 +242,42 @@ BELANGRIJK:
 
     console.log(`[WordPress Analyze] Generated ${topics.length} new topics`);
 
-    // Sla content plan op in project
-    await prisma.project.update({
-      where: { id: projectId },
-      data: {
-        contentPlan: {
-          source: 'wordpress-analysis',
-          analyzedUrl: project.websiteUrl,
-          existingPosts: analysis.posts.length,
-          existingCategories: analysis.categories.map(c => c.name),
-          existingTags: analysis.tags.slice(0, 20).map(t => t.name),
-          topics,
-          generatedAt: new Date().toISOString(),
-        },
-        lastPlanGenerated: new Date(),
-      },
-    });
+    // Sla content plan op in project als JSONB
+    const contentPlanData = {
+      source: 'wordpress-analysis',
+      analyzedUrl: project.websiteUrl,
+      existingPosts: analysis.posts.length,
+      existingCategories: analysis.categories.map(c => c.name),
+      existingTags: analysis.tags.slice(0, 20).map(t => t.name),
+      topics,
+      generatedAt: new Date().toISOString(),
+    };
+
+    console.log(`[WordPress Analyze] Updating project with content plan...`);
+    
+    try {
+      // Direct Supabase update to avoid Prisma shim issues
+      const { supabaseAdmin } = require('@/lib/supabase');
+      const { data: updatedProject, error: updateError } = await supabaseAdmin
+        .from('Project')
+        .update({
+          contentPlan: contentPlanData,
+          lastPlanGenerated: new Date().toISOString(),
+        })
+        .eq('id', projectId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('[WordPress Analyze] Update error:', updateError);
+        throw updateError;
+      }
+
+      console.log(`[WordPress Analyze] ✅ Successfully updated project with ${topics.length} topics`);
+    } catch (updateError: any) {
+      console.error('[WordPress Analyze] Failed to update project:', updateError);
+      // Continue anyway - we still want to return the topics
+    }
 
     return NextResponse.json({
       success: true,

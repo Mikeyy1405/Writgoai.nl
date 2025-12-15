@@ -157,31 +157,58 @@ BELANGRIJK:
     }
 
     // Sla content plan op in project (als projectId is meegegeven)
-    if (projectId) {
-      await prisma.project.update({
-        where: { id: projectId },
-        data: {
-          contentPlan: {
-            keyword,
-            topics,
-            generatedAt: new Date().toISOString(),
-          },
-          lastPlanGenerated: new Date(),
-        },
-      });
-    } else {
-      // Sla op in client als er geen project is
-      await prisma.client.update({
-        where: { id: client.id },
-        data: {
-          contentPlan: {
-            keyword,
-            topics,
-            generatedAt: new Date().toISOString(),
-          },
-          lastPlanGenerated: new Date(),
-        },
-      });
+    const contentPlanData = {
+      source: 'manual-keyword',
+      keyword,
+      topics,
+      generatedAt: new Date().toISOString(),
+    };
+
+    console.log(`[Content Plan] Saving content plan...`);
+    
+    try {
+      // Direct Supabase update to avoid Prisma shim issues
+      const { supabaseAdmin } = require('@/lib/supabase');
+      
+      if (projectId) {
+        const { data: updatedProject, error: updateError } = await supabaseAdmin
+          .from('Project')
+          .update({
+            contentPlan: contentPlanData,
+            lastPlanGenerated: new Date().toISOString(),
+          })
+          .eq('id', projectId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('[Content Plan] Project update error:', updateError);
+          throw updateError;
+        }
+
+        console.log(`[Content Plan] ✅ Successfully updated project with ${topics.length} topics`);
+      } else {
+        // Sla op in client als er geen project is
+        const { data: updatedClient, error: updateError } = await supabaseAdmin
+          .from('Client')
+          .update({
+            contentPlan: contentPlanData,
+            lastPlanGenerated: new Date().toISOString(),
+          })
+          .eq('id', client.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('[Content Plan] Client update error:', updateError);
+          throw updateError;
+        }
+
+        console.log(`[Content Plan] ✅ Successfully updated client with ${topics.length} topics`);
+      }
+    } catch (updateError: any) {
+      console.error('[Content Plan] Failed to save content plan:', updateError);
+      // Continue anyway - we still want to return the topics
     }
 
     return NextResponse.json({
