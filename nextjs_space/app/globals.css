@@ -1384,3 +1384,171 @@ button {
 [disabled] {
   @apply text-gray-600;
 }
+
+
+/* ====================================================================
+   RESPONSIVE DESIGN UTILITIES - HAMBURGER MENU & SIDEBAR
+   ==================================================================== */
+
+/* Touch-friendly tap targets op mobiel (min 44px zoals Apple en Google richtlijnen) */
+@media (max-width: 767px) {
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Responsive grid voor dashboard */
+  .grid-cols-4 {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+  
+  .grid-cols-3 {
+    @apply grid-cols-1;
+  }
+  
+  .grid-cols-2 {
+    @apply grid-cols-1;
+  }
+  
+  /* Betere spacing op mobiel */
+  .space-y-8 > * + * {
+    margin-top: 1.5rem !important;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 1rem !important;
+  }
+  
+  /* Cards full width op mobiel */
+  .rounded-xl {
+    @apply rounded-lg;
+  }
+  
+  /* Betere padding op mobiel */
+  .p-8 {
+    @apply p-4;
+  }
+  
+  .p-6 {
+    @apply p-4;
+  }
+  
+  .px-6 {
+    @apply px-4;
+  }
+  
+  .py-6 {
+    @apply py-4;
+  }
+}
+
+/* Tablet optimalisatie */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Sidebar smaller op tablet */
+  .w-64 {
+    width: 14rem; /* 224px */
+  }
+  
+  /* Content aanpassen */
+  .md\:ml-64 {
+    margin-left: 14rem;
+  }
+}
+
+/* Desktop grote schermen */
+@media (min-width: 1024px) {
+  /* Betere spacing op grote schermen */
+  .max-w-7xl {
+    @apply max-w-6xl;
+  }
+}
+
+/* Smooth transitions voor sidebar */
+@layer utilities {
+  .sidebar-transition {
+    transition: transform 300ms ease-in-out;
+  }
+  
+  .overlay-transition {
+    transition: opacity 300ms ease-in-out;
+  }
+  
+  /* Mobile menu open/close animaties */
+  @keyframes slide-in-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slide-out-left {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+  
+  .animate-slide-in-left {
+    animation: slide-in-left 300ms ease-out;
+  }
+  
+  .animate-slide-out-left {
+    animation: slide-out-left 300ms ease-in;
+  }
+  
+  /* Fade in/out voor overlay */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 300ms ease-out;
+  }
+  
+  .animate-fade-out {
+    animation: fade-out 300ms ease-in;
+  }
+}
+
+/* Prevent body scroll wanneer mobile menu open is */
+body.mobile-menu-open {
+  overflow: hidden;
+}
+
+/* Zorg dat content niet onder fixed header verdwijnt op mobiel */
+@media (max-width: 767px) {
+  main {
+    padding-top: calc(env(safe-area-inset-top) + 4rem);
+  }
+}
+
+/* Safe area insets voor notch devices (iPhone X+) */
+@supports (padding: env(safe-area-inset-top)) {
+  .mobile-header {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .sidebar-mobile {
+    padding-top: env(safe-area-inset-top);
+  }
+}
