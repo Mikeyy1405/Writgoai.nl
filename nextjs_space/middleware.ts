@@ -43,6 +43,25 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     // ===================================
+    // CONTENT PLANNING REDIRECTS
+    // ===================================
+    // Redirect old content planning pages to new unified planning page
+    if (
+      path === '/client-portal/content-kalender' ||
+      path === '/client-portal/content-research' ||
+      path === '/client-portal/content-planner' ||
+      path === '/client-portal/keyword-research'
+    ) {
+      console.log(`🔄 Redirecting ${path} → /client-portal/planning`);
+      return NextResponse.redirect(new URL('/client-portal/planning', req.url));
+    }
+
+    // Allow the new unified planning page
+    if (path.startsWith('/client-portal/planning')) {
+      return NextResponse.next();
+    }
+
+    // ===================================
     // LEGACY REDIRECTS
     // ===================================
     // Alle oude routes → dashboard
@@ -79,6 +98,9 @@ export const config = {
     '/generate/:path*',
     '/publish/:path*',
     '/stats/:path*',
+    
+    // New unified planning page (protected)
+    '/client-portal/planning/:path*',
     
     // Legacy routes (redirect naar /)
     '/admin/:path*',
