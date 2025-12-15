@@ -84,8 +84,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
+    // Helper to check if all WordPress credentials are provided
+    const hasCompleteWordPressCredentials = wordpressUrl && wordpressUsername && wordpressPassword;
+    
     // Test WordPress connectie alleen als alle credentials aanwezig zijn
-    if (wordpressUrl && wordpressUsername && wordpressPassword) {
+    if (hasCompleteWordPressCredentials) {
       try {
         const wpTestUrl = `${wordpressUrl}/wp-json/wp/v2/posts?per_page=1`;
         const wpResponse = await fetch(wpTestUrl, {
@@ -110,6 +113,7 @@ export async function POST(request: NextRequest) {
       data: {
         clientId: client.id,
         name,
+        // websiteUrl priority: explicit websiteUrl > wordpressUrl > null
         websiteUrl: websiteUrl || wordpressUrl || null,
         description: description || null,
         wordpressUrl: wordpressUrl || null,
