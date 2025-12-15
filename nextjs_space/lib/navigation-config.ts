@@ -73,8 +73,8 @@ export const baseNavItems: NavigationItem[] = [
   // Ultimate Writer - ALL-IN-ONE
   { label: 'Ultimate Writer', href: '/client-portal/ultimate-writer', icon: PenTool, badge: 'Nieuw' },
   
-  // Social Media Suite - Single unified page
-  { label: 'Social Media Suite', href: '/client-portal/social-media-suite', icon: Share2 },
+  // Social Media Suite - Complete unified page with AI
+  { label: 'Social Media Suite', href: '/client-portal/social', icon: Share2, badge: 'Nieuw' },
   
   // SUITE 3: Email Marketing Suite
   {
