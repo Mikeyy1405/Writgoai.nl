@@ -14,8 +14,32 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
+// Bot user agents to detect/block (pre-converted to lowercase for performance)
+const BOT_USER_AGENTS = [
+  'chatgpt-user',
+  'gptbot',
+  'anthropic-ai',
+  'claude-web',
+  'google-extended',
+  'ccbot',
+  'bytespider',
+];
+
+function isAIBot(userAgent: string | null): boolean {
+  if (!userAgent) return false;
+  const lowerUserAgent = userAgent.toLowerCase();
+  return BOT_USER_AGENTS.some(bot => lowerUserAgent.includes(bot));
+}
+
 export default withAuth(
   function middleware(req) {
+    const userAgent = req.headers.get('user-agent');
+
+    // Block AI bots early - return 403 Forbidden
+    if (isAIBot(userAgent)) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+
     const path = req.nextUrl.pathname;
 
     // ===================================
