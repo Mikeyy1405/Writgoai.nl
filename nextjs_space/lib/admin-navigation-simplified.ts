@@ -28,7 +28,6 @@ import {
   Settings,
   LucideIcon,
 } from 'lucide-react';
-import { isFeatureEnabled } from './feature-flags';
 
 export interface AdminNavItem {
   label: string;
@@ -139,7 +138,7 @@ export const simplifiedAdminNavSections: AdminNavSection[] = [
   // ========================================
   // SECTIE 6: EMAIL (optioneel - 1 item)
   // ========================================
-  ...(isFeatureEnabled('ADMIN_EMAIL_INBOX') ? [{
+  {
     title: 'Email',
     items: [
       {
@@ -149,7 +148,7 @@ export const simplifiedAdminNavSections: AdminNavSection[] = [
         description: 'Inbox met AI features',
       },
     ],
-  }] : []),
+  },
   
   // ========================================
   // SECTIE 7: INSTELLINGEN (1 item)
