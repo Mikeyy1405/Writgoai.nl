@@ -106,6 +106,15 @@ export async function PUT(
     }
 
     const body = await request.json();
+    const { name, websiteUrl, wordpressUrl, wordpressUsername, wordpressPassword, wordpressCategory, description } = body;
+
+    // Validate required fields
+    if (name !== undefined && !name) {
+      return NextResponse.json(
+        { error: 'Project naam is verplicht' },
+        { status: 400 }
+      );
+    }
 
     // Haal client op
     const client = await prisma.client.findUnique({
@@ -116,16 +125,74 @@ export async function PUT(
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
+    // Get existing project to check for existing WordPress password
+    const existingProject = await prisma.project.findFirst({
+      where: {
+        id: params.id,
+        clientId: client.id,
+      },
+    });
+
+    if (!existingProject) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Test WordPress connection if new credentials are provided
+    const hasCompleteWordPressCredentials = wordpressUrl && wordpressUsername && wordpressPassword;
+    
+    if (hasCompleteWordPressCredentials) {
+      try {
+        const wpTestUrl = `${wordpressUrl}/wp-json/wp/v2/posts?per_page=1`;
+        const wpResponse = await fetch(wpTestUrl, {
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${wordpressUsername}:${wordpressPassword}`).toString('base64')}`,
+          },
+        });
+
+        if (!wpResponse.ok) {
+          throw new Error('WordPress connection failed');
+        }
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'WordPress connection failed. Check your credentials.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Build update data
+    const updateData: {
+      name?: string;
+      websiteUrl?: string | null;
+      description?: string | null;
+      wordpressUrl?: string | null;
+      wordpressUsername?: string | null;
+      wordpressPassword?: string;
+      wordpressCategory?: string | null;
+      updatedAt: Date;
+    } = {
+      updatedAt: new Date(),
+    };
+
+    if (name !== undefined) updateData.name = name;
+    if (websiteUrl !== undefined) updateData.websiteUrl = websiteUrl || null;
+    if (description !== undefined) updateData.description = description || null;
+    if (wordpressUrl !== undefined) updateData.wordpressUrl = wordpressUrl || null;
+    if (wordpressUsername !== undefined) updateData.wordpressUsername = wordpressUsername || null;
+    if (wordpressCategory !== undefined) updateData.wordpressCategory = wordpressCategory || null;
+    
+    // Only update password if a new one is provided
+    if (wordpressPassword) {
+      updateData.wordpressPassword = wordpressPassword;
+    }
+
     // Update project
     const project = await prisma.project.updateMany({
       where: {
         id: params.id,
         clientId: client.id,
       },
-      data: {
-        ...body,
-        updatedAt: new Date(),
-      },
+      data: updateData,
     });
 
     return NextResponse.json({ success: true, project });

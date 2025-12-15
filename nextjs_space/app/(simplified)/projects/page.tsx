@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Plus, Folder, ExternalLink, Edit, Trash2 } from 'lucide-react';
+import { Plus, Folder, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import * as Collapsible from '@radix-ui/react-collapsible';
 
 interface Project {
   id: string;
   name: string;
   websiteUrl: string | null;
   description: string | null;
+  wordpressUrl?: string | null;
+  wordpressUsername?: string | null;
+  wordpressCategory?: string | null;
   createdAt: string;
 }
 
@@ -22,7 +26,13 @@ export default function ProjectsPage() {
     name: '',
     websiteUrl: '',
     description: '',
+    wordpressUrl: '',
+    wordpressUsername: '',
+    wordpressPassword: '',
+    wordpressCategory: '',
   });
+  const [wpSectionOpen, setWpSectionOpen] = useState(false);
+
 
   useEffect(() => {
     fetchProjects();
@@ -64,7 +74,16 @@ export default function ProjectsPage() {
       if (res.ok) {
         setShowNewProject(false);
         setEditingProject(null);
-        setNewProject({ name: '', websiteUrl: '', description: '' });
+        setNewProject({ 
+          name: '', 
+          websiteUrl: '', 
+          description: '',
+          wordpressUrl: '',
+          wordpressUsername: '',
+          wordpressPassword: '',
+          wordpressCategory: '',
+        });
+        setWpSectionOpen(false);
         fetchProjects();
         alert(editingProject ? '✅ Project bijgewerkt!' : '✅ Project aangemaakt!');
       } else {
@@ -83,8 +102,16 @@ export default function ProjectsPage() {
       name: project.name,
       websiteUrl: project.websiteUrl || '',
       description: project.description || '',
+      wordpressUrl: project.wordpressUrl || '',
+      wordpressUsername: project.wordpressUsername || '',
+      wordpressPassword: '', // Password is never returned for security
+      wordpressCategory: project.wordpressCategory || '',
     });
     setShowNewProject(true);
+    // If WordPress URL exists, open the WordPress section
+    if (project.wordpressUrl) {
+      setWpSectionOpen(true);
+    }
   };
 
   const handleDeleteProject = async (projectId: string, projectName: string) => {
@@ -113,7 +140,16 @@ export default function ProjectsPage() {
   const handleCancelEdit = () => {
     setShowNewProject(false);
     setEditingProject(null);
-    setNewProject({ name: '', websiteUrl: '', description: '' });
+    setNewProject({ 
+      name: '', 
+      websiteUrl: '', 
+      description: '',
+      wordpressUrl: '',
+      wordpressUsername: '',
+      wordpressPassword: '',
+      wordpressCategory: '',
+    });
+    setWpSectionOpen(false);
   };
 
   return (
@@ -178,6 +214,86 @@ export default function ProjectsPage() {
                 className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
+
+            {/* WordPress Integration Section */}
+            <Collapsible.Root open={wpSectionOpen} onOpenChange={setWpSectionOpen}>
+              <Collapsible.Trigger className="w-full flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-lg hover:border-gray-600 transition-colors">
+                <span className="text-sm font-medium text-gray-300">
+                  🔌 WordPress Integratie (optioneel)
+                </span>
+                {wpSectionOpen ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </Collapsible.Trigger>
+              
+              <Collapsible.Content className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    WordPress URL
+                  </label>
+                  <input
+                    type="url"
+                    value={newProject.wordpressUrl}
+                    onChange={(e) => setNewProject({ ...newProject, wordpressUrl: e.target.value })}
+                    placeholder="https://jouwsite.nl"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Gebruikersnaam
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.wordpressUsername}
+                    onChange={(e) => setNewProject({ ...newProject, wordpressUsername: e.target.value })}
+                    placeholder="admin"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Application Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newProject.wordpressPassword}
+                    onChange={(e) => setNewProject({ ...newProject, wordpressPassword: e.target.value })}
+                    placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Maak een Application Password aan in WordPress → Gebruikers → Profiel → Application Passwords
+                    {editingProject && newProject.wordpressUrl && (
+                      <span className="block mt-1">
+                        ℹ️ Laat leeg om het huidige wachtwoord te behouden
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Standaard Categorie
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.wordpressCategory}
+                    onChange={(e) => setNewProject({ ...newProject, wordpressCategory: e.target.value })}
+                    placeholder="blog"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 De WordPress verbinding wordt automatisch getest wanneer je het project aanmaakt.
+                  </p>
+                </div>
+              </Collapsible.Content>
+            </Collapsible.Root>
+
             <div className="flex space-x-2">
               <button
                 onClick={handleCreateProject}
