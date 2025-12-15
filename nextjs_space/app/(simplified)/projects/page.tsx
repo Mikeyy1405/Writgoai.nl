@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Plus, Folder, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Plus, Folder, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 
 interface Project {
@@ -29,8 +29,7 @@ export default function ProjectsPage() {
     wordpressCategory: '',
   });
   const [wpSectionOpen, setWpSectionOpen] = useState(false);
-  const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
+
 
   useEffect(() => {
     fetchProjects();
@@ -145,41 +144,7 @@ export default function ProjectsPage() {
       wordpressCategory: '',
     });
     setWpSectionOpen(false);
-    setConnectionStatus(null);
   };
-
-  const handleTestConnection = async () => {
-    if (!newProject.wordpressUrl || !newProject.wordpressUsername || !newProject.wordpressPassword) {
-      return;
-    }
-
-    setTestingConnection(true);
-    setConnectionStatus(null);
-
-    try {
-      const wpTestUrl = `${newProject.wordpressUrl}/wp-json/wp/v2/posts?per_page=1`;
-      const response = await fetch(wpTestUrl, {
-        headers: {
-          'Authorization': `Basic ${btoa(`${newProject.wordpressUsername}:${newProject.wordpressPassword}`)}`,
-        },
-      });
-
-      if (response.ok) {
-        setConnectionStatus({ type: 'success', message: '✅ Verbinding succesvol!' });
-      } else {
-        setConnectionStatus({ type: 'error', message: '❌ Verbinding mislukt. Controleer je credentials.' });
-      }
-    } catch (error) {
-      setConnectionStatus({ type: 'error', message: '❌ Kan geen verbinding maken. Controleer de URL.' });
-    } finally {
-      setTestingConnection(false);
-    }
-  };
-
-  const hasCompleteWordPressCredentials = 
-    newProject.wordpressUrl && 
-    newProject.wordpressUsername && 
-    newProject.wordpressPassword;
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
@@ -265,10 +230,7 @@ export default function ProjectsPage() {
                   <input
                     type="url"
                     value={newProject.wordpressUrl}
-                    onChange={(e) => {
-                      setNewProject({ ...newProject, wordpressUrl: e.target.value });
-                      setConnectionStatus(null);
-                    }}
+                    onChange={(e) => setNewProject({ ...newProject, wordpressUrl: e.target.value })}
                     placeholder="https://jouwsite.nl"
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
@@ -281,10 +243,7 @@ export default function ProjectsPage() {
                   <input
                     type="text"
                     value={newProject.wordpressUsername}
-                    onChange={(e) => {
-                      setNewProject({ ...newProject, wordpressUsername: e.target.value });
-                      setConnectionStatus(null);
-                    }}
+                    onChange={(e) => setNewProject({ ...newProject, wordpressUsername: e.target.value })}
                     placeholder="admin"
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
@@ -297,10 +256,7 @@ export default function ProjectsPage() {
                   <input
                     type="password"
                     value={newProject.wordpressPassword}
-                    onChange={(e) => {
-                      setNewProject({ ...newProject, wordpressPassword: e.target.value });
-                      setConnectionStatus(null);
-                    }}
+                    onChange={(e) => setNewProject({ ...newProject, wordpressPassword: e.target.value })}
                     placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
@@ -320,38 +276,10 @@ export default function ProjectsPage() {
                     placeholder="blog"
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 De WordPress verbinding wordt automatisch getest wanneer je het project aanmaakt.
+                  </p>
                 </div>
-
-                {/* Test Connection Button */}
-                {hasCompleteWordPressCredentials && (
-                  <div>
-                    <button
-                      type="button"
-                      onClick={handleTestConnection}
-                      disabled={testingConnection}
-                      className="w-full bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                    >
-                      {testingConnection ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Verbinding testen...</span>
-                        </>
-                      ) : (
-                        <span>Test Verbinding</span>
-                      )}
-                    </button>
-                    
-                    {connectionStatus && (
-                      <div className={`mt-2 p-3 rounded-lg text-sm ${
-                        connectionStatus.type === 'success' 
-                          ? 'bg-green-900/30 border border-green-700 text-green-300'
-                          : 'bg-red-900/30 border border-red-700 text-red-300'
-                      }`}>
-                        {connectionStatus.message}
-                      </div>
-                    )}
-                  </div>
-                )}
               </Collapsible.Content>
             </Collapsible.Root>
 
