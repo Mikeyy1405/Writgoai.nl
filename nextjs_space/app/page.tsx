@@ -36,10 +36,14 @@ export default function DashboardPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/stats/overview');
+      const response = await fetch('/api/simplified/stats');
       if (response.ok) {
         const data = await response.json();
-        setStats(data);
+        setStats({
+          totalProjects: data.totalProjects,
+          contentThisMonth: data.contentThisMonth,
+          publishedArticles: data.publishedArticles,
+        });
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
