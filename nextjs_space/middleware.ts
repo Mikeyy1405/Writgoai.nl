@@ -14,20 +14,21 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
-// Bot user agents to detect/block
+// Bot user agents to detect/block (pre-converted to lowercase for performance)
 const BOT_USER_AGENTS = [
-  'ChatGPT-User',
-  'GPTBot',
+  'chatgpt-user',
+  'gptbot',
   'anthropic-ai',
-  'Claude-Web',
-  'Google-Extended',
-  'CCBot',
-  'Bytespider',
+  'claude-web',
+  'google-extended',
+  'ccbot',
+  'bytespider',
 ];
 
 function isAIBot(userAgent: string | null): boolean {
   if (!userAgent) return false;
-  return BOT_USER_AGENTS.some(bot => userAgent.toLowerCase().includes(bot.toLowerCase()));
+  const lowerUserAgent = userAgent.toLowerCase();
+  return BOT_USER_AGENTS.some(bot => lowerUserAgent.includes(bot));
 }
 
 export default withAuth(
