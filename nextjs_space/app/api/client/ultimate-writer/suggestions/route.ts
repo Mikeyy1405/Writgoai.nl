@@ -58,8 +58,11 @@ Formateer als genummerde lijst zonder extra uitleg.`;
         max_tokens: 500,
       });
 
+      // ✅ FIX: Extract content from correct response structure
+      const content = response.choices?.[0]?.message?.content || '';
+      
       // Parse numbered list
-      suggestions = response.content
+      suggestions = content
         .split('\n')
         .map((line) => line.replace(/^\d+\.\s*/, '').trim())
         .filter((line) => line.length > 10);
@@ -85,8 +88,11 @@ Formateer als genummerde lijst zonder extra uitleg.`;
         max_tokens: 300,
       });
 
+      // ✅ FIX: Extract content from correct response structure
+      const content = response.choices?.[0]?.message?.content || '';
+      
       // Parse numbered list
-      suggestions = response.content
+      suggestions = content
         .split('\n')
         .map((line) => line.replace(/^\d+\.\s*/, '').trim())
         .filter((line) => line.length > 10);
@@ -112,8 +118,11 @@ Formateer als komma-gescheiden lijst zonder nummers.`;
         max_tokens: 200,
       });
 
+      // ✅ FIX: Extract content from correct response structure
+      const content = response.choices?.[0]?.message?.content || '';
+      
       // Parse comma-separated list
-      suggestions = response.content
+      suggestions = content
         .split(',')
         .map((kw) => kw.trim())
         .filter((kw) => kw.length > 2);

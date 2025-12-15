@@ -155,9 +155,24 @@ BELANGRIJK:
 
     let topics = [];
     try {
-      // Parse de response met meerdere fallback strategieën
-      const content = response.content || '';
+      // ✅ FIX: Extract content from correct response structure
+      // AIML API returns: { choices: [{ message: { content: "..." } }] }
+      const content = response.choices?.[0]?.message?.content || '';
       console.log('[WordPress Analyze] Raw AI response length:', content.length);
+      
+      // Debug: Log full response structure if content is empty
+      if (!content) {
+        console.error('[WordPress Analyze] ❌ EMPTY CONTENT! Full response structure:', {
+          hasChoices: !!response.choices,
+          choicesLength: response.choices?.length || 0,
+          firstChoice: response.choices?.[0] ? {
+            hasMessage: !!response.choices[0].message,
+            messageKeys: response.choices[0].message ? Object.keys(response.choices[0].message) : [],
+            contentPreview: response.choices[0].message?.content?.substring(0, 100)
+          } : 'NO_FIRST_CHOICE',
+          responseKeys: Object.keys(response)
+        });
+      }
       
       // Strategie 1: Verwijder markdown code blocks (```json ... ```)
       let cleanedContent = content;
@@ -235,13 +250,14 @@ BELANGRIJK:
       }
       
     } catch (error) {
+      const responseContent = response.choices?.[0]?.message?.content || '';
       console.error('[WordPress Analyze] Error parsing AI response:', error);
-      console.error('[WordPress Analyze] Response content:', response.content?.substring(0, 1000));
+      console.error('[WordPress Analyze] Response content:', responseContent.substring(0, 1000));
       return NextResponse.json(
         { 
           error: 'Kon AI response niet verwerken',
           details: error instanceof Error ? error.message : 'Unknown parsing error',
-          rawResponse: response.content?.substring(0, 500) + '...'
+          rawResponse: responseContent.substring(0, 500) + '...'
         },
         { status: 500 }
       );

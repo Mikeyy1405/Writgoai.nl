@@ -380,7 +380,9 @@ Voorbeeld output: "De beste robotstofzuigers voor huisdieren in 2025"`;
       temperature: 0.8,
     });
 
-    let topic = response.content.trim();
+    // ✅ FIX: Extract content from correct response structure
+    const responseContent = response.choices?.[0]?.message?.content || '';
+    let topic = responseContent.trim();
     
     // Clean up the topic
     topic = topic.replace(/^["']|["']$/g, ''); // Remove quotes
