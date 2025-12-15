@@ -13,6 +13,46 @@ import {
 export const dynamic = 'force-dynamic';
 
 /**
+ * Parse HTML table to extract topics
+ */
+function parseHTMLTable(html: string): Array<{
+  title: string;
+  description: string;
+  keywords: string[];
+  priority: string;
+  reason: string;
+}> {
+  const topics = [];
+  
+  // Extract table rows - skip header row
+  const rowRegex = /<tr>\s*<td>(.*?)<\/td>\s*<td>(.*?)<\/td>\s*<td>(.*?)<\/td>\s*<td>(.*?)<\/td>\s*<td>(.*?)<\/td>\s*<\/tr>/gi;
+  let match;
+  
+  while ((match = rowRegex.exec(html)) !== null) {
+    const title = match[1].trim().replace(/<[^>]*>/g, ''); // Remove any HTML tags
+    const description = match[2].trim().replace(/<[^>]*>/g, '');
+    const keywordsStr = match[3].trim().replace(/<[^>]*>/g, '');
+    const priority = match[4].trim().replace(/<[^>]*>/g, '').toLowerCase();
+    const reason = match[5].trim().replace(/<[^>]*>/g, '');
+    
+    // Parse keywords (comma-separated)
+    const keywords = keywordsStr.split(',').map(k => k.trim()).filter(k => k);
+    
+    if (title && description && keywords.length > 0 && priority) {
+      topics.push({
+        title,
+        description,
+        keywords,
+        priority,
+        reason: reason || description, // Fallback to description if reason is empty
+      });
+    }
+  }
+  
+  return topics;
+}
+
+/**
  * POST /api/simplified/content-plan/analyze-wordpress
  * Analyseer een WordPress site en genereer automatisch een content plan
  */
@@ -118,29 +158,27 @@ Analyseer deze WordPress site en:
    - SEO-vriendelijk zijn
    - Goed aansluiten bij de bestaande content
 
-Voor elk topic geef je:
-- Title: Een pakkende titel voor het artikel
-- Description: Een korte beschrijving (1-2 zinnen) wat het artikel behandelt
-- Keywords: 3-5 gerelateerde keywords
-- Priority: high, medium, of low (gebaseerd op relevantie en content gap)
-- Reason: Waarom dit topic relevant is en welke content gap het vult
+RETURN FORMAT:
+Geef ALLEEN een HTML tabel terug met dit exacte format:
 
-Format je antwoord als JSON array:
-[
-  {
-    "title": "...",
-    "description": "...",
-    "keywords": ["...", "..."],
-    "priority": "high",
-    "reason": "..."
-  }
-]
+<table>
+<tr><th>Title</th><th>Description</th><th>Keywords</th><th>Priority</th><th>Reason</th></tr>
+<tr><td>Titel 1</td><td>Beschrijving 1</td><td>keyword1, keyword2, keyword3</td><td>high</td><td>Waarom dit relevant is</td></tr>
+<tr><td>Titel 2</td><td>Beschrijving 2</td><td>keyword1, keyword2, keyword3</td><td>medium</td><td>Waarom dit relevant is</td></tr>
+</table>
+
+REGELS:
+- Return ALLEEN de HTML tabel, GEEN andere tekst
+- Geen markdown, geen code blocks, geen uitleg
+- 15-20 topics minimaal
+- Priority moet zijn: high, medium, of low
+- Keywords gescheiden door komma's
+- Elk topic moet relevant zijn voor: ${project.websiteUrl}
 
 BELANGRIJK:
 - Genereer ALLEEN topics die nog niet of nauwelijks behandeld zijn
 - Focus op content gaps
-- Zorg dat topics relevant zijn voor de niche
-- Geef ALLEEN de JSON array terug, geen extra tekst`;
+- Geef ALLEEN de HTML tabel terug`;
 
     console.log('[WordPress Analyze] Generating content plan with AI...');
 
@@ -159,6 +197,7 @@ BELANGRIJK:
       // AIML API returns: { choices: [{ message: { content: "..." } }] }
       const content = response.choices?.[0]?.message?.content || '';
       console.log('[WordPress Analyze] Raw AI response length:', content.length);
+      console.log('[WordPress Analyze] Response preview:', content.substring(0, 500));
       
       // Debug: Log full response structure if content is empty
       if (!content) {
@@ -172,81 +211,19 @@ BELANGRIJK:
           } : 'NO_FIRST_CHOICE',
           responseKeys: Object.keys(response)
         });
+        throw new Error('Empty AI response');
       }
       
-      // Strategie 1: Verwijder markdown code blocks (```json ... ```)
-      let cleanedContent = content;
-      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (codeBlockMatch) {
-        cleanedContent = codeBlockMatch[1];
-        console.log('[WordPress Analyze] Found markdown code block');
-      }
+      // Parse HTML table
+      topics = parseHTMLTable(content);
       
-      // Strategie 2: Extract JSON array met regex
-      const jsonMatch = cleanedContent.match(/\[\s*\{[\s\S]*\}\s*\]/);
-      if (jsonMatch) {
-        try {
-          topics = JSON.parse(jsonMatch[0]);
-          console.log('[WordPress Analyze] Successfully parsed JSON array');
-        } catch (e) {
-          console.log('[WordPress Analyze] JSON array parse failed, trying next strategy');
-        }
-      }
+      console.log(`[WordPress Analyze] Parsed ${topics.length} topics from HTML table`);
       
-      // Strategie 3: Probeer directe parse als nog geen topics
+      // Valideer dat we topics hebben
       if (topics.length === 0) {
-        try {
-          topics = JSON.parse(cleanedContent.trim());
-          console.log('[WordPress Analyze] Successfully parsed direct JSON');
-        } catch (e) {
-          console.log('[WordPress Analyze] Direct JSON parse failed');
-        }
-      }
-      
-      // Strategie 4: Probeer JSON te repareren (incomplete JSON)
-      if (topics.length === 0) {
-        try {
-          // Probeer incomplete JSON te repareren door missing closing brackets toe te voegen
-          let repairedJson = cleanedContent.trim();
-          
-          // Tel opening en closing brackets
-          const openBrackets = (repairedJson.match(/\[/g) || []).length;
-          const closeBrackets = (repairedJson.match(/\]/g) || []).length;
-          const openBraces = (repairedJson.match(/\{/g) || []).length;
-          const closeBraces = (repairedJson.match(/\}/g) || []).length;
-          
-          // Voeg missende brackets toe
-          if (openBraces > closeBraces) {
-            repairedJson += '}'.repeat(openBraces - closeBraces);
-          }
-          if (openBrackets > closeBrackets) {
-            repairedJson += ']'.repeat(openBrackets - closeBrackets);
-          }
-          
-          topics = JSON.parse(repairedJson);
-          console.log('[WordPress Analyze] Successfully parsed repaired JSON');
-        } catch (e) {
-          console.log('[WordPress Analyze] JSON repair failed');
-        }
-      }
-      
-      // Valideer dat we een array hebben
-      if (!Array.isArray(topics) || topics.length === 0) {
-        console.error('[WordPress Analyze] No valid topics array found');
-        console.error('[WordPress Analyze] Response preview:', content.substring(0, 500));
-        throw new Error('Invalid AI response format');
-      }
-      
-      // Valideer topic structuur
-      topics = topics.filter(topic => {
-        return topic.title && 
-               topic.description && 
-               Array.isArray(topic.keywords) && 
-               topic.priority;
-      });
-      
-      if (topics.length === 0) {
-        throw new Error('No valid topics found in response');
+        console.error('[WordPress Analyze] No topics found in HTML table');
+        console.error('[WordPress Analyze] Response preview:', content.substring(0, 1000));
+        throw new Error('No topics found in AI response');
       }
       
     } catch (error) {

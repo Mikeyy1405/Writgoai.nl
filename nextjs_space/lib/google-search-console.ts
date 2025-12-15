@@ -37,10 +37,24 @@ export class GoogleSearchConsole {
   private oauth2Client;
 
   constructor(accessToken: string, refreshToken?: string) {
+    // Support both GOOGLE_SEARCH_CONSOLE_* and GOOGLE_* environment variables
+    const clientId = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_SEARCH_CONSOLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+
+    if (!clientId || !clientSecret) {
+      console.error('[Google OAuth] Missing credentials');
+      console.error('[Google OAuth] GOOGLE_SEARCH_CONSOLE_CLIENT_ID:', !!process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID);
+      console.error('[Google OAuth] GOOGLE_CLIENT_ID:', !!process.env.GOOGLE_CLIENT_ID);
+      console.error('[Google OAuth] GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET:', !!process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET);
+      console.error('[Google OAuth] GOOGLE_CLIENT_SECRET:', !!process.env.GOOGLE_CLIENT_SECRET);
+      throw new Error('Google OAuth credentials not configured');
+    }
+
     this.oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      clientId,
+      clientSecret,
+      redirectUri
     );
 
     this.oauth2Client.setCredentials({
@@ -53,10 +67,22 @@ export class GoogleSearchConsole {
    * Get OAuth URL for user authentication
    */
   static getAuthUrl(): string {
+    // Support both GOOGLE_SEARCH_CONSOLE_* and GOOGLE_* environment variables
+    const clientId = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_SEARCH_CONSOLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+
+    if (!clientId || !clientSecret) {
+      console.error('[Google OAuth] Missing credentials for auth URL');
+      console.error('[Google OAuth] GOOGLE_SEARCH_CONSOLE_CLIENT_ID:', !!process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID);
+      console.error('[Google OAuth] GOOGLE_CLIENT_ID:', !!process.env.GOOGLE_CLIENT_ID);
+      throw new Error('Google OAuth credentials not configured');
+    }
+
     const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      clientId,
+      clientSecret,
+      redirectUri
     );
 
     const scopes = [
@@ -75,10 +101,22 @@ export class GoogleSearchConsole {
    * Exchange authorization code for tokens
    */
   static async getTokensFromCode(code: string) {
+    // Support both GOOGLE_SEARCH_CONSOLE_* and GOOGLE_* environment variables
+    const clientId = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_SEARCH_CONSOLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+
+    if (!clientId || !clientSecret) {
+      console.error('[Google OAuth] Missing credentials for token exchange');
+      console.error('[Google OAuth] GOOGLE_SEARCH_CONSOLE_CLIENT_ID:', !!process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_ID);
+      console.error('[Google OAuth] GOOGLE_CLIENT_ID:', !!process.env.GOOGLE_CLIENT_ID);
+      throw new Error('Google OAuth credentials not configured');
+    }
+
     const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      clientId,
+      clientSecret,
+      redirectUri
     );
 
     const { tokens } = await oauth2Client.getToken(code);

@@ -6,6 +6,51 @@ import { prisma } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 /**
+ * GET /api/simplified/projects/[id]
+ * Haal een specifiek project op met content plan
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Haal client op
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    // Haal project op
+    const project = await prisma.project.findFirst({
+      where: {
+        id: params.id,
+        clientId: client.id,
+      },
+    });
+
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ project });
+  } catch (error) {
+    console.error('Error fetching project:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch project' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * DELETE /api/simplified/projects/[id]
  * Verwijder een project
  */

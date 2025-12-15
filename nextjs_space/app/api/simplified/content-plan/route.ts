@@ -7,6 +7,43 @@ import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
 export const dynamic = 'force-dynamic';
 
 /**
+ * Parse HTML table to extract topics
+ */
+function parseHTMLTable(html: string): Array<{
+  title: string;
+  description: string;
+  keywords: string[];
+  priority: string;
+}> {
+  const topics = [];
+  
+  // Extract table rows - skip header row
+  const rowRegex = /<tr>\s*<td>(.*?)<\/td>\s*<td>(.*?)<\/td>\s*<td>(.*?)<\/td>\s*<td>(.*?)<\/td>\s*<\/tr>/gi;
+  let match;
+  
+  while ((match = rowRegex.exec(html)) !== null) {
+    const title = match[1].trim().replace(/<[^>]*>/g, ''); // Remove any HTML tags
+    const description = match[2].trim().replace(/<[^>]*>/g, '');
+    const keywordsStr = match[3].trim().replace(/<[^>]*>/g, '');
+    const priority = match[4].trim().replace(/<[^>]*>/g, '').toLowerCase();
+    
+    // Parse keywords (comma-separated)
+    const keywords = keywordsStr.split(',').map(k => k.trim()).filter(k => k);
+    
+    if (title && description && keywords.length > 0 && priority) {
+      topics.push({
+        title,
+        description,
+        keywords,
+        priority,
+      });
+    }
+  }
+  
+  return topics;
+}
+
+/**
  * POST /api/simplified/content-plan
  * Genereer een content plan op basis van een keyword
  */
@@ -41,23 +78,25 @@ export async function POST(request: NextRequest) {
 
 Genereer 15-20 gerelateerde topics die samen een complete kennisstructuur vormen.
 
-Voor elk topic geef je:
-- Title: De titel van het artikel
-- Description: Een korte beschrijving (1-2 zinnen)
-- Keywords: 3-5 gerelateerde keywords
-- Priority: high, medium, of low
+RETURN FORMAT:
+Geef ALLEEN een HTML tabel terug met dit exacte format:
 
-Format je antwoord als JSON array:
-[
-  {
-    "title": "...",
-    "description": "...",
-    "keywords": ["...", "..."],
-    "priority": "high"
-  }
-]
+<table>
+<tr><th>Title</th><th>Description</th><th>Keywords</th><th>Priority</th></tr>
+<tr><td>Titel 1</td><td>Beschrijving 1</td><td>keyword1, keyword2, keyword3</td><td>high</td></tr>
+<tr><td>Titel 2</td><td>Beschrijving 2</td><td>keyword1, keyword2, keyword3</td><td>medium</td></tr>
+</table>
 
-Geef ALLEEN de JSON array terug, geen extra tekst.`;
+REGELS:
+- Return ALLEEN de HTML tabel, GEEN andere tekst
+- Geen markdown, geen code blocks, geen uitleg
+- 15-20 topics minimaal
+- Priority moet zijn: high, medium, of low
+- Keywords gescheiden door komma's
+- Elk topic moet gerelateerd zijn aan: ${keyword}
+
+BELANGRIJK:
+- Geef ALLEEN de HTML tabel terug`;
 
     const response = await chatCompletion({
       model: TEXT_MODELS.GPT5_CHAT,
@@ -74,6 +113,7 @@ Geef ALLEEN de JSON array terug, geen extra tekst.`;
       // AIML API returns: { choices: [{ message: { content: "..." } }] }
       const content = response.choices?.[0]?.message?.content || '';
       console.log('[Content Plan] Raw AI response length:', content.length);
+      console.log('[Content Plan] Response preview:', content.substring(0, 500));
       
       // Debug: Log full response structure if content is empty
       if (!content) {
@@ -87,80 +127,19 @@ Geef ALLEEN de JSON array terug, geen extra tekst.`;
           } : 'NO_FIRST_CHOICE',
           responseKeys: Object.keys(response)
         });
+        throw new Error('Empty AI response');
       }
       
-      // Strategie 1: Verwijder markdown code blocks (```json ... ```)
-      let cleanedContent = content;
-      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (codeBlockMatch) {
-        cleanedContent = codeBlockMatch[1];
-        console.log('[Content Plan] Found markdown code block');
-      }
+      // Parse HTML table
+      topics = parseHTMLTable(content);
       
-      // Strategie 2: Extract JSON array met regex
-      const jsonMatch = cleanedContent.match(/\[\s*\{[\s\S]*\}\s*\]/);
-      if (jsonMatch) {
-        try {
-          topics = JSON.parse(jsonMatch[0]);
-          console.log('[Content Plan] Successfully parsed JSON array');
-        } catch (e) {
-          console.log('[Content Plan] JSON array parse failed, trying direct parse');
-        }
-      }
+      console.log(`[Content Plan] Parsed ${topics.length} topics from HTML table`);
       
-      // Strategie 3: Probeer directe parse als nog geen topics
+      // Valideer dat we topics hebben
       if (topics.length === 0) {
-        try {
-          topics = JSON.parse(cleanedContent.trim());
-          console.log('[Content Plan] Successfully parsed direct JSON');
-        } catch (e) {
-          console.log('[Content Plan] Direct JSON parse failed');
-        }
-      }
-      
-      // Strategie 4: Probeer JSON te repareren (incomplete JSON)
-      if (topics.length === 0) {
-        try {
-          let repairedJson = cleanedContent.trim();
-          
-          // Tel opening en closing brackets
-          const openBrackets = (repairedJson.match(/\[/g) || []).length;
-          const closeBrackets = (repairedJson.match(/\]/g) || []).length;
-          const openBraces = (repairedJson.match(/\{/g) || []).length;
-          const closeBraces = (repairedJson.match(/\}/g) || []).length;
-          
-          // Voeg missende brackets toe
-          if (openBraces > closeBraces) {
-            repairedJson += '}'.repeat(openBraces - closeBraces);
-          }
-          if (openBrackets > closeBrackets) {
-            repairedJson += ']'.repeat(openBrackets - closeBrackets);
-          }
-          
-          topics = JSON.parse(repairedJson);
-          console.log('[Content Plan] Successfully parsed repaired JSON');
-        } catch (e) {
-          console.log('[Content Plan] JSON repair failed');
-        }
-      }
-      
-      // Valideer dat we een array hebben
-      if (!Array.isArray(topics) || topics.length === 0) {
-        console.error('[Content Plan] No valid topics array found');
-        console.error('[Content Plan] Response preview:', content.substring(0, 500));
-        throw new Error('Invalid AI response format');
-      }
-      
-      // Valideer topic structuur
-      topics = topics.filter(topic => {
-        return topic.title && 
-               topic.description && 
-               Array.isArray(topic.keywords) && 
-               topic.priority;
-      });
-      
-      if (topics.length === 0) {
-        throw new Error('No valid topics found in response');
+        console.error('[Content Plan] No topics found in HTML table');
+        console.error('[Content Plan] Response preview:', content.substring(0, 1000));
+        throw new Error('No topics found in AI response');
       }
       
     } catch (error) {
