@@ -449,6 +449,8 @@ async function saveToWordPress(
     if (data.content) updateData.content = data.content;
     if (data.excerpt) updateData.excerpt = data.excerpt;
     
+    // Note: WordPress REST API uses POST for updates (not PUT)
+    // This is the standard WordPress REST API convention
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {

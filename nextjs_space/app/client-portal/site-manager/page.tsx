@@ -528,7 +528,7 @@ export default function SiteManagerPage() {
                   <div>
                     <p className="text-white font-medium">{item.title}</p>
                     <p className="text-sm text-zinc-400 truncate max-w-md">
-                      {item.excerpt?.substring(0, 100)}...
+                      {item.excerpt?.substring(0, 100)}{item.excerpt && item.excerpt.length > 100 ? '...' : ''}
                     </p>
                   </div>
                 </td>
@@ -681,11 +681,11 @@ export default function SiteManagerPage() {
                   )}
                   {rewriteResult.content && (
                     <div>
-                      <p className="text-xs text-zinc-400 mb-1">Nieuwe Content:</p>
-                      <div 
-                        className="text-sm text-zinc-300 max-h-48 overflow-y-auto"
-                        dangerouslySetInnerHTML={{ __html: rewriteResult.content.substring(0, 500) + '...' }}
-                      />
+                      <p className="text-xs text-zinc-400 mb-1">Nieuwe Content (preview):</p>
+                      <div className="text-sm text-zinc-300 max-h-48 overflow-y-auto whitespace-pre-wrap">
+                        {rewriteResult.content.replace(/<[^>]*>/g, '').substring(0, 500)}
+                        {rewriteResult.content.length > 500 ? '...' : ''}
+                      </div>
                     </div>
                   )}
                   {rewriteResult.meta_description && (
@@ -708,23 +708,30 @@ export default function SiteManagerPage() {
               </Button>
               
               {!rewriteResult ? (
-                <Button
-                  onClick={rewriteItem ? handleRewrite : handleBulkRewrite}
-                  disabled={rewriteLoading || (!rewriteInstructions && rewriteItem)}
-                  className="bg-[#FF9933] hover:bg-[#FF9933]/90"
-                >
-                  {rewriteLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Genereren...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Genereer Nieuwe Versie
-                    </>
-                  )}
-                </Button>
+                <>
+                  {(() => {
+                    const isDisabled = rewriteLoading || (!rewriteInstructions && rewriteItem);
+                    return (
+                      <Button
+                        onClick={rewriteItem ? handleRewrite : handleBulkRewrite}
+                        disabled={isDisabled}
+                        className="bg-[#FF9933] hover:bg-[#FF9933]/90"
+                      >
+                        {rewriteLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Genereren...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Genereer Nieuwe Versie
+                          </>
+                        )}
+                      </Button>
+                    );
+                  })()}
+                </>
               ) : (
                 <Button
                   onClick={handleSaveRewrite}
