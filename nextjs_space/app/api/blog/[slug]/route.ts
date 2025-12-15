@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, getSupabaseClient } from '@/lib/supabase';
+import { isMissingTableError, isNoRowsError } from '@/lib/supabase/error-helpers';
 
 // GET - Specifieke blog post ophalen by slug
 export async function GET(
@@ -17,18 +18,14 @@ export async function GET(
 
     if (error) {
       // Check if error is due to missing table
-      if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+      if (isMissingTableError(error)) {
         console.warn('[Blog API] blog_posts table does not exist yet.');
         return NextResponse.json({ error: 'Post niet gevonden' }, { status: 404 });
       }
-      if (error.code === 'PGRST116' || !post) {
+      if (isNoRowsError(error)) {
         return NextResponse.json({ error: 'Post niet gevonden' }, { status: 404 });
       }
       throw error;
-    }
-
-    if (!post) {
-      return NextResponse.json({ error: 'Post niet gevonden' }, { status: 404 });
     }
 
     return NextResponse.json({ post });
@@ -77,7 +74,7 @@ export async function PUT(
 
       if (existingError) {
         // Check if error is due to missing table
-        if (existingError.code === 'PGRST205' || existingError.message?.includes('Could not find the table')) {
+        if (isMissingTableError(existingError)) {
           console.warn('[Blog API] blog_posts table does not exist yet. Cannot update post.');
           return NextResponse.json(
             { error: 'Blog system not available. The blog_posts table needs to be created.' },
@@ -132,7 +129,7 @@ export async function PUT(
 
     if (error) {
       // Check if error is due to missing table
-      if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+      if (isMissingTableError(error)) {
         console.warn('[Blog API] blog_posts table does not exist yet. Cannot update post.');
         return NextResponse.json(
           { error: 'Blog system not available. The blog_posts table needs to be created.' },
@@ -174,7 +171,7 @@ export async function DELETE(
 
     if (error) {
       // Check if error is due to missing table
-      if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+      if (isMissingTableError(error)) {
         console.warn('[Blog API] blog_posts table does not exist yet. Cannot delete post.');
         return NextResponse.json(
           { error: 'Blog system not available. The blog_posts table needs to be created.' },

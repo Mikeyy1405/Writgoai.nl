@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, getSupabaseClient } from '@/lib/supabase';
+import { isMissingTableError } from '@/lib/supabase/error-helpers';
 
 // GET - Publieke blog posts ophalen (for public /blog page)
 export async function GET(request: NextRequest) {
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       // Check if error is due to missing table
-      if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+      if (isMissingTableError(error)) {
         console.warn('[Blog API] blog_posts table does not exist yet. Returning empty array.');
         return NextResponse.json({
           posts: [],
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     if (existingError) {
       // Check if error is due to missing table
-      if (existingError.code === 'PGRST205' || existingError.message?.includes('Could not find the table')) {
+      if (isMissingTableError(existingError)) {
         console.warn('[Blog API] blog_posts table does not exist yet. Cannot create post.');
         return NextResponse.json(
           { error: 'Blog system not available. The blog_posts table needs to be created.' },
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       // Check if error is due to missing table
-      if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+      if (isMissingTableError(error)) {
         console.warn('[Blog API] blog_posts table does not exist yet. Cannot create post.');
         return NextResponse.json(
           { error: 'Blog system not available. The blog_posts table needs to be created.' },
