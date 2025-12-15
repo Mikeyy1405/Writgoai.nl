@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, getSupabaseClient } from '@/lib/supabase';
+import { isMissingTableError, isNoRowsError } from '@/lib/supabase/error-helpers';
 
 // GET - Get specific blog post by ID (admin)
 export async function GET(
@@ -21,8 +22,16 @@ export async function GET(
       .eq('id', params.id)
       .single();
 
-    if (error || !post) {
-      return NextResponse.json({ error: 'Post niet gevonden' }, { status: 404 });
+    if (error) {
+      // Check if error is due to missing table
+      if (isMissingTableError(error)) {
+        console.warn('[Blog API] blog_posts table does not exist yet.');
+        return NextResponse.json({ error: 'Post niet gevonden' }, { status: 404 });
+      }
+      if (isNoRowsError(error)) {
+        return NextResponse.json({ error: 'Post niet gevonden' }, { status: 404 });
+      }
+      throw error;
     }
 
     return NextResponse.json({ post });
@@ -71,6 +80,14 @@ export async function PUT(
         .maybeSingle();
 
       if (existingError) {
+        // Check if error is due to missing table
+        if (isMissingTableError(existingError)) {
+          console.warn('[Blog API] blog_posts table does not exist yet. Cannot update post.');
+          return NextResponse.json(
+            { error: 'Blog system not available. The blog_posts table needs to be created.' },
+            { status: 503 }
+          );
+        }
         console.error('Error checking slug uniqueness:', existingError);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
       }
@@ -118,6 +135,14 @@ export async function PUT(
       .single();
 
     if (error) {
+      // Check if error is due to missing table
+      if (isMissingTableError(error)) {
+        console.warn('[Blog API] blog_posts table does not exist yet. Cannot update post.');
+        return NextResponse.json(
+          { error: 'Blog system not available. The blog_posts table needs to be created.' },
+          { status: 503 }
+        );
+      }
       throw error;
     }
 
@@ -152,6 +177,14 @@ export async function DELETE(
       .eq('id', params.id);
 
     if (error) {
+      // Check if error is due to missing table
+      if (isMissingTableError(error)) {
+        console.warn('[Blog API] blog_posts table does not exist yet. Cannot delete post.');
+        return NextResponse.json(
+          { error: 'Blog system not available. The blog_posts table needs to be created.' },
+          { status: 503 }
+        );
+      }
       throw error;
     }
 
