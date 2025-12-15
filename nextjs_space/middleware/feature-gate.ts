@@ -3,6 +3,9 @@
  * 
  * Alle features zijn nu enabled! Dit middleware doet niets meer.
  * Het blijft bestaan voor backwards compatibility.
+ * 
+ * TODO: Consider removing this middleware entirely in a future refactor
+ * if no feature gating is needed.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -29,7 +32,7 @@ export function featureGateMiddleware(request: NextRequest) {
  * 
  * Alle features zijn nu altijd accessible
  */
-export function isFeatureAccessible(featurePath: string): boolean {
+export function isFeatureAccessible(_featurePath: string): boolean {
   // Alle features zijn accessible
   return true;
 }
