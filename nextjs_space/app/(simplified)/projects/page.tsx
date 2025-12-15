@@ -17,6 +17,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewProject, setShowNewProject] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProject, setNewProject] = useState({
     name: '',
     websiteUrl: '',
@@ -48,20 +49,71 @@ export default function ProjectsPage() {
     }
 
     try {
-      const res = await fetch('/api/simplified/projects', {
-        method: 'POST',
+      const url = editingProject 
+        ? `/api/simplified/projects/${editingProject.id}`
+        : '/api/simplified/projects';
+      
+      const method = editingProject ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newProject),
       });
 
       if (res.ok) {
         setShowNewProject(false);
+        setEditingProject(null);
         setNewProject({ name: '', websiteUrl: '', description: '' });
         fetchProjects();
+        alert(editingProject ? '✅ Project bijgewerkt!' : '✅ Project aangemaakt!');
+      } else {
+        const error = await res.json();
+        alert(`❌ Fout: ${error.error || 'Kon project niet opslaan'}`);
       }
     } catch (error) {
-      console.error('Error creating project:', error);
+      console.error('Error saving project:', error);
+      alert('❌ Er is een fout opgetreden bij het opslaan');
     }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setNewProject({
+      name: project.name,
+      websiteUrl: project.websiteUrl || '',
+      description: project.description || '',
+    });
+    setShowNewProject(true);
+  };
+
+  const handleDeleteProject = async (projectId: string, projectName: string) => {
+    if (!confirm(`Weet je zeker dat je "${projectName}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/simplified/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        fetchProjects();
+        alert('✅ Project verwijderd!');
+      } else {
+        const error = await res.json();
+        alert(`❌ Fout: ${error.error || 'Kon project niet verwijderen'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('❌ Er is een fout opgetreden bij het verwijderen');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowNewProject(false);
+    setEditingProject(null);
+    setNewProject({ name: '', websiteUrl: '', description: '' });
   };
 
   return (
@@ -87,7 +139,9 @@ export default function ProjectsPage() {
         {/* New Project Form */}
         {showNewProject && (
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-white">Nieuw Project</h2>
+            <h2 className="text-xl font-semibold text-white">
+              {editingProject ? '✏️ Project Bewerken' : '➕ Nieuw Project'}
+            </h2>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Project Naam <span className="text-red-400">*</span>
@@ -129,13 +183,10 @@ export default function ProjectsPage() {
                 onClick={handleCreateProject}
                 className="flex-1 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold py-2 px-4 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all"
               >
-                Project Aanmaken
+                {editingProject ? 'Project Bijwerken' : 'Project Aanmaken'}
               </button>
               <button
-                onClick={() => {
-                  setShowNewProject(false);
-                  setNewProject({ name: '', websiteUrl: '', description: '' });
-                }}
+                onClick={handleCancelEdit}
                 className="flex-1 bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 transition-all"
               >
                 Annuleren
@@ -174,10 +225,18 @@ export default function ProjectsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <Folder className="w-8 h-8 text-orange-500" />
                   <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="text-gray-400 hover:text-white transition-colors">
+                    <button 
+                      onClick={() => handleEditProject(project)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                      title="Project bewerken"
+                    >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button className="text-gray-400 hover:text-red-400 transition-colors">
+                    <button 
+                      onClick={() => handleDeleteProject(project.id, project.name)}
+                      className="text-gray-400 hover:text-red-400 transition-colors"
+                      title="Project verwijderen"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

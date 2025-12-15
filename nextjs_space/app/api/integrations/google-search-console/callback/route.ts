@@ -40,6 +40,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Check if credentials are configured
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const nextAuthUrl = process.env.NEXTAUTH_URL;
+
+    if (!clientId || !clientSecret || !nextAuthUrl) {
+      console.error('[GSC Callback] Missing environment variables:', {
+        hasClientId: !!clientId,
+        hasClientSecret: !!clientSecret,
+        hasNextAuthUrl: !!nextAuthUrl
+      });
+      return NextResponse.redirect(
+        new URL('/settings?error=gsc_not_configured', request.url)
+      );
+    }
+
     // Exchange code for tokens
     console.log('[GSC Callback] Exchanging code for tokens...');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -47,9 +63,9 @@ export async function GET(request: NextRequest) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/integrations/google-search-console/callback`,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: `${nextAuthUrl}/api/integrations/google-search-console/callback`,
         grant_type: 'authorization_code'
       })
     });
@@ -57,8 +73,14 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
       console.error('[GSC Callback] Token exchange failed:', errorData);
+      let errorJson;
+      try {
+        errorJson = JSON.parse(errorData);
+      } catch (e) {
+        errorJson = { error: 'unknown' };
+      }
       return NextResponse.redirect(
-        new URL('/settings?error=token_exchange_failed', request.url)
+        new URL(`/settings?error=token_exchange_failed&details=${encodeURIComponent(errorJson.error || 'Unknown error')}`, request.url)
       );
     }
 

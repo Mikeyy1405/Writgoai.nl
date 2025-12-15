@@ -111,11 +111,20 @@ export default function DashboardPage() {
         setProjects(projectsData.projects || []);
       }
 
-      // Fetch Google Search Console stats
-      const gscResponse = await fetch('/api/integrations/google-search-console/stats');
-      if (gscResponse.ok) {
-        const gscData = await gscResponse.json();
-        setGscStats(gscData);
+      // Fetch Google Search Console stats (non-blocking)
+      try {
+        const gscResponse = await fetch('/api/integrations/google-search-console/stats');
+        if (gscResponse.ok) {
+          const gscData = await gscResponse.json();
+          setGscStats(gscData);
+        } else {
+          console.log('GSC not available, skipping...');
+          setGscStats({ connected: false });
+        }
+      } catch (gscError) {
+        console.log('GSC error (non-critical):', gscError);
+        // Silently fail - GSC is optional
+        setGscStats({ connected: false });
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

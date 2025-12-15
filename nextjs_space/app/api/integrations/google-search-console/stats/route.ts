@@ -13,6 +13,20 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
+    // Check if GSC credentials are configured
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      console.log('[GSC Stats] Credentials not configured, returning empty data');
+      return NextResponse.json({
+        connected: false,
+        sites: [],
+        stats: null,
+        message: 'Google Search Console credentials not configured'
+      });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -29,10 +43,12 @@ export async function GET(request: NextRequest) {
 
     // Check if Google Search Console is connected
     if (!client.googleSearchConsoleToken) {
-      return NextResponse.json(
-        { error: 'Google Search Console not connected', connected: false },
-        { status: 200 }
-      );
+      return NextResponse.json({
+        connected: false,
+        sites: [],
+        stats: null,
+        message: 'Google Search Console not connected'
+      });
     }
 
     // Decrypt tokens
@@ -47,10 +63,12 @@ export async function GET(request: NextRequest) {
       : [];
 
     if (sites.length === 0) {
-      return NextResponse.json(
-        { error: 'No sites found', connected: true, sites: [] },
-        { status: 200 }
-      );
+      return NextResponse.json({
+        connected: true,
+        sites: [],
+        stats: null,
+        message: 'No sites found in Google Search Console'
+      });
     }
 
     // Use first site (or allow user to select in future)
@@ -85,10 +103,13 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching Google Search Console stats:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch stats', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    console.error('[GSC Stats] Error:', error);
+    // Return empty data instead of error to prevent dashboard from breaking
+    return NextResponse.json({
+      connected: false,
+      sites: [],
+      stats: null,
+      message: 'Failed to fetch Google Search Console data'
+    });
   }
 }

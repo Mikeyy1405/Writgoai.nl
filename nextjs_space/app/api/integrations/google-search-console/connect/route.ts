@@ -11,6 +11,18 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Check if credentials are configured
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      console.log('[GSC Connect] Credentials not configured');
+      return NextResponse.json({
+        error: 'Google Search Console credentials not configured',
+        message: 'Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in environment variables'
+      }, { status: 503 });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -24,9 +36,9 @@ export async function POST(request: NextRequest) {
       message: 'Redirect user to this URL to authorize',
     });
   } catch (error) {
-    console.error('Error starting Google Search Console OAuth:', error);
+    console.error('[GSC Connect] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to start OAuth flow' },
+      { error: 'Failed to start OAuth flow', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -38,6 +50,17 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Check if credentials are configured
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      console.log('[GSC Connect GET] Credentials not configured');
+      return NextResponse.redirect(
+        new URL('/settings?error=gsc_not_configured', request.url)
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.redirect(new URL('/inloggen', request.url));
@@ -47,7 +70,7 @@ export async function GET(request: NextRequest) {
     const authUrl = GoogleSearchConsole.getAuthUrl();
     return NextResponse.redirect(authUrl);
   } catch (error) {
-    console.error('Error redirecting to Google OAuth:', error);
+    console.error('[GSC Connect GET] Error:', error);
     return NextResponse.redirect(
       new URL('/settings?error=oauth_failed', request.url)
     );
