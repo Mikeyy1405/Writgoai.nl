@@ -42,7 +42,7 @@ const TOOL_ROUTES = {
   'wordpress': '/client-portal/wordpress-content',
   'image generator': '/client-portal/image-generator',
   'afbeeldingen': '/client-portal/image-generator',
-  'video': '/client-portal/video-generator'
+  'video': '/client-portal/video'
 };
 
 // --- UTILITY FUNCTIONS ---
