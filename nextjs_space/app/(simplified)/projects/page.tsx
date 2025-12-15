@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Plus, Folder, ExternalLink, Edit, Trash2 } from 'lucide-react';
+import { Plus, Folder, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import * as Collapsible from '@radix-ui/react-collapsible';
 
 interface Project {
   id: string;
@@ -22,7 +23,14 @@ export default function ProjectsPage() {
     name: '',
     websiteUrl: '',
     description: '',
+    wordpressUrl: '',
+    wordpressUsername: '',
+    wordpressPassword: '',
+    wordpressCategory: '',
   });
+  const [wpSectionOpen, setWpSectionOpen] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -64,7 +72,17 @@ export default function ProjectsPage() {
       if (res.ok) {
         setShowNewProject(false);
         setEditingProject(null);
-        setNewProject({ name: '', websiteUrl: '', description: '' });
+        setNewProject({ 
+          name: '', 
+          websiteUrl: '', 
+          description: '',
+          wordpressUrl: '',
+          wordpressUsername: '',
+          wordpressPassword: '',
+          wordpressCategory: '',
+        });
+        setWpSectionOpen(false);
+        setConnectionStatus(null);
         fetchProjects();
         alert(editingProject ? '✅ Project bijgewerkt!' : '✅ Project aangemaakt!');
       } else {
@@ -83,6 +101,10 @@ export default function ProjectsPage() {
       name: project.name,
       websiteUrl: project.websiteUrl || '',
       description: project.description || '',
+      wordpressUrl: '',
+      wordpressUsername: '',
+      wordpressPassword: '',
+      wordpressCategory: '',
     });
     setShowNewProject(true);
   };
@@ -113,8 +135,51 @@ export default function ProjectsPage() {
   const handleCancelEdit = () => {
     setShowNewProject(false);
     setEditingProject(null);
-    setNewProject({ name: '', websiteUrl: '', description: '' });
+    setNewProject({ 
+      name: '', 
+      websiteUrl: '', 
+      description: '',
+      wordpressUrl: '',
+      wordpressUsername: '',
+      wordpressPassword: '',
+      wordpressCategory: '',
+    });
+    setWpSectionOpen(false);
+    setConnectionStatus(null);
   };
+
+  const handleTestConnection = async () => {
+    if (!newProject.wordpressUrl || !newProject.wordpressUsername || !newProject.wordpressPassword) {
+      return;
+    }
+
+    setTestingConnection(true);
+    setConnectionStatus(null);
+
+    try {
+      const wpTestUrl = `${newProject.wordpressUrl}/wp-json/wp/v2/posts?per_page=1`;
+      const response = await fetch(wpTestUrl, {
+        headers: {
+          'Authorization': `Basic ${btoa(`${newProject.wordpressUsername}:${newProject.wordpressPassword}`)}`,
+        },
+      });
+
+      if (response.ok) {
+        setConnectionStatus({ type: 'success', message: '✅ Verbinding succesvol!' });
+      } else {
+        setConnectionStatus({ type: 'error', message: '❌ Verbinding mislukt. Controleer je credentials.' });
+      }
+    } catch (error) {
+      setConnectionStatus({ type: 'error', message: '❌ Kan geen verbinding maken. Controleer de URL.' });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  const hasCompleteWordPressCredentials = 
+    newProject.wordpressUrl && 
+    newProject.wordpressUsername && 
+    newProject.wordpressPassword;
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
@@ -178,6 +243,118 @@ export default function ProjectsPage() {
                 className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
+
+            {/* WordPress Integration Section */}
+            <Collapsible.Root open={wpSectionOpen} onOpenChange={setWpSectionOpen}>
+              <Collapsible.Trigger className="w-full flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-lg hover:border-gray-600 transition-colors">
+                <span className="text-sm font-medium text-gray-300">
+                  🔌 WordPress Integratie (optioneel)
+                </span>
+                {wpSectionOpen ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </Collapsible.Trigger>
+              
+              <Collapsible.Content className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    WordPress URL
+                  </label>
+                  <input
+                    type="url"
+                    value={newProject.wordpressUrl}
+                    onChange={(e) => {
+                      setNewProject({ ...newProject, wordpressUrl: e.target.value });
+                      setConnectionStatus(null);
+                    }}
+                    placeholder="https://jouwsite.nl"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Gebruikersnaam
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.wordpressUsername}
+                    onChange={(e) => {
+                      setNewProject({ ...newProject, wordpressUsername: e.target.value });
+                      setConnectionStatus(null);
+                    }}
+                    placeholder="admin"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Application Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newProject.wordpressPassword}
+                    onChange={(e) => {
+                      setNewProject({ ...newProject, wordpressPassword: e.target.value });
+                      setConnectionStatus(null);
+                    }}
+                    placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Maak een Application Password aan in WordPress → Gebruikers → Profiel → Application Passwords
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Standaard Categorie
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.wordpressCategory}
+                    onChange={(e) => setNewProject({ ...newProject, wordpressCategory: e.target.value })}
+                    placeholder="blog"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Test Connection Button */}
+                {hasCompleteWordPressCredentials && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleTestConnection}
+                      disabled={testingConnection}
+                      className="w-full bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      {testingConnection ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Verbinding testen...</span>
+                        </>
+                      ) : (
+                        <span>Test Verbinding</span>
+                      )}
+                    </button>
+                    
+                    {connectionStatus && (
+                      <div className={`mt-2 p-3 rounded-lg text-sm ${
+                        connectionStatus.type === 'success' 
+                          ? 'bg-green-900/30 border border-green-700 text-green-300'
+                          : 'bg-red-900/30 border border-red-700 text-red-300'
+                      }`}>
+                        {connectionStatus.message}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Collapsible.Content>
+            </Collapsible.Root>
+
             <div className="flex space-x-2">
               <button
                 onClick={handleCreateProject}
