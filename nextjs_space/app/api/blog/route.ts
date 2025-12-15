@@ -46,6 +46,19 @@ export async function GET(request: NextRequest) {
     const { data: posts, count: total, error } = await query;
 
     if (error) {
+      // Check if error is due to missing table
+      if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+        console.warn('[Blog API] blog_posts table does not exist yet. Returning empty array.');
+        return NextResponse.json({
+          posts: [],
+          pagination: {
+            total: 0,
+            page,
+            limit,
+            pages: 0,
+          },
+        });
+      }
       throw error;
     }
 
@@ -109,6 +122,14 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingError) {
+      // Check if error is due to missing table
+      if (existingError.code === 'PGRST205' || existingError.message?.includes('Could not find the table')) {
+        console.warn('[Blog API] blog_posts table does not exist yet. Cannot create post.');
+        return NextResponse.json(
+          { error: 'Blog system not available. The blog_posts table needs to be created.' },
+          { status: 503 }
+        );
+      }
       console.error('Error checking slug uniqueness:', existingError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
@@ -141,6 +162,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      // Check if error is due to missing table
+      if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+        console.warn('[Blog API] blog_posts table does not exist yet. Cannot create post.');
+        return NextResponse.json(
+          { error: 'Blog system not available. The blog_posts table needs to be created.' },
+          { status: 503 }
+        );
+      }
       throw error;
     }
 
