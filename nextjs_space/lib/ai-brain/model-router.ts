@@ -17,34 +17,35 @@ export interface RouterOptions {
 const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; budget?: string }> = {
   // Orchestration & Complex Tasks
   orchestrate: {
-    primary: 'google/gemini-3-pro-preview',
-    fallback: 'gpt-4o',
+    primary: 'o3-pro',
+    fallback: 'google/gemini-3-pro-preview',
+    budget: 'gpt-4o',
   },
   
   // Long-form Content
   blog_long: {
-    primary: 'anthropic/claude-sonnet-4.5',
-    fallback: 'gpt-5-2025-08-07',
-    budget: 'deepseek-ai/DeepSeek-V3',
+    primary: 'gpt-5.2',
+    fallback: 'anthropic/claude-sonnet-4.5',
+    budget: 'deepseek-ai/DeepSeek-V3.2-Speciale',
   },
   
   // Short-form Content
   blog_short: {
     primary: 'gpt-5-mini-2025-08-07',
-    fallback: 'claude-3-5-haiku-20241022',
-    budget: 'deepseek-ai/DeepSeek-V3',
+    fallback: 'anthropic/claude-4.5-haiku',
+    budget: 'deepseek-ai/DeepSeek-V3.2-Speciale',
   },
   
   // Social Media
   social_post: {
     primary: 'gpt-4o-mini',
     fallback: 'gemini-2.5-flash',
-    budget: 'deepseek-ai/DeepSeek-V3',
+    budget: 'deepseek-ai/DeepSeek-V3.2-Speciale',
   },
   
   // Video Scripts
   video_script: {
-    primary: 'gpt-5-2025-08-07',
+    primary: 'gpt-5.2',
     fallback: 'anthropic/claude-sonnet-4.5',
   },
   
@@ -56,14 +57,14 @@ const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; 
   // Marketing Copy
   email: {
     primary: 'gpt-4o-mini',
-    fallback: 'claude-3-5-haiku-20241022',
-    budget: 'deepseek-ai/DeepSeek-V3',
+    fallback: 'anthropic/claude-4.5-haiku',
+    budget: 'deepseek-ai/DeepSeek-V3.2-Speciale',
   },
   
   product_description: {
     primary: 'gpt-4o-mini',
     fallback: 'gemini-2.5-flash',
-    budget: 'deepseek-ai/DeepSeek-V3',
+    budget: 'deepseek-ai/DeepSeek-V3.2-Speciale',
   },
   
   meta_description: {
@@ -73,32 +74,32 @@ const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; 
   
   // Code Tasks
   code_generate: {
-    primary: 'anthropic/claude-sonnet-4.5',
-    fallback: 'gpt-5-2025-08-07',
+    primary: 'gpt-5.2',
+    fallback: 'anthropic/claude-sonnet-4.5',
     budget: 'Qwen/Qwen2.5-Coder-32B-Instruct',
   },
   
   code_review: {
     primary: 'anthropic/claude-sonnet-4.5',
-    fallback: 'gpt-4o',
+    fallback: 'gpt-5.2',
   },
   
   code_debug: {
-    primary: 'claude-opus-4-5-20250514',
-    fallback: 'deepseek-ai/DeepSeek-R1',
+    primary: 'o3',
+    fallback: 'o3-mini',
     budget: 'deepseek-ai/DeepSeek-R1',
   },
   
   // Image Generation
   image_realistic: {
-    primary: 'black-forest-labs/FLUX.1-pro',
-    fallback: 'dall-e-3',
-    budget: 'black-forest-labs/FLUX.1-schnell',
+    primary: 'black-forest-labs/FLUX.2-pro',
+    fallback: 'google/imagen-4.0-ultra',
+    budget: 'alibaba/z-image-turbo',
   },
   
   image_artistic: {
     primary: 'midjourney',
-    fallback: 'black-forest-labs/FLUX.1-pro',
+    fallback: 'bytedance/seedream-4.5',
   },
   
   image_logo: {
@@ -107,27 +108,28 @@ const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; 
   },
   
   image_thumbnail: {
-    primary: 'dall-e-3',
-    fallback: 'black-forest-labs/FLUX.1-schnell',
+    primary: 'alibaba/z-image-turbo',
+    fallback: 'google/imagen-4.0-ultra',
     budget: 'stabilityai/stable-diffusion-xl-1024-v1-0',
   },
   
   // Video Generation
   video_generate: {
-    primary: 'luma/ray-2',
-    fallback: 'runway/gen3a_turbo',
-    budget: 'kling-ai/kling-video-v2',
+    primary: 'openai/sora-2',
+    fallback: 'google/veo-3.1',
+    budget: 'kling-ai/kling-2.6-pro',
   },
   
   // Voice/Audio
   voice_nl: {
-    primary: 'elevenlabs/eleven_multilingual_v2',
-    fallback: 'openai/tts-1-hd',
+    primary: 'elevenlabs/eleven-v3-alpha',
+    fallback: 'inworld-ai/tts-1-max',
+    budget: 'openai/tts-1-hd',
   },
   
   voice_en: {
-    primary: 'elevenlabs/eleven_multilingual_v2',
-    fallback: 'openai/tts-1-hd',
+    primary: 'elevenlabs/eleven-v3-alpha',
+    fallback: 'inworld-ai/tts-1-max',
     budget: 'cartesia/sonic',
   },
   
@@ -143,14 +145,14 @@ const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; 
   
   // Analysis & Research
   research: {
-    primary: 'grok-4-1-fast',
-    fallback: 'claude-opus-4-5-20250514',
+    primary: 'perplexity/sonar-pro-2',
+    fallback: 'x-ai/grok-4-fast',
     budget: 'deepseek-ai/DeepSeek-R1',
   },
   
   analyze: {
-    primary: 'claude-opus-4-5-20250514',
-    fallback: 'gpt-5-2025-08-07',
+    primary: 'o3-pro',
+    fallback: 'gpt-5.2',
     budget: 'deepseek-ai/DeepSeek-R1',
   },
   
@@ -161,9 +163,9 @@ const TASK_MODEL_MAPPING: Record<TaskType, { primary: string; fallback: string; 
   },
   
   translation: {
-    primary: 'gpt-5-2025-08-07',
-    fallback: 'Qwen/Qwen3-235B-A22B',
-    budget: 'deepseek-ai/DeepSeek-V3',
+    primary: 'gpt-5.2',
+    fallback: 'zhipu-ai/glm-4.6',
+    budget: 'deepseek-ai/DeepSeek-V3.2-Speciale',
   },
   
   // Moderation
