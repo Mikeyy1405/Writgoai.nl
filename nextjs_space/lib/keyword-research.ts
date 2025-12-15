@@ -156,7 +156,7 @@ export async function scanWebsiteForKeywords(url: string): Promise<string[]> {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5-20250929', // Claude 4.5 Sonnet voor superieure agentic tasks
+          model: 'anthropic/claude-sonnet-4.5', // Claude 4.5 Sonnet voor superieure agentic tasks
           messages: [
             {
               role: 'user',
@@ -216,7 +216,7 @@ Geef alleen de keywords, gescheiden door komma's. Geen nummering of bullets.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           {
             role: 'user',
@@ -504,7 +504,7 @@ export async function analyzeKeyword(keyword: string, niche?: string): Promise<K
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           {
             role: 'user',
@@ -580,7 +580,7 @@ export async function generateContentIdeas(keyword: string, count: number = 5): 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           {
             role: 'user',
@@ -712,7 +712,7 @@ export async function analyzeWebsiteStructure(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5-20250929',
+          model: 'anthropic/claude-sonnet-4.5',
           messages: [
             {
               role: 'user',
@@ -760,7 +760,7 @@ Analyseer deze website structuur:\n\nURL: ${url}\n\nHTML:\n${html.substring(0, 8
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           {
             role: 'user',
@@ -829,7 +829,7 @@ export async function findCompetitors(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           {
             role: 'user',
@@ -937,7 +937,7 @@ Focus op bekende, gevestigde spelers in de markt.`
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'claude-sonnet-4-5-20250929',
+              model: 'anthropic/claude-sonnet-4.5',
               messages: [
                 {
                   role: 'user',
@@ -1177,7 +1177,7 @@ export async function strategicallyAnalyzeKeywords(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929', // Claude 4.5 voor superieure analyse
+        model: 'anthropic/claude-sonnet-4.5', // Claude 4.5 voor superieure analyse
         messages: [
           {
             role: 'system',
@@ -1532,7 +1532,7 @@ export async function generateContentSilos(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           {
             role: 'user',
@@ -1645,7 +1645,7 @@ Dit wordt de basis voor een volledig SEO content plan voor topical authority.`
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'claude-sonnet-4-5-20250929',
+              model: 'anthropic/claude-sonnet-4.5',
               messages: [
                 {
                   role: 'user',
@@ -1765,7 +1765,7 @@ export async function generateCompleteSitePlan(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5-20250929',
+          model: 'anthropic/claude-sonnet-4.5',
           messages: [
             {
               role: 'user',
@@ -1802,7 +1802,7 @@ export async function generateCompleteSitePlan(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           {
             role: 'user',

@@ -100,7 +100,7 @@ Maak deze tekst natuurlijker en menselijker volgens de regels hierboven.`;
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
           ],
-          model: 'claude-sonnet-4-5-20250929',
+          model: 'anthropic/claude-sonnet-4.5',
           temperature: 0.9, // Higher for more variation
         }),
       });

@@ -58,7 +58,7 @@ export const AVAILABLE_MODELS = {
   // ═══════════════════════════════════════════════════════
   // 🧠 ANTHROPIC CLAUDE MODELLEN
   // ═══════════════════════════════════════════════════════
-  CLAUDE_45_SONNET: 'claude-sonnet-4-5-20250929',   // 🔥 Top kwaliteit voor Nederlandse content - 1M context
+  CLAUDE_45_SONNET: 'anthropic/claude-sonnet-4.5',   // 🔥 Top kwaliteit voor Nederlandse content - 1M context
   CLAUDE_45_OPUS: 'anthropic/claude-opus-4-5',      // 🔥 Meest intelligent, autonoom - 1M context
   CLAUDE_35_HAIKU: 'claude-3-5-haiku-20241022',     // Snelste Claude 3.5
   CLAUDE_3_OPUS: 'claude-3-opus-20240229',          // Legacy premium

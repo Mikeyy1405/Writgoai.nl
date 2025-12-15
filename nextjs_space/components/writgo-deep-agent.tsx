@@ -528,7 +528,7 @@ interface StatusLogEntry {
 // Chat/LLM models beschikbaar via AIML API
 const CHAT_MODELS = [
   // 🔥 NIEUWSTE MODELLEN (2025)
-  { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5 🚀 (NIEUW)', recommended: true, description: 'Beste voor Nederlandse content - uitstekend voor alles' },
+  { value: 'anthropic/claude-sonnet-4.5', label: 'Claude Sonnet 4.5 🚀 (NIEUW)', recommended: true, description: 'Beste voor Nederlandse content - uitstekend voor alles' },
   { value: 'gpt-5-2025-08-07', label: 'GPT-5 🚀', recommended: true, description: 'Nieuwste OpenAI flagship - meest krachtig' },
   { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini ⚡', recommended: true, description: 'Snelle GPT-5 variant - beste balans' },
   { value: 'gpt-5-nano-2025-08-07', label: 'GPT-5 Nano 💨', description: 'Ultra snelle GPT-5 - perfecte prijs/kwaliteit' },

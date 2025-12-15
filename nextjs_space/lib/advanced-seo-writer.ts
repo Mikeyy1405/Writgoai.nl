@@ -251,7 +251,7 @@ export async function generateSEOContent(
     
     // Genereer content met AIML API
     const response = await chatCompletion({
-      model: 'claude-sonnet-4-5-20250929', // Beste model voor content writing
+      model: 'anthropic/claude-sonnet-4.5', // Beste model voor content writing
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }

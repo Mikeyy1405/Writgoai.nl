@@ -198,7 +198,7 @@ export const CHAT_MODELS: AIModel[] = [
 
   // Anthropic Claude Models
   {
-    id: 'claude-sonnet-4-5-20250929',
+    id: 'anthropic/claude-sonnet-4.5',
     name: 'Claude Sonnet 4.5',
     provider: 'Anthropic',
     category: 'chat',

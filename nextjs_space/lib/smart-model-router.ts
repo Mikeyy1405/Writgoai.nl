@@ -17,27 +17,27 @@ export const MODEL_CATEGORIES = {
   // Advanced Reasoning - Voor complexe analyses
   REASONING: {
     primary: 'google/gemini-3-pro-preview',
-    fallback: 'claude-sonnet-4-5-20250929',
+    fallback: 'anthropic/claude-sonnet-4.5',
     description: 'Diepgaande redenering met Gemini 3 Pro'
   },
   
   // Long Context - Voor grote documenten
   LONG_CONTEXT: {
     primary: 'google/gemini-3-pro-preview',
-    fallback: 'claude-sonnet-4-5-20250929',
+    fallback: 'anthropic/claude-sonnet-4.5',
     description: 'Tot 1M+ tokens context'
   },
   
   // Creative Writing - Voor blogs en content (Dutch)
   CREATIVE: {
-    primary: 'claude-sonnet-4-5-20250929',
+    primary: 'anthropic/claude-sonnet-4.5',
     fallback: 'google/gemini-3-pro-preview',
     description: 'Beste Nederlandse content met Claude Sonnet 4.5'
   },
   
   // Fast Generation - Voor snelle responses
   FAST: {
-    primary: 'claude-sonnet-4-5-20250929',
+    primary: 'anthropic/claude-sonnet-4.5',
     fallback: 'gpt-4o-mini',
     description: 'Snelle antwoorden met goede kwaliteit'
   },
@@ -45,20 +45,20 @@ export const MODEL_CATEGORIES = {
   // Code Generation - Voor programmeren
   CODE: {
     primary: 'anthropic/claude-opus-4-5',
-    fallback: 'claude-sonnet-4-5-20250929',
+    fallback: 'anthropic/claude-sonnet-4.5',
     description: 'Beste code generatie met Claude Opus 4.5'
   },
   
   // Dutch Language - Voor Nederlandse teksten
   DUTCH: {
-    primary: 'claude-sonnet-4-5-20250929',
+    primary: 'anthropic/claude-sonnet-4.5',
     fallback: 'google/gemini-3-pro-preview',
     description: 'Beste Nederlandse taal met Claude Sonnet 4.5'
   },
   
   // SEO Writing - Voor SEO-geoptimaliseerde content
   SEO_WRITING: {
-    primary: 'claude-sonnet-4-5-20250929',
+    primary: 'anthropic/claude-sonnet-4.5',
     fallback: 'google/gemini-3-pro-preview',
     description: 'SEO-geoptimaliseerd schrijven met Claude Sonnet 4.5'
   },

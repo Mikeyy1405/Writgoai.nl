@@ -16,11 +16,11 @@ interface ModelConfig {
 // Correct AIML API Model IDs (verified with user requirements)
 export const AI_MODELS = {
   // Content & Writing (Dutch content, good price/quality)
-  CONTENT_REWRITE: 'claude-sonnet-4-5-20250929',
+  CONTENT_REWRITE: 'anthropic/claude-sonnet-4.5',
   
   // Code (Premium - fully autonomous)
   CODE_PREMIUM: 'anthropic/claude-opus-4-5',
-  CODE_STANDARD: 'claude-sonnet-4-5-20250929',
+  CODE_STANDARD: 'anthropic/claude-sonnet-4.5',
   
   // Analysis & Large Context
   LARGE_CODEBASE: 'google/gemini-3-pro-preview',  // 1M context window, cheaper
