@@ -463,8 +463,6 @@ export async function POST(request: NextRequest) {
       cleanupHeartbeat();
     }
   });
-    }
-  });
 
   return new Response(stream, {
     headers: {
