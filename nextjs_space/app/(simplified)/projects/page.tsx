@@ -81,7 +81,6 @@ export default function ProjectsPage() {
           wordpressCategory: '',
         });
         setWpSectionOpen(false);
-        setConnectionStatus(null);
         fetchProjects();
         alert(editingProject ? '✅ Project bijgewerkt!' : '✅ Project aangemaakt!');
       } else {
