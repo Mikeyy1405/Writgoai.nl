@@ -84,6 +84,9 @@ export default function ContentPlanPage() {
       if (plan?.plan?.topics) {
         setContentPlanItems(plan.plan.topics);
       }
+    } else if (!selectedPlanId) {
+      // Clear items when no plan is selected
+      setContentPlanItems([]);
     }
   }, [selectedPlanId, existingPlans]);
 
@@ -445,7 +448,7 @@ export default function ContentPlanPage() {
                       </div>
                       
                       {/* Reason (if available from WordPress analysis) */}
-                      {topic.reason && topic.reason !== topic.description && (
+                      {topic.reason && topic.reason.trim() !== '' && topic.reason !== topic.description && (
                         <p className="text-xs text-gray-500 italic">
                           💡 {topic.reason}
                         </p>
