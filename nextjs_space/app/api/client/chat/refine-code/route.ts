@@ -44,7 +44,7 @@ Lever ALLEEN de verbeterde ${language.toUpperCase()} code op, zonder extra uitle
 
     // Generate refined code using Claude Sonnet or selected model
     const response = await sendChatCompletion({
-      model: settings?.model || 'claude-sonnet-4-5-20250929',
+      model: settings?.model || 'anthropic/claude-sonnet-4.5',
       taskType: 'code_simple', // Use intelligent routing for code tasks
       messages: [
         { role: 'system', content: systemPrompt },

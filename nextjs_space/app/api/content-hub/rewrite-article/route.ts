@@ -110,7 +110,7 @@ Geef het herschreven artikel terug in JSON formaat:
 
     // Call Claude 4.5 Sonnet with task-based routing
     const response = await sendChatCompletion({
-      model: 'claude-sonnet-4-5-20250929', // Claude 4.5 Sonnet (correct model ID)
+      model: 'anthropic/claude-sonnet-4.5', // Claude 4.5 Sonnet (correct model ID)
       taskType: 'content_rewrite', // Use intelligent routing with fallback
       messages: [
         {

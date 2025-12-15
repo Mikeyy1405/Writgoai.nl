@@ -98,7 +98,7 @@ Geef een JSON response met:
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           { role: 'system', content: 'Je bent een expert website analist die gestructureerde analyses maakt.' },
           { role: 'user', content: aiPrompt }
@@ -191,7 +191,7 @@ Geef een JSON response met volledige strategie:
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           { role: 'system', content: 'Je bent een expert content strategist die uitgebreide niche analyses maakt.' },
           { role: 'user', content: aiPrompt }
@@ -308,7 +308,7 @@ Genereer EXACT ${days} dagen met volledige content.
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'anthropic/claude-sonnet-4.5',
         messages: [
           { role: 'system', content: 'Je bent een expert content strategist.' },
           { role: 'user', content: prompt }

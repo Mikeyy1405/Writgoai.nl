@@ -174,7 +174,7 @@ Geef je antwoord terug als een JSON object met een "contentPlan" array. Gebruik 
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929', // Beste model voor strategische content planning
+        model: 'anthropic/claude-sonnet-4.5', // Beste model voor strategische content planning
         messages: [
           {
             role: 'system',

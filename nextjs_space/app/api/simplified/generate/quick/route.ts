@@ -131,34 +131,53 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    const articleResponse = await fetch('https://api.aimlapi.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.AIML_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
-        messages: [{ role: 'user', content: writgoPrompt }],
-        temperature: 0.7,
-        max_tokens: 4000
-      })
-    });
+    // Add timeout to prevent infinite hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
 
-    if (!articleResponse.ok) {
-      throw new Error(`AIML API error: ${articleResponse.statusText}`);
+    try {
+      const articleResponse = await fetch('https://api.aimlapi.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.AIML_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-sonnet-4.5',
+          messages: [{ role: 'user', content: writgoPrompt }],
+          temperature: 0.7,
+          max_tokens: 4000
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!articleResponse.ok) {
+        const errorText = await articleResponse.text();
+        console.error('[Quick Generate] AIML API error response:', errorText);
+        throw new Error(`AIML API error: ${articleResponse.status} - ${errorText}`);
+      }
+
+      const articleData = await articleResponse.json();
+      let articleContent = articleData.choices?.[0]?.message?.content || '';
+
+      console.log('[Quick Generate] Article generated, length:', articleContent.length);
+
+      // Clean HTML (remove code blocks if present)
+      articleContent = articleContent
+        .replace(/```html\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+    
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('[Quick Generate] AIML API timeout - request took longer than 2 minutes');
+        throw new Error('AIML API timeout - request took longer than 2 minutes');
+      }
+      throw error;
     }
-
-    const articleData = await articleResponse.json();
-    let articleContent = articleData.choices?.[0]?.message?.content || '';
-
-    console.log('[Quick Generate] Article generated, length:', articleContent.length);
-
-    // Clean HTML (remove code blocks if present)
-    articleContent = articleContent
-      .replace(/```html\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim();
 
     // Extract title from H1
     const titleMatch = articleContent.match(/<h1[^>]*>(.*?)<\/h1>/i);

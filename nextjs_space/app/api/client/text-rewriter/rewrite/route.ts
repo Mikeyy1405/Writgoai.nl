@@ -95,7 +95,7 @@ Behoud de inhoud maar maak het wetenschappelijker.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929', // Use correct Claude model for content rewriting
+        model: 'anthropic/claude-sonnet-4.5', // Use correct Claude model for content rewriting
         messages: [
           {
             role: 'system',
@@ -135,7 +135,7 @@ Behoud de inhoud maar maak het wetenschappelijker.`
     await trackApiUsage({
       clientId: session.user.id,
       feature: 'text-rewriter',
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'anthropic/claude-sonnet-4.5',
       inputTokens,
       outputTokens,
       success: true,
