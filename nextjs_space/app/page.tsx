@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import SimplifiedLayout from '@/components/SimplifiedLayout';
 import { useSession } from 'next-auth/react';
-import { Users, FileText, TrendingUp, Clock, Globe, Sparkles, CheckCircle, Calendar, Activity, ArrowUpRight } from 'lucide-react';
+import { Users, FileText, TrendingUp, Clock, Globe, Sparkles, CheckCircle, Calendar, Activity, ArrowUpRight, Search, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 
 /**
@@ -51,6 +51,22 @@ interface DashboardStats {
   successRate: number;
 }
 
+interface GSCStats {
+  connected: boolean;
+  siteUrl?: string;
+  stats?: {
+    totalClicks: number;
+    totalImpressions: number;
+    averageCTR: number;
+    averagePosition: number;
+  };
+  topQueries?: Array<{
+    query: string;
+    clicks: number;
+    impressions: number;
+  }>;
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [stats, setStats] = useState<Stats>({
@@ -66,6 +82,7 @@ export default function DashboardPage() {
     publishedThisMonth: 0,
     successRate: 0,
   });
+  const [gscStats, setGscStats] = useState<GSCStats>({ connected: false });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -92,6 +109,13 @@ export default function DashboardPage() {
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json();
         setProjects(projectsData.projects || []);
+      }
+
+      // Fetch Google Search Console stats
+      const gscResponse = await fetch('/api/integrations/google-search-console/stats');
+      if (gscResponse.ok) {
+        const gscData = await gscResponse.json();
+        setGscStats(gscData);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -129,6 +153,14 @@ export default function DashboardPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('nl-NL').format(Math.round(num));
+  };
+
+  const formatPercentage = (num: number) => {
+    return (num * 100).toFixed(2) + '%';
   };
 
   const getContentTypeIcon = (type: string) => {
@@ -331,6 +363,111 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Google Search Console Stats */}
+        {gscStats.connected && gscStats.stats && (
+          <div className="bg-gray-900 rounded-xl p-6 shadow-lg border border-gray-800">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+                <Search className="w-6 h-6 text-orange-500" />
+                <span>Google Search Console</span>
+              </h2>
+              <Link 
+                href="/settings"
+                className="text-sm text-orange-500 hover:text-orange-400 font-semibold flex items-center space-x-1"
+              >
+                <span>Meer details</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {gscStats.siteUrl && (
+              <div className="mb-4 flex items-center space-x-2 text-sm text-gray-400">
+                <Globe className="w-4 h-4" />
+                <span>{gscStats.siteUrl}</span>
+              </div>
+            )}
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="bg-black/50 border border-gray-800 rounded-lg p-4">
+                <p className="text-xs text-gray-400 mb-1">Totaal Clicks</p>
+                <p className="text-2xl font-bold text-blue-400">
+                  {formatNumber(gscStats.stats.totalClicks)}
+                </p>
+              </div>
+              <div className="bg-black/50 border border-gray-800 rounded-lg p-4">
+                <p className="text-xs text-gray-400 mb-1">Impressies</p>
+                <p className="text-2xl font-bold text-green-400">
+                  {formatNumber(gscStats.stats.totalImpressions)}
+                </p>
+              </div>
+              <div className="bg-black/50 border border-gray-800 rounded-lg p-4">
+                <p className="text-xs text-gray-400 mb-1">Gemiddelde CTR</p>
+                <p className="text-2xl font-bold text-purple-400">
+                  {formatPercentage(gscStats.stats.averageCTR)}
+                </p>
+              </div>
+              <div className="bg-black/50 border border-gray-800 rounded-lg p-4">
+                <p className="text-xs text-gray-400 mb-1">Gem. Positie</p>
+                <p className="text-2xl font-bold text-orange-400">
+                  {gscStats.stats.averagePosition.toFixed(1)}
+                </p>
+              </div>
+            </div>
+
+            {/* Top Queries */}
+            {gscStats.topQueries && gscStats.topQueries.length > 0 && (
+              <div>
+                <h3 className="font-bold text-white mb-3">🔍 Top Zoekwoorden (laatste 30 dagen)</h3>
+                <div className="space-y-2">
+                  {gscStats.topQueries.slice(0, 5).map((query, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-black/50 rounded-lg border border-gray-800 hover:border-orange-500/50 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-white truncate">{query.query}</p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-sm font-bold text-blue-400">
+                          {formatNumber(query.clicks)} clicks
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {formatNumber(query.impressions)} impressions
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* GSC Not Connected Banner */}
+        {!gscStats.connected && (
+          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-800 rounded-xl p-6 shadow-lg">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Search className="w-6 h-6 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white mb-2">Google Search Console niet verbonden</h3>
+                <p className="text-gray-300 mb-4">
+                  Verbind je website met Google Search Console om SEO performance te tracken, top keywords te zien en content gaps te identificeren.
+                </p>
+                <Link
+                  href="/settings"
+                  className="inline-flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-colors"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  <span>Nu Verbinden</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="bg-gray-900 rounded-xl p-6 shadow-lg border border-gray-800">
