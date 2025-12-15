@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // DELETE - Verwijder een item uit een plan
 export async function DELETE(
   req: NextRequest,

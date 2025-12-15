@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { PLATFORM_CONFIGS, PlatformConfig } from '@/lib/types/distribution';
 import { testConnection } from '@/lib/services/getlatedev';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 // GET - Fetch all platform configurations

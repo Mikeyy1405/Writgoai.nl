@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { GoogleSearchConsole } from '@/lib/google-search-console';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/integrations/google-search-console/connect
  * Start Google Search Console OAuth flow

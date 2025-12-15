@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { chatCompletion, webSearch } from '@/lib/aiml-api';
 
+export const dynamic = 'force-dynamic';
+
 // Helper to send progress updates
 function sendProgress(
   encoder: TextEncoder,

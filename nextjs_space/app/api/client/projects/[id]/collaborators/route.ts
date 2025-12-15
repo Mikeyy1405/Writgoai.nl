@@ -5,6 +5,8 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 
 const inviteSchema = z.object({
   email: z.string().email('Ongeldig email adres'),

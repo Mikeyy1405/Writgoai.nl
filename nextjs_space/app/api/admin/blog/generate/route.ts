@@ -5,6 +5,8 @@ import { chatCompletion } from '@/lib/aiml-api';
 import { prisma } from '@/lib/db';
 import { publishToWordPress, getWordPressConfig } from '@/lib/wordpress-publisher';
 
+export const dynamic = 'force-dynamic';
+
 // Helper function to send SSE message
 function sendSSE(controller: ReadableStreamDefaultController, data: any) {
   const message = `data: ${JSON.stringify(data)}\n\n`;

@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { bulkAddAutoLinkProducts } from '@/lib/auto-link-products';
 
+export const dynamic = 'force-dynamic';
+
 // GET - Get all auto-link products for a project
 export async function GET(request: NextRequest) {
   try {

@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { getValidKeywords, validateArticleTitle, validateKeywords, COMPLETED_STATUSES } from '@/lib/content-hub/article-utils';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * PATCH /api/content-hub/articles/[id]
  * Update article title and keywords (only for pending articles)

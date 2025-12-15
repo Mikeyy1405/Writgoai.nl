@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { getMoneybird } from '@/lib/moneybird';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/financien/uitgaven
  * Haal alle uitgaven/inkoopfacturen op

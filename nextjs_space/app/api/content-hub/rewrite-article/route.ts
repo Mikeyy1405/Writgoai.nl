@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { sendChatCompletion } from '@/lib/aiml-chat-client';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/content-hub/rewrite-article
  * Rewrite an existing article with fresh, improved content using Claude 4.5 Sonnet

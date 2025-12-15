@@ -8,6 +8,8 @@ import { uploadFile } from '@/lib/s3';
 import { getBucketConfig } from '@/lib/aws-config';
 import { hasEnoughCredits, deductCredits, CREDIT_COSTS } from '@/lib/credits';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 300;
 
 // Beschikbare AI modellen voor image generation - ALLEEN WERKENDE MODELLEN

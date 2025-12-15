@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { sendChatCompletion } from '@/lib/aiml-chat-client';
 import { countWords, sanitizeHtml } from '@/lib/wordpress-helpers';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/content-hub/wordpress-posts/[id]/rewrite
  * Rewrite a WordPress post using Claude 4.5 Sonnet with specific options

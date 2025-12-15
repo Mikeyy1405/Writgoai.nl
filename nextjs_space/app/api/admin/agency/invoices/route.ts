@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // Generate invoice number
 async function generateInvoiceNumber(): Promise<string> {
   const year = new Date().getFullYear();

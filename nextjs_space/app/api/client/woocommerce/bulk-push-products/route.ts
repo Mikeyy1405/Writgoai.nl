@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { createWooCommerceClient } from '@/lib/woocommerce-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Genereert unieke product beschrijvingen met AI
  */

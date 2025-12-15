@@ -12,6 +12,8 @@ import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 
 export async function POST(request: NextRequest) {
   try {

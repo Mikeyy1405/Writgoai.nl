@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { isUserAdmin } from '@/lib/navigation-config';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/admin/writgo-marketing/activate-automation
  * Toggles automation for Writgo.nl marketing

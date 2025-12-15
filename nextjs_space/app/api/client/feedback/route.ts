@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma as db } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/client/feedback - Submit feedback
  */

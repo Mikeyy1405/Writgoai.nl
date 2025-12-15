@@ -6,6 +6,8 @@ import { chatCompletion } from '@/lib/aiml-api';
 import { MODEL_CATEGORIES } from '@/lib/smart-model-router';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 
 export async function POST(request: NextRequest) {
   try {

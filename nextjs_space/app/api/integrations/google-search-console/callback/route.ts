@@ -5,6 +5,8 @@ import { GoogleSearchConsole } from '@/lib/google-search-console';
 import { prisma } from '@/lib/db';
 import { encrypt } from '@/lib/encryption';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/integrations/google-search-console/callback
  * Handle OAuth callback from Google

@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { publishAyrsharePost } from '@/lib/ayrshare-api';
 
+export const dynamic = 'force-dynamic';
+
 // Credit costs per platform
 const PLATFORM_CREDITS: Record<string, number> = {
   linkedin: 5,

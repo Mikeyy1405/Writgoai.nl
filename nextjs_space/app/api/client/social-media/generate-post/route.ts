@@ -4,12 +4,15 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import {
+
   generateBlogPromoPost,
   generateProductHighlightPost,
   generateTipsPost,
   removeMarkdownForFacebook,
   generateSocialMediaImage,
 } from '@/lib/social-media-content-generator';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/client/social-media/generate-post

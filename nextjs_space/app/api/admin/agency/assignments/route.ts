@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { notifyAssignmentCreated } from '@/lib/notification-helper';
 
+export const dynamic = 'force-dynamic';
+
 // GET all assignments
 export async function GET(request: NextRequest) {
   try {

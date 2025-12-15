@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { supabaseAdmin } from '@/lib/supabase';
 import { schedulePost } from '@/lib/services/getlatedev';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 // POST - Schedule content for distribution

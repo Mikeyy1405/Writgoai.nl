@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { getMoneybird } from '@/lib/moneybird';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/financien/contacten/[id]
  * Haal een specifiek contact op

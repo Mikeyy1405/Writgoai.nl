@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isUserAdmin } from '@/lib/navigation-config';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admin/writgo-marketing/status
  * Gets the status of Writgo.nl marketing setup and automation

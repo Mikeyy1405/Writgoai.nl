@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 const LATE_DEV_API_KEY = process.env.LATE_DEV_API_KEY;
 const LATE_DEV_API_URL = 'https://getlate.dev/api/v1';
 

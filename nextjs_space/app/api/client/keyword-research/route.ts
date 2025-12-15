@@ -6,6 +6,8 @@ import { trackUsage } from '@/lib/usage-tracking';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+
 const SECRETS_PATH = '/home/ubuntu/.config/abacusai_auth_secrets.json';
 
 function getApiKey(): string | null {

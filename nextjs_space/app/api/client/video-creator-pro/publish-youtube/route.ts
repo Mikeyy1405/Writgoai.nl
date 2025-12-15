@@ -9,6 +9,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { getLateDevApiKey } from '@/lib/latedev';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 interface PublishYouTubeRequest {

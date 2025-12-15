@@ -9,6 +9,8 @@ import { searchPexelsImages, downloadPexelsImage } from '@/lib/pexels-api';
 import { uploadFile } from '@/lib/s3';
 import { getBucketConfig } from '@/lib/aws-config';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {

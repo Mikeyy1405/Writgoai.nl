@@ -11,10 +11,13 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import {
+
   scheduleArticleIdeas,
   rescheduleAllIdeas,
   scheduleNewIdea,
 } from '@/lib/article-scheduler';
+
+export const dynamic = 'force-dynamic';
 
 export const maxDuration = 300;
 

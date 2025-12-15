@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { getLateDevAccountsByProfile } from '@/lib/late-dev-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * This endpoint is deprecated in favor of the new profile-based workflow
  * Now handled by /api/client/social-media/profile

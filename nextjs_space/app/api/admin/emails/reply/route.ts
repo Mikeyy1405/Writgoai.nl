@@ -10,6 +10,8 @@ import { authOptions } from '@/lib/auth-options';
 import { sendEmailReply } from '@/lib/email-service';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

@@ -7,6 +7,8 @@ import { generateImage } from '@/lib/aiml-api';
 import { deductCredits } from '@/lib/credits';
 import { scrapeWebsite } from '@/lib/website-scraper';
 
+export const dynamic = 'force-dynamic';
+
 interface GenerateDirectRequest {
   projectId: string;
   count: number;

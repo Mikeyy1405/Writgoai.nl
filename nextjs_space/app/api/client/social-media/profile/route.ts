@@ -4,11 +4,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { 
+
   createLateDevProfile, 
   getLateDevAccountsByProfile,
   createPlatformInvite,
   getPlatformInvites
 } from '@/lib/late-dev-api';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * GET: Haal profile informatie op

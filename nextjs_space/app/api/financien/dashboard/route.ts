@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { getMoneybird } from '@/lib/moneybird';
 import { withTimeout, API_TIMEOUTS } from '@/lib/api-timeout';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/financien/dashboard
  * Haal dashboard data op inclusief KPIs - 100% via Moneybird API

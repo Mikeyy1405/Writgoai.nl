@@ -12,6 +12,8 @@ import { uploadFile, deleteFile } from '@/lib/s3';
 import { parseFile, isSupportedFileType } from '@/lib/file-parser';
 import { getBucketConfig } from '@/lib/aws-config';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 /**

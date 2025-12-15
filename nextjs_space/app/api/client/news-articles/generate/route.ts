@@ -6,6 +6,8 @@ import { prisma } from '@/lib/db';
 import { chatCompletion } from '@/lib/aiml-api';
 import { deductCredits, CREDIT_COSTS } from '@/lib/credits';
 
+export const dynamic = 'force-dynamic';
+
 // Helper to send progress updates
 function sendProgress(
   encoder: TextEncoder,

@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { publishToWordPressEnhanced } from '@/lib/wordpress-publisher-enhanced';
 import { createPostEnhanced } from '@/lib/getlate-enhanced';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/simplified/publish
  * Publiceer een artikel naar WordPress en/of social media

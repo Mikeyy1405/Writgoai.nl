@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { notifyAdminNewRequest } from '@/lib/notification-helper';
 import { getServiceCost } from '@/lib/service-pricing';
 
+export const dynamic = 'force-dynamic';
+
 // GET client's own requests
 export async function GET(request: NextRequest) {
   try {

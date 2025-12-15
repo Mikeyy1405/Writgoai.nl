@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useEffect, useState, Suspense } from 'react';
 import SimplifiedLayout from '@/components/SimplifiedLayout';
 import { Settings as SettingsIcon, Link as LinkIcon, Unlink, TrendingUp, Search, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -36,7 +38,7 @@ interface GSCStats {
   }>;
 }
 
-export default function SettingsPage() {
+function SettingsContent() {
   const searchParams = useSearchParams();
   const [gscStats, setGscStats] = useState<GSCStats>({ connected: false });
   const [loading, setLoading] = useState(true);
@@ -362,5 +364,13 @@ export default function SettingsPage() {
         </div>
       </div>
     </SimplifiedLayout>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div>}>
+      <SettingsContent />
+    </Suspense>
   );
 }

@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { chatCompletion, TEXT_MODELS, generateImage } from '@/lib/aiml-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/simplified/generate
  * Genereer een volledig artikel op basis van een topic

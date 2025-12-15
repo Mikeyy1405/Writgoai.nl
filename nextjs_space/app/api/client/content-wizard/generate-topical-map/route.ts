@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import fs from 'fs';
 
+export const dynamic = 'force-dynamic';
+
 const AUTH_SECRETS_PATH = '/home/ubuntu/.config/abacusai_auth_secrets.json';
 
 function getApiKeys(): { aiml?: string; openai?: string } {

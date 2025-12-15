@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { DistributionStats, DistributionOverview, PlatformConfig, PLATFORM_CONFIGS } from '@/lib/types/distribution';
 import { startOfToday, startOfWeek } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 // GET - Fetch distribution overview stats

@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { enrichKeywordsBatch, prioritizeKeywords } from '@/lib/dataforseo-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * 📊 POST /api/client/topical-mapping/enrich
  * 

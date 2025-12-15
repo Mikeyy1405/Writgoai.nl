@@ -19,6 +19,8 @@ import {
 } from '@/lib/ai-video-creator-pro';
 import { getNichePreset, LANGUAGE_OPTIONS } from '@/lib/niche-presets';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 300; // 5 minutes
 
 interface VideoCreatorRequest {

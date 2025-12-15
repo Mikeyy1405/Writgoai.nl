@@ -6,6 +6,8 @@ import { prisma } from '@/lib/db';
 import { getWordPressConfig, publishToWordPress } from '@/lib/wordpress-publisher';
 import { deductCredits, CREDIT_COSTS } from '@/lib/credits';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();

@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 
+export const dynamic = 'force-dynamic';
+
 interface BolProduct {
   id: string;
   title: string;

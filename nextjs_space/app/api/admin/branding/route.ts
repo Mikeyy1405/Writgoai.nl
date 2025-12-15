@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { supabaseAdmin } from '@/lib/supabase';
 import { DEFAULT_BRAND_SETTINGS } from '@/lib/constants/branding';
 
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 // GET - Fetch brand settings (admin only)

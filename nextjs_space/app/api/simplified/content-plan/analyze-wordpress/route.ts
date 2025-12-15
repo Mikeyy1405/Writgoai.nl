@@ -4,10 +4,13 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { chatCompletion, TEXT_MODELS } from '@/lib/aiml-api';
 import {
+
   scrapeWordPressSite,
   generateContentSummary,
   extractTopicsFromAnalysis,
 } from '@/lib/wordpress-scraper';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/simplified/content-plan/analyze-wordpress

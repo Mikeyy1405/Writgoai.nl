@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import OpenAI from 'openai';
 import { deductCredits } from '@/lib/credits';
 
+export const dynamic = 'force-dynamic';
+
 // Lazy initialization to avoid build-time errors when env vars are not available
 function getOpenAIClient() {
   return new OpenAI({

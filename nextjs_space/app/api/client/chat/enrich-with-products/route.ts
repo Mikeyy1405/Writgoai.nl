@@ -9,6 +9,8 @@ import type { BolcomCredentials } from '@/lib/bolcom-api';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Enrich content with Bol.com products
  * POST /api/client/chat/enrich-with-products

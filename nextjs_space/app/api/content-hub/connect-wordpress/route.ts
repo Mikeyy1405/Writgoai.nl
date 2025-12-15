@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { WordPressClient } from '@/lib/content-hub/wordpress-client';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/content-hub/connect-wordpress
  * Connect and test WordPress site credentials

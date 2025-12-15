@@ -19,6 +19,7 @@ import {
   type GeneratedBlog,
 } from '@/lib/seo-automated-workflow';
 
+export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
 
 export async function POST(req: NextRequest) {

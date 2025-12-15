@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { chatCompletion } from '@/lib/aiml-api';
 import { getBannedWordsInstructions } from '@/lib/banned-words';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {

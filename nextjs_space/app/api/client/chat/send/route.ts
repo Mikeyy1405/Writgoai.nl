@@ -11,6 +11,8 @@ import { uploadFile, getDownloadUrl } from '@/lib/s3';
 import { scrapeWebsite, detectWebsiteAnalysisRequest } from '@/lib/website-scraper';
 import { getBannedWordsInstructions } from '@/lib/banned-words';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Helper function to convert base64 data URL to S3 hosted URL
  */

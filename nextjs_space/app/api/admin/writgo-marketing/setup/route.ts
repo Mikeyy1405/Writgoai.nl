@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { isUserAdmin } from '@/lib/navigation-config';
 import bcrypt from 'bcryptjs';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/admin/writgo-marketing/setup
  * Creates Writgo.nl as an internal client for marketing automation

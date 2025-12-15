@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Safely remove HTML tags from a string using multiple passes
  * This ensures nested tags and malicious scripts are fully removed

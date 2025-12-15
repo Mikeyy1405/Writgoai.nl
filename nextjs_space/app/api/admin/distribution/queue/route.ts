@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { supabaseAdmin } from '@/lib/supabase';
 import { QueueResponse } from '@/lib/types/distribution';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 // GET - Fetch queue items with filtering/pagination

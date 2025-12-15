@@ -9,6 +9,8 @@ import { publishToWordPress, WordPressConfig } from '@/lib/wordpress-publisher';
 import { searchBolcomProducts } from '@/lib/bolcom-api';
 import { generateImage } from '@/lib/aiml-api';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   

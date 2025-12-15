@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { createPlatformInvite, createLateDevProfile } from '@/lib/late-dev-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Generate Late.dev invite link for connecting social media accounts
  * POST /api/client/late-dev/connect

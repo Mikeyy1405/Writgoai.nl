@@ -6,6 +6,8 @@ import { sendChatCompletion } from '@/lib/aiml-chat-client';
 import { PERSONALITY_PRESETS } from '@/lib/chat-settings';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

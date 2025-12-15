@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { trackApiUsage } from '@/lib/api-usage-tracker';
 
+export const dynamic = 'force-dynamic';
+
 const AIML_API_KEY = process.env.AIML_API_KEY || '';
 const AIML_API_URL = 'https://api.aimlapi.com/v1/chat/completions';
 

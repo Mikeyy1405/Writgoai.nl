@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { createPlatformInvite } from '@/lib/late-dev-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST: Maak platform invite aan voor client
  */

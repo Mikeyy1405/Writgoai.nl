@@ -9,11 +9,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { 
+
   searchBolcomProducts, 
   getBolcomProductDetails,
   filterHighResolutionImages,
   type BolcomProduct 
 } from '@/lib/bolcom-api';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {

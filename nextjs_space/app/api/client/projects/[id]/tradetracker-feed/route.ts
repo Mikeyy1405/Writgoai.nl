@@ -10,6 +10,8 @@ import {
 } from '@/lib/tradetracker-api';
 import { chatCompletion } from '@/lib/aiml-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/client/projects/[id]/tradetracker-feed
  * Import TradeTracker productfeed en converteer naar affiliate links

@@ -11,6 +11,8 @@ import { prisma } from '@/lib/db';
 import { getBolcomProduct, generateBolcomAffiliateLink, type BolcomProduct } from '@/lib/bolcom-api';
 import { createWooCommerceClient } from '@/lib/woocommerce-api';
 
+export const dynamic = 'force-dynamic';
+
 // Use AIML API for AI descriptions
 async function generateProductDescriptions(
   productTitle: string,

@@ -6,6 +6,8 @@ import { deductCredits } from '@/lib/credits';
 import { scrapeWebsite } from '@/lib/website-scraper';
 import OpenAI from 'openai';
 
+export const dynamic = 'force-dynamic';
+
 function getOpenAI() {
   return new OpenAI({
     apiKey: process.env.AIML_API_KEY || 'dummy-key-for-build',

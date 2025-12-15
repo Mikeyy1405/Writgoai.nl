@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 
 // GET - Fetch all email drafts for the logged-in client
 export async function GET(req: Request) {

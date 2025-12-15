@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { generateTopicalMap } from '@/lib/topical-map-generator';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/client/topical-mapping/generate
  * Genereert een complete topical authority map voor een project

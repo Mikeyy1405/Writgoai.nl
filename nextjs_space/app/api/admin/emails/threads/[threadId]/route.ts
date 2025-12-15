@@ -10,6 +10,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { markEmailAsRead, updateThreadStatus, updateThreadPriority } from '@/lib/email-service';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { threadId: string } }

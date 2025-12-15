@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { searchMusicTracks, getRecommendedMusic, MUSIC_LIBRARY } from '@/lib/royalty-free-music';
 
+export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {

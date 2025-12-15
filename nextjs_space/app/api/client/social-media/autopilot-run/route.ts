@@ -10,6 +10,8 @@ import {
   generateSocialMediaImage,
 } from '@/lib/social-media-content-generator';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/client/social-media/autopilot-run
  * Run social media autopilot for a project (generate and schedule posts)

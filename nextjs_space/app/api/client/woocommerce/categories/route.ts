@@ -6,6 +6,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { createWooCommerceClient } from '@/lib/woocommerce-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/client/woocommerce/categories
  * Load WooCommerce product categories

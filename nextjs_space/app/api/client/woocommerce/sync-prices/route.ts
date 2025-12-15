@@ -7,6 +7,8 @@ import { prisma } from '@/lib/db';
 import { createWooCommerceClient } from '@/lib/woocommerce-api';
 import { searchBolcomProducts } from '@/lib/bolcom-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/client/woocommerce/sync-prices
  * Sync prices from Bol.com to WooCommerce products

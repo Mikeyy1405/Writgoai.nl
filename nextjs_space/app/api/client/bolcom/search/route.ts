@@ -10,6 +10,8 @@ import { authOptions } from '@/lib/auth-options';
 import { quickProductSearch } from '@/lib/bolcom-product-finder';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 
 export async function POST(request: NextRequest) {
   try {

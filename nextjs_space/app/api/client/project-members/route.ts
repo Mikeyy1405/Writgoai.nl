@@ -11,6 +11,8 @@ import { prisma } from '@/lib/db';
 import { randomBytes } from 'crypto';
 import { sendEmail } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET - List all collaborators for a project
  */

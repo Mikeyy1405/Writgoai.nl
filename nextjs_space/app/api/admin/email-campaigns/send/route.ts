@@ -4,10 +4,13 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import {
+
   sendOnboardingEmail,
   sendPromotionalEmail,
   isEmailConfigured,
 } from '@/lib/email';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * Send email campaign to all clients or specific segments

@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { generateVideoScript } from '@/lib/video-script-generator';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {

@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { isUserAdmin } from '@/lib/navigation-config';
 import { generateContentPlan } from '@/lib/content-plan-generator';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/admin/writgo-marketing/generate-plan
  * Generates content plan for Writgo.nl

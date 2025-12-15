@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { validateLateDevApiKey } from '@/lib/late-dev-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/client/social-media/test-connection
  * Test PROJECT-SPECIFIC Late.dev API connection and fetch connected accounts

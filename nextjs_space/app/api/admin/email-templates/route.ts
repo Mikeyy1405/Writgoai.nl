@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma as db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admin/email-templates - Get all email templates
  */

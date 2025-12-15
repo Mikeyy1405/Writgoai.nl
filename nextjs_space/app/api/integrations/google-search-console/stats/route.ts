@@ -5,6 +5,8 @@ import { GoogleSearchConsole, getLast30Days, getLast7Days } from '@/lib/google-s
 import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/encryption';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/integrations/google-search-console/stats
  * Get Search Console stats for the user's site

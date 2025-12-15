@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { getLateDevAccountsByProfile, createLateDevProfile } from '@/lib/late-dev-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Sync connected accounts from Late.dev to database
  * POST /api/client/late-dev/sync

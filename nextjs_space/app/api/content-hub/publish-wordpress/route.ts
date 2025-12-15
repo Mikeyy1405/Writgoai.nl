@@ -6,6 +6,8 @@ import { publishToWordPressEnhanced } from '@/lib/wordpress-publisher-enhanced';
 import { WordPressClient } from '@/lib/content-hub/wordpress-client';
 import { generateYoastMeta } from '@/lib/content-hub/seo-optimizer';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/content-hub/publish-wordpress
  * Publish article to WordPress

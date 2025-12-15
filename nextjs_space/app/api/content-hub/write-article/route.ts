@@ -11,6 +11,8 @@ import { autoSaveToLibrary } from '@/lib/content-library-helper';
 import { publishToWordPress, getWordPressConfig } from '@/lib/wordpress-publisher';
 import { searchBolcomProducts, getBolcomProductDetails, type BolcomCredentials } from '@/lib/bolcom-api';
 
+export const dynamic = 'force-dynamic';
+
 // Set maximum duration for this route to 5 minutes to handle long AI operations
 export const maxDuration = 300;
 

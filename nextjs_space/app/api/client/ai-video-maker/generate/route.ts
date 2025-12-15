@@ -8,6 +8,8 @@ import { generateVideoSEO } from '@/lib/video-seo-generator';
 import { searchPixabayImages } from '@/lib/pixabay-api';
 import { translateToEnglish } from '@/lib/prompt-translator';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * AI Video Package Generator Workflow Orchestrator
  * Generates complete video packages with streaming progress updates

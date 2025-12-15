@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { getLateDevAccountsByProfile, createLateDevProfile } from '@/lib/late-dev-api';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Get connected accounts for a project
  * GET /api/client/late-dev/accounts?projectId=xxx

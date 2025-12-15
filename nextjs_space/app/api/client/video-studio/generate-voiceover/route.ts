@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { generateVoiceover, VOICES } from '@/lib/elevenlabs-api';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {

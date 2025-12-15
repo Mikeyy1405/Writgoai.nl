@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { iterativeHumanize } from '@/lib/zerogpt-api';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

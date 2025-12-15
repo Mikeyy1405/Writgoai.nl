@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { generateImage } from '@/lib/aiml-api';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

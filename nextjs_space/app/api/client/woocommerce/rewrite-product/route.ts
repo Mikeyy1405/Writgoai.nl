@@ -11,6 +11,8 @@ import { createWooCommerceClient } from '@/lib/woocommerce-api';
 import OpenAI from 'openai';
 import { deductCredits } from '@/lib/credits';
 
+export const dynamic = 'force-dynamic';
+
 function getOpenAI() {
   return new OpenAI({
     baseURL: 'https://api.aimlapi.com/v1',

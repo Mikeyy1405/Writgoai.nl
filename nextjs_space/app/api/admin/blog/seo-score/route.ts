@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 
+export const dynamic = 'force-dynamic';
+
 // Simple SEO scoring function
 function calculateSEOScore(data: {
   title: string;

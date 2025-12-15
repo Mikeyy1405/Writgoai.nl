@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 import { countWords, sanitizeHtml } from '@/lib/wordpress-helpers';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/content-hub/wordpress-posts
  * Fetch all WordPress posts from connected site

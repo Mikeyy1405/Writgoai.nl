@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { supabaseAdmin } from '@/lib/supabase';
 import { schedulePost, getJobStatus, handleWebhook } from '@/lib/services/getlatedev';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 // POST - Send to GetLateDev API

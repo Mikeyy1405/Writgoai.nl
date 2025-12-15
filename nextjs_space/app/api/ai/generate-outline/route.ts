@@ -6,6 +6,8 @@ import { prisma } from '@/lib/db';
 import { CREDIT_COSTS, deductCredits } from '@/lib/credits';
 import { getBannedWordsInstructions } from '@/lib/banned-words';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
