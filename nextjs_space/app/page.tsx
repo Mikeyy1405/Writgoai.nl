@@ -3,22 +3,52 @@
 import { useEffect, useState } from 'react';
 import SimplifiedLayout from '@/components/SimplifiedLayout';
 import { useSession } from 'next-auth/react';
-import { Users, FileText, TrendingUp, Clock } from 'lucide-react';
+import { Users, FileText, TrendingUp, Clock, Globe, Sparkles, CheckCircle, Calendar, Activity, ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
 
 /**
- * DASHBOARD - Overzicht en Stats
+ * DASHBOARD - Uitgebreid Overzicht en Stats
  * 
- * Simpele kaarten met:
- * - Aantal projecten
- * - Gegenereerde content deze maand
- * - Gepubliceerde artikelen
- * - Recente activiteit
+ * Features:
+ * - Real-time statistieken uit database
+ * - Project overzicht met details
+ * - Content performance metrics
+ * - Recente activiteit feed
+ * - Quick action shortcuts
+ * - Success rate berekeningen
  */
 
 interface Stats {
   totalProjects: number;
   contentThisMonth: number;
   publishedArticles: number;
+  recentContent: RecentContent[];
+}
+
+interface RecentContent {
+  id: string;
+  title: string;
+  type: string;
+  publishedAt: string | null;
+  createdAt: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  websiteUrl: string;
+  isActive: boolean;
+  createdAt: string;
+  _count?: {
+    savedContent: number;
+  };
+}
+
+interface DashboardStats {
+  totalArticles: number;
+  publishedThisWeek: number;
+  publishedThisMonth: number;
+  successRate: number;
 }
 
 export default function DashboardPage() {
@@ -27,28 +57,91 @@ export default function DashboardPage() {
     totalProjects: 0,
     contentThisMonth: 0,
     publishedArticles: 0,
+    recentContent: [],
+  });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    totalArticles: 0,
+    publishedThisWeek: 0,
+    publishedThisMonth: 0,
+    successRate: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
+    fetchDashboardData();
+    // Refresh data elke 30 seconden
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchStats = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const response = await fetch('/api/simplified/stats');
-      if (response.ok) {
-        const data = await response.json();
-        setStats({
-          totalProjects: data.totalProjects,
-          contentThisMonth: data.contentThisMonth,
-          publishedArticles: data.publishedArticles,
-        });
+      // Fetch stats
+      const statsResponse = await fetch('/api/simplified/stats');
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+        
+        // Calculate dashboard stats
+        calculateDashboardStats(statsData);
+      }
+
+      // Fetch projects
+      const projectsResponse = await fetch('/api/simplified/dashboard/projects');
+      if (projectsResponse.ok) {
+        const projectsData = await projectsResponse.json();
+        setProjects(projectsData.projects || []);
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calculateDashboardStats = (data: Stats) => {
+    // Calculate stats from the data
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    const publishedThisWeek = data.recentContent?.filter(
+      c => c.publishedAt && new Date(c.publishedAt) >= weekAgo
+    ).length || 0;
+
+    const successRate = data.contentThisMonth > 0 
+      ? Math.round((data.publishedArticles / data.contentThisMonth) * 100)
+      : 0;
+
+    setDashboardStats({
+      totalArticles: data.contentThisMonth,
+      publishedThisWeek,
+      publishedThisMonth: data.publishedArticles,
+      successRate,
+    });
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('nl-NL', { 
+      day: 'numeric', 
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getContentTypeIcon = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'blog':
+      case 'article':
+        return '📝';
+      case 'social':
+        return '📱';
+      case 'video':
+        return '🎥';
+      default:
+        return '📄';
     }
   };
 
@@ -59,15 +152,19 @@ export default function DashboardPage() {
         <div className="bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl p-8 text-white shadow-xl">
           <h1 className="text-4xl font-bold mb-2">👋 Welkom terug, {session?.user?.name || 'daar'}!</h1>
           <p className="text-lg opacity-90">Hier is je content overzicht</p>
+          <div className="mt-4 flex items-center space-x-2 text-sm opacity-75">
+            <Activity className="w-4 h-4" />
+            <span>Laatst bijgewerkt: {new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Projecten */}
+        {/* Quick Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Actieve Projecten */}
           <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
+                <Globe className="w-6 h-6 text-blue-600" />
               </div>
               <span className="text-3xl font-bold text-slate-800">{stats.totalProjects}</span>
             </div>
@@ -96,15 +193,150 @@ export default function DashboardPage() {
               <span className="text-3xl font-bold text-slate-800">{stats.publishedArticles}</span>
             </div>
             <h3 className="text-lg font-semibold text-slate-700">Gepubliceerd</h3>
-            <p className="text-sm text-slate-500 mt-1">Artikelen live</p>
+            <p className="text-sm text-slate-500 mt-1">Totaal artikelen live</p>
+          </div>
+
+          {/* Success Rate */}
+          <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-orange-600" />
+              </div>
+              <span className="text-3xl font-bold text-slate-800">{dashboardStats.successRate}%</span>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-700">Success Rate</h3>
+            <p className="text-sm text-slate-500 mt-1">Gepubliceerd / Gegenereerd</p>
+          </div>
+        </div>
+
+        {/* Project Overzicht */}
+        {projects.length > 0 && (
+          <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-slate-800">📁 Mijn Projecten</h2>
+              <Link 
+                href="/projects"
+                className="text-sm text-orange-600 hover:text-orange-700 font-semibold flex items-center space-x-1"
+              >
+                <span>Alle projecten</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.slice(0, 6).map((project) => (
+                <div
+                  key={project.id}
+                  className="border border-slate-200 rounded-lg p-4 hover:border-orange-500 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <Globe className="w-5 h-5 text-blue-600" />
+                      <h3 className="font-semibold text-slate-800 truncate">{project.name}</h3>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${
+                      project.isActive 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {project.isActive ? 'Actief' : 'Inactief'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 truncate mb-2">{project.websiteUrl}</p>
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>{project._count?.savedContent || 0} artikelen</span>
+                    <span>{formatDate(project.createdAt).split(',')[0]}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Content Performance */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Performance Stats */}
+          <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">📊 Content Performance</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">Deze week gepubliceerd</p>
+                    <p className="text-lg font-bold text-slate-800">{dashboardStats.publishedThisWeek}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">Deze maand gepubliceerd</p>
+                    <p className="text-lg font-bold text-slate-800">{dashboardStats.publishedThisMonth}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600">Totaal gegenereerd</p>
+                    <p className="text-lg font-bold text-slate-800">{stats.contentThisMonth}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recente Activiteit */}
+          <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">📋 Recente Activiteit</h2>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {stats.recentContent && stats.recentContent.length > 0 ? (
+                stats.recentContent.map((content) => (
+                  <div
+                    key={content.id}
+                    className="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                  >
+                    <span className="text-2xl">{getContentTypeIcon(content.type)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">
+                        {content.title}
+                      </p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {content.publishedAt ? (
+                          <span className="text-xs text-green-600 font-semibold">✓ Gepubliceerd</span>
+                        ) : (
+                          <span className="text-xs text-orange-600 font-semibold">⏳ Concept</span>
+                        )}
+                        <span className="text-xs text-slate-500">•</span>
+                        <span className="text-xs text-slate-500">{formatDate(content.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Nog geen activiteit</p>
+                  <p className="text-xs mt-1">Genereer je eerste artikel om te beginnen!</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-200">
           <h2 className="text-2xl font-bold text-slate-800 mb-4">🚀 Snel aan de slag</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link
               href="/projects"
               className="flex items-center space-x-4 p-4 rounded-lg border-2 border-dashed border-slate-300 hover:border-orange-500 hover:bg-orange-50 transition-all"
             >
@@ -115,9 +347,9 @@ export default function DashboardPage() {
                 <h3 className="font-semibold text-slate-800">Nieuw Project</h3>
                 <p className="text-sm text-slate-500">WordPress koppelen</p>
               </div>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/content-plan"
               className="flex items-center space-x-4 p-4 rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-all"
             >
@@ -128,21 +360,20 @@ export default function DashboardPage() {
                 <h3 className="font-semibold text-slate-800">Content Plannen</h3>
                 <p className="text-sm text-slate-500">Nieuwe topics maken</p>
               </div>
-            </a>
-          </div>
-        </div>
+            </Link>
 
-        {/* Recente Activiteit */}
-        <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4">📋 Recente Activiteit</h2>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-slate-700">Systeem draait automatisch</span>
-            </div>
-            <p className="text-sm text-slate-500 px-3">
-              💡 Tip: Maak eerst een project aan om te beginnen met content genereren!
-            </p>
+            <Link
+              href="/generate"
+              className="flex items-center space-x-4 p-4 rounded-lg border-2 border-dashed border-slate-300 hover:border-green-500 hover:bg-green-50 transition-all"
+            >
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800">Content Genereren</h3>
+                <p className="text-sm text-slate-500">AI artikelen schrijven</p>
+              </div>
+            </Link>
           </div>
         </div>
       </div>

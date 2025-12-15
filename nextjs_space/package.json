@@ -110,6 +110,7 @@
     "express": "^5.1.0",
     "formik": "2.4.5",
     "framer-motion": "10.18.0",
+    "googleapis": "^168.0.0",
     "gray-matter": "4.0.3",
     "html2canvas": "^1.4.1",
     "imap-simple": "^5.1.0",

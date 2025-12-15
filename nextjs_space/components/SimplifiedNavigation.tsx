@@ -10,19 +10,21 @@ import {
   Sparkles, 
   Send, 
   BarChart3,
+  Settings,
   LogOut
 } from 'lucide-react';
 
 /**
  * SUPER SIMPELE NAVIGATIE
  * 
- * 6 functies - that's it!
+ * 7 functies - that's it!
  * - 🏠 Dashboard
  * - 📁 Mijn Projecten
  * - 📝 Content Plan
  * - ✨ Genereren
  * - 🚀 Publiceren
  * - 📊 Statistieken
+ * - ⚙️ Instellingen
  */
 
 const menuItems = [
@@ -32,6 +34,7 @@ const menuItems = [
   { href: '/generate', label: 'Genereren', icon: Sparkles },
   { href: '/publish', label: 'Publiceren', icon: Send },
   { href: '/stats', label: 'Statistieken', icon: BarChart3 },
+  { href: '/settings', label: 'Instellingen', icon: Settings },
 ];
 
 export default function SimplifiedNavigation() {
