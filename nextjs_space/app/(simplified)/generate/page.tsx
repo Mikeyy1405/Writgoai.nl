@@ -35,6 +35,33 @@ const QUICK_GENERATE_STEPS: ProgressStep[] = [
   { id: 'complete', label: 'Klaar! ✅', status: 'pending' },
 ];
 
+const CONTENT_TYPES = [
+  { 
+    value: 'article', 
+    label: 'Standaard Artikel', 
+    icon: '📝',
+    description: 'SEO-geoptimaliseerd artikel (1500 woorden)'
+  },
+  { 
+    value: 'review', 
+    label: 'Productreview', 
+    icon: '⭐',
+    description: 'Diepgaande review van één product'
+  },
+  { 
+    value: 'bestlist', 
+    label: 'Beste Lijstje', 
+    icon: '🏆',
+    description: 'Top X beste producten in categorie'
+  },
+  { 
+    value: 'comparison', 
+    label: 'Vergelijking', 
+    icon: '🆚',
+    description: 'Product A vs Product B vergelijking'
+  }
+];
+
 export default function QuickGeneratePage() {
   const { data: session } = useSession();
   const [mode, setMode] = useState<'quick' | 'from-plan'>('quick');
@@ -49,6 +76,12 @@ export default function QuickGeneratePage() {
   const [error, setError] = useState('');
   const [generatedArticle, setGeneratedArticle] = useState<any>(null);
   const [publishing, setPublishing] = useState(false);
+  
+  // NEW: Content type selection
+  const [contentType, setContentType] = useState<'article' | 'review' | 'bestlist' | 'comparison'>('article');
+  const [productCount, setProductCount] = useState(5); // For bestlist
+  const [productA, setProductA] = useState(''); // For comparison
+  const [productB, setProductB] = useState(''); // For comparison
 
   const { steps, setStepStatus, resetSteps } = useProgressSteps(QUICK_GENERATE_STEPS);
 
@@ -112,8 +145,15 @@ export default function QuickGeneratePage() {
   };
 
   const handleQuickGenerate = async () => {
+    // Validation
     if (!keyword.trim()) {
       setError('Voer een keyword of titel in');
+      return;
+    }
+
+    // Validation for comparison type
+    if (contentType === 'comparison' && (!productA.trim() || !productB.trim())) {
+      setError('Voor vergelijking zijn beide productnamen vereist');
       return;
     }
 
@@ -124,16 +164,28 @@ export default function QuickGeneratePage() {
 
     try {
       // Stap 1: Writgo artikel genereren
-      setStepStatus('writgo', 'in_progress', 'Schrijven met Writgo regels (1500 woorden, 100% menselijk)...');
+      const contentTypeLabel = CONTENT_TYPES.find(t => t.value === contentType)?.label || 'artikel';
+      setStepStatus('writgo', 'in_progress', `${contentTypeLabel} schrijven met Writgo regels (1500 woorden, 100% menselijk)...`);
+
+      const requestBody: any = {
+        keyword: keyword.trim(),
+        projectId: selectedProject || undefined,
+        toneOfVoice: tone,
+        contentType: contentType, // NEW
+      };
+
+      // Add type-specific parameters
+      if (contentType === 'bestlist') {
+        requestBody.productCount = productCount;
+      } else if (contentType === 'comparison') {
+        requestBody.productA = productA.trim();
+        requestBody.productB = productB.trim();
+      }
 
       const response = await fetch('/api/simplified/generate/quick', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          keyword: keyword.trim(),
-          projectId: selectedProject || undefined,
-          toneOfVoice: tone,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -279,6 +331,35 @@ export default function QuickGeneratePage() {
                 <span>Artikel Details</span>
               </h2>
 
+              {/* Content Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Content Type <span className="text-red-400">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {CONTENT_TYPES.map((type) => (
+                    <button
+                      key={type.value}
+                      onClick={() => setContentType(type.value as any)}
+                      className={`py-3 px-4 rounded-lg border-2 transition-all text-left ${
+                        contentType === type.value
+                          ? 'border-orange-500 bg-orange-500/10'
+                          : 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                      }`}
+                      disabled={loading}
+                    >
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-xl">{type.icon}</span>
+                        <div className={`font-semibold text-sm ${contentType === type.value ? 'text-orange-500' : 'text-white'}`}>
+                          {type.label}
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-400">{type.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Project Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -375,17 +456,24 @@ export default function QuickGeneratePage() {
               {/* Keyword Input (always visible) */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {mode === 'from-plan' ? 'Topic (geselecteerd uit plan)' : 'Keyword of Titel'}{' '}
-                  <span className="text-red-400">*</span>
+                  {contentType === 'article' && (mode === 'from-plan' ? 'Topic (geselecteerd uit plan)' : 'Keyword of Titel')}
+                  {contentType === 'review' && 'Productnaam'}
+                  {contentType === 'bestlist' && 'Categorie'}
+                  {contentType === 'comparison' && 'Product A'}
+                  {' '}<span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   placeholder={
-                    mode === 'from-plan'
-                      ? 'Selecteer een topic hierboven'
-                      : "bijv. 'Beste fitness tips voor beginners'"
+                    contentType === 'article' 
+                      ? (mode === 'from-plan' ? 'Selecteer een topic hierboven' : "bijv. 'Beste fitness tips voor beginners'")
+                      : contentType === 'review'
+                      ? "bijv. 'iPhone 15 Pro'"
+                      : contentType === 'bestlist'
+                      ? "bijv. 'Draadloze Oordopjes'"
+                      : "bijv. 'Samsung QLED'"
                   }
                   disabled={loading || (mode === 'from-plan' && !selectedTopic)}
                   className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
@@ -397,6 +485,43 @@ export default function QuickGeneratePage() {
                   </div>
                 )}
               </div>
+
+              {/* Product Count Input (only for bestlist) */}
+              {contentType === 'bestlist' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Aantal Producten <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={productCount}
+                    onChange={(e) => setProductCount(parseInt(e.target.value))}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    disabled={loading}
+                  >
+                    <option value={3}>Top 3</option>
+                    <option value={5}>Top 5</option>
+                    <option value={7}>Top 7</option>
+                    <option value={10}>Top 10</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Product B Input (only for comparison) */}
+              {contentType === 'comparison' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Product B <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={productB}
+                    onChange={(e) => setProductB(e.target.value)}
+                    placeholder="bijv. 'LG OLED'"
+                    disabled={loading}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
+                  />
+                </div>
+              )}
 
               {/* Tone Selection - Writgo Tones */}
               <div>

@@ -1,285 +1,320 @@
-# Database Migration Instructions - UPDATED
+# ⚠️ BELANGRIJKE DATABASE MIGRATIE VEREIST
 
-## ⚠️ BELANGRIJKE UPDATE (12 December 2024)
+## Probleem
 
-De oude migraties hadden een fundamenteel probleem: ze verwezen naar de `BlogPost` tabel die alleen in `schema.sql` bestaat, niet in de migraties zelf. Dit veroorzaakte de error: **"relation BlogPost does not exist"**.
+De `contentPlan` kolom bestaat niet in de database, waardoor content plan save faalt met de volgende fout:
 
-**OPLOSSING:** Gebruik nu het nieuwe **COMPLETE_MIGRATION_PACKAGE.sql** bestand dat ALLES bevat, inclusief de BlogPost tabel.
-
----
-
-## Nieuwe Migratie Workflow (AANBEVOLEN)
-
-### Optie 1: Verse Database (Nog geen migraties uitgevoerd)
-
-1. **Ga naar Supabase SQL Editor**
-   - Navigeer naar je project op `supabase.com`
-   - Klik op "SQL Editor" in de linker sidebar
-
-2. **Voer het complete migratie pakket uit**
-   - Open `/supabase/migrations/COMPLETE_MIGRATION_PACKAGE.sql`
-   - Kopieer de VOLLEDIGE inhoud
-   - Plak in Supabase SQL Editor
-   - Klik "Run" (rechtsonder)
-
-3. **Verificatie**
-   - Je zou moeten zien: "✅ Migration completed successfully!"
-   - Ga naar stap 4 voor uitgebreide verificatie
-
-4. **Uitgebreide verificatie**
-   - Open `/supabase/migrations/VERIFY_TABLES.sql`
-   - Kopieer en run in Supabase SQL Editor
-   - Controleer alle checkmarks (✅)
-
-**Verwachte output:**
-- ✅ 6 tabellen aangemaakt (BlogPost, ContentPlan, ContentPlanItem, TopicalAuthorityMap, TopicalMapArticle, BatchJob)
-- ✅ Alle foreign keys correct
-- ✅ Alle indexes aanwezig
-- ✅ RLS policies actief
-- ✅ Triggers werkend
-
----
-
-### Optie 2: Database Cleanup + Complete Migratie
-
-Als je eerder de oude migraties probeerde en errors kreeg:
-
-1. **Cleanup oude tabellen**
-   ```sql
-   -- Run dit EERST in Supabase SQL Editor
-   DROP TABLE IF EXISTS "BatchJob" CASCADE;
-   DROP TABLE IF EXISTS "TopicalMapArticle" CASCADE;
-   DROP TABLE IF EXISTS "TopicalAuthorityMap" CASCADE;
-   DROP TABLE IF EXISTS "ContentPlanItem" CASCADE;
-   DROP TABLE IF EXISTS "ContentPlan" CASCADE;
-   
-   -- Verificatie (should return 0 rows)
-   SELECT table_name 
-   FROM information_schema.tables 
-   WHERE table_name IN (
-     'ContentPlan', 'ContentPlanItem',
-     'TopicalAuthorityMap', 'TopicalMapArticle', 'BatchJob'
-   );
-   ```
-
-2. **Voer complete migratie uit**
-   - Volg Optie 1, stappen 2-4
-
----
-
-## Waarom Deze Oplossing Werkt
-
-### Het Probleem
-De oude migraties (`20251212_content_plans_tables_FIXED.sql` en `20251212_topical_authority_map_tables.sql`) hadden foreign keys naar de `BlogPost` tabel:
-
-```sql
-CONSTRAINT "ContentPlanItem_blogPostId_fkey" FOREIGN KEY ("blogPostId") 
-  REFERENCES "BlogPost"("id") ON DELETE SET NULL
+```
+❌ Failed to save content plan
+Error: column "contentPlan" does not exist
 ```
 
-Maar de `BlogPost` tabel werd **NERGENS** aangemaakt in de migraties. Hij bestaat alleen in het `schema.sql` bestand dat de meeste gebruikers NIET uitvoeren.
+## Oplossing
 
-### De Oplossing
-Het nieuwe `COMPLETE_MIGRATION_PACKAGE.sql`:
-
-1. ✅ **Maakt EERST de BlogPost tabel aan** (als deze nog niet bestaat)
-2. ✅ **Dan pas de Content Plan tabellen** (met foreign keys naar BlogPost)
-3. ✅ **Dan de Topical Authority Map tabellen** (ook met foreign keys naar BlogPost)
-4. ✅ **Gebruikt IF NOT EXISTS** checks overal (kan veilig meerdere keren worden uitgevoerd)
-5. ✅ **Bevat ALLE indexes, triggers, en RLS policies**
+Voer de SQL migratie uit in Supabase Dashboard om de `contentPlan` kolom toe te voegen.
 
 ---
 
-## Verificatie Queries (Snelle Checks)
+## 📋 Stap-voor-Stap Instructies
 
-### Check 1: Alle Tabellen Bestaan
+### 1. Open Supabase Dashboard
+
+1. Ga naar [https://supabase.com/dashboard](https://supabase.com/dashboard)
+2. Log in met je account
+3. Selecteer je Writgo project
+4. Klik op **"SQL Editor"** in het linkermenu
+
+### 2. Kopieer en Plak de SQL Migratie
+
+Open het bestand `/supabase/migrations/20251215_add_contentplan_robust.sql` en kopieer de volledige SQL code.
+
+Of gebruik deze directe code:
+
 ```sql
-SELECT table_name 
-FROM information_schema.tables 
-WHERE table_schema = 'public' 
-  AND table_name IN (
-    'BlogPost',
-    'ContentPlan',
-    'ContentPlanItem',
-    'TopicalAuthorityMap',
-    'TopicalMapArticle',
-    'BatchJob'
-  )
-ORDER BY table_name;
-```
-**Verwacht:** 6 rijen
+-- ============================================
+-- ROBUST Content Plan Column Migration
+-- Date: 2025-12-15
+-- Purpose: Add contentPlan JSONB column with full error handling
+-- ============================================
 
----
+-- Step 1: Check if column exists, if not add it
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'Project' 
+          AND column_name = 'contentPlan'
+    ) THEN
+        -- Add contentPlan JSONB column
+        ALTER TABLE "Project" 
+        ADD COLUMN "contentPlan" JSONB DEFAULT '[]'::jsonb;
+        
+        RAISE NOTICE '✅ Column contentPlan added successfully';
+    ELSE
+        RAISE NOTICE 'ℹ️ Column contentPlan already exists, skipping creation';
+    END IF;
+END $$;
 
-### Check 2: Foreign Keys Zijn Correct
-```sql
+-- Step 2: Add index if it doesn't exist
+CREATE INDEX IF NOT EXISTS "Project_contentPlan_idx" 
+ON "Project" USING gin ("contentPlan");
+
+-- Step 3: Add comment
+COMMENT ON COLUMN "Project"."contentPlan" 
+IS 'Array of content plan topics generated by AI. Each topic has: title, description, keywords, priority';
+
+-- Step 4: Verify column exists and is properly configured
+DO $$
+DECLARE
+    col_exists boolean;
+    col_type text;
+    col_default text;
+BEGIN
+    SELECT 
+        EXISTS (
+            SELECT 1 
+            FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+              AND table_name = 'Project' 
+              AND column_name = 'contentPlan'
+        ),
+        data_type,
+        column_default
+    INTO col_exists, col_type, col_default
+    FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+      AND table_name = 'Project' 
+      AND column_name = 'contentPlan';
+    
+    IF col_exists THEN
+        RAISE NOTICE '✅ SUCCESS: contentPlan column exists and is ready to use';
+        RAISE NOTICE '   - Data Type: %', col_type;
+        RAISE NOTICE '   - Default: %', col_default;
+    ELSE
+        RAISE EXCEPTION '❌ ERROR: contentPlan column was not created';
+    END IF;
+END $$;
+
+-- Step 5: Test insert/update capability
+DO $$
+DECLARE
+    test_project_id text;
+    update_success boolean := false;
+BEGIN
+    -- Get first project ID for testing
+    SELECT id INTO test_project_id FROM "Project" LIMIT 1;
+    
+    IF test_project_id IS NOT NULL THEN
+        -- Test update
+        UPDATE "Project" 
+        SET "contentPlan" = '[{"title":"Migration Test","description":"Testing contentPlan column","keywords":"test","priority":"high"}]'::jsonb
+        WHERE id = test_project_id;
+        
+        -- Verify update worked
+        SELECT 
+            CASE 
+                WHEN "contentPlan" IS NOT NULL THEN true 
+                ELSE false 
+            END
+        INTO update_success
+        FROM "Project"
+        WHERE id = test_project_id;
+        
+        IF update_success THEN
+            RAISE NOTICE '✅ Test update successful for project: %', test_project_id;
+            
+            -- Rollback test data
+            UPDATE "Project" 
+            SET "contentPlan" = '[]'::jsonb
+            WHERE id = test_project_id;
+            
+            RAISE NOTICE '✅ Test data cleaned up';
+        ELSE
+            RAISE WARNING '⚠️ Test update failed verification';
+        END IF;
+    ELSE
+        RAISE NOTICE 'ℹ️ No projects found for testing (empty database)';
+    END IF;
+END $$;
+
+-- Final verification query
 SELECT 
-  tc.table_name, 
-  kcu.column_name,
-  ccu.table_name AS foreign_table_name
-FROM information_schema.table_constraints AS tc 
-JOIN information_schema.key_column_usage AS kcu
-  ON tc.constraint_name = kcu.constraint_name
-JOIN information_schema.constraint_column_usage AS ccu
-  ON ccu.constraint_name = tc.constraint_name
-WHERE tc.constraint_type = 'FOREIGN KEY'
-  AND tc.table_name IN (
-    'ContentPlanItem',
-    'TopicalMapArticle',
-    'BatchJob'
-  )
-ORDER BY tc.table_name;
-```
-**Verwacht:** 8 foreign keys (waaronder 2x naar BlogPost)
+    'contentPlan' as column_name,
+    data_type,
+    column_default,
+    is_nullable,
+    '✅ Column is ready for use!' as status
+FROM information_schema.columns 
+WHERE table_schema = 'public' 
+  AND table_name = 'Project' 
+  AND column_name = 'contentPlan';
 
----
-
-### Check 3: Test Insert in BlogPost
-```sql
--- Test of BlogPost tabel werkt
-INSERT INTO "BlogPost" (
-  title, slug, excerpt, content
-) VALUES (
-  'Test Post',
-  'test-post-' || gen_random_uuid()::text,
-  'Test excerpt',
-  'Test content'
-) RETURNING id, title;
-
--- Clean up
-DELETE FROM "BlogPost" WHERE title = 'Test Post';
-```
-**Verwacht:** INSERT succesvol, geen errors
-
----
-
-## Troubleshooting
-
-### ❌ Error: "relation 'Client' does not exist"
-**Oorzaak:** Je database heeft nog geen basis tabellen  
-**Oplossing:** Run EERST het basis schema:
-```sql
--- In Supabase SQL Editor, run dit VOOR de migratie:
--- Kopieer en run /supabase/schema.sql
+-- Success message
+DO $$
+BEGIN
+    RAISE NOTICE '═══════════════════════════════════════════════════════';
+    RAISE NOTICE '✅ MIGRATION COMPLETE: contentPlan column is ready!';
+    RAISE NOTICE '═══════════════════════════════════════════════════════';
+END $$;
 ```
 
-### ❌ Error: "duplicate key value violates unique constraint"
-**Oorzaak:** Tabellen bestaan al uit eerdere poging  
-**Oplossing:** Gebruik Optie 2 (cleanup + retry)
+### 3. Voer de SQL uit
 
-### ❌ Error: "permission denied for table"
-**Oorzaak:** RLS policies blokkeren toegang  
-**Oplossing:** Run als database eigenaar (service_role) in Supabase
+1. Plak de SQL code in de SQL Editor
+2. Klik op de **"Run"** knop (of druk Ctrl/Cmd + Enter)
 
-### ❌ Error: "syntax error near 'USING'"
-**Oorzaak:** Oude PostgreSQL versie  
-**Oplossing:** Supabase gebruikt altijd PostgreSQL 14+, dit zou niet moeten gebeuren
+### 4. Controleer het Resultaat
 
----
+Je zou het volgende moeten zien in de output:
 
-## Volledige Test Procedure
+```
+✅ Column contentPlan added successfully
+✅ SUCCESS: contentPlan column exists and is ready to use
+   - Data Type: jsonb
+   - Default: '[]'::jsonb
+✅ Test update successful for project: [project-id]
+✅ Test data cleaned up
+═══════════════════════════════════════════════════════
+✅ MIGRATION COMPLETE: contentPlan column is ready!
+═══════════════════════════════════════════════════════
+```
 
-Run deze stappen om 100% zeker te zijn:
+Als je dit ziet, is de migratie succesvol!
+
+### 5. Optioneel: Voer ook de RPC Function uit
+
+Voor extra robuustheid, voer ook deze SQL uit:
 
 ```sql
--- 1. Check tables
-SELECT count(*) as table_count 
-FROM information_schema.tables 
-WHERE table_name IN (
-  'BlogPost', 'ContentPlan', 'ContentPlanItem',
-  'TopicalAuthorityMap', 'TopicalMapArticle', 'BatchJob'
-);
--- Expected: 6
-
--- 2. Test BlogPost insert
-INSERT INTO "BlogPost" (title, slug, excerpt, content)
-VALUES ('Test', 'test-' || gen_random_uuid()::text, 'Test', 'Test')
-RETURNING id;
-
--- 3. Test ContentPlan insert (replace CLIENT_ID)
-INSERT INTO "ContentPlan" (
-  "clientId", name, niche, "targetAudience", "totalPosts", period
+-- Create RPC function for updating content plan
+CREATE OR REPLACE FUNCTION update_project_content_plan(
+  p_project_id text,
+  p_content_plan jsonb
 )
-SELECT id, 'Test Plan', 'AI', 'Developers', 5, '1 week'
-FROM "Client" LIMIT 1
-RETURNING id;
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_updated_project jsonb;
+BEGIN
+  -- Update the project
+  UPDATE "Project"
+  SET "contentPlan" = p_content_plan,
+      "updatedAt" = NOW()
+  WHERE id = p_project_id
+  RETURNING jsonb_build_object(
+    'id', id,
+    'name', name,
+    'contentPlan', "contentPlan",
+    'updatedAt', "updatedAt"
+  ) INTO v_updated_project;
+  
+  -- Check if update was successful
+  IF v_updated_project IS NULL THEN
+    RAISE EXCEPTION 'Project not found: %', p_project_id;
+  END IF;
+  
+  -- Return updated project data
+  RETURN v_updated_project;
+END;
+$$;
 
--- 4. Test foreign key (replace PLAN_ID and BLOGPOST_ID)
-INSERT INTO "ContentPlanItem" (
-  "planId", "blogPostId", title, description
-) VALUES (
-  'PLAN_ID',
-  'BLOGPOST_ID',
-  'Test Item',
-  'Test Description'
-);
-
--- 5. Clean up
-DELETE FROM "ContentPlanItem" WHERE title = 'Test Item';
-DELETE FROM "ContentPlan" WHERE name = 'Test Plan';
-DELETE FROM "BlogPost" WHERE title = 'Test';
-
-SELECT '✅ All tests passed!' as result;
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION update_project_content_plan(text, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION update_project_content_plan(text, jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION update_project_content_plan(text, jsonb) TO anon;
 ```
 
 ---
 
-## Git Commit
+## ✅ Test de App
 
-Na succesvolle migratie:
+Na het uitvoeren van de migratie:
 
-```bash
-cd /home/ubuntu/writgoai_app
-git add .
-git commit -m "fix: Remove BlogPost dependency from migrations
-
-- Created COMPLETE_MIGRATION_PACKAGE.sql with BlogPost table included
-- Fixed 'relation BlogPost does not exist' error
-- Added comprehensive VERIFY_TABLES.sql script
-- Updated migration instructions with new workflow
-- All foreign keys now work correctly"
-
-git push origin main
-```
+1. Ga naar [https://writgo.nl/content-plan](https://writgo.nl/content-plan)
+2. Selecteer een project met een WordPress URL
+3. Klik op **"Analyseer WordPress & Genereer Plan"**
+4. Wacht 30-60 seconden
+5. ✅ Je zou nu 15-20 topics moeten zien zonder errors!
 
 ---
 
-## Bestanden in Deze Update
+## 🎉 Nieuwe Features Beschikbaar!
 
-- ✅ **NEW:** `supabase/migrations/COMPLETE_MIGRATION_PACKAGE.sql` - Alles-in-één migratie
-- ✅ **NEW:** `supabase/migrations/VERIFY_TABLES.sql` - Uitgebreide verificatie
-- ✅ **UPDATED:** `DATABASE_MIGRATION_INSTRUCTIONS.md` - Deze instructies
-- ⚠️ **DEPRECATED:** `20251212_content_plans_tables_FIXED.sql` - Gebruik niet meer (blijft voor reference)
-- ⚠️ **DEPRECATED:** `20251212_topical_authority_map_tables.sql` - Gebruik niet meer (blijft voor reference)
+Na de migratie heb je toegang tot **4 nieuwe content types** in het Content Genereren scherm:
+
+### 1. 📝 Standaard Artikel
+- SEO-geoptimaliseerd artikel (1500 woorden)
+- Gebruik: algemene informatieve content
+- Voorbeeld: "Beste fitness tips voor beginners"
+
+### 2. ⭐ Productreview
+- Diepgaande review van één product
+- Inclusief Voor-/Nadelen tabel
+- Technische specificaties
+- Voorbeeld: "iPhone 15 Pro Review"
+
+### 3. 🏆 Beste Lijstje
+- Top X beste producten in categorie
+- Vergelijkingstabel
+- Per product: analyse, pluspunten, minpunten
+- Voorbeeld: "Beste 5 Draadloze Oordopjes"
+
+### 4. 🆚 Vergelijking
+- Product A vs Product B vergelijking
+- Diepgaande feature-by-feature analyse
+- Quick summary met aanbevelingen
+- Voorbeeld: "Samsung QLED vs LG OLED"
+
+**Alle types volgen Writgo's strenge regels:**
+- 1500 woorden
+- 100% menselijke score
+- E-E-A-T geoptimaliseerd
+- Conversationeel B1-niveau
+- 'je/jij' aanspreekvorm
+- Verboden woorden gefilterd
 
 ---
 
-## Volgende Stappen
+## 🆘 Hulp Nodig?
 
-1. ✅ Run COMPLETE_MIGRATION_PACKAGE.sql in Supabase
-2. ✅ Run VERIFY_TABLES.sql voor validatie
-3. ✅ Test content plan API endpoints
-4. ✅ Commit naar Git
-5. ✅ Test in productie
+Als je problemen hebt met de migratie:
 
----
+1. **Check of de SQL compleet is uitgevoerd**: scroll door de hele output
+2. **Refresh de Supabase dashboard**: soms is een refresh nodig
+3. **Check de "Project" tabel**: klik op "Table Editor" → "Project" → check of "contentPlan" kolom bestaat
 
-## ⚠️ Foreign Key Issues?
+### Veelvoorkomende Fouten
 
-Als je na de migratie foreign key problemen tegenkomt (zoals "only 6 foreign keys instead of 8" of "Key (planId)=(PLAN_ID) is not present"), gebruik dan de **Foreign Key Fix Guide**:
+**Fout: "permission denied"**
+- Oplossing: Zorg dat je ingelogd bent als owner van het Supabase project
 
-📖 **Zie:** [FOREIGN_KEY_FIX_GUIDE.md](./FOREIGN_KEY_FIX_GUIDE.md)
+**Fout: "column already exists"**
+- Oplossing: Dit is geen probleem! De migratie is al uitgevoerd. Ga door naar de test stap.
 
-**Quick Fix:** Run `/supabase/migrations/COMPLETE_FIX_PACKAGE.sql` in Supabase SQL Editor.
-
-Dit script:
-- ✅ Cleanup orphaned data
-- ✅ Fix invalid references  
-- ✅ Voegt ontbrekende foreign keys toe (ContentPlanItem.blogPostId en TopicalMapArticle.blogPostId)
-- ✅ Verifieert dat alle 8 foreign keys aanwezig zijn
+**Fout: "table Project does not exist"**
+- Oplossing: Je database schema is anders. Controleer de tabel naam in je schema.
 
 ---
 
-**Status:** Ready for production 🚀  
-**Last Updated:** 12 December 2024  
-**Migration Version:** 2.0 (Complete Package)
+## 📁 Bestand Locaties
+
+- **SQL Migratie**: `/supabase/migrations/20251215_add_contentplan_robust.sql`
+- **RPC Function**: `/supabase/migrations/20251215_create_rpc_function.sql`
+- **API Route**: `/app/api/simplified/content-plan/analyze-wordpress/route.ts`
+- **Prompts**: `/lib/writgo-prompt.ts`
+
+---
+
+## ✨ Klaar!
+
+Na het voltooien van deze stappen zou je:
+- ✅ Content plans kunnen opslaan zonder errors
+- ✅ WordPress analyse kunnen uitvoeren
+- ✅ 4 verschillende content types kunnen genereren
+- ✅ Alle Writgo features kunnen gebruiken
+
+Veel plezier met de nieuwe features! 🚀

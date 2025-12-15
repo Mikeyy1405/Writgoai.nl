@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { createClient } from '@supabase/supabase-js';
-import { generateWritgoPrompt, generateImagePrompt } from '@/lib/writgo-prompt';
+import { 
+  generateWritgoPrompt, 
+  generateProductReviewPrompt,
+  generateBestListPrompt,
+  generateComparisonPrompt,
+  generateImagePrompt 
+} from '@/lib/writgo-prompt';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +36,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { keyword, projectId, toneOfVoice = 'professioneel' } = body;
+    const { 
+      keyword, 
+      projectId, 
+      toneOfVoice = 'professioneel',
+      contentType = 'article', // NEW
+      productCount = 5, // For bestlist
+      productA = '', // For comparison
+      productB = '' // For comparison
+    } = body;
 
     if (!keyword?.trim()) {
       return NextResponse.json(
@@ -39,9 +53,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validation for comparison type
+    if (contentType === 'comparison' && (!productA?.trim() || !productB?.trim())) {
+      return NextResponse.json(
+        { error: 'Voor vergelijking zijn beide productnamen vereist' },
+        { status: 400 }
+      );
+    }
+
     console.log('[Quick Generate] Starting...');
+    console.log('[Quick Generate] Content Type:', contentType);
     console.log('[Quick Generate] Keyword:', keyword);
     console.log('[Quick Generate] Tone:', toneOfVoice);
+    if (contentType === 'bestlist') console.log('[Quick Generate] Product Count:', productCount);
+    if (contentType === 'comparison') console.log('[Quick Generate] Products:', productA, 'vs', productB);
 
     // ✅ Haal client op via SUPABASE
     const { data: client, error: clientError } = await supabase
@@ -83,7 +108,28 @@ export async function POST(request: NextRequest) {
     // STEP 1: Genereer artikel met Writgo prompt
     console.log('[Quick Generate] Generating article with Writgo rules...');
 
-    const writgoPrompt = generateWritgoPrompt(keyword, toneOfVoice);
+    // Generate appropriate prompt based on content type
+    let writgoPrompt = '';
+    
+    switch (contentType) {
+      case 'review':
+        writgoPrompt = generateProductReviewPrompt(keyword, toneOfVoice);
+        console.log('[Quick Generate] Using Product Review prompt');
+        break;
+      case 'bestlist':
+        writgoPrompt = generateBestListPrompt(keyword, productCount, toneOfVoice);
+        console.log('[Quick Generate] Using Best List prompt for Top', productCount);
+        break;
+      case 'comparison':
+        writgoPrompt = generateComparisonPrompt(productA, productB, toneOfVoice);
+        console.log('[Quick Generate] Using Comparison prompt for', productA, 'vs', productB);
+        break;
+      case 'article':
+      default:
+        writgoPrompt = generateWritgoPrompt(keyword, toneOfVoice);
+        console.log('[Quick Generate] Using Standard Article prompt');
+        break;
+    }
 
     const articleResponse = await fetch('https://api.aimlapi.com/chat/completions', {
       method: 'POST',

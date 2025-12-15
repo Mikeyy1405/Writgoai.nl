@@ -270,8 +270,17 @@ BELANGRIJK:
 
     console.log(`[WordPress Analyze] Updating project with content plan...`);
     
+    // ✅ ROBUST SAVE with multiple fallback strategies
+    let saveSuccess = false;
+    let saveError: any = null;
+    let strategy = '';
+
+    // ═══════════════════════════════════════════════════════════
+    // STRATEGY 1: Direct Supabase Update
+    // ═══════════════════════════════════════════════════════════
+    console.log('[WordPress Analyze] 🔄 Trying Strategy 1: Direct Supabase update...');
+    
     try {
-      // ✅ Direct Supabase update
       const { data: updatedProject, error: updateError } = await supabase
         .from('Project')
         .update({
@@ -284,21 +293,101 @@ BELANGRIJK:
         .single();
 
       if (updateError) {
-        console.error('[WordPress Analyze] Update error:', updateError);
-        console.error('[WordPress Analyze] Update error details:', JSON.stringify(updateError, null, 2));
-        throw updateError;
+        console.error('[WordPress Analyze] ❌ Strategy 1 failed:', updateError);
+        console.error('[WordPress Analyze] Error details:', JSON.stringify(updateError, null, 2));
+        saveError = updateError;
+      } else {
+        console.log('[WordPress Analyze] ✅ Strategy 1 SUCCESS! Project updated via direct Supabase call');
+        saveSuccess = true;
+        strategy = 'direct_update';
+        
+        return NextResponse.json({
+          success: true,
+          source: 'wordpress-analysis',
+          analyzedUrl: project.websiteUrl,
+          existingPosts: analysis.posts.length,
+          topics,
+          count: topics.length,
+          saveStrategy: strategy,
+          message: `✅ Content plan met ${topics.length} topics succesvol gegenereerd en opgeslagen!`
+        });
       }
+    } catch (error: any) {
+      console.error('[WordPress Analyze] ❌ Strategy 1 exception:', error);
+      saveError = error;
+    }
 
-      console.log(`[WordPress Analyze] ✅ Successfully updated project with ${topics.length} topics`);
-    } catch (updateError: any) {
-      console.error('[WordPress Analyze] Failed to update project:', updateError);
-      return NextResponse.json(
-        { 
-          error: 'Failed to save content plan',
-          details: updateError.message || 'Unknown error',
+    // ═══════════════════════════════════════════════════════════
+    // STRATEGY 2: RPC Function Call
+    // ═══════════════════════════════════════════════════════════
+    if (!saveSuccess) {
+      console.log('[WordPress Analyze] 🔄 Trying Strategy 2: RPC function call...');
+      
+      try {
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('update_project_content_plan', {
+            p_project_id: projectId,
+            p_content_plan: contentPlanData
+          });
+
+        if (rpcError) {
+          console.error('[WordPress Analyze] ❌ Strategy 2 failed:', rpcError);
+          console.error('[WordPress Analyze] RPC error details:', JSON.stringify(rpcError, null, 2));
+          saveError = rpcError;
+        } else {
+          console.log('[WordPress Analyze] ✅ Strategy 2 SUCCESS! Project updated via RPC function');
+          saveSuccess = true;
+          strategy = 'rpc_function';
+          
+          return NextResponse.json({
+            success: true,
+            source: 'wordpress-analysis',
+            analyzedUrl: project.websiteUrl,
+            existingPosts: analysis.posts.length,
+            topics,
+            count: topics.length,
+            saveStrategy: strategy,
+            message: `✅ Content plan met ${topics.length} topics succesvol gegenereerd en opgeslagen (via RPC)!`
+          });
+        }
+      } catch (error: any) {
+        console.error('[WordPress Analyze] ❌ Strategy 2 exception:', error);
+        saveError = error;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STRATEGY 3: Return Topics Without Saving (Graceful Degradation)
+    // ═══════════════════════════════════════════════════════════
+    if (!saveSuccess) {
+      console.error('[WordPress Analyze] ❌ All save strategies failed!');
+      console.error('[WordPress Analyze] Last error:', saveError);
+      console.error('[WordPress Analyze] This likely means the contentPlan column does not exist in the database.');
+      console.error('[WordPress Analyze] ⚠️ Please run the database migration: /supabase/migrations/20251215_add_contentplan_robust.sql');
+      
+      // Return topics without saving (partial success)
+      return NextResponse.json({
+        success: false,
+        warning: 'Content plan gegenereerd maar niet opgeslagen in database',
+        source: 'wordpress-analysis',
+        analyzedUrl: project.websiteUrl,
+        existingPosts: analysis.posts.length,
+        topics,
+        count: topics.length,
+        saveStrategy: 'failed',
+        error: saveError?.message || 'Database save failed',
+        solution: {
+          message: '⚠️ DATABASE MIGRATIE VEREIST',
+          instructions: [
+            '1. Ga naar Supabase Dashboard → SQL Editor',
+            '2. Kopieer en plak de SQL uit: /supabase/migrations/20251215_add_contentplan_robust.sql',
+            '3. Klik "Run"',
+            '4. Probeer opnieuw'
+          ],
+          sqlFile: '/supabase/migrations/20251215_add_contentplan_robust.sql'
         },
-        { status: 500 }
-      );
+        message: `⚠️ ${topics.length} topics gegenereerd maar niet opgeslagen. Voer database migratie uit.`
+      }, { status: 207 }); // 207 = Multi-Status (partial success)
     }
 
     return NextResponse.json({
