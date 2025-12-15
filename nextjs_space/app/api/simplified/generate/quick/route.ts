@@ -135,6 +135,8 @@ export async function POST(request: NextRequest) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
 
+    let articleContent = '';
+
     try {
       const articleResponse = await fetch('https://api.aimlapi.com/chat/completions', {
         method: 'POST',
@@ -160,7 +162,7 @@ export async function POST(request: NextRequest) {
       }
 
       const articleData = await articleResponse.json();
-      let articleContent = articleData.choices?.[0]?.message?.content || '';
+      articleContent = articleData.choices?.[0]?.message?.content || '';
 
       console.log('[Quick Generate] Article generated, length:', articleContent.length);
 
