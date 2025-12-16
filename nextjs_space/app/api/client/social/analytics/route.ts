@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
       return acc;
     }, {} as Record<number, number>);
 
-    const bestPostingTimes = Object.entries(postsByHour)
+    const bestPostingTimes = (Object.entries(postsByHour) as [string, number][])
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
       .map(([hour]) => `${hour}:00`);
