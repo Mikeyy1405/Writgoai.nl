@@ -34,6 +34,10 @@ import {
   Receipt,
   Repeat,
   CreditCard,
+  Package,
+  Layers,
+  Zap,
+  Activity,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -122,6 +126,24 @@ export const adminNavSections: AdminNavSection[] = [
         href: '/admin/clients',
         icon: Users,
         description: 'Klantenbeheer',
+      },
+      {
+        label: 'Content Overzicht',
+        href: '/admin/content-overview',
+        icon: Layers,
+        description: 'Alle content',
+      },
+      {
+        label: 'Analytics',
+        href: '/admin/analytics',
+        icon: Activity,
+        description: 'Statistieken & Trends',
+      },
+      {
+        label: 'Integraties',
+        href: '/admin/integrations',
+        icon: Zap,
+        description: 'Platform koppelingen',
       },
       {
         label: 'Email Manager',
