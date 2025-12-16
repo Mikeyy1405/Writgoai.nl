@@ -40,6 +40,11 @@ const TABLE_NAME_MAP: Record<string, string> = {
   affiliateLink: 'AffiliateLink',
   knowledgeBase: 'KnowledgeBase',
   projectSettings: 'ProjectSettings',
+  // WordPress Autopilot tables
+  wordPressAutopilotSite: 'WordPressAutopilotSite',
+  contentStrategy: 'ContentStrategy',
+  contentCalendarItem: 'ContentCalendarItem',
+  autopilotSettings: 'AutopilotSettings',
 };
 
 // Create a Proxy that intercepts property access and returns table-specific handlers
