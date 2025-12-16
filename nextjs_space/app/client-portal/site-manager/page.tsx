@@ -710,7 +710,7 @@ export default function SiteManagerPage() {
               {!rewriteResult ? (
                 <>
                   {(() => {
-                    const isDisabled = rewriteLoading || (!rewriteInstructions && rewriteItem);
+                    const isDisabled = rewriteLoading || (!rewriteInstructions && !!rewriteItem);
                     return (
                       <Button
                         onClick={rewriteItem ? handleRewrite : handleBulkRewrite}

@@ -13,7 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { UltimateWriterConfig } from '../page';
+import type { UltimateWriterConfig } from '../types';
 
 interface ExportOptionsProps {
   content: string;

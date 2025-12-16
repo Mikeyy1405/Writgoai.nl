@@ -47,6 +47,17 @@ function createHeartbeat() {
   return `data: ${JSON.stringify({ type: 'heartbeat', timestamp: Date.now() })}\n\n`;
 }
 
+// Helper to convert duration in seconds to videoLengte
+function getVideoLengte(durationInSeconds: number): 'kort' | 'medium' | 'lang' {
+  if (durationInSeconds <= 180) {
+    return 'kort';
+  } else if (durationInSeconds <= 480) {
+    return 'medium';
+  } else {
+    return 'lang';
+  }
+}
+
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   
@@ -333,7 +344,7 @@ export async function POST(request: NextRequest) {
               videoIdea: ideas[0],
               niche: style || 'professional',
               taal: language,
-              videoLengte: duration,
+              videoLengte: getVideoLengte(duration),
               toon: style || 'professional',
             });
 

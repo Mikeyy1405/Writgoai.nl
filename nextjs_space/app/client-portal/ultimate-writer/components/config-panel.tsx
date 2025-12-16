@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import ProjectSelector from '@/components/project-selector';
 import TopicSuggestions from './topic-suggestions';
-import type { UltimateWriterConfig } from '../page';
+import type { UltimateWriterConfig } from '../types';
 
 interface ConfigPanelProps {
   config: UltimateWriterConfig;
