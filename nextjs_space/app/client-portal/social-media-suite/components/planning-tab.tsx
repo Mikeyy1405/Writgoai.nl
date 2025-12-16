@@ -93,7 +93,7 @@ export default function PlanningTab({ projectId }: PlanningTabProps) {
       setLoading(true);
       toast.loading('AI genereert waardevolle content planning...', { id: 'planning' });
 
-      const response = await fetch('/api/client/social-media/generate-planning', {
+      const response = await fetch('/api/client/social/planning', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

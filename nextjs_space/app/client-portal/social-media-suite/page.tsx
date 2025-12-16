@@ -175,7 +175,7 @@ export default function SocialMediaSuitePage() {
       // Generate content for all platforms concurrently
       const results = await Promise.allSettled(
         selectedPlatforms.map(async (platform) => {
-          const response = await fetch('/api/client/generate-social-post', {
+          const response = await fetch('/api/client/social/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

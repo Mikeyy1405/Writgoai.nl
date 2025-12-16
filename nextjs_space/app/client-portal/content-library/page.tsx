@@ -159,7 +159,7 @@ export default function ContentLibrary() {
 
   const loadSocialPosts = async () => {
     try {
-      const response = await fetch('/api/client/social-media/all-posts');
+      const response = await fetch('/api/client/social');
       if (response.ok) {
         const data = await response.json();
         setSocialPosts(data.posts || []);
