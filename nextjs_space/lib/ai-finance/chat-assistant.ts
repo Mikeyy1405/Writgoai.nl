@@ -136,7 +136,7 @@ async function handleExpenseQuery(query: string): Promise<ChatResponse> {
   const insights = await getExpenseInsights(startDate, endDate);
 
   const topCategory = Object.entries(insights.categoryBreakdown)
-    .sort(([, a], [, b]) => b - a)[0];
+    .sort(([, a], [, b]) => (b as number) - (a as number))[0];
 
   return {
     answer: `De totale uitgaven zijn €${insights.totalExpenses.toFixed(2)}. De hoogste categorie is '${topCategory?.[0] || 'onbekend'}' met €${topCategory?.[1]?.toFixed(2) || 0}. De top 3 leveranciers zijn: ${insights.topSuppliers.slice(0, 3).map(s => `${s.name} (€${s.total.toFixed(2)})`).join(', ')}.`,

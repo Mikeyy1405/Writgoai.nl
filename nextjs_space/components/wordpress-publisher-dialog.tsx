@@ -115,7 +115,7 @@ function suggestTags(htmlContent: string, title: string): string[] {
   
   // Get top 5 most frequent words as tags
   return Object.entries(wordCount)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 5)
     .map(([word]) => word);
 }
