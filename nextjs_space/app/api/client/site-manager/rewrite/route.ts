@@ -366,7 +366,7 @@ function buildRewritePrompt(
   tone?: string,
   language?: string,
   tonePrompt?: string,
-  bannedWords?: string[]
+  bannedWords?: readonly string[]
 ): string {
   const languageInstruction = language === 'en' 
     ? 'Write in perfect, fluent English' 
