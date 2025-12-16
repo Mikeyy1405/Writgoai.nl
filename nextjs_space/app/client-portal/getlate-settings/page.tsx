@@ -65,7 +65,7 @@ export default function GetlateSettingsPage() {
     setIsLoading(true);
     try {
       // Load accounts
-      const accountsResponse = await fetch(`/api/client/getlate/accounts?projectId=${projectId}`);
+      const accountsResponse = await fetch(`/api/client/late-dev/accounts?projectId=${projectId}`);
       if (accountsResponse.ok) {
         const data = await accountsResponse.json();
         setGetlateAccounts(data.accounts || []);
@@ -80,7 +80,7 @@ export default function GetlateSettingsPage() {
 
   const testConnection = async () => {
     try {
-      const response = await fetch('/api/client/getlate/test');
+      const response = await fetch('/api/client/late-dev/test');
       if (response.ok) {
         const data = await response.json();
         setConnectionTest(data);
@@ -98,7 +98,7 @@ export default function GetlateSettingsPage() {
 
     setIsSettingUp(true);
     try {
-      const response = await fetch('/api/client/getlate/setup', {
+      const response = await fetch('/api/client/late-dev/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
