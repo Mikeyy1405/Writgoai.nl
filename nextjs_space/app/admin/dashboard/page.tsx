@@ -55,7 +55,7 @@ function DashboardContent() {
     } else if (status === 'authenticated') {
       // Check if user is admin
       if (session?.user?.email !== 'info@writgo.nl') {
-        router.push('/client-portal');
+        router.push('/');
         return;
       }
       loadStats();

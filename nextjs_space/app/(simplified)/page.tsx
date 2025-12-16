@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import SimplifiedLayout from '@/components/SimplifiedLayout';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Users, FileText, TrendingUp, Clock, Globe, Sparkles, CheckCircle, Calendar, Activity, ArrowUpRight, Search, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 
@@ -69,6 +70,7 @@ interface GSCStats {
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [stats, setStats] = useState<Stats>({
     totalProjects: 0,
     contentThisMonth: 0,
@@ -88,16 +90,18 @@ export default function DashboardPage() {
   // Redirect admin users to admin portal
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.email === 'info@writgo.nl') {
-      window.location.href = '/admin/dashboard';
+      router.push('/admin/dashboard');
+      return;
     }
-  }, [session, status]);
-
-  useEffect(() => {
-    fetchDashboardData();
-    // Refresh data elke 30 seconden
-    const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    
+    // Only fetch data for non-admin users
+    if (status === 'authenticated') {
+      fetchDashboardData();
+      // Refresh data elke 30 seconden
+      const interval = setInterval(fetchDashboardData, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [session, status, router]);
 
   const fetchDashboardData = async () => {
     try {
