@@ -57,6 +57,7 @@ export interface ContentCalendarItem {
   focusKeyword: string;
   secondaryKeywords: string[];
   contentType: 'article' | 'listicle' | 'how-to' | 'review' | 'guide';
+  contentIntent?: 'informational' | 'best-of-list' | 'review' | 'how-to' | 'guide';
   topic: string;
   subtopic?: string;
   scheduledDate: Date;
@@ -67,6 +68,10 @@ export interface ContentCalendarItem {
   generatedAt?: Date;
   publishedAt?: Date;
   error?: string;
+  internalLinks?: InternalLink[];
+  affiliateLinks?: AffiliateLink[];
+  images?: ContentImage[];
+  metadata?: Record<string, any>;
 }
 
 export interface AutopilotPerformanceMetrics {
@@ -155,4 +160,40 @@ export interface AutopilotSettings {
     onError: boolean;
     email?: string;
   };
+  // Content Rules
+  contentRules?: Record<string, any>;
+  toneOfVoice?: string; // 'professioneel', 'casual', 'vriendelijk', 'formeel', etc.
+  brandGuidelines?: string;
+  targetAudience?: string;
+  writingStyle?: string;
+  dosAndDonts?: {
+    dos: string[];
+    donts: string[];
+  };
+}
+
+export interface InternalLink {
+  url: string;
+  anchorText: string;
+  targetTitle: string;
+  position: number; // Position in content (character index)
+  relevanceScore?: number;
+}
+
+export interface AffiliateLink {
+  id: string;
+  url: string;
+  anchorText: string;
+  productName: string;
+  position: number;
+  disclosure?: string;
+}
+
+export interface ContentImage {
+  url: string;
+  alt: string;
+  caption?: string;
+  position: number; // Position in content
+  source: 'generated' | 'stock' | 'uploaded';
+  wordpressMediaId?: number;
 }

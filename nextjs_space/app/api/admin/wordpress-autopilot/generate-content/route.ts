@@ -7,10 +7,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-import { generateBlog } from '@/lib/aiml-agent';
+import { chatCompletion } from '@/lib/aiml-api';
 import { publishToWordPress } from '@/lib/wordpress-publisher';
-import { updateContentCalendarItem } from '@/lib/wordpress-autopilot/database';
+import { updateContentCalendarItem, getAutopilotSettings } from '@/lib/wordpress-autopilot/database';
 import { hasEnoughCredits, deductCredits, CREDIT_COSTS } from '@/lib/credits';
+import { getContentTemplate, buildContentPrompt } from '@/lib/wordpress-autopilot/content-intent-templates';
+import { enhanceContent } from '@/lib/wordpress-autopilot/content-enhancers';
+import type { ContentCalendarItem } from '@/lib/wordpress-autopilot/types';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -80,30 +83,68 @@ export async function POST(req: NextRequest) {
       );
     }
     
+    // Get autopilot settings (for content rules)
+    const settings = await getAutopilotSettings(item.siteId);
+    
     // Update status to generating
     await updateContentCalendarItem(calendarItemId, {
       status: 'generating',
     });
     
     console.log(`📝 Generating content: ${item.title}`);
+    console.log(`   Content Intent: ${item.contentIntent || 'informational'}`);
     
-    // Generate content
-    const keywords = [item.focusKeyword, ...item.secondaryKeywords];
-    
-    const htmlContent = await generateBlog(
-      item.title,
-      keywords,
-      'professioneel en informatief',
-      site.name,
-      {
-        targetWordCount: 2000,
-        language: (site.language || 'NL') as any,
-        includeFAQ: true,
-        includeDirectAnswer: true,
-      }
+    // Get content template based on intent
+    const template = getContentTemplate(
+      item.contentIntent,
+      item.contentType
     );
     
-    console.log('✅ Content generated');
+    // Build AI prompt with content rules and template
+    const prompt = buildContentPrompt(
+      item as ContentCalendarItem,
+      template,
+      settings || undefined,
+      site.language || 'nl'
+    );
+    
+    console.log(`   Using template: ${template.intent}`);
+    console.log(`   Target length: ${template.minWordCount}-${template.maxWordCount} words`);
+    
+    // Generate content with Claude Sonnet 4
+    const response = await chatCompletion({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'claude-sonnet-4',
+      temperature: 0.6,
+      max_tokens: 8000,
+      trackUsage: {
+        clientId: client.id,
+        feature: 'wordpress_autopilot_content',
+      },
+    });
+    
+    let htmlContent = response.choices[0]?.message?.content || '';
+    
+    // Clean up response (remove any markdown code blocks)
+    htmlContent = htmlContent.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    console.log('✅ Base content generated');
+    
+    // Enhance content with internal links, affiliate links, and images
+    console.log('🔧 Enhancing content...');
+    const enhancement = await enhanceContent(
+      item.siteId,
+      client.id,
+      htmlContent,
+      item.title,
+      item.focusKeyword,
+      item.topic,
+      settings?.includeImages ?? true
+    );
+    
+    htmlContent = enhancement.enhancedContent;
+    
+    console.log('✅ Content enhanced');
     
     // Save to SavedContent
     const savedContent = await prisma.savedContent.create({
@@ -119,11 +160,23 @@ export async function POST(req: NextRequest) {
       },
     });
     
-    // Update calendar item with content
+    // Update calendar item with content and enhancements
     await updateContentCalendarItem(calendarItemId, {
       status: 'generated',
       contentId: savedContent.id,
       generatedAt: new Date(),
+      internalLinks: enhancement.internalLinks,
+      affiliateLinks: enhancement.affiliateLinks,
+      images: enhancement.images,
+      metadata: {
+        template: template.intent,
+        wordCount: htmlContent.split(/\s+/).length,
+        enhancementStats: {
+          internalLinks: enhancement.internalLinks.length,
+          affiliateLinks: enhancement.affiliateLinks.length,
+          images: enhancement.images.length,
+        },
+      },
     });
     
     // Publish to WordPress

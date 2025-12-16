@@ -5,6 +5,7 @@
 
 import { chatCompletion } from '@/lib/aiml-api';
 import { fetchSitemap } from '@/lib/wordpress-publisher';
+import { detectContentIntent } from './content-intent-templates';
 import type {
   ContentStrategy,
   KeywordCluster,
@@ -220,18 +221,28 @@ export async function generateContentCalendar(
     
     // Generate content title suggestions with AI
     const titles = generateTitleSuggestions(cluster.primaryKeyword, cluster.topic);
+    const title = titles[0] || `${cluster.topic}: ${cluster.primaryKeyword}`;
+    
+    // Detect content intent automatically
+    const allKeywords = [cluster.primaryKeyword, ...cluster.secondaryKeywords];
+    const contentIntent = detectContentIntent(title, allKeywords);
     
     calendar.push({
       id: `calendar-${Date.now()}-${index}`,
       siteId,
       strategyId,
-      title: titles[0] || `${cluster.topic}: ${cluster.primaryKeyword}`,
+      title,
       focusKeyword: cluster.primaryKeyword,
       secondaryKeywords: cluster.secondaryKeywords,
       contentType: determineContentType(cluster.primaryKeyword),
+      contentIntent: contentIntent as any,
       topic: cluster.topic,
       scheduledDate,
       status: 'scheduled',
+      internalLinks: [],
+      affiliateLinks: [],
+      images: [],
+      metadata: {},
     });
   });
   
