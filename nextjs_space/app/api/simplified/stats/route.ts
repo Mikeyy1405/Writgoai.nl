@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,9 +26,17 @@ export async function GET(request: NextRequest) {
     // Haal client op
     let client;
     try {
-      client = await prisma.client.findUnique({
-        where: { email: session.user.email },
-      });
+      const { data, error } = await supabaseAdmin
+        .from('Client')
+        .select('*')
+        .eq('email', session.user.email)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      client = data;
     } catch (clientError) {
       console.error('[Stats API] Error fetching client:', clientError);
       return NextResponse.json({ 
@@ -51,9 +59,17 @@ export async function GET(request: NextRequest) {
     // Tel projecten
     let totalProjects = 0;
     try {
-      totalProjects = await prisma.project.count({
-        where: { clientId: client.id, isActive: true },
-      });
+      const { count, error } = await supabaseAdmin
+        .from('Project')
+        .select('*', { count: 'exact', head: true })
+        .eq('clientId', client.id)
+        .eq('isActive', true);
+      
+      if (error) {
+        throw error;
+      }
+      
+      totalProjects = count || 0;
       console.log('[Stats API] Total projects:', totalProjects);
     } catch (projectError) {
       console.error('[Stats API] Error counting projects:', projectError);
@@ -67,12 +83,17 @@ export async function GET(request: NextRequest) {
 
     let contentThisMonth = 0;
     try {
-      contentThisMonth = await prisma.savedContent.count({
-        where: {
-          clientId: client.id,
-          createdAt: { gte: startOfMonth },
-        },
-      });
+      const { count, error } = await supabaseAdmin
+        .from('SavedContent')
+        .select('*', { count: 'exact', head: true })
+        .eq('clientId', client.id)
+        .gte('createdAt', startOfMonth.toISOString());
+      
+      if (error) {
+        throw error;
+      }
+      
+      contentThisMonth = count || 0;
       console.log('[Stats API] Content this month:', contentThisMonth);
     } catch (contentError) {
       console.error('[Stats API] Error counting content this month:', contentError);
@@ -82,12 +103,17 @@ export async function GET(request: NextRequest) {
     // Tel gepubliceerde artikelen
     let publishedArticles = 0;
     try {
-      publishedArticles = await prisma.savedContent.count({
-        where: {
-          clientId: client.id,
-          publishedAt: { not: null },
-        },
-      });
+      const { count, error } = await supabaseAdmin
+        .from('SavedContent')
+        .select('*', { count: 'exact', head: true })
+        .eq('clientId', client.id)
+        .not('publishedAt', 'is', null);
+      
+      if (error) {
+        throw error;
+      }
+      
+      publishedArticles = count || 0;
       console.log('[Stats API] Published articles:', publishedArticles);
     } catch (publishedError) {
       console.error('[Stats API] Error counting published articles:', publishedError);
@@ -97,18 +123,18 @@ export async function GET(request: NextRequest) {
     // Haal recente content op
     let recentContent = [];
     try {
-      recentContent = await prisma.savedContent.findMany({
-        where: { clientId: client.id },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          title: true,
-          type: true,
-          publishedAt: true,
-          createdAt: true,
-        },
-      });
+      const { data, error } = await supabaseAdmin
+        .from('SavedContent')
+        .select('id, title, type, publishedAt, createdAt')
+        .eq('clientId', client.id)
+        .order('createdAt', { ascending: false })
+        .limit(5);
+      
+      if (error) {
+        throw error;
+      }
+      
+      recentContent = data || [];
       console.log('[Stats API] Recent content count:', recentContent.length);
     } catch (recentError) {
       console.error('[Stats API] Error fetching recent content:', recentError);
