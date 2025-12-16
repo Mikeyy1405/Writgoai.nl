@@ -68,7 +68,7 @@ interface GSCStats {
 }
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [stats, setStats] = useState<Stats>({
     totalProjects: 0,
     contentThisMonth: 0,
@@ -84,6 +84,13 @@ export default function DashboardPage() {
   });
   const [gscStats, setGscStats] = useState<GSCStats>({ connected: false });
   const [loading, setLoading] = useState(true);
+
+  // Redirect admin users to admin portal
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.email === 'info@writgo.nl') {
+      window.location.href = '/admin/dashboard';
+    }
+  }, [session, status]);
 
   useEffect(() => {
     fetchDashboardData();
