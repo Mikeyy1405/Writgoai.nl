@@ -148,7 +148,7 @@ export default function ContentIdeasTab({ projectId, projectLoading = false, onC
       // Generate posts for all platforms concurrently
       const generatePromises = platforms.map(async (platform) => {
         try {
-          const response = await fetch('/api/client/generate-social-post', {
+          const response = await fetch('/api/client/social/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

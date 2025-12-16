@@ -116,7 +116,7 @@ export default function CreatePostTab({ projectId, projectLoading = false, initi
       // Generate content for each selected platform
       for (const platform of selectedPlatforms) {
         try {
-          const response = await fetch('/api/client/generate-social-post', {
+          const response = await fetch('/api/client/social/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

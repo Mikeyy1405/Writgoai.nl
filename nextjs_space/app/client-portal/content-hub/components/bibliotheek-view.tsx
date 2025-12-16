@@ -183,7 +183,7 @@ export default function BibliotheekView({ siteId }: BibliotheekViewProps) {
 
   const loadSocialPosts = async () => {
     try {
-      const response = await fetch('/api/client/social-media/all-posts');
+      const response = await fetch('/api/client/social');
       if (response.ok) {
         const data = await response.json();
         setSocialPosts(data.posts || []);
