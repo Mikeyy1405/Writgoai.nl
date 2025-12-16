@@ -43,28 +43,39 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     // ===================================
-    // CONTENT PLANNING REDIRECTS
+    // ALLOWED CLIENT PORTAL ROUTES
     // ===================================
-    // Redirect old content planning pages to new unified planning page
-    if (
-      path === '/client-portal/content-kalender' ||
-      path === '/client-portal/content-research' ||
-      path === '/client-portal/content-planner' ||
-      path === '/client-portal/keyword-research'
-    ) {
-      console.log(`🔄 Redirecting ${path} → /client-portal/planning`);
-      return NextResponse.redirect(new URL('/client-portal/planning', req.url));
-    }
+    // Allow specific client-portal routes (don't redirect these)
+    const allowedClientPortalRoutes = [
+      '/client-portal/planning',
+      '/client-portal/content-planner',
+      '/client-portal/content-kalender',
+      '/client-portal/content-research',
+      '/client-portal/keyword-research',
+      '/client-portal/content-library',
+      '/client-portal/content-hub',
+      '/client-portal/topical-content-planner',
+      '/client-portal/topical-mapping',
+      '/client-portal/schrijven',
+      '/client-portal/ultimate-writer',
+      '/client-portal/social-media-suite',
+      '/client-portal/site-manager',
+      '/client-portal/projects',
+    ];
 
-    // Allow the new unified planning page
-    if (path.startsWith('/client-portal/planning')) {
+    // Check if current path matches any allowed route (including sub-paths)
+    const isAllowedClientPortalRoute = allowedClientPortalRoutes.some(route => 
+      path === route || path.startsWith(route + '/')
+    );
+
+    if (isAllowedClientPortalRoute) {
       return NextResponse.next();
     }
 
     // ===================================
     // LEGACY REDIRECTS
     // ===================================
-    // Alle oude routes → dashboard
+    // Redirect other legacy routes → dashboard
     if (
       path.startsWith('/admin') || 
       path.startsWith('/client') || 
