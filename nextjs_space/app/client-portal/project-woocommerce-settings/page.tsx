@@ -33,13 +33,10 @@ export default function ProjectWooCommerceSettingsPage() {
   const [project, setProject] = useState<any>(null);
   
   const [wooCommerceUrl, setWooCommerceUrl] = useState('');
-  const [wooCommerceConsumerKey, setWooCommerceConsumerKey] = useState('');
-  const [wooCommerceConsumerSecret, setWooCommerceConsumerSecret] = useState('');
   const [wooCommerceEnabled, setWooCommerceEnabled] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(false);
   
   const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message?: string } | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -89,15 +86,20 @@ export default function ProjectWooCommerceSettingsPage() {
     if (!projectId) return;
     
     try {
-      const response = await fetch(`/api/client/projects/woocommerce-settings?projectId=${projectId}`);
+      const response = await fetch(`/api/client/projects/${projectId}/integrations/woocommerce`);
       const data = await response.json();
       
-      if (response.ok && data.project) {
-        setProject(data.project);
-        setWooCommerceUrl(data.project.wooCommerceUrl || '');
-        setWooCommerceConsumerKey(data.project.wooCommerceConsumerKey || '');
-        setWooCommerceConsumerSecret(data.project.wooCommerceConsumerSecret || '');
-        setWooCommerceEnabled(data.project.wooCommerceEnabled || false);
+      if (response.ok) {
+        // Get project info for name display
+        const projectResponse = await fetch(`/api/client/projects/${projectId}`);
+        const projectData = await projectResponse.json();
+        if (projectData.project) {
+          setProject(projectData.project);
+        }
+        
+        setWooCommerceUrl(data.wordpressUrl || '');
+        setWooCommerceEnabled(data.enabled || false);
+        setIsConfigured(data.isConfigured || false);
       }
     } catch (error) {
       console.error('Fout bij laden project settings:', error);
@@ -105,43 +107,14 @@ export default function ProjectWooCommerceSettingsPage() {
   };
 
   const testConnection = async () => {
-    if (!wooCommerceUrl || !wooCommerceConsumerKey || !wooCommerceConsumerSecret) {
-      toast.error('Vul alle velden in om de verbinding te testen');
+    // WooCommerce gebruikt de WordPress credentials van het project
+    // Test de WordPress verbinding via de WordPress integration route
+    if (!projectId) {
+      toast.error('Geen project geselecteerd');
       return;
     }
     
-    setIsTesting(true);
-    setTestResult(null);
-    
-    try {
-      const response = await fetch('/api/client/projects/woocommerce-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId,
-          wooCommerceUrl,
-          wooCommerceConsumerKey,
-          wooCommerceConsumerSecret,
-          wooCommerceEnabled: false,
-          testConnection: true,
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        setTestResult({ success: true, message: 'Verbinding succesvol!' });
-        toast.success('Verbinding succesvol getest! ✓');
-      } else {
-        setTestResult({ success: false, message: data.message || data.error });
-        toast.error(data.message || data.error || 'Verbinding mislukt');
-      }
-    } catch (error: any) {
-      setTestResult({ success: false, message: error.message });
-      toast.error('Fout bij testen verbinding');
-    } finally {
-      setIsTesting(false);
-    }
+    toast.info('WooCommerce gebruikt de WordPress credentials. Test eerst de WordPress verbinding in de WordPress instellingen.');
   };
 
   const saveSettings = async () => {
@@ -152,15 +125,11 @@ export default function ProjectWooCommerceSettingsPage() {
     
     setIsSaving(true);
     try {
-      const response = await fetch('/api/client/projects/woocommerce-settings', {
-        method: 'POST',
+      const response = await fetch(`/api/client/projects/${projectId}/integrations/woocommerce`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId,
-          wooCommerceUrl: wooCommerceUrl.trim() || null,
-          wooCommerceConsumerKey: wooCommerceConsumerKey.trim() || null,
-          wooCommerceConsumerSecret: wooCommerceConsumerSecret.trim() || null,
-          wooCommerceEnabled,
+          enabled: wooCommerceEnabled,
         }),
       });
       
@@ -245,6 +214,26 @@ export default function ProjectWooCommerceSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* WordPress Info */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h4 className="font-semibold text-blue-700 mb-2">
+              ℹ️ WooCommerce gebruikt WordPress credentials
+            </h4>
+            <p className="text-sm text-blue-600">
+              WooCommerce integratie gebruikt automatisch de WordPress credentials die je hebt geconfigureerd in de WordPress instellingen van dit project.
+              {!isConfigured && (
+                <span className="block mt-2 font-semibold">
+                  ⚠️ Configureer eerst de WordPress instellingen voordat je WooCommerce kunt gebruiken.
+                </span>
+              )}
+            </p>
+            {wooCommerceUrl && (
+              <p className="text-sm text-blue-600 mt-2">
+                <strong>WordPress URL:</strong> {wooCommerceUrl}
+              </p>
+            )}
+          </div>
+          
           {/* Enable/Disable */}
           <div className="flex items-center justify-between">
             <div>
@@ -259,128 +248,35 @@ export default function ProjectWooCommerceSettingsPage() {
               id="enabled"
               checked={wooCommerceEnabled}
               onCheckedChange={setWooCommerceEnabled}
-            />
-          </div>
-          
-          {/* URL */}
-          <div>
-            <Label htmlFor="url">
-              WooCommerce Site URL
-            </Label>
-            <Input
-              id="url"
-              type="url"
-              placeholder="https://jouwwebshop.nl"
-              value={wooCommerceUrl}
-              onChange={(e) => setWooCommerceUrl(e.target.value)}
-              className="mt-1"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              De volledige URL van je WooCommerce webshop
-            </p>
-          </div>
-          
-          {/* Consumer Key */}
-          <div>
-            <Label htmlFor="consumerKey">
-              Consumer Key
-            </Label>
-            <Input
-              id="consumerKey"
-              type="text"
-              placeholder="ck_..."
-              value={wooCommerceConsumerKey}
-              onChange={(e) => setWooCommerceConsumerKey(e.target.value)}
-              className="mt-1 font-mono text-sm"
-            />
-          </div>
-          
-          {/* Consumer Secret */}
-          <div>
-            <Label htmlFor="consumerSecret">
-              Consumer Secret
-            </Label>
-            <Input
-              id="consumerSecret"
-              type="password"
-              placeholder="cs_..."
-              value={wooCommerceConsumerSecret}
-              onChange={(e) => setWooCommerceConsumerSecret(e.target.value)}
-              className="mt-1 font-mono text-sm"
+              disabled={!isConfigured}
             />
           </div>
           
           {/* Instructions */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-blue-700 mb-2">
-              Hoe verkrijg ik WooCommerce API credentials?
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <h4 className="font-semibold text-gray-700 mb-2">
+              📝 Hoe configureer ik WooCommerce?
             </h4>
-            <ol className="text-sm text-blue-600 space-y-1 list-decimal list-inside">
-              <li>Log in op je WordPress website</li>
-              <li>Ga naar WooCommerce → Instellingen → Geavanceerd → REST API</li>
-              <li>Klik op "Toevoegen sleutel"</li>
-              <li>Vul een beschrijving in (bijv. "WritgoAI")</li>
-              <li>Kies "Lezen/Schrijven" als machtigingen</li>
-              <li>Klik op "API sleutel genereren"</li>
-              <li>Kopieer de Consumer Key en Consumer Secret</li>
+            <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+              <li>Ga naar de WordPress instellingen van dit project</li>
+              <li>Configureer de WordPress URL, gebruikersnaam en wachtwoord</li>
+              <li>Test de WordPress verbinding</li>
+              <li>Kom terug naar deze pagina en schakel WooCommerce in</li>
             </ol>
-            <a
-              href="https://woocommerce.com/document/woocommerce-rest-api/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-600 mt-2"
+            <Button
+              variant="link"
+              onClick={() => router.push(`/client-portal/projects/${projectId}/settings?tab=wordpress`)}
+              className="mt-2 p-0 h-auto text-blue-600"
             >
-              WooCommerce REST API Documentatie
-              <ExternalLink className="ml-1 h-3 w-3" />
-            </a>
+              → Naar WordPress instellingen
+            </Button>
           </div>
-          
-          {/* Test Result */}
-          {testResult && (
-            <div className={`p-4 rounded-lg ${testResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
-              <div className="flex items-start">
-                {testResult.success ? (
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
-                )}
-                <div>
-                  <p className={`font-semibold ${testResult.success ? 'text-green-900' : 'text-red-900'}`}>
-                    {testResult.success ? 'Verbinding Succesvol' : 'Verbinding Mislukt'}
-                  </p>
-                  {testResult.message && (
-                    <p className={`text-sm mt-1 ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
-                      {testResult.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
           
           {/* Actions */}
           <div className="flex gap-3 pt-4">
             <Button
-              variant="outline"
-              onClick={testConnection}
-              disabled={isTesting || !wooCommerceUrl || !wooCommerceConsumerKey || !wooCommerceConsumerSecret}
-            >
-              {isTesting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Testen...
-                </>
-              ) : (
-                <>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Test Verbinding
-                </>
-              )}
-            </Button>
-            
-            <Button
               onClick={saveSettings}
-              disabled={isSaving}
+              disabled={isSaving || !isConfigured}
             >
               {isSaving ? (
                 <>
