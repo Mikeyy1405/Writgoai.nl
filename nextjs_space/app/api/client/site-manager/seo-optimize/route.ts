@@ -329,7 +329,7 @@ function buildSeoPrompt(
   item: SeoOptimizeItem,
   currentContent: { title: string; content: string },
   language: string,
-  bannedWords: string[]
+  bannedWords: readonly string[]
 ): string {
   const languageInstruction = language === 'en' 
     ? 'Write in perfect English' 
