@@ -27,7 +27,8 @@ export async function POST(request: Request) {
 
     // Test 1: Check database connection
     try {
-      await prisma.$queryRaw`SELECT 1`;
+      // Simple health check using Prisma
+      await prisma.client.findFirst();
       console.log('[Test Autopilot] ✅ Database connection OK');
     } catch (error) {
       return NextResponse.json({

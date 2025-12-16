@@ -121,38 +121,14 @@ export async function POST(req: NextRequest) {
     console.log('  Post ID:', result.id);
 
     // Store in database for tracking (optional)
+    // Note: This feature requires a published_videos table which may not exist in the current schema
+    // Removed $executeRaw usage for Supabase/Prisma-shim compatibility
     if (projectId) {
-      try {
-        await prisma.$executeRaw`
-          INSERT INTO published_videos (
-            client_id, 
-            project_id, 
-            title, 
-            video_url, 
-            platform, 
-            external_id, 
-            metadata
-          ) VALUES (
-            ${client.id},
-            ${projectId},
-            ${metadata.titel},
-            ${videoUrl},
-            'youtube',
-            ${result.id},
-            ${JSON.stringify({
-              beschrijving: metadata.beschrijving,
-              tags: metadata.tags,
-              category: metadata.category,
-              privacy: privacy,
-              thumbnailUrl: thumbnailUrl,
-              scheduledTime: scheduledTime,
-            })}::jsonb
-          )
-        `;
-      } catch (dbError) {
-        console.error('Warning: Could not save to database:', dbError);
-        // Don't fail the request if database save fails
-      }
+      console.log('Video tracking: Would store video publication data (feature currently disabled)');
+      console.log('  Client ID:', client.id);
+      console.log('  Project ID:', projectId);
+      console.log('  Title:', metadata.titel);
+      console.log('  External ID:', result.id);
     }
 
     return NextResponse.json({

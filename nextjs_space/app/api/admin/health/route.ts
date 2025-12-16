@@ -34,7 +34,8 @@ export async function GET() {
 
     // Check database connection
     try {
-      await db.$queryRaw`SELECT 1`;
+      // Simple health check using Prisma - just count clients
+      await db.client.findFirst();
       checks.services.database = {
         status: 'healthy',
         message: 'Database verbinding OK',

@@ -109,18 +109,18 @@ export async function GET(req: NextRequest) {
           take: 10, // Top 10 clients
         }),
 
-        // Daily usage (last 30 days)
-        prisma.$queryRaw`
-          SELECT 
-            DATE(created_at) as date,
-            COUNT(*) as requests,
-            SUM(total_tokens) as tokens,
-            SUM(total_cost) as cost
-          FROM "ApiUsage"
-          WHERE created_at >= ${startDate}
-          GROUP BY DATE(created_at)
-          ORDER BY date DESC
-        `,
+        // Daily usage (last 30 days) - fetch all records and group in JS
+        prisma.apiUsage.findMany({
+          where,
+          select: {
+            createdAt: true,
+            totalTokens: true,
+            totalCost: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
       ]);
 
       // Get client names for top clients
@@ -142,6 +142,30 @@ export async function GET(req: NextRequest) {
       });
 
       const clientMap = new Map(clients.map(c => [c.id, c]));
+
+      // Group daily usage by date
+      const dailyUsageMap = new Map<string, { requests: number; tokens: number; cost: number }>();
+      
+      recentUsage.forEach(record => {
+        const dateKey = record.createdAt.toISOString().split('T')[0]; // Get YYYY-MM-DD
+        const existing = dailyUsageMap.get(dateKey) || { requests: 0, tokens: 0, cost: 0 };
+        
+        dailyUsageMap.set(dateKey, {
+          requests: existing.requests + 1,
+          tokens: existing.tokens + (record.totalTokens || 0),
+          cost: existing.cost + (record.totalCost || 0),
+        });
+      });
+
+      // Convert map to array and sort by date
+      const dailyUsageArray = Array.from(dailyUsageMap.entries())
+        .map(([date, data]) => ({
+          date,
+          requests: data.requests,
+          tokens: data.tokens,
+          cost: data.cost,
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date)); // Sort descending
 
       stats = {
         total: {
@@ -173,7 +197,7 @@ export async function GET(req: NextRequest) {
           cost: c._sum.totalCost || 0,
           costUSD: ((c._sum.totalCost || 0) / 100).toFixed(2),
         })),
-        recent: recentUsage,
+        recent: dailyUsageArray,
       };
     }
 

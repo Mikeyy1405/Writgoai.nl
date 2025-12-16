@@ -23,18 +23,6 @@ export async function GET(request: NextRequest) {
 
     console.log('[Stats API] Fetching stats for email:', session.user.email);
 
-    // Check database connection
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-    } catch (dbError) {
-      console.error('[Stats API] Database connection failed:', dbError);
-      return NextResponse.json({ 
-        error: 'Database connection failed',
-        message: 'Kan geen verbinding maken met de database. Probeer het later opnieuw.',
-        details: dbError instanceof Error ? dbError.message : 'Unknown database error'
-      }, { status: 503 });
-    }
-
     // Haal client op
     let client;
     try {
