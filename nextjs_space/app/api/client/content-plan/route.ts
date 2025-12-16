@@ -3,12 +3,18 @@
  * 
  * GET: Retrieve existing content plan and article ideas for a project
  * Wrapper for the planning API to maintain backward compatibility
+ * 
+ * Refactored to use shared service layer
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
+import { 
+  validateClientAndProject, 
+  getArticleIdeas,
+  mapServiceError 
+} from '@/lib/services/content-plan-service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,18 +26,6 @@ export const runtime = 'nodejs';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-    }
-
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
 
@@ -39,34 +33,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
     }
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId, clientId: client.id }
-    });
+    // Validate client and project (consolidated validation)
+    const { client, project } = await validateClientAndProject(session, projectId);
 
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    // Get article ideas for this project
-    const ideas = await prisma.articleIdea.findMany({
-      where: {
-        clientId: client.id,
-        projectId: projectId
-      },
-      include: {
-        savedContent: {
-          select: {
-            id: true,
-            publishedUrl: true,
-            publishedAt: true,
-          }
-        }
-      },
-      orderBy: [
-        { priority: 'desc' },
-        { aiScore: 'desc' },
-        { createdAt: 'desc' }
-      ]
+    // Get article ideas using shared service
+    const ideas = await getArticleIdeas(client.id, projectId, {
+      includeSavedContent: true
     });
 
     return NextResponse.json({
@@ -83,12 +55,13 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[content-plan] Get error:', error);
+    const errorResponse = mapServiceError(error);
     return NextResponse.json(
       { 
-        error: 'Failed to get content plan',
-        details: error.message 
+        error: errorResponse.error,
+        details: errorResponse.details
       },
-      { status: 500 }
+      { status: errorResponse.status }
     );
   }
 }

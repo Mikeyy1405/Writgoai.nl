@@ -3,24 +3,25 @@
  * 
  * GET: Retrieve existing content plans
  * POST: Generate new content plan based on keyword
+ * 
+ * Refactored to use shared service layer
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
-import { chatCompletion } from '@/lib/ai-utils';
+import { 
+  validateClient,
+  validateProject,
+  generateContentIdeas,
+  saveArticleIdeas,
+  mapServiceError,
+  ContentPlanTopic
+} from '@/lib/services/content-plan-service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-interface ContentPlanTopic {
-  title: string;
-  description: string;
-  keywords: string[];
-  priority: string;
-  reason?: string;
-}
 
 interface ContentPlanData {
   source: string;
@@ -36,25 +37,11 @@ interface ContentPlanData {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ 
-        error: 'Unauthorized', 
-        message: 'Je moet ingelogd zijn' 
-      }, { status: 401 });
-    }
+    
+    // Validate client (consolidated validation)
+    const client = await validateClient(session);
 
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!client) {
-      return NextResponse.json({ 
-        error: 'Client not found',
-        message: 'Gebruiker niet gevonden'
-      }, { status: 404 });
-    }
-
-    // Get all article ideas grouped by project or keyword
+    // Get all article ideas
     const ideas = await prisma.articleIdea.findMany({
       where: {
         clientId: client.id,
@@ -65,7 +52,7 @@ export async function GET(request: NextRequest) {
       take: 100 // Limit to recent ideas
     });
 
-    // Group ideas into plans
+    // Group ideas into plans (simplified-specific logic)
     const plansMap = new Map<string, any>();
 
     ideas.forEach(idea => {
@@ -91,7 +78,7 @@ export async function GET(request: NextRequest) {
         title: idea.title,
         description: idea.description || '',
         keywords: idea.keywords || [],
-        priority: idea.priority || 'medium',
+        priority: (idea.priority || 'medium') as 'high' | 'medium' | 'low',
         reason: idea.reason,
       });
 
@@ -110,13 +97,14 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[simplified/content-plan] GET error:', error);
+    const errorResponse = mapServiceError(error);
     return NextResponse.json(
       { 
-        error: 'Failed to get content plans',
-        message: 'Kan content plannen niet ophalen',
-        details: error.message 
+        error: errorResponse.error,
+        message: errorResponse.message,
+        details: errorResponse.details
       },
-      { status: 500 }
+      { status: errorResponse.status }
     );
   }
 }
@@ -128,27 +116,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ 
-        error: 'Unauthorized',
-        message: 'Je moet ingelogd zijn'
-      }, { status: 401 });
-    }
-
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!client) {
-      return NextResponse.json({ 
-        error: 'Client not found',
-        message: 'Gebruiker niet gevonden'
-      }, { status: 404 });
-    }
-
     const body = await request.json();
     const { projectId, keyword } = body;
 
+    // Validate input
     if (!keyword || typeof keyword !== 'string' || keyword.trim() === '') {
       return NextResponse.json({ 
         error: 'Invalid input',
@@ -156,91 +127,36 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Validate client
+    const client = await validateClient(session);
+
     // Validate project if provided
     let project = null;
     if (projectId) {
-      project = await prisma.project.findUnique({
-        where: { id: projectId, clientId: client.id }
-      });
+      project = await validateProject(projectId, client.id);
+    }
 
-      if (!project) {
-        return NextResponse.json({ 
-          error: 'Project not found',
-          message: 'Project niet gevonden'
-        }, { status: 404 });
+    // Generate content plan using shared service
+    const topics = await generateContentIdeas({
+      keyword,
+      projectContext: project ? {
+        name: project.name,
+        websiteUrl: project.websiteUrl,
+        niche: project.niche,
+      } : undefined,
+      count: 12,
+      temperature: 0.7,
+    });
+
+    // Save ideas to database using shared service
+    const savedIdeas = await saveArticleIdeas(
+      topics,
+      client.id,
+      projectId || null,
+      { 
+        targetKeyword: keyword,
+        useUpsert: false // Use create for new ideas
       }
-    }
-
-    // Generate content plan using AI
-    const prompt = `Je bent een expert SEO content strategist. Genereer een uitgebreid content plan voor het keyword: "${keyword}".
-
-${project ? `Context: Dit is voor de website "${project.name}" (${project.websiteUrl || 'geen URL'}) in de niche "${project.niche || 'algemeen'}"` : ''}
-
-Genereer 8-12 artikel topics die:
-1. Gerelateerd zijn aan het hoofdkeyword
-2. Verschillende zoekintents dekken (informationeel, transactioneel, navigational)
-3. Long-tail variaties bevatten
-4. Content gaps adresseren
-
-Geef je antwoord als een JSON array met objecten in dit formaat:
-{
-  "topics": [
-    {
-      "title": "Artikel titel",
-      "description": "Korte beschrijving van wat het artikel behandelt",
-      "keywords": ["keyword1", "keyword2", "keyword3"],
-      "priority": "high|medium|low",
-      "reason": "Waarom dit topic belangrijk is"
-    }
-  ]
-}
-
-Geef ALLEEN de JSON terug, geen extra tekst.`;
-
-    const aiResponse = await chatCompletion(
-      [
-        { role: 'system', content: 'Je bent een SEO expert die gestructureerde JSON content plannen genereert.' },
-        { role: 'user', content: prompt }
-      ],
-      {
-        model: 'claude-sonnet-4-20250514',
-        temperature: 0.7,
-        max_tokens: 4000,
-      }
-    );
-
-    let topics: ContentPlanTopic[] = [];
-    try {
-      const cleanedResponse = aiResponse.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '');
-      const parsed = JSON.parse(cleanedResponse);
-      topics = parsed.topics || [];
-    } catch (parseError) {
-      console.error('[simplified/content-plan] Failed to parse AI response:', parseError);
-      throw new Error('Failed to parse AI response');
-    }
-
-    if (topics.length === 0) {
-      throw new Error('No topics generated');
-    }
-
-    // Save ideas to database
-    const savedIdeas = await Promise.all(
-      topics.map((topic, index) =>
-        prisma.articleIdea.create({
-          data: {
-            clientId: client.id,
-            projectId: projectId || null,
-            title: topic.title,
-            description: topic.description,
-            keywords: topic.keywords,
-            priority: topic.priority,
-            reason: topic.reason,
-            targetKeyword: keyword,
-            aiScore: 1.0 - (index * 0.05), // Decreasing score based on order
-            searchVolume: 0,
-          },
-        })
-      )
     );
 
     console.log(`[simplified/content-plan] Generated ${topics.length} topics for keyword: ${keyword}`);
@@ -253,13 +169,14 @@ Geef ALLEEN de JSON terug, geen extra tekst.`;
 
   } catch (error: any) {
     console.error('[simplified/content-plan] POST error:', error);
+    const errorResponse = mapServiceError(error);
     return NextResponse.json(
       { 
-        error: 'Failed to generate content plan',
-        message: 'Kan content plan niet genereren',
-        details: error.message 
+        error: errorResponse.error,
+        message: errorResponse.message,
+        details: errorResponse.details
       },
-      { status: 500 }
+      { status: errorResponse.status }
     );
   }
 }

@@ -2,13 +2,20 @@
  * Content Plan Refresh API Route
  * 
  * POST: Refresh existing plan with new ideas based on project analysis
+ * 
+ * Refactored to use shared service layer (retains specific refreshDailyInsights logic)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/db';
 import { refreshDailyInsights, MasterContentPlan } from '@/lib/intelligent-content-planner';
+import { 
+  validateClientAndProject,
+  generateSlug,
+  mapServiceError
+} from '@/lib/services/content-plan-service';
+import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -21,18 +28,6 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-    }
-
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
     const language = searchParams.get('language') || 'NL';
@@ -41,13 +36,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
     }
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId, clientId: client.id }
-    });
-
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
+    // Validate client and project (consolidated validation)
+    const { client, project } = await validateClientAndProject(session, projectId);
 
     console.log(`🔄 Refreshing content plan for project: ${project.name}`);
 
@@ -63,21 +53,19 @@ export async function POST(request: NextRequest) {
     const niche = project.niche || project.name || 'algemeen';
     const targetAudience = project.targetAudience || 'Nederlandse lezers';
 
-    // Generate fresh ideas
+    // Generate fresh ideas using intelligent-content-planner
     const newIdeas = await refreshDailyInsights(
       existingPlan,
       niche,
       targetAudience
     );
 
-    // Save new ideas to database
+    // Transform ideas to database format
     const articleIdeasData = newIdeas.map(idea => ({
       clientId: client.id,
       projectId: projectId,
       title: idea.title,
-      slug: idea.title.toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, ''),
+      slug: generateSlug(idea.title),
       focusKeyword: idea.focusKeyword,
       topic: idea.description,
       secondaryKeywords: idea.secondaryKeywords,
@@ -127,12 +115,14 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[content-plan/refresh] Error:', error);
+    const errorResponse = mapServiceError(error);
     return NextResponse.json(
       { 
-        error: 'Failed to refresh content plan',
-        details: error.message 
+        error: errorResponse.error,
+        message: errorResponse.message,
+        details: errorResponse.details
       },
-      { status: 500 }
+      { status: errorResponse.status }
     );
   }
 }
