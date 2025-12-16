@@ -108,9 +108,12 @@ export async function POST(req: NextRequest) {
     await trackUsage({
       clientId: client.id,
       projectId,
-      credits: 10,
-      feature: 'social_content_ideas',
-      metadata: { count },
+      tool: 'social_content_ideas',
+      action: `Generated ${count} social content ideas`,
+      details: { 
+        count,
+        creditsUsed: 10 
+      },
     });
 
     // Generate content ideas using AI
