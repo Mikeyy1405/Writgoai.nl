@@ -129,20 +129,24 @@ Gebaseerd op de bestaande content (of het ontbreken daarvan), genereer 8-12 nieu
 4. SEO-vriendelijk zijn met goede zoekvolume potentie
 5. Complementair zijn aan bestaande content
 
-Geef je antwoord als een JSON object met dit formaat:
+BELANGRIJK: Geef je antwoord ALLEEN als een geldig JSON object, zonder extra tekst, uitleg of markdown formatting.
+
+Exact formaat (volg dit exact):
 {
   "topics": [
     {
       "title": "Artikel titel",
       "description": "Korte beschrijving van het artikel",
       "keywords": ["keyword1", "keyword2", "keyword3"],
-      "priority": "high|medium|low",
+      "priority": "high",
       "reason": "Waarom dit topic een content gap invult"
     }
   ]
 }
 
-Geef ALLEEN de JSON terug, geen extra tekst.`;
+Gebruik alleen deze priority waarden: "high", "medium", of "low".
+Geef minimaal 8 en maximaal 12 topics.
+Antwoord direct met de JSON, geen tekst ervoor of erna.`;
 
     const aiResponse = await chatCompletion(
       [
@@ -156,19 +160,93 @@ Geef ALLEEN de JSON terug, geen extra tekst.`;
       }
     );
 
+    // Parse AI response with robust error handling
     let topics: ContentPlanTopic[] = [];
+    
     try {
-      const cleanedResponse = aiResponse.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '');
-      const parsed = JSON.parse(cleanedResponse);
-      topics = parsed.topics || [];
-    } catch (parseError) {
-      console.error('[analyze-wordpress] Failed to parse AI response:', parseError);
-      throw new Error('Failed to parse AI response');
+      // Strategy 1: Try direct JSON parse
+      try {
+        const parsed = JSON.parse(aiResponse);
+        topics = parsed.topics || [];
+        console.log('[analyze-wordpress] Strategy 1 success: Direct JSON parse');
+      } catch (e1) {
+        // Strategy 2: Remove markdown code blocks
+        try {
+          const withoutCodeBlocks = aiResponse
+            .replace(/```json\s*/gi, '')
+            .replace(/```\s*/g, '')
+            .trim();
+          const parsed = JSON.parse(withoutCodeBlocks);
+          topics = parsed.topics || [];
+          console.log('[analyze-wordpress] Strategy 2 success: Removed markdown code blocks');
+        } catch (e2) {
+          // Strategy 3: Extract JSON from text using regex
+          try {
+            const jsonMatch = aiResponse.match(/\{[\s\S]*"topics"[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              topics = parsed.topics || [];
+              console.log('[analyze-wordpress] Strategy 3 success: Regex JSON extraction');
+            } else {
+              throw new Error('No JSON object found in response');
+            }
+          } catch (e3) {
+            // Strategy 4: Try to find array of topics directly
+            try {
+              const topicsMatch = aiResponse.match(/"topics"\s*:\s*(\[[\s\S]*?\])\s*\}/);
+              if (topicsMatch) {
+                topics = JSON.parse(topicsMatch[1]);
+                console.log('[analyze-wordpress] Strategy 4 success: Direct topics array extraction');
+              } else {
+                // All strategies failed - log raw response for debugging
+                console.error('[analyze-wordpress] All parsing strategies failed');
+                console.error('[analyze-wordpress] Raw AI response length:', aiResponse.length);
+                console.error('[analyze-wordpress] Raw AI response (first 1000 chars):', aiResponse.substring(0, 1000));
+                console.error('[analyze-wordpress] Raw AI response (last 500 chars):', aiResponse.substring(Math.max(0, aiResponse.length - 500)));
+                
+                throw new Error('Failed to parse AI response after trying all strategies');
+              }
+            } catch (e4) {
+              // Final fallback failed
+              console.error('[analyze-wordpress] Strategy 4 failed:', e4);
+              console.error('[analyze-wordpress] Raw AI response:', aiResponse);
+              throw e4;
+            }
+          }
+        }
+      }
+    } catch (parseError: any) {
+      console.error('[analyze-wordpress] Complete parsing failure');
+      console.error('[analyze-wordpress] Parse error:', parseError);
+      console.error('[analyze-wordpress] Full raw AI response:', aiResponse);
+      
+      return NextResponse.json(
+        { 
+          error: 'Failed to parse AI response',
+          message: 'Kan AI response niet parsen. Controleer de logs voor details.',
+          details: parseError.message,
+          responsePreview: aiResponse.substring(0, 200) + '...'
+        },
+        { status: 500 }
+      );
     }
 
-    if (topics.length === 0) {
-      throw new Error('No topics generated from analysis');
+    // Validate topics
+    if (!Array.isArray(topics) || topics.length === 0) {
+      console.error('[analyze-wordpress] No valid topics generated');
+      console.error('[analyze-wordpress] Parsed topics:', topics);
+      
+      return NextResponse.json(
+        { 
+          error: 'No topics generated',
+          message: 'Geen topics gegenereerd. Probeer het opnieuw.',
+          details: 'AI response was parsed but contained no valid topics'
+        },
+        { status: 500 }
+      );
     }
+
+    console.log(`[analyze-wordpress] Successfully parsed ${topics.length} topics`);
 
     // Save ideas to database
     const savedIdeas = await Promise.all(
