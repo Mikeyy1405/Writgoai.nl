@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth-options';
 import { testConnection } from '@/lib/getlate-api';
 
 /**
- * GET /api/client/getlate/test
+ * GET /api/client/late-dev/test
  * Test de Getlate API connectie
  */
 export async function GET(req: NextRequest) {

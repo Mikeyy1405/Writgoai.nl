@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db';
 import { createProfile, listAccounts } from '@/lib/getlate-api';
 
 /**
- * POST /api/client/getlate/setup
+ * POST /api/client/late-dev/setup
  * Setup Getlate profile voor een project
  */
 export async function POST(req: NextRequest) {

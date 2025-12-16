@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db';
 import { schedulePost, publishPost } from '@/lib/getlate-api';
 
 /**
- * POST /api/client/getlate/schedule
+ * POST /api/client/late-dev/schedule
  * 
  * Schedule een social media post via Getlate
  * 
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * GET /api/client/getlate/schedule?projectId=xxx
+ * GET /api/client/late-dev/schedule?projectId=xxx
  * 
  * Haal geplande posts op van Getlate
  */
