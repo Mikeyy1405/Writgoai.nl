@@ -27,6 +27,7 @@ export default function StatsPage() {
     recentContent: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -35,12 +36,25 @@ export default function StatsPage() {
   const fetchStats = async () => {
     try {
       const response = await fetch('/api/simplified/stats');
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
         setStats(data);
+        setError(null);
+      } else {
+        // Handle API errors
+        const errorMessage = data.message || data.error || 'Er is een fout opgetreden';
+        console.error('Error fetching stats:', {
+          status: response.status,
+          error: data.error,
+          message: data.message,
+          details: data.details
+        });
+        setError(errorMessage);
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+      setError('Kan geen verbinding maken met de server. Controleer je internetverbinding.');
     } finally {
       setLoading(false);
     }
@@ -59,6 +73,28 @@ export default function StatsPage() {
   return (
     <SimplifiedLayout>
       <div className="space-y-8">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-red-800">Fout bij ophalen statistieken</h3>
+                <p className="mt-1 text-sm text-red-700">{error}</p>
+                <button 
+                  onClick={fetchStats}
+                  className="mt-3 text-sm font-medium text-red-800 hover:text-red-900 underline"
+                >
+                  Probeer opnieuw
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div>
           <h1 className="text-4xl font-bold text-slate-800">📊 Statistieken</h1>
           <p className="text-lg text-slate-600 mt-2">Volg je content performance</p>

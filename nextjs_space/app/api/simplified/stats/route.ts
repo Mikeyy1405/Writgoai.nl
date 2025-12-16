@@ -11,59 +11,123 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
+    // Check session
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error('[Stats API] No session or email found');
+      return NextResponse.json({ 
+        error: 'Unauthorized', 
+        message: 'Je moet ingelogd zijn om statistieken te bekijken' 
+      }, { status: 401 });
+    }
+
+    console.log('[Stats API] Fetching stats for email:', session.user.email);
+
+    // Check database connection
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch (dbError) {
+      console.error('[Stats API] Database connection failed:', dbError);
+      return NextResponse.json({ 
+        error: 'Database connection failed',
+        message: 'Kan geen verbinding maken met de database. Probeer het later opnieuw.',
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+      }, { status: 503 });
     }
 
     // Haal client op
-    const client = await prisma.client.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    let client;
+    try {
+      client = await prisma.client.findUnique({
+        where: { email: session.user.email },
+      });
+    } catch (clientError) {
+      console.error('[Stats API] Error fetching client:', clientError);
+      return NextResponse.json({ 
+        error: 'Failed to fetch client',
+        message: 'Kan gebruikersgegevens niet ophalen',
+        details: clientError instanceof Error ? clientError.message : 'Unknown error'
+      }, { status: 500 });
     }
 
+    if (!client) {
+      console.error('[Stats API] Client not found for email:', session.user.email);
+      return NextResponse.json({ 
+        error: 'Client not found',
+        message: 'Gebruiker niet gevonden. Neem contact op met support.'
+      }, { status: 404 });
+    }
+
+    console.log('[Stats API] Client found, ID:', client.id);
+
     // Tel projecten
-    const totalProjects = await prisma.project.count({
-      where: { clientId: client.id, isActive: true },
-    });
+    let totalProjects = 0;
+    try {
+      totalProjects = await prisma.project.count({
+        where: { clientId: client.id, isActive: true },
+      });
+      console.log('[Stats API] Total projects:', totalProjects);
+    } catch (projectError) {
+      console.error('[Stats API] Error counting projects:', projectError);
+      // Continue with 0, don't fail the entire request
+    }
 
     // Tel content deze maand
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const contentThisMonth = await prisma.savedContent.count({
-      where: {
-        clientId: client.id,
-        createdAt: { gte: startOfMonth },
-      },
-    });
+    let contentThisMonth = 0;
+    try {
+      contentThisMonth = await prisma.savedContent.count({
+        where: {
+          clientId: client.id,
+          createdAt: { gte: startOfMonth },
+        },
+      });
+      console.log('[Stats API] Content this month:', contentThisMonth);
+    } catch (contentError) {
+      console.error('[Stats API] Error counting content this month:', contentError);
+      // Continue with 0, don't fail the entire request
+    }
 
     // Tel gepubliceerde artikelen
-    const publishedArticles = await prisma.savedContent.count({
-      where: {
-        clientId: client.id,
-        publishedAt: { not: null },
-      },
-    });
+    let publishedArticles = 0;
+    try {
+      publishedArticles = await prisma.savedContent.count({
+        where: {
+          clientId: client.id,
+          publishedAt: { not: null },
+        },
+      });
+      console.log('[Stats API] Published articles:', publishedArticles);
+    } catch (publishedError) {
+      console.error('[Stats API] Error counting published articles:', publishedError);
+      // Continue with 0, don't fail the entire request
+    }
 
     // Haal recente content op
-    const recentContent = await prisma.savedContent.findMany({
-      where: { clientId: client.id },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        publishedAt: true,
-        createdAt: true,
-      },
-    });
+    let recentContent = [];
+    try {
+      recentContent = await prisma.savedContent.findMany({
+        where: { clientId: client.id },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          publishedAt: true,
+          createdAt: true,
+        },
+      });
+      console.log('[Stats API] Recent content count:', recentContent.length);
+    } catch (recentError) {
+      console.error('[Stats API] Error fetching recent content:', recentError);
+      // Continue with empty array, don't fail the entire request
+    }
 
+    console.log('[Stats API] Successfully fetched all stats');
     return NextResponse.json({
       totalProjects,
       contentThisMonth,
@@ -71,9 +135,22 @@ export async function GET(request: NextRequest) {
       recentContent,
     });
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    console.error('[Stats API] Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('[Stats API] Error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      type: error?.constructor?.name
+    });
+    
     return NextResponse.json(
-      { error: 'Failed to fetch stats' },
+      { 
+        error: 'Failed to fetch stats',
+        message: 'Er is een onverwachte fout opgetreden bij het ophalen van statistieken',
+        details: errorMessage
+      },
       { status: 500 }
     );
   }
