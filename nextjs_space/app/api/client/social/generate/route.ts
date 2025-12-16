@@ -105,12 +105,13 @@ export async function POST(req: NextRequest) {
     await trackUsage({
       clientId: client.id,
       projectId,
-      credits: totalCredits,
-      feature: 'social_content_generation',
-      metadata: {
+      tool: 'social_content_generation',
+      action: `Generated social content for ${platforms.join(', ')}`,
+      details: {
         platforms,
         generateImage,
         generateVideo,
+        creditsUsed: totalCredits,
       },
     });
 
