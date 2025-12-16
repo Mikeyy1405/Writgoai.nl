@@ -87,21 +87,15 @@ export default function DashboardPage() {
   const [gscStats, setGscStats] = useState<GSCStats>({ connected: false });
   const [loading, setLoading] = useState(true);
 
-  // Redirect admin users to admin portal
+  // Fetch dashboard data when authenticated
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.email === 'info@writgo.nl') {
-      router.push('/admin/dashboard');
-      return;
-    }
-    
-    // Only fetch data for non-admin users
     if (status === 'authenticated') {
       fetchDashboardData();
       // Refresh data elke 30 seconden
       const interval = setInterval(fetchDashboardData, 30000);
       return () => clearInterval(interval);
     }
-  }, [session, status, router]);
+  }, [status]);
 
   const fetchDashboardData = async () => {
     try {
