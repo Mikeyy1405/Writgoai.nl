@@ -104,8 +104,9 @@ export interface ChatCompletionOptions {
 export async function chatCompletion(options: ChatCompletionOptions): Promise<any> {
   try {
     // 🎯 CLAUDE DETECTION - Claude models need special handling
-    const isClaude = options.model.toLowerCase().includes('claude');
-    const isHaiku = options.model.toLowerCase().includes('haiku');
+    const modelName = (options.model || '').toLowerCase();
+    const isClaude = modelName.includes('claude');
+    const isHaiku = modelName.includes('haiku');
     
     // 🎨 Extract system messages for Claude (Claude doesn't support system role in messages)
     let systemPrompt: string | undefined = undefined;
@@ -137,8 +138,7 @@ export async function chatCompletion(options: ChatCompletionOptions): Promise<an
     }
     
     // 🎯 PERPLEXITY/SONAR DETECTION - Strict message alternation required
-    const isPerplexity = options.model.toLowerCase().includes('perplexity') || 
-                         options.model.toLowerCase().includes('sonar');
+    const isPerplexity = modelName.includes('perplexity') || modelName.includes('sonar');
     
     // Valideer en clean messages - AIML API IS STRICT
     const cleanMessages = messagesToProcess

@@ -33,13 +33,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { title, keywords, projectId, targetAudience, contentType } = body;
     
-    console.log('[Generate Simple] Title:', title);
-    console.log('[Generate Simple] Keywords:', keywords);
-    console.log('[Generate Simple] Project ID:', projectId);
+    // Validate and sanitize inputs
+    const safeTitle = title && typeof title === 'string' ? String(title).trim() : '';
+    const safeKeywords = keywords && typeof keywords === 'string' ? String(keywords).trim() : '';
+    const safeProjectId = projectId && typeof projectId === 'string' ? String(projectId).trim() : null;
+    const safeTargetAudience = targetAudience && typeof targetAudience === 'string' ? String(targetAudience).trim() : '';
     
-    if (!title) {
+    console.log('[Generate Simple] Title:', safeTitle);
+    console.log('[Generate Simple] Keywords:', safeKeywords);
+    console.log('[Generate Simple] Project ID:', safeProjectId);
+    console.log('[Generate Simple] Target Audience:', safeTargetAudience);
+    
+    if (!safeTitle || safeTitle.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Titel is verplicht' },
+        { success: false, error: 'Titel is verplicht en mag niet leeg zijn' },
         { status: 400 }
       );
     }
@@ -58,23 +65,23 @@ export async function POST(request: NextRequest) {
     
     // Get project if provided
     let project = null;
-    if (projectId) {
+    if (safeProjectId) {
       project = await prisma.project.findFirst({
         where: { 
-          id: projectId,
+          id: safeProjectId,
           clientId: client.id
         }
       });
     }
     
-    // Build AI prompt
+    // Build AI prompt with safe values
     const prompt = `
 Schrijf een uitgebreid, SEO-geoptimaliseerd artikel in het Nederlands.
 
-Titel: ${title}
-${keywords ? `Focus Keywords: ${keywords}` : ''}
-${targetAudience ? `Doelgroep: ${targetAudience}` : ''}
-${project ? `Website: ${project.websiteUrl || project.name}` : ''}
+Titel: ${safeTitle}
+${safeKeywords ? `Focus Keywords: ${safeKeywords}` : ''}
+${safeTargetAudience ? `Doelgroep: ${safeTargetAudience}` : ''}
+${project?.websiteUrl ? `Website: ${project.websiteUrl}` : (project?.name ? `Project: ${project.name}` : '')}
 
 Vereisten:
 - Minimaal 1500 woorden
@@ -94,17 +101,20 @@ Schrijf het volledige artikel nu:
 `.trim();
     
     console.log('[Generate Simple] Calling AI...');
+    console.log('[Generate Simple] Prompt length:', prompt.length);
     
-    // Call AI API - gebruik chatCompletion
-    const aiResponse = await chatCompletion([
-      { role: 'user', content: prompt }
-    ], {
+    // Call AI API - gebruik chatCompletion met correct format
+    const aiResponse = await chatCompletion({
       model: TEXT_MODELS.CLAUDE_SONNET_4,
+      messages: [
+        { role: 'user', content: prompt }
+      ],
       temperature: 0.7,
       max_tokens: 4000
     });
     
-    const content = aiResponse.content;
+    // Extract content from response
+    const content = aiResponse.choices?.[0]?.message?.content || aiResponse.content;
     
     console.log('[Generate Simple] Content generated:', content.length, 'characters');
     
@@ -112,12 +122,12 @@ Schrijf het volledige artikel nu:
       throw new Error('Geen content gegenereerd');
     }
     
-    // Save to database
+    // Save to database with validated data
     const savedContent = await prisma.savedContent.create({
       data: {
-        title: title,
+        title: safeTitle,
         content: content,
-        projectId: projectId || null,
+        projectId: safeProjectId || null,
         clientId: client.id,
         status: 'draft',
         createdAt: new Date()
@@ -136,11 +146,32 @@ Schrijf het volledige artikel nu:
     
   } catch (error: any) {
     console.error('[Generate Simple] ❌ ERROR:', error);
+    console.error('[Generate Simple] Error name:', error.name);
+    console.error('[Generate Simple] Error message:', error.message);
+    console.error('[Generate Simple] Error stack:', error.stack);
+    
+    // Provide user-friendly error messages
+    let userMessage = 'Er ging iets mis bij het genereren van content';
+    
+    if (error.message?.includes('timeout')) {
+      userMessage = 'De AI deed er te lang over. Probeer het opnieuw met kortere tekst.';
+    } else if (error.message?.includes('API')) {
+      userMessage = 'De AI service is tijdelijk niet bereikbaar. Probeer het later opnieuw.';
+    } else if (error.message?.includes('Geen content')) {
+      userMessage = 'Er kon geen content gegenereerd worden. Probeer een andere titel of keywords.';
+    } else if (error.message) {
+      userMessage = error.message;
+    }
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || 'Onbekende fout',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: userMessage,
+        technicalDetails: process.env.NODE_ENV === 'development' ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : undefined
       },
       { status: 500 }
     );
