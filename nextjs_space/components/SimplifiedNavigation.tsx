@@ -26,7 +26,7 @@ import {
 
 const menuItems = [
   { 
-    href: '/', 
+    href: '/dashboard', 
     label: 'Dashboard', 
     icon: Home,
     description: 'Sites, Genereren & Overzicht'

@@ -70,9 +70,9 @@ function LoginRegisterForm() {
       } else if (result?.ok) {
         toast.success('Welkom terug!');
         
-        // Redirect to unified dashboard for all users
+        // Redirect to unified dashboard at /dashboard for all users
         // Admin users can access /admin if needed via direct navigation
-        router.push('/');
+        router.push('/dashboard');
         router.refresh();
       }
     } catch (err) {

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import DashboardLayoutClient from '@/components/client/DashboardLayoutClient';
+import SimplifiedLayoutComponent from '@/components/SimplifiedLayout';
 
 export default async function DashboardLayout({
   children,
@@ -10,10 +10,10 @@ export default async function DashboardLayout({
 }) {
   const session = await getServerSession(authOptions);
 
-  // Check if user is authenticated
+  // Check if user is authenticated (redirect to /inloggen for consistency)
   if (!session?.user?.email) {
-    redirect('/client-login');
+    redirect('/inloggen');
   }
 
-  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
+  return <SimplifiedLayoutComponent>{children}</SimplifiedLayoutComponent>;
 }

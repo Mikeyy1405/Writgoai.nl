@@ -2,8 +2,9 @@
  * WRITGO.NL SIMPLIFIED MIDDLEWARE
  * 
  * SUPER SIMPEL - Geen admin/client scheiding meer!
- * Iedereen heeft dezelfde interface met 6 functies:
- * - / (Dashboard)
+ * Iedereen heeft dezelfde interface met unified dashboard:
+ * - / (Marketing Homepage - PUBLIC)
+ * - /dashboard (Unified Dashboard - PROTECTED)
  * - /projects (Projecten)
  * - /content-plan (Content Planning)
  * - /generate (Content Genereren)
@@ -101,11 +102,11 @@ export default withAuth(
     // ===================================
     // LEGACY REDIRECTS
     // ===================================
-    // Redirect other legacy routes → dashboard
+    // Redirect other legacy routes → homepage
+    // Note: /dashboard is now the primary dashboard location (not a legacy route)
     if (
       path.startsWith('/client') || 
       path.startsWith('/client-portal') || 
-      path.startsWith('/dashboard') ||
       path.startsWith('/admin-portal') ||
       path.startsWith('/superadmin')
     ) {
@@ -134,6 +135,12 @@ export const config = {
     '/generate/:path*',
     '/publish/:path*',
     '/stats/:path*',
+    
+    // Simplified dashboard routes (protected)
+    '/content/:path*',
+    '/instellingen/:path*',
+    '/topical-authority/:path*',
+    '/performance/:path*',
     
     // New unified planning page (protected)
     '/client-portal/planning/:path*',
