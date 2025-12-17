@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/db';
+import { fetchAllContent, getContentStats } from '@/lib/services/wordpress-content-fetcher';
 
 /**
  * GET /api/simplified/content
  * 
  * Haalt alle content op voor de ingelogde gebruiker
+ * Combineert:
+ * - Gegenereerde content (SavedContent tabel)
+ * - Gepubliceerde WordPress posts (via sitemap)
+ * 
  * Gebruikt voor de content overzicht pagina
  */
 export async function GET(request: Request) {
@@ -22,7 +27,7 @@ export async function GET(request: Request) {
     }
 
     // Vind client
-    const client = await db.client.findUnique({
+    const client = await prisma.client.findUnique({
       where: { email: session.user.email },
     });
 
@@ -33,44 +38,28 @@ export async function GET(request: Request) {
       );
     }
 
-    // Haal alle content op voor deze client
-    const content = await db.savedContent.findMany({
-      where: {
-        project: {
-          clientId: client.id,
-        },
-      },
-      include: {
-        project: {
-          select: {
-            id: true,
-            name: true,
-            websiteUrl: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 100, // Limiteer tot laatste 100 items
-    });
+    console.log(`[Content API] Fetching all content for client ${client.id}`);
+
+    // Haal alle content op (WordPress + Gegenereerd)
+    const [allContent, stats] = await Promise.all([
+      fetchAllContent(client.id),
+      getContentStats(client.id),
+    ]);
+
+    console.log(`[Content API] Fetched ${allContent.length} total items (Generated: ${stats.generated}, WordPress: ${stats.wordpress})`);
 
     return NextResponse.json({
       success: true,
-      content: content.map(item => ({
-        id: item.id,
-        title: item.title,
-        status: item.status,
-        publishedAt: item.publishedAt,
-        createdAt: item.createdAt,
-        wordCount: item.wordCount,
-        project: item.project,
-      })),
+      content: allContent,
+      stats: stats,
     });
   } catch (error) {
-    console.error('Error fetching content:', error);
+    console.error('[Content API] Error fetching content:', error);
     return NextResponse.json(
-      { error: 'Er is een fout opgetreden bij het ophalen van content' },
+      { 
+        error: 'Er is een fout opgetreden bij het ophalen van content',
+        details: error instanceof Error ? error.message : 'Onbekende fout'
+      },
       { status: 500 }
     );
   }
