@@ -105,7 +105,7 @@ Schrijf het volledige artikel nu:
     
     // Call AI API - gebruik chatCompletion met correct format
     const aiResponse = await chatCompletion({
-      model: TEXT_MODELS.CLAUDE_SONNET_4,
+      model: 'claude-sonnet-4-20250514',  // ✅ MODEL TOEGEVOEGD!
       messages: [
         { role: 'user', content: prompt }
       ],
