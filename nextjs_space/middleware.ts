@@ -41,6 +41,12 @@ export default withAuth(
     }
 
     const path = req.nextUrl.pathname;
+    
+    // Allow public homepage (root path)
+    if (path === '/') {
+      return NextResponse.next();
+    }
+    
     const token = req.nextauth.token;
 
     // ===================================
@@ -121,8 +127,8 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // Nieuwe simpele routes (protected)
-    '/',
+    // Nieuwe simpele routes (protected) - EXCLUDE root '/' for public homepage
+    '/dashboard/:path*',
     '/projects/:path*',
     '/content-plan/:path*',
     '/generate/:path*',
@@ -138,6 +144,5 @@ export const config = {
     '/superadmin/:path*',
     '/client/:path*',
     '/client-portal/:path*',
-    '/dashboard/:path*',
   ],
 };
