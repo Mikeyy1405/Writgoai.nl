@@ -1,7 +1,8 @@
 /**
- * POST /api/client/topical-authority/generate-article
+ * GET/POST /api/client/topical-authority/generate-article
  * 
- * Generate an article from the topical authority map
+ * GET: Fetch article data for generation
+ * POST: Generate an article from the topical authority map
  * Uses the existing content generation system but with topical context
  */
 
@@ -12,6 +13,146 @@ import { validateClient } from '@/lib/services/content-plan-service';
 import { TopicalAuthorityService } from '@/lib/services/topical-authority-service';
 import { prisma } from '@/lib/db';
 
+/**
+ * GET handler to fetch article data before generation
+ */
+export async function GET(request: Request) {
+  try {
+    console.log('[Generate Article API GET] ========== START ==========');
+    
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      console.log('[Generate Article API GET] ❌ No session');
+      return NextResponse.json(
+        { success: false, error: 'Niet ingelogd' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const articleId = searchParams.get('articleId');
+    
+    console.log('[Generate Article API GET] Article ID:', articleId);
+    console.log('[Generate Article API GET] User:', session.user.email);
+    
+    if (!articleId) {
+      console.log('[Generate Article API GET] ❌ No article ID');
+      return NextResponse.json(
+        { success: false, error: 'Artikel ID ontbreekt' },
+        { status: 400 }
+      );
+    }
+
+    const client = await validateClient(session);
+    console.log('[Generate Article API GET] Client ID:', client.id);
+    
+    // Get article with all relations in ONE query
+    const article = await prisma.plannedArticle.findUnique({
+      where: { id: articleId },
+      include: {
+        subtopic: {
+          include: {
+            pillar: true
+          }
+        }
+      }
+    });
+    
+    console.log('[Generate Article API GET] Article found:', !!article);
+    
+    if (!article) {
+      console.log('[Generate Article API GET] ❌ Article not found');
+      return NextResponse.json(
+        { success: false, error: 'Artikel niet gevonden' },
+        { status: 404 }
+      );
+    }
+
+    if (!article.mapId) {
+      console.log('[Generate Article API GET] ❌ Article has no mapId');
+      return NextResponse.json(
+        { success: false, error: 'Artikel heeft geen topical authority map' },
+        { status: 500 }
+      );
+    }
+
+    // Get map separately
+    const map = await prisma.topicalAuthorityMap.findUnique({
+      where: { id: article.mapId },
+      include: {
+        project: true
+      }
+    });
+    
+    console.log('[Generate Article API GET] Map found:', !!map);
+    
+    if (!map) {
+      console.log('[Generate Article API GET] ❌ Map not found');
+      return NextResponse.json(
+        { success: false, error: 'Topical authority map niet gevonden' },
+        { status: 404 }
+      );
+    }
+
+    // Verify ownership
+    if (map.clientId !== client.id) {
+      console.log('[Generate Article API GET] ❌ Not authorized');
+      console.log('[Generate Article API GET] Article client:', map.clientId);
+      console.log('[Generate Article API GET] Current client:', client.id);
+      return NextResponse.json(
+        { success: false, error: 'Geen toegang tot dit artikel' },
+        { status: 403 }
+      );
+    }
+
+    console.log('[Generate Article API GET] ✅ SUCCESS');
+    console.log('[Generate Article API GET] Article:', {
+      id: article.id,
+      title: article.title,
+      focusKeyword: article.focusKeyword,
+      mapId: article.mapId,
+      projectId: map.projectId
+    });
+    
+    return NextResponse.json({
+      success: true,
+      article: {
+        id: article.id,
+        title: article.title,
+        description: article.description,
+        focusKeyword: article.focusKeyword,
+        keywords: article.keywords,
+        targetAudience: article.targetAudience,
+        contentType: article.contentType,
+        articleType: article.articleType,
+        wordCountTarget: article.wordCountTarget,
+        searchIntent: article.searchIntent,
+        pillarName: article.subtopic?.pillar?.name || '',
+        subtopicName: article.subtopic?.name || '',
+        niche: map.niche,
+        mapId: article.mapId,
+        map: {
+          id: map.id,
+          projectId: map.projectId,
+          clientId: map.clientId,
+          niche: map.niche
+        }
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('[Generate Article API GET] ❌ ERROR:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Onbekende fout' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST handler to generate article content
+ */
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);

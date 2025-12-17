@@ -52,7 +52,7 @@ export default function AutoGeneratePage({ params }: { params: { articleId: stri
         throw new Error(articleData.error || 'Kon artikel niet ophalen');
       }
       
-      const article = articleData.data;
+      const article = articleData.article;
       setMapId(article.mapId);
       updateStep('fetch', 'success', `Artikel "${article.title}" gevonden`);
       
