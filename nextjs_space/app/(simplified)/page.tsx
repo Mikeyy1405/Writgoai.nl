@@ -236,7 +236,7 @@ export default function UnifiedDashboardPage() {
       return;
     }
 
-    if (!selectedProjectId) {
+    if (!selectedProjectId || selectedProjectId === 'none') {
       setGenerateError('Selecteer een WordPress site');
       return;
     }
@@ -620,12 +620,15 @@ export default function UnifiedDashboardPage() {
                     WordPress Site <span className="text-red-400">*</span>
                   </label>
                   <select
-                    value={selectedProjectId}
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    value={selectedProjectId || 'none'}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSelectedProjectId(value === 'none' ? '' : value);
+                    }}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
                     disabled={generating}
                   >
-                    <option value="">-- Selecteer site --</option>
+                    <option value="none">-- Selecteer site --</option>
                     {projects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
@@ -659,7 +662,7 @@ export default function UnifiedDashboardPage() {
                 {/* Generate Button */}
                 <button
                   onClick={handleGenerateContent}
-                  disabled={generating || !topic.trim() || !selectedProjectId}
+                  disabled={generating || !topic.trim() || !selectedProjectId || selectedProjectId === 'none'}
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   {generating ? (

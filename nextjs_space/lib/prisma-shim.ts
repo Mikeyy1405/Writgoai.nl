@@ -17,6 +17,7 @@ const TABLE_NAME_MAP: Record<string, string> = {
   // Client & Project tables
   client: 'Client',
   project: 'Project',
+  projectCollaborator: 'ProjectCollaborator',
   // Content & Brand tables
   blogPost: 'BlogPost',
   socialMediaPost: 'SocialMediaPost',
@@ -297,6 +298,58 @@ export const prisma = new Proxy({} as any, {
         
         console.log(`[Prisma Shim] Successfully created record in ${actualTableName} with id:`, result.id);
         return result;
+      },
+      
+      // createMany: Create multiple records
+      createMany: async ({ data, skipDuplicates }: any) => {
+        // Ensure data is an array
+        const records = Array.isArray(data) ? data : [data];
+        
+        if (records.length === 0) {
+          return { count: 0 };
+        }
+        
+        // Generate IDs for records that don't have them
+        const recordsWithIds = records.map(record => {
+          if (!record.id) {
+            const crypto = require('crypto');
+            return { ...record, id: crypto.randomUUID() };
+          }
+          return record;
+        });
+        
+        console.log(`[Prisma Shim] Creating ${recordsWithIds.length} records in ${actualTableName}`);
+        
+        try {
+          const { data: result, error } = await supabaseAdmin
+            .from(actualTableName)
+            .insert(recordsWithIds)
+            .select();
+          
+          if (error) {
+            // If skipDuplicates is true and it's a unique constraint error, ignore it
+            if (skipDuplicates && (error.code === '23505' || error.message?.includes('duplicate key'))) {
+              console.log(`[Prisma Shim] Skipped duplicate records in ${actualTableName}`);
+              // Return count of records that would have been inserted
+              // Note: We can't know exactly how many were skipped, so return 0
+              return { count: 0 };
+            }
+            
+            console.error(`[Prisma Shim] CreateMany error for table ${actualTableName}:`, error);
+            throw error;
+          }
+          
+          const count = result?.length || 0;
+          console.log(`[Prisma Shim] Successfully created ${count} records in ${actualTableName}`);
+          return { count };
+        } catch (err: any) {
+          // If skipDuplicates is true and it's a unique constraint error, return 0
+          if (skipDuplicates && (err.code === '23505' || err.message?.includes('duplicate key'))) {
+            console.log(`[Prisma Shim] Skipped duplicate records in ${actualTableName}`);
+            return { count: 0 };
+          }
+          throw err;
+        }
       },
       
       // update: Update a record

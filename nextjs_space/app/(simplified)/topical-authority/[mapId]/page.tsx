@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Loader2, ChevronRight, ChevronDown, FileText, CheckCircle2, Clock, PlayCircle, ExternalLink } from 'lucide-react';
+import { Loader2, ChevronRight, ChevronDown, FileText, CheckCircle2, Clock, PlayCircle, ExternalLink, Globe } from 'lucide-react';
 
 export default function TopicalAuthorityMapPage() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function TopicalAuthorityMapPage() {
   const [expandedPillars, setExpandedPillars] = useState<Set<string>>(new Set());
   const [expandedSubtopics, setExpandedSubtopics] = useState<Set<string>>(new Set());
   const [generatingArticleId, setGeneratingArticleId] = useState<string | null>(null);
+  const [publishingArticleId, setPublishingArticleId] = useState<string | null>(null);
 
   useEffect(() => {
     loadMap();
@@ -89,6 +90,42 @@ export default function TopicalAuthorityMapPage() {
       alert('Fout: ' + error.message);
     } finally {
       setGeneratingArticleId(null);
+    }
+  };
+
+  const publishToBlog = async (articleId: string) => {
+    if (publishingArticleId) return; // Prevent multiple publishes
+
+    if (!confirm('Weet je zeker dat je dit artikel wilt publiceren naar de Writgo.nl blog?')) {
+      return;
+    }
+
+    try {
+      setPublishingArticleId(articleId);
+      
+      const response = await fetch('/api/client/blog/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.alreadyPublished) {
+          alert('✅ Dit artikel is al gepubliceerd!\n\nBekijk het op: https://writgo.nl' + data.blogPost.url);
+        } else {
+          alert('✅ Artikel gepubliceerd naar Writgo.nl blog!\n\nBekijk het op: https://writgo.nl' + data.blogPost.url);
+        }
+        // Reload map to update blogPostId
+        loadMap();
+      } else {
+        alert('❌ Fout: ' + (data.error || 'Kon artikel niet publiceren'));
+      }
+    } catch (error: any) {
+      alert('❌ Fout: ' + error.message);
+    } finally {
+      setPublishingArticleId(null);
     }
   };
 
@@ -346,6 +383,33 @@ export default function TopicalAuthorityMapPage() {
                                         Genereer
                                       </button>
                                     )}
+                                    {article.status === 'generated' && !article.blogPostId && (
+                                      <button
+                                        onClick={() => publishToBlog(article.id)}
+                                        disabled={publishingArticleId === article.id}
+                                        className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 flex items-center gap-2"
+                                        title="Publiceer naar Writgo.nl blog"
+                                      >
+                                        {publishingArticleId === article.id ? (
+                                          <Loader2 className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                          <Globe className="w-3 h-3" />
+                                        )}
+                                        Publiceer
+                                      </button>
+                                    )}
+                                    {article.blogPostId && (
+                                      <a
+                                        href={`/blog/${article.blogPostSlug || ''}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                        title="Bekijk op Writgo.nl blog"
+                                      >
+                                        <Globe className="w-3 h-3" />
+                                        Blog
+                                      </a>
+                                    )}
                                     {article.publishedUrl && (
                                       <a
                                         href={article.publishedUrl}
@@ -354,7 +418,7 @@ export default function TopicalAuthorityMapPage() {
                                         className="px-4 py-1.5 border border-gray-300 text-sm rounded-lg hover:bg-gray-50 flex items-center gap-2"
                                       >
                                         <ExternalLink className="w-3 h-3" />
-                                        Bekijk
+                                        WordPress
                                       </a>
                                     )}
                                   </div>
