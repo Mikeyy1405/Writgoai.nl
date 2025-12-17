@@ -44,16 +44,10 @@ export default withAuth(
     const token = req.nextauth.token;
 
     // ===================================
-    // ADMIN REDIRECT LOGIC
+    // ADMIN ACCESS CONTROL
     // ===================================
     // Check if user is admin (info@writgo.nl)
     const isAdmin = token?.email === 'info@writgo.nl';
-
-    // Admin accessing root → redirect to admin dashboard
-    if (isAdmin && path === '/') {
-      console.log('🔐 Admin detected on /, redirecting to /admin/dashboard');
-      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
-    }
 
     // Non-admin trying to access /admin → redirect to root
     if (!isAdmin && path.startsWith('/admin')) {
@@ -61,10 +55,12 @@ export default withAuth(
       return NextResponse.redirect(new URL('/', req.url));
     }
 
-    // Admin users are allowed to access /admin routes
+    // Admin users are allowed to access /admin routes (legacy admin tools)
     if (isAdmin && path.startsWith('/admin')) {
       return NextResponse.next();
     }
+
+    // Admin users can now see the unified dashboard on / (no redirect)
 
     // ===================================
     // ALLOWED CLIENT PORTAL ROUTES
