@@ -98,10 +98,12 @@ export default function UnifiedDashboardPage() {
       const res = await fetch('/api/simplified/projects');
       if (res.ok) {
         const data = await res.json();
-        setProjects(data.projects || []);
+        console.log('[Dashboard] Projects loaded:', data);
+        setProjects(data.data || []);
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
+      setProjects([]);
     }
   };
 

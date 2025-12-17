@@ -344,7 +344,7 @@ async function fetchArticleData(url: string): Promise<WordPressSitemapEntry | nu
 
 /**
  * Cache sitemap data to database
- * Uses UPSERT to prevent duplicate key errors
+ * Uses try-catch create to prevent duplicate key errors
  */
 export async function cacheSitemapData(
   projectId: string,
@@ -353,45 +353,36 @@ export async function cacheSitemapData(
   try {
     console.log(`[Sitemap Parser] Caching ${articles.length} articles for project ${projectId}`);
 
-    // Gebruik transaction voor batch upsert
-    const operations = articles.map(article => {
-      // Create a unique composite key identifier
-      const uniqueKey = {
-        projectId_url: {
-          projectId: projectId,
-          url: article.url,
-        }
-      };
-
-      return prisma.wordPressSitemapCache.upsert({
-        where: uniqueKey,
-        update: {
-          // Update bestaande entry
-          title: article.title,
-          publishedDate: article.publishedDate,
-          topics: article.topics || [],
-          keywords: article.keywords || [],
-          lastScanned: new Date(),
-        },
-        create: {
-          // Create nieuwe entry
-          projectId,
-          url: article.url,
-          title: article.title,
-          publishedDate: article.publishedDate,
-          topics: article.topics || [],
-          keywords: article.keywords || [],
-          lastScanned: new Date(),
-        },
-      });
-    });
-
-    // Voer alle upserts uit in batches (max 10 per keer voor performance)
+    // Process articles in batches (max 10 per keer)
     const batchSize = 10;
-    for (let i = 0; i < operations.length; i += batchSize) {
-      const batch = operations.slice(i, i + batchSize);
-      await Promise.all(batch);
-      console.log(`[Sitemap Parser] Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(operations.length / batchSize)}`);
+    for (let i = 0; i < articles.length; i += batchSize) {
+      const batch = articles.slice(i, i + batchSize);
+      
+      for (const article of batch) {
+        try {
+          await prisma.wordPressSitemapCache.create({
+            data: {
+              projectId,
+              url: article.url,
+              title: article.title,
+              publishedDate: article.publishedDate,
+              topics: article.topics || [],
+              keywords: article.keywords || [],
+              lastScanned: new Date(),
+            },
+          });
+        } catch (error: any) {
+          // Als record al bestaat (duplicate key), negeer de error
+          if (error.code === '23505' || error.message?.includes('duplicate key')) {
+            console.log('[Sitemap Parser] Record already exists, skipping:', article.url);
+          } else {
+            // Andere errors wel loggen maar niet stoppen
+            console.error('[Sitemap Parser] Error caching article:', error);
+          }
+        }
+      }
+      
+      console.log(`[Sitemap Parser] Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(articles.length / batchSize)}`);
     }
 
     console.log('[Sitemap Parser] Cache updated successfully');

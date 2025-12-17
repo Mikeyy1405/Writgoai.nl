@@ -580,6 +580,130 @@ function getCompetitionLevel(competition: number): 'low' | 'medium' | 'high' {
 }
 
 // ============================================================================
+// Keyword Enrichment & Prioritization
+// ============================================================================
+
+/**
+ * Enrich keywords in batch with cost tracking
+ * Returns enriched data with cost information
+ */
+export async function enrichKeywordsBatch(
+  keywords: string[],
+  location: string = 'Netherlands',
+  language: string = 'nl'
+): Promise<{
+  success: boolean;
+  data: Array<DataForSEOKeywordData & {
+    seasonalityScore?: number;
+    opportunityScore?: number;
+  }>;
+  totalCost: number;
+  errors?: string[];
+}> {
+  try {
+    console.log(`[DataForSEO] Enriching ${keywords.length} keywords...`);
+    
+    // Get batch keyword data
+    const batchData = await getBatchKeywordData({ keywords, location, language });
+    
+    // Calculate opportunity scores and add trend analysis
+    const enrichedData = batchData.map(kw => {
+      // Opportunity score (0-100): high volume + low difficulty = high opportunity
+      const volumeScore = Math.min(100, (kw.searchVolume / 1000) * 10);
+      const difficultyScore = 100 - kw.difficulty;
+      const opportunityScore = Math.round((volumeScore * 0.6 + difficultyScore * 0.4));
+      
+      // Seasonality score (placeholder - would require trend data)
+      const seasonalityScore = 50; // Neutral by default
+      
+      return {
+        ...kw,
+        opportunityScore,
+        seasonalityScore,
+      };
+    });
+    
+    // Calculate cost (DataForSEO charges ~€0.006 per keyword)
+    const costPerKeyword = 0.006;
+    const totalCost = keywords.length * costPerKeyword;
+    
+    console.log(`[DataForSEO] Enrichment complete. Cost: €${totalCost.toFixed(2)}`);
+    
+    return {
+      success: true,
+      data: enrichedData,
+      totalCost,
+    };
+  } catch (error: any) {
+    console.error('[DataForSEO] Enrichment error:', error.message);
+    return {
+      success: false,
+      data: [],
+      totalCost: 0,
+      errors: [error.message],
+    };
+  }
+}
+
+/**
+ * Prioritize keywords based on different strategies
+ */
+export function prioritizeKeywords(
+  keywords: Array<DataForSEOKeywordData & { opportunityScore?: number }>,
+  strategy: 'quick-wins' | 'high-volume' | 'low-competition' | 'balanced' = 'balanced'
+): Array<DataForSEOKeywordData & { opportunityScore?: number; priorityScore: number }> {
+  console.log(`[DataForSEO] Prioritizing ${keywords.length} keywords with strategy: ${strategy}`);
+  
+  const prioritized = keywords.map(kw => {
+    let priorityScore = 0;
+    
+    switch (strategy) {
+      case 'quick-wins':
+        // Low difficulty + decent volume
+        priorityScore = (100 - kw.difficulty) * 0.7 + (kw.searchVolume / 100) * 0.3;
+        break;
+        
+      case 'high-volume':
+        // Prioritize high search volume
+        priorityScore = kw.searchVolume / 10;
+        break;
+        
+      case 'low-competition':
+        // Prioritize low difficulty
+        priorityScore = 100 - kw.difficulty;
+        break;
+        
+      case 'balanced':
+      default:
+        // Use opportunity score or calculate balanced score
+        if (kw.opportunityScore) {
+          priorityScore = kw.opportunityScore;
+        } else {
+          const volumeScore = Math.min(100, (kw.searchVolume / 1000) * 10);
+          const difficultyScore = 100 - kw.difficulty;
+          const cpcScore = Math.min(100, kw.cpc * 10);
+          priorityScore = volumeScore * 0.5 + difficultyScore * 0.3 + cpcScore * 0.2;
+        }
+        break;
+    }
+    
+    return {
+      ...kw,
+      priorityScore: Math.round(priorityScore),
+    };
+  });
+  
+  // Sort by priority score (highest first)
+  prioritized.sort((a, b) => b.priorityScore - a.priorityScore);
+  
+  console.log(`[DataForSEO] Top 5 prioritized keywords:`, 
+    prioritized.slice(0, 5).map(k => `${k.keyword} (score: ${k.priorityScore})`)
+  );
+  
+  return prioritized;
+}
+
+// ============================================================================
 // Exports
 // ============================================================================
 
@@ -592,4 +716,6 @@ export const DataForSEO = {
   getCompetitionAnalysis,
   findQuickWins,
   clearExpiredCache,
+  enrichKeywordsBatch,
+  prioritizeKeywords,
 };
