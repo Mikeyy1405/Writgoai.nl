@@ -2,15 +2,16 @@
  * WordPress Content Fetcher Service
  * 
  * Fetches and consolidates WordPress posts from multiple sources:
- * - WordPress REST API
- * - WordPress XML Sitemaps
- * - Cached sitemap data
+ * - WordPress REST API (PRIMARY - for real content)
+ * - Cached WordPress data
+ * - Fallback to sitemap (legacy)
  * 
  * Used by content overview pages to show both:
  * - Generated content (SavedContent table)
- * - Published WordPress posts (via API/sitemap)
+ * - Published WordPress posts (via REST API)
  */
 
+import { WordPressAPI } from '@/lib/services/wordpress-api-fetcher';
 import { parseWordPressSitemap, getCachedSitemapData, cacheSitemapData } from '@/lib/wordpress-sitemap-parser';
 import { prisma } from '@/lib/db';
 
@@ -64,7 +65,12 @@ export interface ConsolidatedContent {
 // ============================================================================
 
 /**
- * Fetch WordPress posts for a specific project using sitemap
+ * Fetch WordPress posts for a specific project using WordPress REST API
+ * 
+ * Strategy:
+ * 1. Check cache first (max 24 hours old)
+ * 2. If no cache or too old: fetch fresh data from WordPress REST API
+ * 3. Fallback to sitemap if REST API fails
  */
 export async function fetchWordPressPostsForProject(
   projectId: string
@@ -86,8 +92,8 @@ export async function fetchWordPressPostsForProject(
     }
 
     // Try to get cached data first (max 24 hours old)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const cachedData = await getCachedSitemapData(projectId, oneDayAgo);
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+    const cachedData = await getCachedSitemapData(projectId, oneDayInMs);
 
     let posts: WordPressPost[] = [];
 
@@ -114,42 +120,105 @@ export async function fetchWordPressPostsForProject(
         };
       });
     } else {
-      // No cache or old cache - fetch fresh data
-      console.log(`[WordPress Fetcher] Fetching fresh sitemap for project ${projectId}`);
+      // No cache or old cache - fetch fresh data using WordPress REST API
+      console.log(`[WordPress Fetcher] Fetching fresh data from WordPress REST API for project ${projectId}`);
       
       try {
-        const sitemapData = await parseWordPressSitemap(project.websiteUrl);
+        // Try WordPress REST API first (preferred method)
+        const apiPosts = await WordPressAPI.fetchAllPosts(project.websiteUrl);
         
-        // Cache the results
-        if (sitemapData.articles && sitemapData.articles.length > 0) {
-          await cacheSitemapData(projectId, sitemapData.articles);
+        if (apiPosts.length > 0) {
+          console.log(`[WordPress Fetcher] Successfully fetched ${apiPosts.length} posts from REST API`);
           
-          posts = sitemapData.articles.map((article, index) => {
-            // Create a simple hash from the URL for consistent IDs
-            const urlHash = article.url.split('').reduce((acc, char) => {
+          // Cache the API results
+          await WordPressAPI.cachePosts(projectId, apiPosts);
+          
+          // Map to our format
+          posts = apiPosts.map(post => {
+            const urlHash = post.url.split('').reduce((acc, char) => {
               return ((acc << 5) - acc) + char.charCodeAt(0);
             }, 0).toString(36);
             
             return {
               id: `wp-${projectId}-${urlHash}`,
-              title: article.title || 'Untitled',
-              url: article.url,
-              publishedDate: article.publishedDate || new Date(),
-              excerpt: article.excerpt,
+              title: post.title || 'Untitled',
+              url: post.url,
+              publishedDate: post.publishedDate,
+              excerpt: post.excerpt,
               status: 'published' as const,
               source: 'wordpress' as const,
               projectId: project.id,
               projectName: project.name || project.websiteUrl || 'Unknown Project',
             };
           });
+        } else {
+          // REST API returned no posts - try sitemap fallback
+          console.log(`[WordPress Fetcher] REST API returned no posts, trying sitemap fallback`);
+          
+          const sitemapData = await parseWordPressSitemap(project.websiteUrl);
+          
+          if (sitemapData.articles && sitemapData.articles.length > 0) {
+            console.log(`[WordPress Fetcher] Successfully fetched ${sitemapData.articles.length} posts from sitemap (fallback)`);
+            
+            await cacheSitemapData(projectId, sitemapData.articles);
+            
+            posts = sitemapData.articles.map((article, index) => {
+              const urlHash = article.url.split('').reduce((acc, char) => {
+                return ((acc << 5) - acc) + char.charCodeAt(0);
+              }, 0).toString(36);
+              
+              return {
+                id: `wp-${projectId}-${urlHash}`,
+                title: article.title || 'Untitled',
+                url: article.url,
+                publishedDate: article.publishedDate || new Date(),
+                excerpt: article.excerpt,
+                status: 'published' as const,
+                source: 'wordpress' as const,
+                projectId: project.id,
+                projectName: project.name || project.websiteUrl || 'Unknown Project',
+              };
+            });
+          }
         }
       } catch (error) {
-        console.error(`[WordPress Fetcher] Error fetching sitemap for project ${projectId}:`, error);
-        // Return empty array on error
-        return [];
+        console.error(`[WordPress Fetcher] Error fetching posts for project ${projectId}:`, error);
+        
+        // Last resort: try sitemap
+        try {
+          console.log(`[WordPress Fetcher] Trying sitemap as last resort`);
+          
+          const sitemapData = await parseWordPressSitemap(project.websiteUrl);
+          
+          if (sitemapData.articles && sitemapData.articles.length > 0) {
+            await cacheSitemapData(projectId, sitemapData.articles);
+            
+            posts = sitemapData.articles.map((article, index) => {
+              const urlHash = article.url.split('').reduce((acc, char) => {
+                return ((acc << 5) - acc) + char.charCodeAt(0);
+              }, 0).toString(36);
+              
+              return {
+                id: `wp-${projectId}-${urlHash}`,
+                title: article.title || 'Untitled',
+                url: article.url,
+                publishedDate: article.publishedDate || new Date(),
+                excerpt: article.excerpt,
+                status: 'published' as const,
+                source: 'wordpress' as const,
+                projectId: project.id,
+                projectName: project.name || project.websiteUrl || 'Unknown Project',
+              };
+            });
+          }
+        } catch (sitemapError) {
+          console.error(`[WordPress Fetcher] Sitemap fallback also failed:`, sitemapError);
+          return [];
+        }
       }
     }
 
+    console.log(`[WordPress Fetcher] Returning ${posts.length} posts for project ${projectId}`);
     return posts;
   } catch (error) {
     console.error(`[WordPress Fetcher] Error in fetchWordPressPostsForProject:`, error);
