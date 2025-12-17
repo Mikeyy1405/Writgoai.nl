@@ -35,13 +35,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get article
+    // Get article with all related data
     const article = await prisma.plannedArticle.findUnique({
       where: { id: articleId },
       include: {
-        subtopic: true,
-        pillar: true,
-        map: true,
+        subtopic: {
+          include: {
+            pillarTopic: true,
+          },
+        },
+        pillarTopic: true, // Direct pillar reference
+        topicalAuthorityMap: true, // Include the map
       },
     });
 
@@ -52,8 +56,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify ownership
-    if (article.map.clientId !== client.id) {
+    // Verify map exists and ownership
+    if (!article.topicalAuthorityMap) {
+      console.error(`[Generate Article] No topical authority map found for article ${articleId}`);
+      return NextResponse.json(
+        { error: 'Topical authority map not found for this article' },
+        { status: 404 }
+      );
+    }
+
+    if (article.topicalAuthorityMap.clientId !== client.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -78,9 +90,9 @@ export async function POST(request: Request) {
         articleType: article.articleType,
         wordCountTarget: article.wordCountTarget,
         searchIntent: article.searchIntent,
-        pillarTitle: article.pillar.title,
-        subtopicTitle: article.subtopic.title,
-        niche: article.map.niche,
+        pillarTitle: article.pillarTopic?.title || '',
+        subtopicTitle: article.subtopic?.title || '',
+        niche: article.topicalAuthorityMap.niche,
         internalLinks: article.internalLinks,
         dataForSEO: article.dataForSEO,
       },

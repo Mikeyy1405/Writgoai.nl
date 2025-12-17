@@ -139,61 +139,108 @@ export async function parseWordPressSitemap(
         ? xmlData.urlset.url 
         : [xmlData.urlset.url];
       
+      // BELANGRIJKE FIX: Filter alleen POST URLs, geen PAGES
+      // WordPress sitemap heeft aparte sitemaps voor posts en pages
+      // We willen ALLEEN posts, geen pages
+      
       articleUrls = urls
         .map((u: any) => u.loc)
         .filter((url: string) => {
-          // Filter out non-article URLs (common WordPress pages)
-          const excludePatterns = [
-            '/tag/', '/category/', '/author/', '/page/',
-            '/contact', '/over-ons', '/about', '/about-us',
-            '/privacy', '/disclaimer', '/algemene-voorwaarden',
-            '/cookie', '/terms', '/policy', '/privacyverklaring',
-            '/home', '/homepage', '/index',
-            '/diensten', '/services', '/producten', '/products',
-            '/team', '/ons-team', '/our-team',
-            '/vacatures', '/careers', '/jobs',
-            '/sitemap', '/feed', '/rss',
-            '/wp-', '/wp-content/', '/wp-admin/',
-            '/shop', '/winkel', '/cart', '/checkout',
-            '/account', '/mijn-account', '/login', '/register',
-            '/faq', '/veelgestelde-vragen',
+          // ==========================================
+          // STAP 1: Exclude WordPress PAGES (niet posts)
+          // ==========================================
+          
+          // Common WordPress page slugs (exact matches)
+          const pageExactMatches = [
+            'privacy-policy', 'privacyverklaring', 'privacy',
+            'about', 'about-us', 'over-ons', 'about-a',
+            'contact', 'contact-us', 'contacteer-ons', 'contact-a',
+            'disclaimer', 'algemene-voorwaarden', 'terms', 
+            'cookies', 'cookie-policy', 'cookiebeleid',
+            'blog', // Blog page itself
+            'home', 'homepage',
+            'diensten', 'services',
+            'producten', 'products',
+            'team', 'ons-team', 'our-team',
+            'vacatures', 'careers', 'jobs',
+            'faq', 'veelgestelde-vragen',
+            'sitemap', 'sitemap_index',
+            'shop', 'winkel', 'store',
+            'cart', 'winkelwagen', 'checkout', 'kassa',
+            'account', 'mijn-account', 'my-account',
+            'login', 'inloggen', 'register', 'registreren',
           ];
           
-          // Check if URL contains any exclude patterns
-          const urlLower = url.toLowerCase();
-          if (excludePatterns.some(pattern => urlLower.includes(pattern))) {
-            console.log(`[Sitemap Parser] Filtering page: ${url}`);
-            return false;
-          }
-          
-          // Filter URLs that end with just the domain (homepage)
+          // Extract slug from URL
           try {
             const urlObj = new URL(url);
-            
-            if (urlObj.pathname === '/' || urlObj.pathname === '') {
-              console.log(`[Sitemap Parser] Filtering homepage: ${url}`);
-              return false;
-            }
-            
-            // Only include URLs with actual content paths
-            // Blog posts usually have patterns like:
-            // - /2024/12/post-name/
-            // - /post-name/
-            // - /blog/post-name/
             const pathSegments = urlObj.pathname.split('/').filter(Boolean);
-            const hasContentPath = pathSegments.length >= 1;
             
-            // Additional check: filter out very short URLs that are likely pages
-            // Most blog posts have at least 10 characters in the slug
-            const lastSegment = pathSegments[pathSegments.length - 1] || '';
-            if (lastSegment.length < 5) {
-              console.log(`[Sitemap Parser] Filtering short slug page: ${url}`);
+            // Homepage check
+            if (urlObj.pathname === '/' || urlObj.pathname === '') {
+              console.log(`[Sitemap Parser] ❌ Filtering homepage: ${url}`);
               return false;
             }
             
-            return hasContentPath;
+            // Check if any segment is a page slug (exact match)
+            const lastSegment = pathSegments[pathSegments.length - 1]?.toLowerCase() || '';
+            if (pageExactMatches.includes(lastSegment)) {
+              console.log(`[Sitemap Parser] ❌ Filtering WordPress page: ${url} (matched: ${lastSegment})`);
+              return false;
+            }
+            
+            // ==========================================
+            // STAP 2: Exclude patterns (partial matches)
+            // ==========================================
+            
+            const excludePatterns = [
+              '/tag/', '/category/', '/author/', 
+              '/page/', // Pagination
+              '/feed/', '/rss/',
+              '/wp-content/', '/wp-admin/', '/wp-includes/',
+              '/xmlrpc', '/wp-json/',
+            ];
+            
+            const urlLower = url.toLowerCase();
+            if (excludePatterns.some(pattern => urlLower.includes(pattern))) {
+              console.log(`[Sitemap Parser] ❌ Filtering system URL: ${url}`);
+              return false;
+            }
+            
+            // ==========================================
+            // STAP 3: Only include URLs that look like blog posts
+            // ==========================================
+            
+            // Blog posts hebben meestal:
+            // - Een datum in de URL (/2024/12/...) OF
+            // - Een langere slug (minimaal 10 characters) OF  
+            // - /blog/ in het pad
+            
+            const hasDatePattern = /\/\d{4}\//.test(urlObj.pathname); // Year in path
+            const hasBlogPath = urlObj.pathname.includes('/blog/');
+            const hasLongSlug = lastSegment.length >= 10;
+            
+            // Count hyphens (blog posts usually have multiple words)
+            const hyphenCount = (lastSegment.match(/-/g) || []).length;
+            const hasMultipleWords = hyphenCount >= 2;
+            
+            // Accept if it looks like a blog post
+            const looksLikeBlogPost = hasDatePattern || hasBlogPath || (hasLongSlug && hasMultipleWords);
+            
+            if (!looksLikeBlogPost) {
+              console.log(`[Sitemap Parser] ❌ Filtering non-blog URL: ${url} (slug: ${lastSegment})`);
+              return false;
+            }
+            
+            // ==========================================
+            // STAP 4: Passed all filters!
+            // ==========================================
+            
+            console.log(`[Sitemap Parser] ✅ Including blog post: ${url}`);
+            return true;
+            
           } catch (error) {
-            console.warn(`[Sitemap Parser] Error parsing URL: ${url}`);
+            console.warn(`[Sitemap Parser] ⚠️ Error parsing URL: ${url}`);
             return false;
           }
         });
@@ -475,6 +522,7 @@ export async function cacheSitemapData(
 
 /**
  * Clean old cache entries to keep database lean
+ * ALSO: Clean cache for pages that were incorrectly cached (before the fix)
  */
 export async function cleanOldCache(
   projectId: string,
@@ -498,6 +546,68 @@ export async function cleanOldCache(
     
   } catch (error: any) {
     console.error('[Sitemap Cache] Error cleaning cache:', error.message);
+    return 0;
+  }
+}
+
+/**
+ * Clean cached WordPress PAGES (not posts) from database
+ * This removes incorrectly cached pages like "Privacy Policy", "About", "Contact", etc.
+ */
+export async function cleanCachedPages(projectId: string): Promise<number> {
+  try {
+    console.log(`[Sitemap Cache] Cleaning cached WordPress pages for project ${projectId}...`);
+    
+    // List of common page slugs to remove
+    const pagePatterns = [
+      'privacy', 'about', 'contact', 'disclaimer', 'cookies', 'cookie',
+      'terms', 'policy', 'algemene-voorwaarden', 'privacyverklaring',
+      'over-ons', 'about-us', 'blog', 'home', 'homepage',
+      'diensten', 'services', 'producten', 'products',
+      'team', 'vacatures', 'careers', 'faq', 'shop', 'winkel',
+      'cart', 'account', 'login', 'register',
+    ];
+    
+    // Get all cached entries for this project
+    const allCached = await prisma.wordPressSitemapCache.findMany({
+      where: { projectId },
+      select: { id: true, url: true, title: true }
+    });
+    
+    console.log(`[Sitemap Cache] Found ${allCached.length} total cached entries`);
+    
+    // Filter entries that look like pages
+    const pageIds = allCached
+      .filter(entry => {
+        const urlLower = entry.url.toLowerCase();
+        const titleLower = entry.title.toLowerCase();
+        
+        // Check if URL or title contains page patterns
+        return pagePatterns.some(pattern => 
+          urlLower.includes(pattern) || titleLower.includes(pattern)
+        );
+      })
+      .map(entry => entry.id);
+    
+    if (pageIds.length === 0) {
+      console.log('[Sitemap Cache] No cached pages found to clean');
+      return 0;
+    }
+    
+    console.log(`[Sitemap Cache] Removing ${pageIds.length} cached pages...`);
+    
+    // Delete cached pages
+    const result = await prisma.wordPressSitemapCache.deleteMany({
+      where: {
+        id: { in: pageIds }
+      }
+    });
+    
+    console.log(`[Sitemap Cache] ✅ Cleaned ${result.count} cached WordPress pages`);
+    return result.count;
+    
+  } catch (error: any) {
+    console.error('[Sitemap Cache] Error cleaning cached pages:', error.message);
     return 0;
   }
 }
@@ -744,6 +854,7 @@ export const WordPressSitemapParser = {
   cache: cacheSitemapData,
   getCached: getCachedSitemapData,
   cleanCache: cleanOldCache,
+  cleanCachedPages: cleanCachedPages,
   findInternalLinks,
   findRelatedArticles,
 };
