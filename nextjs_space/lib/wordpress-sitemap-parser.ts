@@ -344,51 +344,135 @@ async function fetchArticleData(url: string): Promise<WordPressSitemapEntry | nu
 
 /**
  * Cache sitemap data to database
- * Uses try-catch create to prevent duplicate key errors
+ * Efficiently checks existing records first to prevent duplicate key errors
  */
 export async function cacheSitemapData(
   projectId: string,
   articles: WordPressSitemapEntry[]
 ): Promise<void> {
+  if (!articles || articles.length === 0) {
+    console.log('[Sitemap Cache] No articles to cache');
+    return;
+  }
+  
   try {
-    console.log(`[Sitemap Parser] Caching ${articles.length} articles for project ${projectId}`);
-
-    // Process articles in batches (max 10 per keer)
-    const batchSize = 10;
-    for (let i = 0; i < articles.length; i += batchSize) {
-      const batch = articles.slice(i, i + batchSize);
+    console.log(`[Sitemap Cache] Starting cache for ${articles.length} articles in project ${projectId}`);
+    
+    // Step 1: Fetch existing URLs for this project
+    const existingRecords = await prisma.wordPressSitemapCache.findMany({
+      where: { projectId },
+      select: { url: true }
+    });
+    
+    const existingUrls = new Set(existingRecords.map(r => r.url));
+    console.log(`[Sitemap Cache] Found ${existingUrls.size} existing records`);
+    
+    // Step 2: Filter only new articles
+    const newArticles = articles.filter(article => !existingUrls.has(article.url));
+    
+    if (newArticles.length === 0) {
+      console.log('[Sitemap Cache] No new articles to cache - all URLs already exist');
+      return;
+    }
+    
+    console.log(`[Sitemap Cache] Caching ${newArticles.length} new articles (${articles.length - newArticles.length} already exist)`);
+    
+    // Step 3: Batch insert new records
+    const batchSize = 50;
+    let totalCached = 0;
+    let totalErrors = 0;
+    
+    for (let i = 0; i < newArticles.length; i += batchSize) {
+      const batch = newArticles.slice(i, i + batchSize);
       
-      for (const article of batch) {
-        try {
-          await prisma.wordPressSitemapCache.create({
-            data: {
-              projectId,
-              url: article.url,
-              title: article.title,
-              publishedDate: article.publishedDate,
-              topics: article.topics || [],
-              keywords: article.keywords || [],
-              lastScanned: new Date(),
-            },
-          });
-        } catch (error: any) {
-          // Als record al bestaat (duplicate key), negeer de error
-          if (error.code === '23505' || error.message?.includes('duplicate key')) {
-            console.log('[Sitemap Parser] Record already exists, skipping:', article.url);
-          } else {
-            // Andere errors wel loggen maar niet stoppen
-            console.error('[Sitemap Parser] Error caching article:', error);
+      try {
+        // Use createMany with skipDuplicates for safe batch insert
+        const result = await prisma.wordPressSitemapCache.createMany({
+          data: batch.map(article => ({
+            projectId,
+            url: article.url,
+            title: article.title || '',
+            publishedDate: article.publishedDate || new Date(),
+            topics: article.topics || [],
+            keywords: article.keywords || [],
+            lastScanned: new Date()
+          })),
+          skipDuplicates: true // Automatically skip duplicates
+        });
+        
+        totalCached += result.count;
+        console.log(`[Sitemap Cache] Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(newArticles.length / batchSize)}: ${result.count} records cached`);
+        
+      } catch (error: any) {
+        console.error(`[Sitemap Cache] Batch error, falling back to individual inserts:`, error.message);
+        
+        // Fallback: Insert individually with error handling
+        for (const article of batch) {
+          try {
+            await prisma.wordPressSitemapCache.create({
+              data: {
+                projectId,
+                url: article.url,
+                title: article.title || '',
+                publishedDate: article.publishedDate || new Date(),
+                topics: article.topics || [],
+                keywords: article.keywords || [],
+                lastScanned: new Date()
+              }
+            });
+            totalCached++;
+          } catch (err: any) {
+            // Only log non-duplicate errors
+            if (err.code !== '23505' && !err.message?.includes('duplicate key')) {
+              console.error('[Sitemap Cache] Individual insert error:', err.message);
+              totalErrors++;
+            }
           }
         }
       }
-      
-      console.log(`[Sitemap Parser] Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(articles.length / batchSize)}`);
     }
-
-    console.log('[Sitemap Parser] Cache updated successfully');
+    
+    // Summary logging
+    console.log('[Sitemap Cache] Summary:', {
+      totalArticles: articles.length,
+      existingRecords: existingUrls.size,
+      newArticles: newArticles.length,
+      successfullyCached: totalCached,
+      errors: totalErrors
+    });
+    
   } catch (error: any) {
-    console.error('[Sitemap Parser] Error caching data:', error.message);
-    throw error; // Re-throw to handle upstream
+    console.error('[Sitemap Cache] Fatal error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Clean old cache entries to keep database lean
+ */
+export async function cleanOldCache(
+  projectId: string,
+  maxAgeDays: number = 30
+): Promise<number> {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - maxAgeDays);
+    
+    const result = await prisma.wordPressSitemapCache.deleteMany({
+      where: {
+        projectId,
+        lastScanned: {
+          lt: cutoffDate
+        }
+      }
+    });
+    
+    console.log(`[Sitemap Cache] Cleaned ${result.count} records older than ${maxAgeDays} days`);
+    return result.count;
+    
+  } catch (error: any) {
+    console.error('[Sitemap Cache] Error cleaning cache:', error.message);
+    return 0;
   }
 }
 
@@ -619,6 +703,7 @@ export const WordPressSitemapParser = {
   parse: parseWordPressSitemap,
   cache: cacheSitemapData,
   getCached: getCachedSitemapData,
+  cleanCache: cleanOldCache,
   findInternalLinks,
   findRelatedArticles,
 };
