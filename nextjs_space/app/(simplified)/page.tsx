@@ -404,7 +404,7 @@ export default function UnifiedDashboardPage() {
               )}
 
               {/* Sites List */}
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              <div className="space-y-2 max-h-[400px] overflow-y-auto wordpress-sites-scroll smooth-scroll">
                 {projects.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Globe className="w-12 h-12 mx-auto mb-2 opacity-50" />
