@@ -114,6 +114,53 @@ export default function TopicalAuthorityMapPage() {
     );
   }
 
+  // Als er geen pillars zijn, toon de simpele lijst view
+  if (!map.pillars || map.pillars.length === 0) {
+    return (
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 mb-6">
+            <h2 className="text-xl font-bold mb-2 text-yellow-900">
+              ⚠️ Geen Pillar Structuur Beschikbaar
+            </h2>
+            <p className="text-yellow-700 mb-4">
+              Deze map heeft geen pillar/subtopic structuur. Gebruik de simpele lijst view om de artikelen te bekijken.
+            </p>
+            <button
+              onClick={() => router.push(`/topical-authority/${mapId}/lijst`)}
+              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 font-medium"
+            >
+              → Bekijk Simpele Artikel Lijst
+            </button>
+          </div>
+          
+          {/* Stats Preview */}
+          <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
+            <h3 className="font-bold text-lg mb-4">{map.niche}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{map.totalArticlesTarget}</div>
+                <div className="text-sm text-gray-600">Target Artikelen</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">{map.totalArticlesPlanned}</div>
+                <div className="text-sm text-gray-600">Gepland</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{map.totalArticlesGenerated}</div>
+                <div className="text-sm text-gray-600">Gegenereerd</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{map.totalArticlesPublished}</div>
+                <div className="text-sm text-gray-600">Gepubliceerd</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const progress = Math.round((map.totalArticlesPublished / map.totalArticlesTarget) * 100);
 
   return (
@@ -122,17 +169,25 @@ export default function TopicalAuthorityMapPage() {
         {/* Header */}
         <div className="bg-white rounded-xl border-2 border-gray-200 p-6 mb-6">
           <div className="flex items-start justify-between mb-4">
-            <div>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold mb-2">{map.niche}</h1>
               <p className="text-slate-200">{map.description}</p>
             </div>
-            <div className={`px-4 py-2 rounded-full text-sm font-medium ${
-              map.status === 'active' ? 'bg-green-100 text-green-700' :
-              map.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-              'bg-gray-100 text-white'
-            }`}>
-              {map.status === 'active' ? 'Actief' : 
-               map.status === 'completed' ? 'Voltooid' : 'Concept'}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push(`/topical-authority/${mapId}/lijst`)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium"
+              >
+                📋 Simpele Lijst
+              </button>
+              <div className={`px-4 py-2 rounded-full text-sm font-medium ${
+                map.status === 'active' ? 'bg-green-100 text-green-700' :
+                map.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                'bg-gray-100 text-white'
+              }`}>
+                {map.status === 'active' ? 'Actief' : 
+                 map.status === 'completed' ? 'Voltooid' : 'Concept'}
+              </div>
             </div>
           </div>
 
