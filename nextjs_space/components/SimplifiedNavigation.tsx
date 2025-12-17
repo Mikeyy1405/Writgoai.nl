@@ -115,18 +115,18 @@ export default function SimplifiedNavigation({
                 onClick={handleLinkClick}
                 className={`
                   flex flex-col px-4 py-4 rounded-xl
-                  transition-all duration-200 group
+                  transition-all duration-200 group no-underline
                   ${isActive 
-                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30' 
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 !text-white shadow-lg shadow-orange-500/30' 
+                    : '!text-gray-300 hover:bg-gray-800 hover:!text-white'
                   }
                 `}
               >
                 <div className="flex items-center space-x-3 mb-1">
-                  <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? '' : 'group-hover:scale-110 transition-transform'}`} />
-                  <span className="font-semibold text-base">{item.label}</span>
+                  <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-300 group-hover:text-white group-hover:scale-110 transition-transform'}`} />
+                  <span className={`font-semibold text-base ${isActive ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>{item.label}</span>
                 </div>
-                <p className={`text-xs ml-9 ${isActive ? 'text-white/90' : 'text-slate-200'}`}>
+                <p className={`text-xs ml-9 ${isActive ? '!text-white/90' : '!text-gray-400 group-hover:!text-gray-300'}`}>
                   {item.description}
                 </p>
               </Link>

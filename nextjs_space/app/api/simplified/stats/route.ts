@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { supabaseAdmin } from '@/lib/db';
+import { prisma } from '@/lib/db';
+import { fetchAllContent, getContentStats } from '@/lib/services/wordpress-content-fetcher';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/simplified/stats
  * Haal statistieken op voor de ingelogde gebruiker
+ * Inclusief WordPress content via sitemap
  */
 export async function GET(request: NextRequest) {
   try {
@@ -24,27 +26,9 @@ export async function GET(request: NextRequest) {
     console.log('[Stats API] Fetching stats for email:', session.user.email);
 
     // Haal client op
-    let client;
-    try {
-      const { data, error } = await supabaseAdmin
-        .from('Client')
-        .select('*')
-        .eq('email', session.user.email)
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
-      client = data;
-    } catch (clientError) {
-      console.error('[Stats API] Error fetching client:', clientError);
-      return NextResponse.json({ 
-        error: 'Failed to fetch client',
-        message: 'Kan gebruikersgegevens niet ophalen',
-        details: clientError instanceof Error ? clientError.message : 'Unknown error'
-      }, { status: 500 });
-    }
+    const client = await prisma.client.findUnique({
+      where: { email: session.user.email },
+    });
 
     if (!client) {
       console.error('[Stats API] Client not found for email:', session.user.email);
@@ -57,103 +41,49 @@ export async function GET(request: NextRequest) {
     console.log('[Stats API] Client found, ID:', client.id);
 
     // Tel projecten
-    let totalProjects = 0;
-    try {
-      const { count, error } = await supabaseAdmin
-        .from('Project')
-        .select('*', { count: 'exact', head: true })
-        .eq('clientId', client.id)
-        .eq('isActive', true);
-      
-      if (error) {
-        throw error;
-      }
-      
-      totalProjects = count || 0;
-      console.log('[Stats API] Total projects:', totalProjects);
-    } catch (projectError) {
-      console.error('[Stats API] Error counting projects:', projectError);
-      // Continue with 0, don't fail the entire request
-    }
+    const totalProjects = await prisma.project.count({
+      where: { 
+        clientId: client.id,
+        isActive: true,
+      },
+    });
+    console.log('[Stats API] Total projects:', totalProjects);
 
-    // Tel content deze maand
+    // Haal alle content op (WordPress + Gegenereerd) via de service
+    const allContent = await fetchAllContent(client.id);
+    const stats = await getContentStats(client.id);
+
+    // Tel content deze maand (alleen gegenereerde content)
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    let contentThisMonth = 0;
-    try {
-      const { count, error } = await supabaseAdmin
-        .from('SavedContent')
-        .select('id, project:Project!inner(clientId)', { count: 'exact', head: true })
-        .eq('project.clientId', client.id)
-        .gte('createdAt', startOfMonth.toISOString());
-      
-      if (error) {
-        throw error;
-      }
-      
-      contentThisMonth = count || 0;
-      console.log('[Stats API] Content this month:', contentThisMonth);
-    } catch (contentError) {
-      console.error('[Stats API] Error counting content this month:', contentError);
-      // Continue with 0, don't fail the entire request
-    }
+    const contentThisMonth = allContent.filter(c => {
+      const contentDate = c.createdAt || c.publishedDate;
+      return contentDate && new Date(contentDate) >= startOfMonth;
+    }).length;
 
-    // Tel gepubliceerde artikelen
-    let publishedArticles = 0;
-    try {
-      const { count, error } = await supabaseAdmin
-        .from('SavedContent')
-        .select('id, project:Project!inner(clientId)', { count: 'exact', head: true })
-        .eq('project.clientId', client.id)
-        .not('publishedAt', 'is', null);
-      
-      if (error) {
-        throw error;
-      }
-      
-      publishedArticles = count || 0;
-      console.log('[Stats API] Published articles:', publishedArticles);
-    } catch (publishedError) {
-      console.error('[Stats API] Error counting published articles:', publishedError);
-      // Continue with 0, don't fail the entire request
-    }
+    console.log('[Stats API] Content this month:', contentThisMonth);
 
-    // Haal recente content op
-    let recentContent = [];
-    try {
-      const { data, error } = await supabaseAdmin
-        .from('SavedContent')
-        .select(`
-          id, 
-          title, 
-          type, 
-          publishedAt, 
-          createdAt,
-          status,
-          project:Project!inner(
-            id,
-            name,
-            clientId
-          )
-        `)
-        .eq('project.clientId', client.id)
-        .order('createdAt', { ascending: false })
-        .limit(5);
-      
-      if (error) {
-        throw error;
-      }
-      
-      recentContent = data || [];
-      console.log('[Stats API] Recent content count:', recentContent.length);
-    } catch (recentError) {
-      console.error('[Stats API] Error fetching recent content:', recentError);
-      // Continue with empty array, don't fail the entire request
-    }
+    // Tel gepubliceerde artikelen (WordPress + Gegenereerd)
+    const publishedArticles = stats.published;
+    console.log('[Stats API] Published articles (WordPress + Generated):', publishedArticles);
 
+    // Haal recente content op (top 5)
+    const recentContent = allContent.slice(0, 5).map(item => ({
+      id: item.id,
+      title: item.title,
+      status: item.status,
+      publishedAt: item.publishedDate?.toISOString() || null,
+      createdAt: item.createdAt?.toISOString() || item.publishedDate?.toISOString() || new Date().toISOString(),
+      project: {
+        name: item.projectName,
+      },
+    }));
+
+    console.log('[Stats API] Recent content count:', recentContent.length);
     console.log('[Stats API] Successfully fetched all stats');
+    
     return NextResponse.json({
       totalProjects,
       contentThisMonth,

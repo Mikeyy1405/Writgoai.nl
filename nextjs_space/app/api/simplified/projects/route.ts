@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    // Haal projecten op
+    // Haal projecten op met artikel count
     const projects = await prisma.project.findMany({
       where: { clientId: client.id },
       orderBy: { createdAt: 'desc' },
@@ -41,6 +41,11 @@ export async function GET(request: NextRequest) {
         isActive: true,
         createdAt: true,
         updatedAt: true,
+        _count: {
+          select: {
+            savedContent: true,
+          },
+        },
       },
     });
 
