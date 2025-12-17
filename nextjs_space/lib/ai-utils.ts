@@ -5,8 +5,8 @@
  * Re-exports commonly used AI functions
  */
 
-// Re-export chatCompletion from aiml-advanced (preferred) or aiml-api (fallback)
-export { chatCompletion } from './aiml-advanced';
+// Re-export chatCompletion from aiml-api (has correct signature with messages array + options)
+export { chatCompletion } from './aiml-api';
 
 // Re-export other commonly used AI functions
 export { generateText, generateStructuredOutput } from './aiml-advanced';

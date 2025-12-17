@@ -300,23 +300,27 @@ Geef je antwoord als JSON:
 
 Geef ALLEEN JSON terug, geen extra tekst.`;
 
-  const aiResponse = await chatCompletion(
-    [
+  const aiResponse = await chatCompletion({
+    model: 'claude-sonnet-4-20250514',
+    messages: [
       {
         role: 'system',
         content: 'Je bent een SEO expert die WordPress websites analyseert en de niche detecteert in gestructureerd JSON formaat.'
       },
       { role: 'user', content: prompt }
     ],
-    {
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.3,
-      max_tokens: 2000,
-    }
-  );
+    temperature: 0.3,
+    max_tokens: 2000,
+  });
+
+  // Extract content from AI response
+  const content = aiResponse.choices?.[0]?.message?.content || '';
+  if (!content) {
+    throw new Error('No content in AI response');
+  }
 
   // Parse AI response
-  const parsed = parseAIResponse(aiResponse);
+  const parsed = parseAIResponse(content);
 
   return {
     niche: parsed.niche || 'Algemene content',
@@ -386,22 +390,25 @@ Geef je antwoord als JSON:
 Geef ALLEEN JSON terug, geen extra tekst.`;
 
   try {
-    const aiResponse = await chatCompletion(
-      [
+    const aiResponse = await chatCompletion({
+      model: 'claude-sonnet-4-20250514',
+      messages: [
         {
           role: 'system',
           content: 'Je bent een SEO expert die primary keywords selecteert in JSON formaat.'
         },
         { role: 'user', content: prompt }
       ],
-      {
-        model: 'claude-sonnet-4-20250514',
-        temperature: 0.3,
-        max_tokens: 500,
-      }
-    );
+      temperature: 0.3,
+      max_tokens: 500,
+    });
 
-    const parsed = parseAIResponse(aiResponse);
+    const content = aiResponse.choices?.[0]?.message?.content || '';
+    if (!content) {
+      throw new Error('No content in AI response');
+    }
+
+    const parsed = parseAIResponse(content);
     return parsed.keywords || keywordList.slice(0, 15);
   } catch (error) {
     console.warn('[Website Analyzer] Could not use AI for keyword extraction, using top keywords');
@@ -467,22 +474,25 @@ Geef je antwoord als JSON:
 Geef ALLEEN JSON terug, geen extra tekst.`;
 
   try {
-    const aiResponse = await chatCompletion(
-      [
+    const aiResponse = await chatCompletion({
+      model: 'claude-sonnet-4-20250514',
+      messages: [
         {
           role: 'system',
           content: 'Je bent een SEO expert die content gaps identificeert in JSON formaat.'
         },
         { role: 'user', content: prompt }
       ],
-      {
-        model: 'claude-sonnet-4-20250514',
-        temperature: 0.5,
-        max_tokens: 3000,
-      }
-    );
+      temperature: 0.5,
+      max_tokens: 3000,
+    });
 
-    const parsed = parseAIResponse(aiResponse);
+    const content = aiResponse.choices?.[0]?.message?.content || '';
+    if (!content) {
+      throw new Error('No content in AI response');
+    }
+
+    const parsed = parseAIResponse(content);
     return parsed.gaps || [];
   } catch (error) {
     console.error('[Website Analyzer] Error analyzing content gaps:', error);

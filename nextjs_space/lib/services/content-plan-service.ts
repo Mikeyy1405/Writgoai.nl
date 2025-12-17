@@ -164,23 +164,27 @@ export async function generateContentIdeas(
   }
 
   // Call AI with unified interface
-  const aiResponse = await chatCompletion(
-    [
+  const aiResponse = await chatCompletion({
+    model: 'claude-sonnet-4-20250514',
+    messages: [
       { 
         role: 'system', 
         content: 'Je bent een SEO expert die gestructureerde JSON content plannen genereert.' 
       },
       { role: 'user', content: prompt }
     ],
-    {
-      model: 'claude-sonnet-4-20250514',
-      temperature,
-      max_tokens: 4000,
-    }
-  );
+    temperature,
+    max_tokens: 4000,
+  });
+
+  // Extract content from AI response
+  const content = aiResponse.choices?.[0]?.message?.content || '';
+  if (!content) {
+    throw new Error('No content in AI response');
+  }
 
   // Parse with robust error handling
-  const topics = parseAIResponse(aiResponse);
+  const topics = parseAIResponse(content);
   
   if (!Array.isArray(topics) || topics.length === 0) {
     throw new Error('NO_TOPICS_GENERATED');
@@ -312,22 +316,25 @@ Gebruik alleen deze priority waarden: "high", "medium", of "low".
 Geef minimaal 8 en maximaal 12 topics.
 Antwoord direct met de JSON, geen tekst ervoor of erna.`;
 
-  const aiResponse = await chatCompletion(
-    [
+  const aiResponse = await chatCompletion({
+    model: 'claude-sonnet-4-20250514',
+    messages: [
       { 
         role: 'system', 
         content: 'Je bent een SEO expert die WordPress sites analyseert en gestructureerde JSON content plannen genereert.' 
       },
       { role: 'user', content: prompt }
     ],
-    {
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.7,
-      max_tokens: 4000,
-    }
-  );
+    temperature: 0.7,
+    max_tokens: 4000,
+  });
 
-  return parseAIResponse(aiResponse);
+  const content = aiResponse.choices?.[0]?.message?.content || '';
+  if (!content) {
+    throw new Error('No content in AI response');
+  }
+
+  return parseAIResponse(content);
 }
 
 // ============================================================================

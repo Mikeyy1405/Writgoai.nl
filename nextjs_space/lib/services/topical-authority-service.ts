@@ -387,23 +387,27 @@ Genereer EXACT ${targetCount} pillars.
 Priority: 1-10 (10 = hoogste prioriteit)
 Geef ALLEEN JSON terug, geen extra tekst.`;
 
-  const aiResponse = await chatCompletion(
-    [
+  const aiResponse = await chatCompletion({
+    model: 'claude-sonnet-4-20250514',
+    messages: [
       {
         role: 'system',
         content: 'Je bent een SEO expert die gestructureerde topical authority maps genereert in JSON formaat.'
       },
       { role: 'user', content: prompt }
     ],
-    {
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.7,
-      max_tokens: 4000,
-    }
-  );
+    temperature: 0.7,
+    max_tokens: 4000,
+  });
+
+  // Extract content from AI response
+  const content = aiResponse.choices?.[0]?.message?.content || '';
+  if (!content) {
+    throw new Error('No content in AI response');
+  }
 
   // Parse AI response
-  const parsed = parseAIResponse(aiResponse);
+  const parsed = parseAIResponse(content);
   const pillarData: PillarTopicData[] = parsed.pillars || [];
 
   if (pillarData.length === 0) {
@@ -514,22 +518,25 @@ Genereer EXACT ${targetSubtopics} subtopics.
 Priority: 1-10 (10 = hoogste prioriteit)
 Geef ALLEEN JSON terug, geen extra tekst.`;
 
-  const aiResponse = await chatCompletion(
-    [
+  const aiResponse = await chatCompletion({
+    model: 'claude-sonnet-4-20250514',
+    messages: [
       {
         role: 'system',
         content: 'Je bent een SEO expert die gestructureerde topical authority maps genereert in JSON formaat.'
       },
       { role: 'user', content: prompt }
     ],
-    {
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.7,
-      max_tokens: 6000,
-    }
-  );
+    temperature: 0.7,
+    max_tokens: 6000,
+  });
 
-  const parsed = parseAIResponse(aiResponse);
+  const content = aiResponse.choices?.[0]?.message?.content || '';
+  if (!content) {
+    throw new Error('No content in AI response');
+  }
+
+  const parsed = parseAIResponse(content);
   const subtopicData: SubtopicData[] = parsed.subtopics || [];
 
   if (subtopicData.length === 0) {
@@ -639,22 +646,25 @@ Genereer EXACT ${targetCount} artikelen.
 Priority: 1-10 (10 = hoogste prioriteit)
 Geef ALLEEN JSON terug, geen extra tekst.`;
 
-  const aiResponse = await chatCompletion(
-    [
+  const aiResponse = await chatCompletion({
+    model: 'claude-sonnet-4-20250514',
+    messages: [
       {
         role: 'system',
         content: 'Je bent een SEO expert die gestructureerde content plans genereert in JSON formaat.'
       },
       { role: 'user', content: prompt }
     ],
-    {
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.8,
-      max_tokens: 6000,
-    }
-  );
+    temperature: 0.8,
+    max_tokens: 6000,
+  });
 
-  const parsed = parseAIResponse(aiResponse);
+  const content = aiResponse.choices?.[0]?.message?.content || '';
+  if (!content) {
+    throw new Error('No content in AI response');
+  }
+
+  const parsed = parseAIResponse(content);
   const articleData: ArticleData[] = (parsed.articles || []).map((a: any) => ({
     ...a,
     contentType: 'cluster' as const,
