@@ -71,24 +71,14 @@ export default function TopicalAuthorityMapPage() {
     try {
       setGeneratingArticleId(articleId);
       
-      const response = await fetch('/api/client/topical-authority/generate-article', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ articleId }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Redirect to content generation page with pre-filled data
-        const articleData = data.data;
-        router.push(`/client-portal/schrijven?fromTopicalAuthority=true&articleId=${articleId}&title=${encodeURIComponent(articleData.title)}`);
-      } else {
-        alert('Fout: ' + (data.details || data.error));
-      }
+      // Redirect direct naar de nieuwe auto-generate route
+      // Deze route handelt automatisch de volledige generatie af
+      console.log('[TopicalAuthority] Redirecting to auto-generate:', articleId);
+      router.push(`/topical-authority/generate/${articleId}`);
+      
     } catch (error: any) {
+      console.error('[TopicalAuthority] Error:', error);
       alert('Fout: ' + error.message);
-    } finally {
       setGeneratingArticleId(null);
     }
   };

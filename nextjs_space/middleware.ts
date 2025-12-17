@@ -42,6 +42,25 @@ export default withAuth(
     }
 
     const path = req.nextUrl.pathname;
+    const searchParams = req.nextUrl.searchParams;
+    
+    // ===================================
+    // REDIRECT OLD CLIENT-PORTAL ROUTES
+    // ===================================
+    // Redirect old /client-portal/schrijven URLs to new auto-generate route
+    if (path === '/client-portal/schrijven') {
+      const articleId = searchParams.get('articleId');
+      const fromTopicalAuthority = searchParams.get('fromTopicalAuthority');
+      
+      if (fromTopicalAuthority === 'true' && articleId) {
+        console.log(`🔄 Redirecting old topical authority link → /topical-authority/generate/${articleId}`);
+        return NextResponse.redirect(new URL(`/topical-authority/generate/${articleId}`, req.url));
+      }
+      
+      // Other schrijven routes redirect to content page
+      console.log('🔄 Redirecting /client-portal/schrijven → /content');
+      return NextResponse.redirect(new URL('/content', req.url));
+    }
     
     // Allow public homepage (root path)
     if (path === '/') {

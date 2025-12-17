@@ -190,29 +190,10 @@ export default function TopicalAuthorityDashboard() {
       setGeneratingId(articleId);
       setError(null);
       
-      const response = await fetch('/api/client/topical-authority/generate-article', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ articleId }),
-      });
-
-      // Check content type
-      const contentType = response.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
-        const text = await response.text();
-        console.error('[Generate] Got HTML instead of JSON:', text.substring(0, 200));
-        throw new Error('API returned HTML instead of JSON. Check if route exists.');
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        const articleData = data.data;
-        // Redirect to schrijven page with pre-filled data
-        router.push(`/client-portal/schrijven?fromTopicalAuthority=true&articleId=${articleId}&title=${encodeURIComponent(articleData.title)}`);
-      } else {
-        throw new Error(data.details || data.error || 'Genereren mislukt');
-      }
+      // Redirect direct naar de nieuwe auto-generate route
+      // Deze route handelt automatisch de volledige generatie af
+      console.log('[Generate] Redirecting to auto-generate:', articleId);
+      router.push(`/topical-authority/generate/${articleId}`);
     } catch (error: any) {
       console.error('[Generate] Error:', error);
       setError(error.message);
