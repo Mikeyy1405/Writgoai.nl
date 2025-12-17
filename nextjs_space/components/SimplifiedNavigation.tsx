@@ -7,17 +7,19 @@ import {
   Home, 
   FileText,
   Settings,
-  LogOut
+  LogOut,
+  Map
 } from 'lucide-react';
 
 /**
- * SUPER VEREENVOUDIGDE NAVIGATIE - Slechts 3 menu items
+ * SUPER VEREENVOUDIGDE NAVIGATIE - 4 menu items
  * 
  * Desktop: Fixed sidebar links (altijd zichtbaar)
  * Mobiel: Slide-in sidebar met hamburger menu
  * 
- * 3 functies:
+ * 4 functies:
  * - 🏠 Dashboard (alles op één scherm)
+ * - 🗺️ Content Planning (Topical Authority Maps)
  * - 📄 Content (uitgebreid overzicht)
  * - ⚙️ Instellingen
  */
@@ -28,6 +30,12 @@ const menuItems = [
     label: 'Dashboard', 
     icon: Home,
     description: 'Sites, Genereren & Overzicht'
+  },
+  { 
+    href: '/topical-authority', 
+    label: 'Content Planning', 
+    icon: Map,
+    description: '400+ artikel strategieën'
   },
   { 
     href: '/content', 

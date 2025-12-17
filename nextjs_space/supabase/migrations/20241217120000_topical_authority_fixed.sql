@@ -8,16 +8,14 @@
 -- STEP 1: DROP ALL EXISTING STRUCTURES
 -- ============================================================================
 -- Drop in reverse order of dependencies to avoid foreign key errors
+-- CASCADE automatically drops triggers, so we don't need to drop them separately
 
--- Drop triggers first
-DROP TRIGGER IF EXISTS trigger_planned_article_counts ON "PlannedArticle";
-DROP TRIGGER IF EXISTS trigger_topical_map_updated_at ON "TopicalAuthorityMap";
-
--- Drop functions
+-- Drop functions first (they are not dependent on tables)
 DROP FUNCTION IF EXISTS update_topical_map_counts();
 DROP FUNCTION IF EXISTS update_topical_map_updated_at();
 
 -- Drop tables in reverse order of dependencies
+-- CASCADE will automatically drop all triggers and constraints
 DROP TABLE IF EXISTS "DataForSEOCache" CASCADE;
 DROP TABLE IF EXISTS "WordPressSitemapCache" CASCADE;
 DROP TABLE IF EXISTS "PlannedArticle" CASCADE;

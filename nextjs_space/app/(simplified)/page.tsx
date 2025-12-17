@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { 
   Globe, FileText, Sparkles, Plus, Edit, Trash2, 
   Check, X, Loader2, ExternalLink, Calendar, TrendingUp,
-  Clock, Zap
+  Clock, Zap, Map, ArrowRight
 } from 'lucide-react';
 
 /**
@@ -317,6 +317,49 @@ export default function UnifiedDashboardPage() {
           <p className="text-base md:text-lg text-gray-200">
             Alles wat je nodig hebt om content te maken voor je WordPress sites
           </p>
+        </div>
+
+        {/* Topical Authority Banner - NEW */}
+        <div 
+          onClick={() => window.location.href = '/topical-authority'}
+          className="bg-gradient-to-r from-purple-900/50 via-indigo-900/50 to-blue-900/50 border-2 border-purple-500/50 rounded-2xl p-6 md:p-8 shadow-2xl cursor-pointer hover:border-purple-400 transition-all hover:scale-[1.01] group"
+        >
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="bg-purple-500/20 p-3 rounded-xl border border-purple-500/50 group-hover:bg-purple-500/30 transition-colors">
+                <Map className="w-8 h-8 text-purple-400" />
+              </div>
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                  🗺️ Topical Authority Maps
+                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full font-semibold border border-green-500/50">
+                    NIEUW
+                  </span>
+                </h2>
+                <p className="text-sm md:text-base text-gray-300 mb-2">
+                  Bouw complete topical authority met 400-500 gestructureerde artikelen
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs text-gray-400">
+                  <span className="bg-purple-500/10 px-2 py-1 rounded border border-purple-500/30">
+                    ✓ Automatische niche detectie
+                  </span>
+                  <span className="bg-purple-500/10 px-2 py-1 rounded border border-purple-500/30">
+                    ✓ Pillar + Subtopic structuur
+                  </span>
+                  <span className="bg-purple-500/10 px-2 py-1 rounded border border-purple-500/30">
+                    ✓ DataForSEO integratie
+                  </span>
+                  <span className="bg-purple-500/10 px-2 py-1 rounded border border-purple-500/30">
+                    ✓ WordPress sitemap analyse
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-purple-500 hover:bg-purple-400 px-6 py-3 rounded-xl font-semibold text-white transition-colors group-hover:gap-4">
+              <span>Start Planning</span>
+              <ArrowRight className="w-5 h-5" />
+            </div>
+          </div>
         </div>
 
         {/* Main Content - 3 Column Layout on desktop, stacked on mobile */}
