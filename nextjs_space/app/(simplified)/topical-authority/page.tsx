@@ -638,13 +638,27 @@ function CreateMapWizard({ projectId, onClose, onSuccess }: {
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState('');
   const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState(false);
 
   const handleGenerate = async () => {
     try {
       setLoading(true);
+      setProgress(10);
+      setStatus('🔍 Website analyseren...');
       setError('');
+      
+      // Simulate progress during analysis
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 90) return prev + 5;
+          return prev;
+        });
+      }, 500);
       
       const response = await fetch('/api/client/topical-authority/generate-map', {
         method: 'POST',
@@ -660,6 +674,10 @@ function CreateMapWizard({ projectId, onClose, onSuccess }: {
         }),
       });
 
+      clearInterval(progressInterval);
+      setProgress(95);
+      setStatus('✅ Map genereren...');
+
       // Check content type
       const contentType = response.headers.get('content-type');
       if (!contentType?.includes('application/json')) {
@@ -671,14 +689,29 @@ function CreateMapWizard({ projectId, onClose, onSuccess }: {
       const data = await response.json();
 
       if (data.success) {
-        alert(`✅ Topical Authority Map gegenereerd!\n\nTotaal artikelen: ${data.data.totalArticles}\nGeschat tijdsbestek: ${data.data.estimatedTimeToComplete}`);
-        onSuccess();
+        setProgress(100);
+        setStatus(`✅ Klaar! ${data.data.totalArticles} artikelen gegenereerd`);
+        setSuccess(true);
+        
+        // Auto-close after 1.5 seconds and redirect to the map
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+          // Navigate to the new map's article list
+          if (data.data.mapId) {
+            router.push(`/topical-authority/${data.data.mapId}/lijst`);
+          }
+        }, 1500);
       } else {
+        setProgress(0);
+        setStatus('');
         setError(data.details || data.error || 'Onbekende fout');
+        setLoading(false);
       }
     } catch (error: any) {
+      setProgress(0);
+      setStatus('');
       setError(error.message || 'Fout bij genereren map');
-    } finally {
       setLoading(false);
     }
   };
@@ -734,8 +767,27 @@ function CreateMapWizard({ projectId, onClose, onSuccess }: {
             </ul>
           </div>
 
+          {/* Progress Display */}
+          {loading && (
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-white font-medium">{status}</p>
+                <p className="text-slate-400 text-sm">{progress}%</p>
+              </div>
+              <div className="bg-slate-700 rounded-full h-3 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-300 ${success ? 'bg-green-500' : 'bg-orange-500'}`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              {success && (
+                <p className="text-green-400 text-sm text-center">Je wordt doorgestuurd naar de artikellijst...</p>
+              )}
+            </div>
+          )}
+
           {/* Error Display */}
-          {error && (
+          {error && !loading && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
               <p className="text-red-400 text-sm font-medium mb-1">❌ Fout bij genereren:</p>
               <p className="text-red-300 text-sm">{error}</p>

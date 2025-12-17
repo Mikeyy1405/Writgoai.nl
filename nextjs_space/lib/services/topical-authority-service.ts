@@ -190,8 +190,16 @@ export async function generateTopicalAuthorityMap(
     throw new Error('Niche is required. Either provide it manually or enable auto-analysis.');
   }
 
+  // FIXED STRUCTURE: ALWAYS 9 pillars × 10 subtopics × 5 articles = 450
+  const EXACT_STRUCTURE = {
+    PILLARS: 9,
+    SUBTOPICS_PER_PILLAR: 10,
+    ARTICLES_PER_SUBTOPIC: 5,
+    TOTAL: 450, // 9 × 10 × 5
+  };
+
   console.log(`[Topical Authority] 🚀 Starting map generation for niche: ${niche}`);
-  console.log(`[Topical Authority] Target: ${targetArticles} articles`);
+  console.log(`[Topical Authority] EXACT Target: ${EXACT_STRUCTURE.TOTAL} articles (${EXACT_STRUCTURE.PILLARS} pillars × ${EXACT_STRUCTURE.SUBTOPICS_PER_PILLAR} subtopics × ${EXACT_STRUCTURE.ARTICLES_PER_SUBTOPIC} articles)`);
 
   // Step 4: Create the map
   const map = await prisma.topicalAuthorityMap.create({
@@ -202,35 +210,46 @@ export async function generateTopicalAuthorityMap(
       description: description || (websiteAnalysis 
         ? websiteAnalysis.nicheDescription 
         : `Complete topical authority map for ${niche}`),
-      totalArticlesTarget: targetArticles,
+      totalArticlesTarget: EXACT_STRUCTURE.TOTAL,
       status: 'draft',
-      metadata: websiteAnalysis ? {
-        autoDetected: true,
-        subNiches: websiteAnalysis.subNiches,
-        primaryKeywords: websiteAnalysis.primaryKeywords,
-        targetAudience: websiteAnalysis.targetAudience,
-        existingArticlesAnalyzed: websiteAnalysis.existingArticleCount,
-      } : {},
+      metadata: {
+        ...(websiteAnalysis ? {
+          autoDetected: true,
+          subNiches: websiteAnalysis.subNiches,
+          primaryKeywords: websiteAnalysis.primaryKeywords,
+          targetAudience: websiteAnalysis.targetAudience,
+          existingArticlesAnalyzed: websiteAnalysis.existingArticleCount,
+        } : {}),
+        structure: {
+          pillars: EXACT_STRUCTURE.PILLARS,
+          subtopicsPerPillar: EXACT_STRUCTURE.SUBTOPICS_PER_PILLAR,
+          articlesPerSubtopic: EXACT_STRUCTURE.ARTICLES_PER_SUBTOPIC,
+          totalArticles: EXACT_STRUCTURE.TOTAL,
+        },
+      },
     },
   });
 
   console.log(`[Topical Authority] ✅ Created map: ${map.id}`);
 
-  // Step 5: Generate pillar topics (5-10 pillars)
-  // If we have website analysis, use sub-niches as inspiration for pillars
-  const targetPillars = Math.ceil(targetArticles / 50); // ~50 articles per pillar
+  // Step 5: Generate EXACTLY 9 pillar topics
   const pillars = await generatePillarTopics(
     map.id,
     niche,
-    targetPillars,
+    EXACT_STRUCTURE.PILLARS, // EXACT: 9 pillars
     existingContent,
     { useDataForSEO, location, language },
-    websiteAnalysis // Pass analysis for better pillar generation
+    websiteAnalysis
   );
 
-  console.log(`[Topical Authority] Generated ${pillars.length} pillar topics`);
+  console.log(`[Topical Authority] Generated ${pillars.length} pillar topics (expected: ${EXACT_STRUCTURE.PILLARS})`);
 
-  // Step 5: For each pillar, generate subtopics and articles
+  // VALIDATION: Ensure we have exactly 9 pillars
+  if (pillars.length !== EXACT_STRUCTURE.PILLARS) {
+    throw new Error(`Expected ${EXACT_STRUCTURE.PILLARS} pillars, got ${pillars.length}`);
+  }
+
+  // Step 6: For each pillar, generate EXACTLY 10 subtopics and 5 articles per subtopic
   const result: TopicalAuthorityMapResult = {
     mapId: map.id,
     pillars: [],
@@ -243,42 +262,46 @@ export async function generateTopicalAuthorityMap(
     
     console.log(`[Topical Authority] Processing pillar ${i + 1}/${pillars.length}: ${pillar.title}`);
     
-    // Calculate articles per pillar
-    const articlesForThisPillar = Math.floor(targetArticles / pillars.length);
-    
-    // Generate subtopics (40-50 per pillar)
+    // EXACT: 10 subtopics per pillar
     const subtopics = await generateSubtopics(
       pillar.id,
       pillar.title,
       niche,
-      articlesForThisPillar,
+      EXACT_STRUCTURE.SUBTOPICS_PER_PILLAR * EXACT_STRUCTURE.ARTICLES_PER_SUBTOPIC, // Total articles for this pillar
       existingContent,
-      { useDataForSEO, location, language }
+      { useDataForSEO, location, language },
+      EXACT_STRUCTURE.SUBTOPICS_PER_PILLAR // Pass exact count
     );
 
-    console.log(`[Topical Authority]   Generated ${subtopics.length} subtopics`);
+    console.log(`[Topical Authority]   Generated ${subtopics.length} subtopics (expected: ${EXACT_STRUCTURE.SUBTOPICS_PER_PILLAR})`);
 
-    // For each subtopic, generate articles (8-10 per subtopic)
+    // VALIDATION: Ensure exactly 10 subtopics
+    if (subtopics.length !== EXACT_STRUCTURE.SUBTOPICS_PER_PILLAR) {
+      console.warn(`[Topical Authority] WARNING: Expected ${EXACT_STRUCTURE.SUBTOPICS_PER_PILLAR} subtopics, got ${subtopics.length}`);
+    }
+
     const pillarResult: any = {
       pillarId: pillar.id,
       title: pillar.title,
       subtopics: [],
     };
 
+    // For each subtopic, generate EXACTLY 5 articles
     for (let j = 0; j < subtopics.length; j++) {
       const subtopic = subtopics[j];
       
-      const articlesForThisSubtopic = Math.floor(articlesForThisPillar / subtopics.length);
-      
+      // EXACT: 5 articles per subtopic
       const articles = await generateArticles(
         map.id,
         pillar.id,
         subtopic.id,
         subtopic.title,
         niche,
-        articlesForThisSubtopic,
+        EXACT_STRUCTURE.ARTICLES_PER_SUBTOPIC, // EXACT: 5 articles
         { useDataForSEO, location, language }
       );
+
+      console.log(`[Topical Authority]     Subtopic ${j + 1}: ${articles.length} articles (expected: ${EXACT_STRUCTURE.ARTICLES_PER_SUBTOPIC})`);
 
       pillarResult.subtopics.push({
         subtopicId: subtopic.id,
@@ -476,12 +499,13 @@ async function generateSubtopics(
   niche: string,
   targetArticles: number,
   existingContent: any[],
-  options: { useDataForSEO: boolean; location: string; language: string }
+  options: { useDataForSEO: boolean; location: string; language: string },
+  exactCount?: number // NEW: Force exact subtopic count
 ): Promise<any[]> {
-  // Calculate target subtopics (each subtopic will have 8-10 articles)
-  const targetSubtopics = Math.ceil(targetArticles / 9); // ~9 articles per subtopic
+  // FIXED: Use exactCount if provided, otherwise calculate
+  const targetSubtopics = exactCount || Math.ceil(targetArticles / 9);
   
-  console.log(`[Topical Authority]   Generating ${targetSubtopics} subtopics for: ${pillarTitle}`);
+  console.log(`[Topical Authority]   Generating EXACTLY ${targetSubtopics} subtopics for: ${pillarTitle}`);
 
   const prompt = `Je bent een SEO expert die topical authority maps creëert.
 
@@ -537,11 +561,31 @@ Geef ALLEEN JSON terug, geen extra tekst.`;
   }
 
   const parsed = parseAIResponse(content);
-  const subtopicData: SubtopicData[] = parsed.subtopics || [];
+  let subtopicData: SubtopicData[] = parsed.subtopics || [];
 
   if (subtopicData.length === 0) {
     throw new Error(`Failed to generate subtopics for pillar: ${pillarTitle}`);
   }
+
+  // FIXED: Ensure EXACTLY targetSubtopics count
+  if (subtopicData.length < targetSubtopics) {
+    console.warn(`[Topical Authority] AI generated ${subtopicData.length} subtopics, padding to ${targetSubtopics}`);
+    // Pad with generic subtopics
+    while (subtopicData.length < targetSubtopics) {
+      subtopicData.push({
+        title: `${pillarTitle} - Topic ${subtopicData.length + 1}`,
+        description: `Additional subtopic for ${pillarTitle}`,
+        keywords: [pillarTitle.toLowerCase()],
+        priority: 5,
+      });
+    }
+  } else if (subtopicData.length > targetSubtopics) {
+    console.warn(`[Topical Authority] AI generated ${subtopicData.length} subtopics, trimming to ${targetSubtopics}`);
+    // Trim excess subtopics
+    subtopicData = subtopicData.slice(0, targetSubtopics);
+  }
+
+  console.log(`[Topical Authority]   ✅ Validated: ${subtopicData.length} subtopics (target: ${targetSubtopics})`);
 
   // Enrich with DataForSEO data
   if (options.useDataForSEO && DataForSEO.isConfigured()) {
@@ -665,7 +709,7 @@ Geef ALLEEN JSON terug, geen extra tekst.`;
   }
 
   const parsed = parseAIResponse(content);
-  const articleData: ArticleData[] = (parsed.articles || []).map((a: any) => ({
+  let articleData: ArticleData[] = (parsed.articles || []).map((a: any) => ({
     ...a,
     contentType: 'cluster' as const,
   }));
@@ -673,6 +717,31 @@ Geef ALLEEN JSON terug, geen extra tekst.`;
   if (articleData.length === 0) {
     throw new Error(`Failed to generate articles for subtopic: ${subtopicTitle}`);
   }
+
+  // FIXED: Ensure EXACTLY targetCount articles
+  if (articleData.length < targetCount) {
+    console.warn(`[Topical Authority] AI generated ${articleData.length} articles, padding to ${targetCount}`);
+    // Pad with generic articles
+    while (articleData.length < targetCount) {
+      articleData.push({
+        title: `${subtopicTitle} - Article ${articleData.length + 1}`,
+        description: `Additional article about ${subtopicTitle}`,
+        keywords: [subtopicTitle.toLowerCase()],
+        focusKeyword: subtopicTitle.toLowerCase(),
+        contentType: 'cluster' as const,
+        articleType: 'blog-post',
+        priority: 5,
+        wordCountTarget: 1500,
+        searchIntent: 'informational',
+      });
+    }
+  } else if (articleData.length > targetCount) {
+    console.warn(`[Topical Authority] AI generated ${articleData.length} articles, trimming to ${targetCount}`);
+    // Trim excess articles
+    articleData = articleData.slice(0, targetCount);
+  }
+
+  console.log(`[Topical Authority]     ✅ Validated: ${articleData.length} articles (target: ${targetCount})`);
 
   // Enrich with DataForSEO data
   if (options.useDataForSEO && DataForSEO.isConfigured()) {
