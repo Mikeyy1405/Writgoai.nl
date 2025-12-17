@@ -142,34 +142,60 @@ export async function parseWordPressSitemap(
       articleUrls = urls
         .map((u: any) => u.loc)
         .filter((url: string) => {
-          // Filter out non-article URLs
+          // Filter out non-article URLs (common WordPress pages)
           const excludePatterns = [
             '/tag/', '/category/', '/author/', '/page/',
             '/contact', '/over-ons', '/about', '/about-us',
             '/privacy', '/disclaimer', '/algemene-voorwaarden',
-            '/cookie', '/terms', '/policy',
+            '/cookie', '/terms', '/policy', '/privacyverklaring',
             '/home', '/homepage', '/index',
+            '/diensten', '/services', '/producten', '/products',
+            '/team', '/ons-team', '/our-team',
+            '/vacatures', '/careers', '/jobs',
+            '/sitemap', '/feed', '/rss',
+            '/wp-', '/wp-content/', '/wp-admin/',
+            '/shop', '/winkel', '/cart', '/checkout',
+            '/account', '/mijn-account', '/login', '/register',
+            '/faq', '/veelgestelde-vragen',
           ];
           
           // Check if URL contains any exclude patterns
-          if (excludePatterns.some(pattern => url.toLowerCase().includes(pattern))) {
+          const urlLower = url.toLowerCase();
+          if (excludePatterns.some(pattern => urlLower.includes(pattern))) {
+            console.log(`[Sitemap Parser] Filtering page: ${url}`);
             return false;
           }
           
           // Filter URLs that end with just the domain (homepage)
-          const urlObj = new URL(url);
-          if (urlObj.pathname === '/' || urlObj.pathname === '') {
+          try {
+            const urlObj = new URL(url);
+            
+            if (urlObj.pathname === '/' || urlObj.pathname === '') {
+              console.log(`[Sitemap Parser] Filtering homepage: ${url}`);
+              return false;
+            }
+            
+            // Only include URLs with actual content paths
+            // Blog posts usually have patterns like:
+            // - /2024/12/post-name/
+            // - /post-name/
+            // - /blog/post-name/
+            const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+            const hasContentPath = pathSegments.length >= 1;
+            
+            // Additional check: filter out very short URLs that are likely pages
+            // Most blog posts have at least 10 characters in the slug
+            const lastSegment = pathSegments[pathSegments.length - 1] || '';
+            if (lastSegment.length < 5) {
+              console.log(`[Sitemap Parser] Filtering short slug page: ${url}`);
+              return false;
+            }
+            
+            return hasContentPath;
+          } catch (error) {
+            console.warn(`[Sitemap Parser] Error parsing URL: ${url}`);
             return false;
           }
-          
-          // Only include URLs with actual content paths
-          // Blog posts usually have patterns like:
-          // - /2024/12/post-name/
-          // - /post-name/
-          // - /blog/post-name/
-          const hasContentPath = urlObj.pathname.split('/').filter(Boolean).length >= 1;
-          
-          return hasContentPath;
         });
     }
 
@@ -495,12 +521,26 @@ export async function getCachedSitemapData(
 
     // Check if cache is too old
     const latestEntry = entries[0];
-    const cacheAge = Date.now() - latestEntry.lastScanned.getTime();
     
-    if (cacheAge > maxAge) {
-      console.log('[Sitemap Parser] Cache is too old, needs refresh');
+    // Fix: Convert lastScanned to Date if it's a string
+    const lastScannedDate = latestEntry.lastScanned instanceof Date 
+      ? latestEntry.lastScanned 
+      : new Date(latestEntry.lastScanned);
+    
+    // Validate the date
+    if (isNaN(lastScannedDate.getTime())) {
+      console.log('[Sitemap Parser] Invalid lastScanned date, needs refresh');
       return null;
     }
+    
+    const cacheAge = Date.now() - lastScannedDate.getTime();
+    
+    if (cacheAge > maxAge) {
+      console.log(`[Sitemap Parser] Cache is too old (${(cacheAge / (60 * 60 * 1000)).toFixed(1)} hours), needs refresh`);
+      return null;
+    }
+
+    console.log(`[Sitemap Parser] Using cached data (${(cacheAge / (60 * 60 * 1000)).toFixed(1)} hours old, ${entries.length} entries)`);
 
     return entries.map(entry => ({
       url: entry.url,

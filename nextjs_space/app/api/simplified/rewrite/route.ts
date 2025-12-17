@@ -152,19 +152,35 @@ CONTENT:
     console.log('[Rewrite API] Generating rewritten content with AI...');
 
     // Generate herschreven content met AI
-    const aiResponse = await chatCompletion({
-      messages: [
+    const aiResponse = await chatCompletion(
+      [
         {
           role: 'user',
           content: prompt,
         },
       ],
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 6000,
-      temperature: 0.7,
-    });
+      {
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 6000,
+        temperature: 0.7,
+      }
+    );
 
-    const rewrittenText = aiResponse.content || '';
+    // Extract content from response
+    const rewrittenText = aiResponse.choices?.[0]?.message?.content || '';
+
+    if (!rewrittenText || rewrittenText.length < 100) {
+      console.error('[Rewrite API] AI response is empty or too short:', {
+        responseLength: rewrittenText.length,
+        response: rewrittenText.substring(0, 200)
+      });
+      return NextResponse.json(
+        { error: 'AI kon geen herschreven content genereren. Probeer het opnieuw.' },
+        { status: 500 }
+      );
+    }
+
+    console.log(`[Rewrite API] AI response length: ${rewrittenText.length} characters`);
 
     // Extract nieuwe titel en content
     const newTitleMatch = rewrittenText.match(/NIEUWE TITEL:\s*\n(.+?)(?=\n\nCONTENT:)/s);
@@ -173,7 +189,19 @@ CONTENT:
     const newTitle = newTitleMatch ? newTitleMatch[1].trim() : originalTitle;
     const newContent = newContentMatch ? newContentMatch[1].trim() : rewrittenText;
 
-    console.log('[Rewrite API] Rewritten content generated, saving to database...');
+    if (!newContent || newContent.length < 100) {
+      console.error('[Rewrite API] Extracted content is too short:', {
+        contentLength: newContent.length,
+        titleMatch: !!newTitleMatch,
+        contentMatch: !!newContentMatch
+      });
+      return NextResponse.json(
+        { error: 'Kon geen valide content extraheren uit AI response. Probeer het opnieuw.' },
+        { status: 500 }
+      );
+    }
+
+    console.log('[Rewrite API] Rewritten content generated successfully, saving to database...');
 
     // Sla herschreven content op als nieuwe SavedContent (draft)
     const savedContent = await prisma.savedContent.create({

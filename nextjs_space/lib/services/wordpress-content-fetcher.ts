@@ -94,17 +94,25 @@ export async function fetchWordPressPostsForProject(
     if (cachedData && cachedData.length > 0) {
       console.log(`[WordPress Fetcher] Using cached data for project ${projectId} (${cachedData.length} posts)`);
       
-      posts = cachedData.map(entry => ({
-        id: `wp-${entry.id}`,
-        title: entry.title,
-        url: entry.url,
-        publishedDate: entry.publishedDate || new Date(),
-        excerpt: entry.excerpt,
-        status: 'published' as const,
-        source: 'wordpress' as const,
-        projectId: project.id,
-        projectName: project.name,
-      }));
+      // Generate unique IDs for cached entries using URL hash
+      posts = cachedData.map((entry, index) => {
+        // Create a simple hash from the URL for consistent IDs
+        const urlHash = entry.url.split('').reduce((acc, char) => {
+          return ((acc << 5) - acc) + char.charCodeAt(0);
+        }, 0).toString(36);
+        
+        return {
+          id: `wp-${projectId}-${urlHash}`,
+          title: entry.title || 'Untitled',
+          url: entry.url,
+          publishedDate: entry.publishedDate || new Date(),
+          excerpt: entry.excerpt,
+          status: 'published' as const,
+          source: 'wordpress' as const,
+          projectId: project.id,
+          projectName: project.name || project.websiteUrl || 'Unknown Project',
+        };
+      });
     } else {
       // No cache or old cache - fetch fresh data
       console.log(`[WordPress Fetcher] Fetching fresh sitemap for project ${projectId}`);
@@ -116,17 +124,24 @@ export async function fetchWordPressPostsForProject(
         if (sitemapData.articles && sitemapData.articles.length > 0) {
           await cacheSitemapData(projectId, sitemapData.articles);
           
-          posts = sitemapData.articles.map((article, index) => ({
-            id: `wp-${projectId}-${index}`,
-            title: article.title,
-            url: article.url,
-            publishedDate: article.publishedDate || new Date(),
-            excerpt: article.excerpt,
-            status: 'published' as const,
-            source: 'wordpress' as const,
-            projectId: project.id,
-            projectName: project.name,
-          }));
+          posts = sitemapData.articles.map((article, index) => {
+            // Create a simple hash from the URL for consistent IDs
+            const urlHash = article.url.split('').reduce((acc, char) => {
+              return ((acc << 5) - acc) + char.charCodeAt(0);
+            }, 0).toString(36);
+            
+            return {
+              id: `wp-${projectId}-${urlHash}`,
+              title: article.title || 'Untitled',
+              url: article.url,
+              publishedDate: article.publishedDate || new Date(),
+              excerpt: article.excerpt,
+              status: 'published' as const,
+              source: 'wordpress' as const,
+              projectId: project.id,
+              projectName: project.name || project.websiteUrl || 'Unknown Project',
+            };
+          });
         }
       } catch (error) {
         console.error(`[WordPress Fetcher] Error fetching sitemap for project ${projectId}:`, error);
@@ -198,18 +213,21 @@ export async function fetchGeneratedContent(
       take: 100, // Limit to latest 100 items
     });
 
-    return content.map(item => ({
-      id: item.id,
-      title: item.title,
-      url: item.publishedUrl || undefined,
-      publishedDate: item.publishedAt ? new Date(item.publishedAt) : undefined,
-      createdAt: new Date(item.createdAt),
-      status: (item.status || 'draft') as 'draft' | 'published' | 'scheduled',
-      source: 'generated' as const,
-      projectId: item.project.id,
-      projectName: item.project.name,
-      wordCount: item.wordCount || undefined,
-    }));
+    // Filter out items with missing project data and map with null checks
+    return content
+      .filter(item => item && item.project && item.project.id)
+      .map(item => ({
+        id: item.id,
+        title: item.title || 'Untitled',
+        url: item.publishedUrl || undefined,
+        publishedDate: item.publishedAt ? new Date(item.publishedAt) : undefined,
+        createdAt: new Date(item.createdAt),
+        status: (item.status || 'draft') as 'draft' | 'published' | 'scheduled',
+        source: 'generated' as const,
+        projectId: item.project.id,
+        projectName: item.project.name || 'Unknown Project',
+        wordCount: item.wordCount || undefined,
+      }));
   } catch (error) {
     console.error(`[WordPress Fetcher] Error fetching generated content:`, error);
     return [];
