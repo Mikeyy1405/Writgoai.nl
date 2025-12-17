@@ -20,7 +20,7 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold text-orange-500 mb-2">
             ⚙️ Instellingen
           </h1>
           <p className="text-gray-400">Beheer je account en voorkeuren</p>
@@ -56,7 +56,7 @@ export default function SettingsPage() {
         </div>
 
         {/* WritGo Info */}
-        <div className="bg-gradient-to-r from-orange-500/10 to-pink-500/10 border border-orange-500/20 rounded-xl p-6">
+        <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-6">
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <Info className="w-5 h-5 text-orange-500" />
             Over WritGo

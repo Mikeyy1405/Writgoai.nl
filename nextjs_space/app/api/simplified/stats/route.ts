@@ -85,8 +85,8 @@ export async function GET(request: NextRequest) {
     try {
       const { count, error } = await supabaseAdmin
         .from('SavedContent')
-        .select('*', { count: 'exact', head: true })
-        .eq('clientId', client.id)
+        .select('id, project:Project!inner(clientId)', { count: 'exact', head: true })
+        .eq('project.clientId', client.id)
         .gte('createdAt', startOfMonth.toISOString());
       
       if (error) {
@@ -105,8 +105,8 @@ export async function GET(request: NextRequest) {
     try {
       const { count, error } = await supabaseAdmin
         .from('SavedContent')
-        .select('*', { count: 'exact', head: true })
-        .eq('clientId', client.id)
+        .select('id, project:Project!inner(clientId)', { count: 'exact', head: true })
+        .eq('project.clientId', client.id)
         .not('publishedAt', 'is', null);
       
       if (error) {
@@ -125,8 +125,20 @@ export async function GET(request: NextRequest) {
     try {
       const { data, error } = await supabaseAdmin
         .from('SavedContent')
-        .select('id, title, type, publishedAt, createdAt')
-        .eq('clientId', client.id)
+        .select(`
+          id, 
+          title, 
+          type, 
+          publishedAt, 
+          createdAt,
+          status,
+          project:Project!inner(
+            id,
+            name,
+            clientId
+          )
+        `)
+        .eq('project.clientId', client.id)
         .order('createdAt', { ascending: false })
         .limit(5);
       

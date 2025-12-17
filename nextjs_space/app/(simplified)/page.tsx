@@ -310,11 +310,11 @@ export default function UnifiedDashboardPage() {
     <div className="min-h-screen bg-black text-white p-4 md:p-6">
       <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl p-6 md:p-8 shadow-xl">
-          <h1 className="text-2xl md:text-4xl font-bold mb-2">
+        <div className="bg-gray-900 border-2 border-orange-500 rounded-2xl p-6 md:p-8 shadow-xl">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2 text-white">
             👋 Welkom terug, {session?.user?.name || 'daar'}!
           </h1>
-          <p className="text-base md:text-lg opacity-90">
+          <p className="text-base md:text-lg text-gray-200">
             Alles wat je nodig hebt om content te maken voor je WordPress sites
           </p>
         </div>
@@ -514,7 +514,7 @@ export default function UnifiedDashboardPage() {
                 <button
                   onClick={handleGenerateContent}
                   disabled={generating || !topic.trim() || !selectedProjectId}
-                  className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold py-3 rounded-lg hover:from-orange-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   {generating ? (
                     <>
