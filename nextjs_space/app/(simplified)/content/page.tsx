@@ -77,7 +77,12 @@ export default function ContentOverviewPage() {
     avgPosition: 0,
   });
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
+    console.log('[Content Page] ========== MOUNT ==========');
+    console.log('[Content Page] Timestamp:', new Date().toISOString());
+    
     fetchContent();
     fetchProjects();
   }, []);
@@ -90,15 +95,52 @@ export default function ContentOverviewPage() {
 
   const fetchContent = async () => {
     try {
+      console.log('[Content Page] Loading content...');
+      setLoading(true);
+      setError(null);
+      
+      const startTime = Date.now();
+      console.log('[Content Page] Fetching from /api/simplified/content...');
+      
       const res = await fetch('/api/simplified/content');
-      if (res.ok) {
-        const data = await res.json();
-        setContent(data.content || []);
-        setStats(data.stats || null);
+      const duration = Date.now() - startTime;
+      
+      console.log(`[Content Page] API response in ${duration}ms`);
+      console.log('[Content Page] Response status:', res.status);
+      console.log('[Content Page] Response ok:', res.ok);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[Content Page] ❌ API error response:', errorText);
+        throw new Error(`API error: ${res.status} - ${errorText}`);
       }
-    } catch (error) {
-      console.error('Error fetching content:', error);
-    } finally {
+      
+      const data = await res.json();
+      console.log('[Content Page] API data received:', {
+        success: data.success,
+        contentLength: data.content?.length,
+        stats: data.stats
+      });
+      console.log('[Content Page] Full API response:', data);
+      
+      if (!data.success) {
+        console.error('[Content Page] ❌ API returned error:', data.error);
+        throw new Error(data.error || 'Unknown error');
+      }
+      
+      console.log(`[Content Page] ✅ Loaded ${data.content?.length || 0} items`);
+      
+      setContent(data.content || []);
+      setStats(data.stats || null);
+      setLoading(false);
+      
+    } catch (err) {
+      console.error('[Content Page] ❌ Error loading content:', err);
+      console.error('[Content Page] Error type:', err?.constructor?.name);
+      console.error('[Content Page] Error message:', err instanceof Error ? err.message : 'Unknown');
+      console.error('[Content Page] Error stack:', err instanceof Error ? err.stack : 'No stack');
+      
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
       setLoading(false);
     }
   };
@@ -327,6 +369,52 @@ export default function ContentOverviewPage() {
     return null;
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-16 h-16 animate-spin text-orange-500 mx-auto" />
+          <div>
+            <p className="text-white text-xl font-semibold">Content laden...</p>
+            <p className="text-slate-400 text-sm mt-2">Een moment geduld</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-6">
+        <div className="bg-red-500/20 border-2 border-red-500 rounded-xl p-8 max-w-md">
+          <h2 className="text-red-500 text-2xl font-bold mb-4">❌ Fout</h2>
+          <p className="text-white mb-6">{error}</p>
+          <div className="space-y-3">
+            <button
+              onClick={fetchContent}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+            >
+              Probeer Opnieuw
+            </button>
+            <button
+              onClick={() => window.location.href = '/dashboard'}
+              className="w-full bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+            >
+              Terug naar Dashboard
+            </button>
+          </div>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-6 p-4 bg-black/50 rounded-lg">
+              <p className="text-xs text-slate-400">Development Mode - Check console for details</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -505,11 +593,7 @@ export default function ContentOverviewPage() {
         </div>
 
         {/* Content List */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
-          </div>
-        ) : filteredContent.length === 0 ? (
+        {filteredContent.length === 0 ? (
           <div className="bg-gray-900 rounded-xl p-12 border border-gray-800 text-center">
             <FileText className="w-16 h-16 text-slate-200 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-slate-200 mb-2">
@@ -705,6 +789,59 @@ export default function ContentOverviewPage() {
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Debug Info */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+            <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+              🐛 Debug Info
+              <span className="text-xs text-slate-400">(alleen zichtbaar in development)</span>
+            </h3>
+            <div className="space-y-3">
+              <div className="bg-black/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-2">Content Stats</div>
+                <pre className="text-slate-300 text-xs overflow-auto">
+                  {JSON.stringify({ 
+                    totalContent: content.length,
+                    filteredContent: filteredContent.length,
+                    stats,
+                    filters: {
+                      search: searchQuery || 'none',
+                      status: statusFilter,
+                      source: sourceFilter,
+                      project: projectFilter
+                    }
+                  }, null, 2)}
+                </pre>
+              </div>
+              
+              <div className="bg-black/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-2">Sample Content Items (first 2)</div>
+                <pre className="text-slate-300 text-xs overflow-auto max-h-60">
+                  {JSON.stringify(content.slice(0, 2), null, 2)}
+                </pre>
+              </div>
+              
+              <div className="bg-black/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-2">Actions</div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={fetchContent}
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm"
+                  >
+                    Refresh Content
+                  </button>
+                  <button
+                    onClick={() => console.log('Current state:', { content, stats, filters: { searchQuery, statusFilter, sourceFilter, projectFilter } })}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
+                  >
+                    Log State to Console
+                  </button>
+                </div>
               </div>
             </div>
           </div>
