@@ -80,10 +80,15 @@ export default function UnifiedDashboardPage() {
   // Publishing State
   const [publishing, setPublishing] = useState(false);
 
+  // GSC Connection State
+  const [gscConnected, setGscConnected] = useState(false);
+  const [gscLoading, setGscLoading] = useState(true);
+
   // Load initial data
   useEffect(() => {
     fetchProjects();
     fetchRecentContent();
+    checkGSCConnection();
   }, []);
 
   // Auto-select first project
@@ -104,6 +109,33 @@ export default function UnifiedDashboardPage() {
     } catch (error) {
       console.error('Error fetching projects:', error);
       setProjects([]);
+    }
+  };
+
+  const checkGSCConnection = async () => {
+    try {
+      const res = await fetch('/api/client/gsc/status');
+      if (res.ok) {
+        const data = await res.json();
+        setGscConnected(data.connected);
+      }
+    } catch (error) {
+      console.error('Error checking GSC connection:', error);
+    } finally {
+      setGscLoading(false);
+    }
+  };
+
+  const handleConnectGSC = async () => {
+    try {
+      const res = await fetch('/api/client/gsc/connect');
+      if (res.ok) {
+        const data = await res.json();
+        alert(data.message || 'Google Search Console verbinding wordt opgezet...');
+      }
+    } catch (error) {
+      console.error('Error connecting GSC:', error);
+      alert('Er is een fout opgetreden bij het verbinden met Google Search Console.');
     }
   };
 
@@ -363,6 +395,75 @@ export default function UnifiedDashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Google Search Console Connection Banner */}
+        {!gscLoading && !gscConnected && (
+          <div className="bg-gradient-to-r from-blue-900/50 via-purple-900/50 to-blue-900/50 border-2 border-blue-500/50 rounded-2xl p-6 md:p-8 shadow-2xl">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="bg-blue-500/20 p-3 rounded-xl border border-blue-500/50">
+                  <TrendingUp className="w-8 h-8 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
+                    📊 Verbind Google Search Console
+                  </h2>
+                  <p className="text-sm md:text-base text-gray-300 mb-2">
+                    Krijg inzicht in je content performance: clicks, impressions, CTR en posities
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-200">
+                    <span className="bg-blue-500/10 px-2 py-1 rounded border border-blue-500/30">
+                      ✓ Real-time performance metrics
+                    </span>
+                    <span className="bg-blue-500/10 px-2 py-1 rounded border border-blue-500/30">
+                      ✓ AI-powered improvement tips
+                    </span>
+                    <span className="bg-blue-500/10 px-2 py-1 rounded border border-blue-500/30">
+                      ✓ Performance alerts
+                    </span>
+                    <span className="bg-blue-500/10 px-2 py-1 rounded border border-blue-500/30">
+                      ✓ Google updates tracking
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleConnectGSC}
+                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 px-6 py-3 rounded-xl font-semibold text-white transition-colors"
+              >
+                <span>Verbinden</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* GSC Connected Success Banner */}
+        {!gscLoading && gscConnected && (
+          <div className="bg-gradient-to-r from-green-900/50 via-green-900/50 to-blue-900/50 border-2 border-green-500/50 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-green-500/20 p-3 rounded-xl border border-green-500/50">
+                  <Check className="w-6 h-6 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">
+                    ✅ Google Search Console Verbonden
+                  </h3>
+                  <p className="text-sm text-gray-300">
+                    Je GSC data wordt dagelijks gesynchroniseerd. Bekijk performance metrics in het Content Overzicht.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => window.location.href = '/content'}
+                className="bg-green-500 hover:bg-green-400 px-6 py-3 rounded-xl font-semibold text-white transition-colors"
+              >
+                Bekijk Metrics
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Main Content - 3 Column Layout on desktop, stacked on mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

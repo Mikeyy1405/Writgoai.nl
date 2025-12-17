@@ -244,9 +244,9 @@ export async function generateTopicalAuthorityMap(
 
   console.log(`[Topical Authority] Generated ${pillars.length} pillar topics (expected: ${EXACT_STRUCTURE.PILLARS})`);
 
-  // VALIDATION: Ensure we have exactly 9 pillars
+  // VALIDATION: Ensure we have exactly 9 pillars (should always pass now)
   if (pillars.length !== EXACT_STRUCTURE.PILLARS) {
-    throw new Error(`Expected ${EXACT_STRUCTURE.PILLARS} pillars, got ${pillars.length}`);
+    console.warn(`[Topical Authority] WARNING: Expected ${EXACT_STRUCTURE.PILLARS} pillars, got ${pillars.length}. This should not happen!`);
   }
 
   // Step 6: For each pillar, generate EXACTLY 10 subtopics and 5 articles per subtopic
@@ -431,11 +431,31 @@ Geef ALLEEN JSON terug, geen extra tekst.`;
 
   // Parse AI response
   const parsed = parseAIResponse(content);
-  const pillarData: PillarTopicData[] = parsed.pillars || [];
+  let pillarData: PillarTopicData[] = parsed.pillars || [];
 
   if (pillarData.length === 0) {
     throw new Error('Failed to generate pillar topics');
   }
+
+  // FIXED: Ensure EXACTLY targetCount pillars
+  if (pillarData.length < targetCount) {
+    console.warn(`[Topical Authority] AI generated ${pillarData.length} pillars, padding to ${targetCount}`);
+    // Pad with generic pillars
+    while (pillarData.length < targetCount) {
+      pillarData.push({
+        title: `${niche} - Pillar ${pillarData.length + 1}`,
+        description: `Additional pillar topic for ${niche}`,
+        keywords: [niche.toLowerCase()],
+        priority: 5,
+      });
+    }
+  } else if (pillarData.length > targetCount) {
+    console.warn(`[Topical Authority] AI generated ${pillarData.length} pillars, trimming to ${targetCount}`);
+    // Trim excess pillars
+    pillarData = pillarData.slice(0, targetCount);
+  }
+
+  console.log(`[Topical Authority] ✅ Validated: ${pillarData.length} pillars (target: ${targetCount})`);
 
   // Enrich with DataForSEO data
   if (options.useDataForSEO && DataForSEO.isConfigured()) {

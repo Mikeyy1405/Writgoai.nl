@@ -693,15 +693,15 @@ function CreateMapWizard({ projectId, onClose, onSuccess }: {
         setStatus(`✅ Klaar! ${data.data.totalArticles} artikelen gegenereerd`);
         setSuccess(true);
         
-        // Auto-close after 1.5 seconds and redirect to the map
+        // Auto-close after 2 seconds and redirect to the map
         setTimeout(() => {
           onSuccess();
           onClose();
-          // Navigate to the new map's article list
+          // Navigate to the new map's article list (refresh the page to show the new map)
           if (data.data.mapId) {
-            router.push(`/topical-authority/${data.data.mapId}/lijst`);
+            window.location.href = `/topical-authority`;
           }
-        }, 1500);
+        }, 2000);
       } else {
         setProgress(0);
         setStatus('');

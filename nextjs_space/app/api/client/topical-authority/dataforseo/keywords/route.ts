@@ -23,13 +23,6 @@ export async function POST(request: Request) {
 
     await validateClient(session);
     
-    if (!DataForSEO.isConfigured()) {
-      return NextResponse.json(
-        { error: 'DataForSEO is not configured' },
-        { status: 503 }
-      );
-    }
-
     const body = await request.json();
     const { keywords, location = 'Netherlands', language = 'nl' } = body;
 
@@ -42,7 +35,7 @@ export async function POST(request: Request) {
 
     console.log(`[DataForSEO API] Fetching data for ${keywords.length} keywords`);
 
-    // Get keyword data
+    // Get keyword data (uses default metrics if API not configured or fails)
     const keywordData = await DataForSEO.getBatchKeywordData({
       keywords,
       location,
@@ -52,6 +45,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: keywordData,
+      usingDefaults: !DataForSEO.isConfigured(),
     });
 
   } catch (error: any) {

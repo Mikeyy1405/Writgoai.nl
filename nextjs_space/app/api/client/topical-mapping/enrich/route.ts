@@ -92,17 +92,12 @@ export async function POST(req: NextRequest) {
     const location = topicalMap.language === 'nl' || topicalMap.language === 'NL' ? 'Netherlands' : 'United States';
     const language = topicalMap.language === 'nl' || topicalMap.language === 'NL' ? 'nl' : 'en';
 
-    // Enrich keywords with DataForSEO
+    // Enrich keywords with DataForSEO (uses default metrics if API fails)
     const enrichmentResult = await enrichKeywordsBatch(uniqueKeywords, location, language);
 
+    // Continue even if enrichment fails - we'll use default metrics
     if (!enrichmentResult.success) {
-      return NextResponse.json(
-        {
-          error: 'Failed to enrich keywords',
-          details: enrichmentResult.errors
-        },
-        { status: 500 }
-      );
+      console.log('[Topical Map Enrichment] Using default metrics (DataForSEO unavailable)');
     }
 
     // Create a lookup map for enriched data

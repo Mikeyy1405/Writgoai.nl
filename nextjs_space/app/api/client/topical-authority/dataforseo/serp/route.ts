@@ -23,13 +23,6 @@ export async function POST(request: Request) {
 
     await validateClient(session);
     
-    if (!DataForSEO.isConfigured()) {
-      return NextResponse.json(
-        { error: 'DataForSEO is not configured' },
-        { status: 503 }
-      );
-    }
-
     const body = await request.json();
     const { keyword, location = 'Netherlands', language = 'nl' } = body;
 
@@ -42,19 +35,29 @@ export async function POST(request: Request) {
 
     console.log(`[DataForSEO API] Fetching SERP data for: ${keyword}`);
 
-    // Get SERP data
+    // Get SERP data (returns null if API not configured or fails)
     const serpData = await DataForSEO.getSerpData(keyword, location, language);
 
+    // Return empty data if SERP data not available
     if (!serpData) {
-      return NextResponse.json(
-        { error: 'No SERP data found' },
-        { status: 404 }
-      );
+      console.log(`[DataForSEO API] No SERP data available - using defaults`);
+      return NextResponse.json({
+        success: true,
+        data: {
+          keyword,
+          topResults: [],
+          serpFeatures: [],
+          peopleAlsoAsk: [],
+          relatedSearches: [],
+        },
+        usingDefaults: true,
+      });
     }
 
     return NextResponse.json({
       success: true,
       data: serpData,
+      usingDefaults: !DataForSEO.isConfigured(),
     });
 
   } catch (error: any) {

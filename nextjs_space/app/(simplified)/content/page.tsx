@@ -66,11 +66,27 @@ export default function ContentOverviewPage() {
     improveStructure: true,
   });
   const [rewriteLoading, setRewriteLoading] = useState(false);
+  
+  // GSC Performance Data
+  const [gscData, setGscData] = useState<Record<string, any>>({});
+  const [gscLoading, setGscLoading] = useState(false);
+  const [gscStats, setGscStats] = useState({
+    totalClicks: 0,
+    totalImpressions: 0,
+    avgCtr: 0,
+    avgPosition: 0,
+  });
 
   useEffect(() => {
     fetchContent();
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    if (projectFilter && projectFilter !== 'all') {
+      fetchGSCData(projectFilter);
+    }
+  }, [projectFilter]);
 
   const fetchContent = async () => {
     try {
@@ -96,6 +112,47 @@ export default function ContentOverviewPage() {
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
+    }
+  };
+
+  const fetchGSCData = async (projectId: string) => {
+    setGscLoading(true);
+    try {
+      const res = await fetch(`/api/client/gsc/performance?projectId=${projectId}&days=30&limit=100`);
+      if (res.ok) {
+        const data = await res.json();
+        
+        if (data.success && data.topUrls) {
+          // Map GSC data by URL
+          const mapped: Record<string, any> = {};
+          let totalClicks = 0;
+          let totalImpressions = 0;
+          let totalCtr = 0;
+          let totalPosition = 0;
+          let count = 0;
+          
+          data.topUrls.forEach((item: any) => {
+            mapped[item.url] = item;
+            totalClicks += item.clicks || 0;
+            totalImpressions += item.impressions || 0;
+            totalCtr += item.ctr || 0;
+            totalPosition += item.position || 0;
+            count++;
+          });
+          
+          setGscData(mapped);
+          setGscStats({
+            totalClicks,
+            totalImpressions,
+            avgCtr: count > 0 ? totalCtr / count : 0,
+            avgPosition: count > 0 ? totalPosition / count : 0,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching GSC data:', error);
+    } finally {
+      setGscLoading(false);
     }
   };
 
@@ -281,23 +338,47 @@ export default function ContentOverviewPage() {
           <p className="text-slate-200">Al je gegenereerde artikelen op één plek</p>
         </div>
 
-        {/* Performance Dashboard Banner */}
-        <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-6 border border-blue-700">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">📊 Bekijk je Performance Metrics</h3>
-              <p className="text-blue-200 text-sm">
-                Krijg inzicht in je Google Search Console prestaties, alerts en AI-powered tips
-              </p>
+        {/* Google Search Console Performance (only show if project selected) */}
+        {projectFilter && projectFilter !== 'all' && (
+          <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-6 border border-blue-700">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-white mb-1">📊 Google Search Console Performance</h3>
+                <p className="text-blue-200 text-sm">Laatste 30 dagen - Selecteer een website om metrics te zien</p>
+              </div>
+              {gscLoading && (
+                <Loader2 className="w-5 h-5 animate-spin text-white" />
+              )}
             </div>
-            <button
-              onClick={() => window.location.href = '/performance'}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium whitespace-nowrap"
-            >
-              Open Performance Dashboard →
-            </button>
+            
+            {Object.keys(gscData).length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                <div className="bg-white/10 rounded-lg p-4">
+                  <div className="text-blue-200 text-sm mb-1">Totaal Clicks</div>
+                  <div className="text-white text-2xl font-bold">{gscStats.totalClicks.toLocaleString()}</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-4">
+                  <div className="text-blue-200 text-sm mb-1">Impressions</div>
+                  <div className="text-white text-2xl font-bold">{gscStats.totalImpressions.toLocaleString()}</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-4">
+                  <div className="text-blue-200 text-sm mb-1">Gem. CTR</div>
+                  <div className="text-white text-2xl font-bold">{(gscStats.avgCtr * 100).toFixed(1)}%</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-4">
+                  <div className="text-blue-200 text-sm mb-1">Gem. Positie</div>
+                  <div className="text-white text-2xl font-bold">{gscStats.avgPosition.toFixed(1)}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/10 rounded-lg p-4 text-center">
+                <p className="text-blue-200">
+                  {gscLoading ? 'Laden...' : 'Geen GSC data beschikbaar. Verbind je Google Search Console om performance metrics te zien.'}
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -494,6 +575,34 @@ export default function ContentOverviewPage() {
                         </div>
                       )}
                     </div>
+                    
+                    {/* GSC Performance Metrics (if available for this URL) */}
+                    {item.url && gscData[item.url] && (
+                      <div className="flex items-center gap-4 text-sm pt-3 border-t border-gray-700">
+                        <div className="flex items-center gap-2 text-blue-300">
+                          <span className="font-semibold">Clicks:</span>
+                          <span>{gscData[item.url].clicks?.toLocaleString() || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-purple-300">
+                          <span className="font-semibold">Impressions:</span>
+                          <span>{gscData[item.url].impressions?.toLocaleString() || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-green-300">
+                          <span className="font-semibold">CTR:</span>
+                          <span>{((gscData[item.url].ctr || 0) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">Positie:</span>
+                          <span className={`font-bold ${
+                            gscData[item.url].position <= 3 ? 'text-green-400' : 
+                            gscData[item.url].position <= 10 ? 'text-yellow-400' : 
+                            'text-red-400'
+                          }`}>
+                            #{gscData[item.url].position?.toFixed(1) || '-'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex flex-col items-end gap-3">
