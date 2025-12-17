@@ -2,6 +2,10 @@
  * POST /api/client/topical-authority/generate-map
  * 
  * Generate a complete topical authority map with 400-500 articles
+ * 
+ * NEW: Can automatically detect niche from WordPress website
+ * - If `niche` is provided: Use that niche (backwards compatible)
+ * - If `niche` is NOT provided or `autoAnalyze=true`: Automatically analyze website and detect niche
  */
 
 import { NextResponse } from 'next/server';
@@ -26,19 +30,20 @@ export async function POST(request: Request) {
     
     const {
       projectId,
-      niche,
+      niche, // Optional: will auto-detect if not provided
       description,
       targetArticles = 450,
       location = 'Netherlands',
       language = 'nl',
       useDataForSEO = true,
       analyzeExistingContent = true,
+      autoAnalyze = false, // Set to true to force website analysis
     } = body;
 
     // Validate required fields
-    if (!projectId || !niche) {
+    if (!projectId) {
       return NextResponse.json(
-        { error: 'Missing required fields', details: 'projectId and niche are required' },
+        { error: 'Missing required fields', details: 'projectId is required' },
         { status: 400 }
       );
     }
@@ -47,19 +52,28 @@ export async function POST(request: Request) {
     await validateProject(projectId, client.id);
 
     console.log(`[Topical Authority API] Generating map for project ${projectId}`);
-    console.log(`[Topical Authority API] Niche: ${niche}, Target: ${targetArticles} articles`);
+    
+    if (niche && !autoAnalyze) {
+      console.log(`[Topical Authority API] Using provided niche: ${niche}`);
+    } else {
+      console.log(`[Topical Authority API] Will auto-detect niche from website`);
+    }
+    
+    console.log(`[Topical Authority API] Target: ${targetArticles} articles`);
 
     // Generate the map (this will take some time)
+    // The service will automatically analyze the website if niche is not provided
     const result = await TopicalAuthorityService.generateMap({
       projectId,
       clientId: client.id,
-      niche,
+      niche, // Can be undefined
       description,
       targetArticles,
       location,
       language,
       useDataForSEO,
       analyzeExistingContent,
+      autoAnalyze, // Enable automatic website analysis
     });
 
     return NextResponse.json({

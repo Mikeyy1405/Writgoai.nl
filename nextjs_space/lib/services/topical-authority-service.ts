@@ -18,6 +18,7 @@ import { prisma } from '@/lib/db';
 import { chatCompletion } from '@/lib/ai-utils';
 import { DataForSEO } from '@/lib/dataforseo-api';
 import { WordPressSitemapParser } from '@/lib/wordpress-sitemap-parser';
+import { WordPressWebsiteAnalyzer, type WebsiteAnalysisResult } from './wordpress-website-analyzer';
 
 // ============================================================================
 // Types & Interfaces
@@ -26,13 +27,14 @@ import { WordPressSitemapParser } from '@/lib/wordpress-sitemap-parser';
 export interface GenerateMapOptions {
   projectId: string;
   clientId: string;
-  niche: string;
+  niche?: string; // Optional: will auto-detect if not provided
   description?: string;
   targetArticles?: number; // Default: 400-500
   location?: string;
   language?: string;
   useDataForSEO?: boolean;
   analyzeExistingContent?: boolean;
+  autoAnalyze?: boolean; // If true, automatically analyze website
 }
 
 export interface PillarTopicData {
@@ -92,6 +94,8 @@ export interface TopicalAuthorityMapResult {
 /**
  * Generate a complete topical authority map
  * This is the main entry point for creating a 400-500 article content strategy
+ * 
+ * NEW: Can automatically detect niche from WordPress website if not provided
  */
 export async function generateTopicalAuthorityMap(
   options: GenerateMapOptions
@@ -99,17 +103,15 @@ export async function generateTopicalAuthorityMap(
   const {
     projectId,
     clientId,
-    niche,
+    niche: providedNiche,
     description,
     targetArticles = 450,
     location = 'Netherlands',
-    language = 'nl',
+    language: providedLanguage = 'nl',
     useDataForSEO = true,
     analyzeExistingContent = true,
+    autoAnalyze = false,
   } = options;
-
-  console.log(`[Topical Authority] Starting map generation for niche: ${niche}`);
-  console.log(`[Topical Authority] Target: ${targetArticles} articles`);
 
   // Step 1: Get project data
   const project = await prisma.project.findUnique({
@@ -120,9 +122,56 @@ export async function generateTopicalAuthorityMap(
     throw new Error('Project not found');
   }
 
-  // Step 2: Analyze existing WordPress content (if enabled)
+  // Step 2: Automatic website analysis (if enabled or no niche provided)
+  let websiteAnalysis: WebsiteAnalysisResult | null = null;
+  let niche = providedNiche;
+  let language = providedLanguage;
   let existingContent: any[] = [];
-  if (analyzeExistingContent && project.websiteUrl) {
+
+  if (!niche || autoAnalyze) {
+    console.log('[Topical Authority] 🔍 Starting automatic website analysis...');
+    
+    if (!project.websiteUrl) {
+      throw new Error('No website URL configured for automatic analysis');
+    }
+
+    try {
+      websiteAnalysis = await WordPressWebsiteAnalyzer.analyze(projectId);
+      
+      // Use detected niche if not provided
+      if (!niche) {
+        niche = websiteAnalysis.niche;
+        console.log(`[Topical Authority] ✅ Auto-detected niche: ${niche}`);
+      }
+      
+      // Use detected language
+      language = websiteAnalysis.language;
+      
+      // Get existing content from analysis
+      const cachedArticles = await WordPressSitemapParser.getCached(projectId);
+      if (cachedArticles) {
+        existingContent = cachedArticles;
+      }
+      
+      console.log(`[Topical Authority] ✅ Website analysis complete`);
+      console.log(`[Topical Authority]    - Niche: ${websiteAnalysis.niche}`);
+      console.log(`[Topical Authority]    - Sub-niches: ${websiteAnalysis.subNiches.length}`);
+      console.log(`[Topical Authority]    - Existing articles: ${websiteAnalysis.existingArticleCount}`);
+      console.log(`[Topical Authority]    - Content gaps: ${websiteAnalysis.contentGaps.length}`);
+      
+    } catch (error: any) {
+      console.error(`[Topical Authority] ❌ Website analysis failed: ${error.message}`);
+      
+      if (!niche) {
+        throw new Error(`Could not auto-detect niche: ${error.message}. Please provide niche manually.`);
+      }
+      
+      console.warn('[Topical Authority] Continuing with provided niche...');
+    }
+  }
+
+  // Step 3: Fallback: Analyze existing WordPress content (if not done in auto-analysis)
+  if (existingContent.length === 0 && analyzeExistingContent && project.websiteUrl) {
     console.log('[Topical Authority] Analyzing existing WordPress content...');
     try {
       const sitemapResult = await WordPressSitemapParser.parse(project.websiteUrl);
@@ -137,28 +186,46 @@ export async function generateTopicalAuthorityMap(
     }
   }
 
-  // Step 3: Create the map
+  if (!niche) {
+    throw new Error('Niche is required. Either provide it manually or enable auto-analysis.');
+  }
+
+  console.log(`[Topical Authority] 🚀 Starting map generation for niche: ${niche}`);
+  console.log(`[Topical Authority] Target: ${targetArticles} articles`);
+
+  // Step 4: Create the map
   const map = await prisma.topicalAuthorityMap.create({
     data: {
       projectId,
       clientId,
       niche,
-      description: description || `Complete topical authority map for ${niche}`,
+      description: description || (websiteAnalysis 
+        ? websiteAnalysis.nicheDescription 
+        : `Complete topical authority map for ${niche}`),
       totalArticlesTarget: targetArticles,
       status: 'draft',
+      metadata: websiteAnalysis ? {
+        autoDetected: true,
+        subNiches: websiteAnalysis.subNiches,
+        primaryKeywords: websiteAnalysis.primaryKeywords,
+        targetAudience: websiteAnalysis.targetAudience,
+        existingArticlesAnalyzed: websiteAnalysis.existingArticleCount,
+      } : {},
     },
   });
 
-  console.log(`[Topical Authority] Created map: ${map.id}`);
+  console.log(`[Topical Authority] ✅ Created map: ${map.id}`);
 
-  // Step 4: Generate pillar topics (5-10 pillars)
+  // Step 5: Generate pillar topics (5-10 pillars)
+  // If we have website analysis, use sub-niches as inspiration for pillars
   const targetPillars = Math.ceil(targetArticles / 50); // ~50 articles per pillar
   const pillars = await generatePillarTopics(
     map.id,
     niche,
     targetPillars,
     existingContent,
-    { useDataForSEO, location, language }
+    { useDataForSEO, location, language },
+    websiteAnalysis // Pass analysis for better pillar generation
   );
 
   console.log(`[Topical Authority] Generated ${pillars.length} pillar topics`);
@@ -262,7 +329,8 @@ async function generatePillarTopics(
   niche: string,
   targetCount: number,
   existingContent: any[],
-  options: { useDataForSEO: boolean; location: string; language: string }
+  options: { useDataForSEO: boolean; location: string; language: string },
+  websiteAnalysis?: WebsiteAnalysisResult | null
 ): Promise<any[]> {
   console.log(`[Topical Authority] Generating ${targetCount} pillar topics...`);
 
@@ -270,13 +338,27 @@ async function generatePillarTopics(
     ? `Bestaande content:\n${existingContent.slice(0, 20).map(a => `- ${a.title}`).join('\n')}`
     : 'Geen bestaande content gevonden.';
 
+  const websiteContext = websiteAnalysis ? `
+WEBSITE ANALYSE:
+Sub-niches: ${websiteAnalysis.subNiches.join(', ')}
+Content thema's: ${websiteAnalysis.contentThemes.join(', ')}
+Doelgroep: ${websiteAnalysis.targetAudience}
+Bestaande artikelen: ${websiteAnalysis.existingArticleCount}
+
+CONTENT GAPS (focus hierop):
+${websiteAnalysis.contentGaps.map(gap => 
+  `- ${gap.topic} (Priority: ${gap.priority}/10, ~${gap.estimatedArticles} artikelen nodig)`
+).join('\n')}
+` : '';
+
   const prompt = `Je bent een SEO expert die topical authority maps creëert.
 
 Niche: ${niche}
-
+${websiteContext}
 ${existingSummary}
 
 Genereer ${targetCount} HOOFDPILAREN (pillar topics) voor deze niche. Dit zijn de BREDE, FUNDAMENTELE onderwerpen die de basis vormen van topical authority.
+${websiteAnalysis ? '\nFOCUS: Richt je vooral op de geïdentificeerde content gaps en ontbrekende topics.' : ''}
 
 Elke pillar moet:
 1. Breed genoeg zijn voor 40-50 subtopics
@@ -761,6 +843,44 @@ export async function updateArticleStatus(
 }
 
 // ============================================================================
+// Website Analysis (Preview Mode)
+// ============================================================================
+
+/**
+ * Analyze website without generating map
+ * This is useful for showing a preview before generating the full map
+ */
+export async function analyzeWebsiteForTopicalMap(
+  projectId: string
+): Promise<WebsiteAnalysisResult> {
+  console.log(`[Topical Authority] Analyzing website for project: ${projectId}`);
+
+  // Get project data
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: {
+      id: true,
+      name: true,
+      websiteUrl: true,
+    },
+  });
+
+  if (!project || !project.websiteUrl) {
+    throw new Error('Project not found or no website URL configured');
+  }
+
+  // Perform analysis
+  const analysis = await WordPressWebsiteAnalyzer.analyze(projectId);
+
+  console.log(`[Topical Authority] ✅ Analysis complete for: ${project.name}`);
+  console.log(`[Topical Authority]    - Detected niche: ${analysis.niche}`);
+  console.log(`[Topical Authority]    - Existing articles: ${analysis.existingArticleCount}`);
+  console.log(`[Topical Authority]    - Content gaps: ${analysis.contentGaps.length}`);
+
+  return analysis;
+}
+
+// ============================================================================
 // Exports
 // ============================================================================
 
@@ -770,4 +890,5 @@ export const TopicalAuthorityService = {
   getProjectMaps,
   getArticlesForGeneration,
   updateArticleStatus,
+  analyzeWebsite: analyzeWebsiteForTopicalMap, // NEW: Preview analysis
 };
