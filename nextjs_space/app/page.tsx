@@ -67,13 +67,13 @@ export default function HomePage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <a 
-                href="#pricing"
+              <Link 
+                href="/inloggen"
                 className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg text-lg font-medium transition inline-flex items-center justify-center shadow-lg shadow-orange-500/30"
               >
                 Start Nu - Vanaf €97/maand
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </a>
+              </Link>
               
               <Link 
                 href="/blog"
@@ -260,12 +260,12 @@ export default function HomePage() {
                 ))}
               </ul>
               
-              <a 
-                href="#contact"
+              <Link 
+                href="/inloggen"
                 className="block w-full bg-slate-800 hover:bg-slate-700 text-white text-center px-6 py-3 rounded-lg font-medium transition border border-slate-700"
               >
                 Start Starter
-              </a>
+              </Link>
             </div>
 
             {/* Professional (Popular) */}
@@ -304,12 +304,12 @@ export default function HomePage() {
                 ))}
               </ul>
               
-              <a 
-                href="#contact"
+              <Link 
+                href="/inloggen"
                 className="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center px-6 py-3 rounded-lg font-medium transition shadow-lg shadow-orange-500/30"
               >
                 Start Professional
-              </a>
+              </Link>
             </div>
 
             {/* Enterprise */}
@@ -345,12 +345,12 @@ export default function HomePage() {
                 ))}
               </ul>
               
-              <a 
-                href="#contact"
+              <Link 
+                href="/inloggen"
                 className="block w-full bg-slate-800 hover:bg-slate-700 text-white text-center px-6 py-3 rounded-lg font-medium transition border border-slate-700"
               >
                 Start Enterprise
-              </a>
+              </Link>
             </div>
           </div>
           
@@ -509,13 +509,13 @@ export default function HomePage() {
             Eerste 100 credits gratis bij aanmelding.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="#pricing"
+            <Link 
+              href="/inloggen"
               className="bg-white hover:bg-slate-100 text-orange-500 px-8 py-4 rounded-lg text-lg font-medium transition inline-flex items-center justify-center shadow-lg"
             >
               Start Nu - Vanaf €97/maand
               <ArrowRight className="ml-2 w-5 h-5" />
-            </a>
+            </Link>
             
             <Link 
               href="/blog"

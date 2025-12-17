@@ -70,18 +70,9 @@ function LoginRegisterForm() {
       } else if (result?.ok) {
         toast.success('Welkom terug!');
         
-        // Fetch session to get user role
-        const sessionResponse = await fetch('/api/auth/session');
-        const session = await sessionResponse.json();
-        
-        // Redirect based on role
-        const userRole = session?.user?.role;
-        if (userRole === 'admin' || userRole === 'superadmin') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/client/overzicht');
-        }
-        
+        // Redirect to unified dashboard for all users
+        // Admin users can access /admin if needed via direct navigation
+        router.push('/');
         router.refresh();
       }
     } catch (err) {
