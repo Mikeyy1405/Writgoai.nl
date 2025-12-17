@@ -1,341 +1,595 @@
-
 /**
- * 🔍 DATAFORSEO API CLIENT
+ * DataForSEO API Integration
  * 
- * Integrates with DataForSEO API for real keyword data:
- * - Search volume & trends
- * - Keyword difficulty
- * - CPC (cost per click)
- * - Related keywords & questions
- * - Batch processing for efficiency
+ * Provides comprehensive SEO data including:
+ * - Keyword research (search volume, difficulty, CPC)
+ * - SERP analysis (top ranking pages, features)
+ * - Competition analysis
+ * - Related keywords and questions
+ * - Trending topics
  * 
- * Pricing: ~€0.006 per keyword (bulk rate)
+ * API Documentation: https://docs.dataforseo.com/v3/
  */
 
-export interface KeywordData {
+import { prisma } from '@/lib/db';
+
+// ============================================================================
+// Types & Interfaces
+// ============================================================================
+
+export interface DataForSEOKeywordData {
   keyword: string;
   searchVolume: number;
   difficulty: number;
   cpc: number;
   competition: number;
-  trend: number[]; // Monthly trend for last 12 months
-  relatedKeywords: string[];
-  questions: string[];
-  seasonalityScore: number; // 0-100
-  opportunityScore: number; // Our calculated score
+  competitionLevel?: 'low' | 'medium' | 'high';
+  trend?: number[];
+  relatedKeywords?: string[];
+  questions?: string[];
+  serpFeatures?: string[];
+  location?: string;
+  language?: string;
 }
 
-export interface BatchKeywordResult {
-  success: boolean;
-  data: KeywordData[];
-  errors: string[];
-  totalCost: number;
-  processedCount: number;
+export interface DataForSEOSerpData {
+  keyword: string;
+  topResults: Array<{
+    position: number;
+    url: string;
+    title: string;
+    description: string;
+    domainRating?: number;
+  }>;
+  serpFeatures: string[];
+  peopleAlsoAsk?: Array<{
+    question: string;
+    answer?: string;
+  }>;
+  relatedSearches?: string[];
 }
+
+export interface DataForSEOBatchRequest {
+  keywords: string[];
+  location?: string;
+  language?: string;
+}
+
+export interface DataForSEOCompetitionData {
+  keyword: string;
+  topCompetitors: Array<{
+    url: string;
+    domain: string;
+    domainRating: number;
+    position: number;
+    title: string;
+  }>;
+  averageDifficulty: number;
+  quickWins: boolean; // Low difficulty + high volume
+}
+
+// ============================================================================
+// Configuration
+// ============================================================================
 
 const DATAFORSEO_API_URL = 'https://api.dataforseo.com/v3';
+const DATAFORSEO_LOGIN = process.env.DATAFORSEO_LOGIN || '';
+const DATAFORSEO_PASSWORD = process.env.DATAFORSEO_PASSWORD || '';
+const CACHE_EXPIRY_DAYS = 30;
+
+// Check if DataForSEO is configured
+export function isDataForSEOConfigured(): boolean {
+  return !!(DATAFORSEO_LOGIN && DATAFORSEO_PASSWORD);
+}
+
+// ============================================================================
+// Core API Functions
+// ============================================================================
 
 /**
- * Get authentication header for DataForSEO API
+ * Make authenticated request to DataForSEO API
  */
-function getAuthHeader(): string {
-  const username = process.env.DATAFORSEO_USERNAME;
-  const password = process.env.DATAFORSEO_PASSWORD;
-  
-  if (!username || !password) {
-    throw new Error('DataForSEO credentials not configured');
+async function makeDataForSEORequest(
+  endpoint: string,
+  data: any
+): Promise<any> {
+  if (!isDataForSEOConfigured()) {
+    throw new Error('DataForSEO API credentials not configured. Set DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD environment variables.');
   }
+
+  const auth = Buffer.from(`${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}`).toString('base64');
   
-  return 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+  const response = await fetch(`${DATAFORSEO_API_URL}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`DataForSEO API error (${response.status}): ${error}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.status_code !== 20000) {
+    throw new Error(`DataForSEO API error: ${result.status_message || 'Unknown error'}`);
+  }
+
+  return result;
+}
+
+// ============================================================================
+// Keyword Research
+// ============================================================================
+
+/**
+ * Get keyword data with search volume, difficulty, and CPC
+ * Uses caching to reduce API calls
+ */
+export async function getKeywordData(
+  keyword: string,
+  location: string = 'Netherlands',
+  language: string = 'nl'
+): Promise<DataForSEOKeywordData | null> {
+  try {
+    // Check cache first
+    const cached = await getCachedKeywordData(keyword, location, language);
+    if (cached) {
+      console.log(`[DataForSEO] Using cached data for: ${keyword}`);
+      return cached;
+    }
+
+    console.log(`[DataForSEO] Fetching fresh data for: ${keyword}`);
+
+    // Call DataForSEO API
+    const result = await makeDataForSEORequest('/keywords_data/google_ads/search_volume/live', [
+      {
+        keywords: [keyword],
+        location_code: getLocationCode(location),
+        language_code: language,
+      }
+    ]);
+
+    if (!result.tasks || !result.tasks[0] || !result.tasks[0].result) {
+      return null;
+    }
+
+    const data = result.tasks[0].result[0];
+    
+    const keywordData: DataForSEOKeywordData = {
+      keyword: keyword,
+      searchVolume: data.search_volume || 0,
+      difficulty: calculateDifficulty(data),
+      cpc: data.cpc || 0,
+      competition: data.competition || 0,
+      competitionLevel: getCompetitionLevel(data.competition || 0),
+      location,
+      language,
+    };
+
+    // Cache the result
+    await cacheKeywordData(keywordData);
+
+    return keywordData;
+  } catch (error: any) {
+    console.error('[DataForSEO] Error fetching keyword data:', error.message);
+    return null;
+  }
 }
 
 /**
- * 📊 BATCH KEYWORD ENRICHMENT
- * 
- * Fetches real SEO data for multiple keywords in one API call
- * Cost: ~€0.006 per keyword
+ * Get keyword data for multiple keywords in batch
+ * More efficient than individual calls
  */
-export async function enrichKeywordsBatch(
+export async function getBatchKeywordData(
+  request: DataForSEOBatchRequest
+): Promise<DataForSEOKeywordData[]> {
+  const { keywords, location = 'Netherlands', language = 'nl' } = request;
+  
+  try {
+    // Check which keywords are already cached
+    const results: DataForSEOKeywordData[] = [];
+    const uncachedKeywords: string[] = [];
+
+    for (const keyword of keywords) {
+      const cached = await getCachedKeywordData(keyword, location, language);
+      if (cached) {
+        results.push(cached);
+      } else {
+        uncachedKeywords.push(keyword);
+      }
+    }
+
+    // If all keywords are cached, return immediately
+    if (uncachedKeywords.length === 0) {
+      console.log(`[DataForSEO] All ${keywords.length} keywords found in cache`);
+      return results;
+    }
+
+    console.log(`[DataForSEO] Fetching ${uncachedKeywords.length} uncached keywords`);
+
+    // Fetch uncached keywords in batches of 100 (API limit)
+    const batchSize = 100;
+    for (let i = 0; i < uncachedKeywords.length; i += batchSize) {
+      const batch = uncachedKeywords.slice(i, i + batchSize);
+      
+      const result = await makeDataForSEORequest('/keywords_data/google_ads/search_volume/live', [
+        {
+          keywords: batch,
+          location_code: getLocationCode(location),
+          language_code: language,
+        }
+      ]);
+
+      if (result.tasks && result.tasks[0] && result.tasks[0].result) {
+        for (const data of result.tasks[0].result) {
+          const keywordData: DataForSEOKeywordData = {
+            keyword: data.keyword,
+            searchVolume: data.search_volume || 0,
+            difficulty: calculateDifficulty(data),
+            cpc: data.cpc || 0,
+            competition: data.competition || 0,
+            competitionLevel: getCompetitionLevel(data.competition || 0),
+            location,
+            language,
+          };
+
+          results.push(keywordData);
+          await cacheKeywordData(keywordData);
+        }
+      }
+    }
+
+    return results;
+  } catch (error: any) {
+    console.error('[DataForSEO] Error in batch keyword fetch:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Get related keywords and questions for a keyword
+ */
+export async function getRelatedKeywords(
+  keyword: string,
+  location: string = 'Netherlands',
+  language: string = 'nl',
+  limit: number = 50
+): Promise<{
+  relatedKeywords: string[];
+  questions: string[];
+}> {
+  try {
+    const result = await makeDataForSEORequest('/keywords_data/google_ads/keywords_for_keywords/live', [
+      {
+        keywords: [keyword],
+        location_code: getLocationCode(location),
+        language_code: language,
+        include_seed_keyword: false,
+        limit: limit,
+      }
+    ]);
+
+    const relatedKeywords: string[] = [];
+    const questions: string[] = [];
+
+    if (result.tasks && result.tasks[0] && result.tasks[0].result) {
+      for (const item of result.tasks[0].result) {
+        const kw = item.keyword;
+        if (kw.includes('?') || kw.startsWith('hoe') || kw.startsWith('wat') || 
+            kw.startsWith('waar') || kw.startsWith('wie') || kw.startsWith('waarom')) {
+          questions.push(kw);
+        } else {
+          relatedKeywords.push(kw);
+        }
+      }
+    }
+
+    return { relatedKeywords, questions };
+  } catch (error: any) {
+    console.error('[DataForSEO] Error fetching related keywords:', error.message);
+    return { relatedKeywords: [], questions: [] };
+  }
+}
+
+// ============================================================================
+// SERP Analysis
+// ============================================================================
+
+/**
+ * Get SERP data including top ranking pages and SERP features
+ */
+export async function getSerpData(
+  keyword: string,
+  location: string = 'Netherlands',
+  language: string = 'nl'
+): Promise<DataForSEOSerpData | null> {
+  try {
+    const result = await makeDataForSEORequest('/serp/google/organic/live/advanced', [
+      {
+        keyword: keyword,
+        location_code: getLocationCode(location),
+        language_code: language,
+        device: 'desktop',
+        os: 'windows',
+        depth: 20, // Get top 20 results
+      }
+    ]);
+
+    if (!result.tasks || !result.tasks[0] || !result.tasks[0].result) {
+      return null;
+    }
+
+    const data = result.tasks[0].result[0];
+    const items = data.items || [];
+
+    const serpData: DataForSEOSerpData = {
+      keyword,
+      topResults: items
+        .filter((item: any) => item.type === 'organic')
+        .slice(0, 10)
+        .map((item: any, index: number) => ({
+          position: index + 1,
+          url: item.url,
+          title: item.title,
+          description: item.description || '',
+          domainRating: item.rank_group, // Rough estimate
+        })),
+      serpFeatures: items
+        .filter((item: any) => item.type !== 'organic')
+        .map((item: any) => item.type),
+      peopleAlsoAsk: items
+        .filter((item: any) => item.type === 'people_also_ask')
+        .flatMap((item: any) => item.items || [])
+        .map((q: any) => ({
+          question: q.title || q.question,
+          answer: q.snippet || q.answer,
+        })),
+      relatedSearches: items
+        .filter((item: any) => item.type === 'related_searches')
+        .flatMap((item: any) => item.items || [])
+        .map((s: any) => s.title),
+    };
+
+    return serpData;
+  } catch (error: any) {
+    console.error('[DataForSEO] Error fetching SERP data:', error.message);
+    return null;
+  }
+}
+
+// ============================================================================
+// Competition Analysis
+// ============================================================================
+
+/**
+ * Analyze competition for a keyword
+ */
+export async function getCompetitionAnalysis(
+  keyword: string,
+  location: string = 'Netherlands',
+  language: string = 'nl'
+): Promise<DataForSEOCompetitionData | null> {
+  try {
+    const [keywordData, serpData] = await Promise.all([
+      getKeywordData(keyword, location, language),
+      getSerpData(keyword, location, language),
+    ]);
+
+    if (!keywordData || !serpData) {
+      return null;
+    }
+
+    const topCompetitors = serpData.topResults.slice(0, 5).map(result => ({
+      url: result.url,
+      domain: new URL(result.url).hostname,
+      domainRating: result.domainRating || 0,
+      position: result.position,
+      title: result.title,
+    }));
+
+    const averageDifficulty = keywordData.difficulty;
+    const quickWins = keywordData.difficulty < 30 && keywordData.searchVolume > 100;
+
+    return {
+      keyword,
+      topCompetitors,
+      averageDifficulty,
+      quickWins,
+    };
+  } catch (error: any) {
+    console.error('[DataForSEO] Error in competition analysis:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Find quick wins: low difficulty + high volume keywords
+ */
+export async function findQuickWins(
   keywords: string[],
   location: string = 'Netherlands',
   language: string = 'nl'
-): Promise<BatchKeywordResult> {
-  console.log('[DataForSEO] Enriching batch of', keywords.length, 'keywords');
+): Promise<DataForSEOKeywordData[]> {
+  const batchData = await getBatchKeywordData({ keywords, location, language });
   
-  try {
-    // Limit to 1000 keywords per batch (API limit)
-    const batchSize = Math.min(keywords.length, 1000);
-    const keywordsBatch = keywords.slice(0, batchSize);
-    
-    // Step 1: Get search volume, difficulty, CPC
-    const keywordMetrics = await getKeywordMetrics(keywordsBatch, location, language);
-    
-    // Step 2: Get related keywords and questions
-    const relatedData = await getRelatedKeywords(keywordsBatch.slice(0, 10), location, language); // Limit to top 10
-    
-    // Combine all data
-    const enrichedData: KeywordData[] = keywordsBatch.map((keyword, index) => {
-      const metrics = keywordMetrics[index] || {};
-      const related = relatedData[keyword] || { related: [], questions: [] };
-      
-      // Calculate opportunity score
-      const opportunityScore = calculateOpportunityScore(
-        metrics.search_volume || 0,
-        metrics.keyword_difficulty || 50,
-        metrics.cpc || 0,
-        metrics.competition || 0.5
-      );
-      
-      // Calculate seasonality
-      const seasonalityScore = calculateSeasonality(metrics.monthly_searches || []);
-      
-      return {
-        keyword,
-        searchVolume: metrics.search_volume || 0,
-        difficulty: metrics.keyword_difficulty || 50,
-        cpc: metrics.cpc || 0,
-        competition: metrics.competition || 0.5,
-        trend: (metrics.monthly_searches || []).map((m: any) => m.search_volume || 0),
-        relatedKeywords: related.related.slice(0, 10), // Top 10
-        questions: related.questions.slice(0, 5), // Top 5
-        seasonalityScore,
-        opportunityScore
-      };
+  return batchData
+    .filter(kw => kw.difficulty < 30 && kw.searchVolume > 100)
+    .sort((a, b) => {
+      // Score: higher volume and lower difficulty is better
+      const scoreA = a.searchVolume / (a.difficulty + 1);
+      const scoreB = b.searchVolume / (b.difficulty + 1);
+      return scoreB - scoreA;
     });
-    
-    const totalCost = batchSize * 0.006; // €0.006 per keyword
-    
-    console.log('[DataForSEO] Enriched', enrichedData.length, 'keywords. Cost: €', totalCost.toFixed(3));
-    
-    return {
-      success: true,
-      data: enrichedData,
-      errors: [],
-      totalCost,
-      processedCount: enrichedData.length
-    };
-    
-  } catch (error) {
-    console.error('[DataForSEO] Batch enrichment error:', error);
-    return {
-      success: false,
-      data: [],
-      errors: [error instanceof Error ? error.message : 'Unknown error'],
-      totalCost: 0,
-      processedCount: 0
-    };
-  }
 }
 
-/**
- * Get keyword metrics (search volume, difficulty, CPC)
- */
-async function getKeywordMetrics(
-  keywords: string[],
-  location: string,
-  language: string
-): Promise<any[]> {
-  const response = await fetch(`${DATAFORSEO_API_URL}/keywords_data/google_ads/search_volume/live`, {
-    method: 'POST',
-    headers: {
-      'Authorization': getAuthHeader(),
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify([{
-      location_name: location,
-      language_name: language,
-      keywords: keywords,
-      search_partners: false,
-      date_from: getDateMonthsAgo(12),
-      date_to: getToday()
-    }])
-  });
-  
-  if (!response.ok) {
-    throw new Error(`DataForSEO API error: ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  if (data.status_code !== 20000) {
-    throw new Error(`DataForSEO API error: ${data.status_message}`);
-  }
-  
-  return data.tasks?.[0]?.result?.[0]?.metrics || [];
-}
+// ============================================================================
+// Cache Management
+// ============================================================================
 
 /**
- * Get related keywords and questions
+ * Get cached keyword data
  */
-async function getRelatedKeywords(
-  keywords: string[],
+async function getCachedKeywordData(
+  keyword: string,
   location: string,
   language: string
-): Promise<Record<string, { related: string[], questions: string[] }>> {
-  const results: Record<string, { related: string[], questions: string[] }> = {};
-  
-  // Process in parallel for speed
-  const promises = keywords.map(async (keyword) => {
-    try {
-      const response = await fetch(`${DATAFORSEO_API_URL}/keywords_data/google_ads/keywords_for_keywords/live`, {
-        method: 'POST',
-        headers: {
-          'Authorization': getAuthHeader(),
-          'Content-Type': 'application/json'
+): Promise<DataForSEOKeywordData | null> {
+  try {
+    const cached = await prisma.dataForSEOCache.findUnique({
+      where: {
+        unique_dataforseo_keyword: {
+          keyword,
+          location,
+          language,
         },
-        body: JSON.stringify([{
-          location_name: location,
-          language_name: language,
-          keywords: [keyword],
-          sort_by: 'search_volume',
-          limit: 20
-        }])
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error for ${keyword}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      const items = data.tasks?.[0]?.result?.[0]?.items || [];
-      
-      // Separate related keywords and questions
-      const related: string[] = [];
-      const questions: string[] = [];
-      
-      items.forEach((item: any) => {
-        const kw = item.keyword || '';
-        if (kw.includes('?') || kw.startsWith('wat') || kw.startsWith('hoe') || 
-            kw.startsWith('waarom') || kw.startsWith('wie') || kw.startsWith('waar')) {
-          questions.push(kw);
-        } else {
-          related.push(kw);
-        }
-      });
-      
-      results[keyword] = { related, questions };
-      
-    } catch (error) {
-      console.error(`[DataForSEO] Error fetching related for ${keyword}:`, error);
-      results[keyword] = { related: [], questions: [] };
+      },
+    });
+
+    if (!cached) {
+      return null;
     }
-  });
-  
-  await Promise.all(promises);
-  
-  return results;
-}
 
-/**
- * Calculate opportunity score (0-100)
- * Higher score = better opportunity (high volume, low difficulty, good CPC)
- */
-function calculateOpportunityScore(
-  searchVolume: number,
-  difficulty: number,
-  cpc: number,
-  competition: number
-): number {
-  // Normalize values
-  const volumeScore = Math.min(searchVolume / 1000, 10) * 10; // Max 100 at 10k+
-  const difficultyScore = (100 - difficulty); // Lower difficulty = better
-  const cpcScore = Math.min(cpc * 20, 20); // Max 20 at €1+ CPC
-  const competitionScore = (1 - competition) * 10; // Lower competition = better
-  
-  // Weighted average
-  const score = (
-    volumeScore * 0.4 +
-    difficultyScore * 0.3 +
-    cpcScore * 0.2 +
-    competitionScore * 0.1
-  );
-  
-  return Math.round(Math.min(score, 100));
-}
-
-/**
- * Calculate seasonality score (0-100)
- * Higher score = more seasonal variation
- */
-function calculateSeasonality(monthlySearches: any[]): number {
-  if (!monthlySearches || monthlySearches.length < 12) return 0;
-  
-  const volumes = monthlySearches.map(m => m.search_volume || 0);
-  const avg = volumes.reduce((a, b) => a + b, 0) / volumes.length;
-  
-  if (avg === 0) return 0;
-  
-  // Calculate coefficient of variation
-  const variance = volumes.reduce((sum, vol) => sum + Math.pow(vol - avg, 2), 0) / volumes.length;
-  const stdDev = Math.sqrt(variance);
-  const cv = stdDev / avg;
-  
-  // Convert to 0-100 scale (cv of 0.5+ = high seasonality)
-  return Math.round(Math.min(cv * 200, 100));
-}
-
-/**
- * Helper: Get date N months ago in YYYY-MM-DD format
- */
-function getDateMonthsAgo(months: number): string {
-  const date = new Date();
-  date.setMonth(date.getMonth() - months);
-  return date.toISOString().split('T')[0];
-}
-
-/**
- * Helper: Get today's date in YYYY-MM-DD format
- */
-function getToday(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-/**
- * 🎯 SMART KEYWORD PRIORITIZATION
- * 
- * Prioritizes keywords based on opportunity score
- */
-export function prioritizeKeywords(
-  keywords: KeywordData[],
-  strategy: 'quick_wins' | 'long_term' | 'balanced' = 'balanced'
-): KeywordData[] {
-  return keywords.sort((a, b) => {
-    if (strategy === 'quick_wins') {
-      // Prioritize high volume + low difficulty
-      const scoreA = (a.searchVolume / 100) * (100 - a.difficulty);
-      const scoreB = (b.searchVolume / 100) * (100 - b.difficulty);
-      return scoreB - scoreA;
-    } else if (strategy === 'long_term') {
-      // Prioritize high CPC + moderate competition
-      const scoreA = a.cpc * (1 - a.competition) * 100;
-      const scoreB = b.cpc * (1 - b.competition) * 100;
-      return scoreB - scoreA;
-    } else {
-      // Balanced: use our opportunity score
-      return b.opportunityScore - a.opportunityScore;
+    // Check if expired
+    if (cached.expiresAt < new Date()) {
+      await prisma.dataForSEOCache.delete({
+        where: { id: cached.id },
+      });
+      return null;
     }
-  });
+
+    return cached.data as any as DataForSEOKeywordData;
+  } catch (error) {
+    console.error('[DataForSEO] Error reading cache:', error);
+    return null;
+  }
 }
 
 /**
- * 📈 IDENTIFY CONTENT GAPS
- * 
- * Finds high-value keywords not yet covered
+ * Cache keyword data
  */
-export function identifyContentGaps(
-  keywords: KeywordData[],
-  existingTopics: string[],
-  minOpportunity: number = 50
-): KeywordData[] {
-  const existingLower = existingTopics.map(t => t.toLowerCase());
-  
-  return keywords.filter(kw => {
-    // Check if keyword is already covered
-    const isCovered = existingLower.some(topic => 
-      topic.includes(kw.keyword.toLowerCase()) || 
-      kw.keyword.toLowerCase().includes(topic)
-    );
-    
-    return !isCovered && kw.opportunityScore >= minOpportunity;
-  });
+async function cacheKeywordData(data: DataForSEOKeywordData): Promise<void> {
+  try {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + CACHE_EXPIRY_DAYS);
+
+    await prisma.dataForSEOCache.upsert({
+      where: {
+        unique_dataforseo_keyword: {
+          keyword: data.keyword,
+          location: data.location || 'Netherlands',
+          language: data.language || 'nl',
+        },
+      },
+      create: {
+        keyword: data.keyword,
+        location: data.location || 'Netherlands',
+        language: data.language || 'nl',
+        data: data as any,
+        searchVolume: data.searchVolume,
+        difficulty: data.difficulty,
+        cpc: data.cpc,
+        competition: data.competition,
+        expiresAt,
+      },
+      update: {
+        data: data as any,
+        searchVolume: data.searchVolume,
+        difficulty: data.difficulty,
+        cpc: data.cpc,
+        competition: data.competition,
+        expiresAt,
+      },
+    });
+  } catch (error) {
+    console.error('[DataForSEO] Error caching data:', error);
+  }
 }
+
+/**
+ * Clear expired cache entries
+ */
+export async function clearExpiredCache(): Promise<number> {
+  try {
+    const result = await prisma.dataForSEOCache.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+    });
+    return result.count;
+  } catch (error) {
+    console.error('[DataForSEO] Error clearing cache:', error);
+    return 0;
+  }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Get DataForSEO location code
+ */
+function getLocationCode(location: string): number {
+  const locationCodes: Record<string, number> = {
+    'Netherlands': 2528,
+    'Belgium': 2056,
+    'Germany': 2276,
+    'United Kingdom': 2826,
+    'United States': 2840,
+    'France': 2250,
+    'Spain': 2724,
+    'Italy': 2380,
+  };
+  
+  return locationCodes[location] || locationCodes['Netherlands'];
+}
+
+/**
+ * Calculate keyword difficulty (0-100)
+ * Based on competition and other factors
+ */
+function calculateDifficulty(data: any): number {
+  const competition = data.competition || 0;
+  const cpc = data.cpc || 0;
+  
+  // Higher competition and CPC = higher difficulty
+  let difficulty = competition * 100;
+  
+  // Adjust based on CPC (high CPC often means competitive)
+  if (cpc > 2) {
+    difficulty = Math.min(100, difficulty * 1.2);
+  }
+  
+  return Math.round(difficulty);
+}
+
+/**
+ * Get competition level label
+ */
+function getCompetitionLevel(competition: number): 'low' | 'medium' | 'high' {
+  if (competition < 0.3) return 'low';
+  if (competition < 0.7) return 'medium';
+  return 'high';
+}
+
+// ============================================================================
+// Exports
+// ============================================================================
+
+export const DataForSEO = {
+  isConfigured: isDataForSEOConfigured,
+  getKeywordData,
+  getBatchKeywordData,
+  getRelatedKeywords,
+  getSerpData,
+  getCompetitionAnalysis,
+  findQuickWins,
+  clearExpiredCache,
+};
