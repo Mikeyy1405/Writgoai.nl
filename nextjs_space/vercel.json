@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/wordpress-autopilot-scheduler",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/gsc-daily-sync",
+      "schedule": "0 6 * * *"
     }
   ]
 }

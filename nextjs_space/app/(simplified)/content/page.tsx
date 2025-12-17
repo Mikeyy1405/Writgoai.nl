@@ -281,6 +281,24 @@ export default function ContentOverviewPage() {
           <p className="text-slate-200">Al je gegenereerde artikelen op één plek</p>
         </div>
 
+        {/* Performance Dashboard Banner */}
+        <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-6 border border-blue-700">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">📊 Bekijk je Performance Metrics</h3>
+              <p className="text-blue-200 text-sm">
+                Krijg inzicht in je Google Search Console prestaties, alerts en AI-powered tips
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.href = '/performance'}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium whitespace-nowrap"
+            >
+              Open Performance Dashboard →
+            </button>
+          </div>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
