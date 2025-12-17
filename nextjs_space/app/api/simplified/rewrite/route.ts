@@ -180,7 +180,9 @@ CONTENT:
       data: {
         title: newTitle,
         content: newContent,
-        projectId: projectId,
+        project: {
+          connect: { id: projectId }
+        },
         status: 'draft',
         type: 'rewrite',
         wordCount: newContent.split(/\s+/).length,

@@ -41,13 +41,21 @@ interface Content {
   projectName: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  websiteUrl?: string;
+}
+
 export default function ContentOverviewPage() {
   const [content, setContent] = useState<Content[]>([]);
   const [stats, setStats] = useState<ContentStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'scheduled'>('all');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'generated' | 'wordpress'>('all');
+  const [projectFilter, setProjectFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'title'>('date');
   const [rewriteModalOpen, setRewriteModalOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
@@ -61,6 +69,7 @@ export default function ContentOverviewPage() {
 
   useEffect(() => {
     fetchContent();
+    fetchProjects();
   }, []);
 
   const fetchContent = async () => {
@@ -75,6 +84,18 @@ export default function ContentOverviewPage() {
       console.error('Error fetching content:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch('/api/simplified/projects');
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
     }
   };
 
@@ -133,6 +154,11 @@ export default function ContentOverviewPage() {
       return false;
     }
 
+    // Project/Website filter
+    if (projectFilter !== 'all' && item.projectId !== projectFilter) {
+      return false;
+    }
+
     return true;
   }).sort((a, b) => {
     if (sortBy === 'date') {
@@ -145,14 +171,27 @@ export default function ContentOverviewPage() {
   });
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('nl-NL', { 
-      day: 'numeric', 
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return '-';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Gebruik een consistent formaat dat server en client hetzelfde weergeven
+      // Format: "17 december 2025, 12:09"
+      const day = date.getDate();
+      const months = [
+        'januari', 'februari', 'maart', 'april', 'mei', 'juni',
+        'juli', 'augustus', 'september', 'oktober', 'november', 'december'
+      ];
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day} ${month} ${year}, ${hours}:${minutes}`;
+    } catch (error) {
+      return '-';
+    }
   };
 
   const getStatusBadge = (status: 'draft' | 'published' | 'scheduled') => {
@@ -293,7 +332,7 @@ export default function ContentOverviewPage() {
 
         {/* Filters & Search */}
         <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-200" />
@@ -304,6 +343,25 @@ export default function ContentOverviewPage() {
                 placeholder="Zoek artikelen..."
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
+            </div>
+
+            {/* Website/Project Filter */}
+            <div>
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="all">Alle websites ({content.length})</option>
+                {projects.map(project => {
+                  const projectContentCount = content.filter(c => c.projectId === project.id).length;
+                  return (
+                    <option key={project.id} value={project.id}>
+                      {project.name || project.websiteUrl} ({projectContentCount})
+                    </option>
+                  );
+                })}
+              </select>
             </div>
 
             {/* Source Filter */}

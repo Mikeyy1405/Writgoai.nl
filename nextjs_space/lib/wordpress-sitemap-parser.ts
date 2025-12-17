@@ -344,6 +344,7 @@ async function fetchArticleData(url: string): Promise<WordPressSitemapEntry | nu
 
 /**
  * Cache sitemap data to database
+ * Uses UPSERT to prevent duplicate key errors
  */
 export async function cacheSitemapData(
   projectId: string,
@@ -352,33 +353,51 @@ export async function cacheSitemapData(
   try {
     console.log(`[Sitemap Parser] Caching ${articles.length} articles for project ${projectId}`);
 
-    // Delete old cache entries
-    await prisma.wordPressSitemapCache.deleteMany({
-      where: { projectId },
+    // Gebruik transaction voor batch upsert
+    const operations = articles.map(article => {
+      // Create a unique composite key identifier
+      const uniqueKey = {
+        projectId_url: {
+          projectId: projectId,
+          url: article.url,
+        }
+      };
+
+      return prisma.wordPressSitemapCache.upsert({
+        where: uniqueKey,
+        update: {
+          // Update bestaande entry
+          title: article.title,
+          publishedDate: article.publishedDate,
+          topics: article.topics || [],
+          keywords: article.keywords || [],
+          lastScanned: new Date(),
+        },
+        create: {
+          // Create nieuwe entry
+          projectId,
+          url: article.url,
+          title: article.title,
+          publishedDate: article.publishedDate,
+          topics: article.topics || [],
+          keywords: article.keywords || [],
+          lastScanned: new Date(),
+        },
+      });
     });
 
-    // Insert new entries
-    for (const article of articles) {
-      try {
-        await prisma.wordPressSitemapCache.create({
-          data: {
-            projectId,
-            url: article.url,
-            title: article.title,
-            publishedDate: article.publishedDate,
-            topics: article.topics || [],
-            keywords: article.keywords || [],
-          },
-        });
-      } catch (error) {
-        // Skip duplicates
-        console.warn(`[Sitemap Parser] Skipping duplicate: ${article.url}`);
-      }
+    // Voer alle upserts uit in batches (max 10 per keer voor performance)
+    const batchSize = 10;
+    for (let i = 0; i < operations.length; i += batchSize) {
+      const batch = operations.slice(i, i + batchSize);
+      await Promise.all(batch);
+      console.log(`[Sitemap Parser] Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(operations.length / batchSize)}`);
     }
 
     console.log('[Sitemap Parser] Cache updated successfully');
   } catch (error: any) {
     console.error('[Sitemap Parser] Error caching data:', error.message);
+    throw error; // Re-throw to handle upstream
   }
 }
 
