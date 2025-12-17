@@ -25,7 +25,7 @@ export default function SimplifiedLayout({ children }: SimplifiedLayoutProps) {
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-gray-900 border-b border-gray-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">W</span>
             </div>
             <h1 className="text-lg font-bold text-white">WritGo</h1>

@@ -23,7 +23,7 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-bold text-orange-500 mb-2">
             ⚙️ Instellingen
           </h1>
-          <p className="text-gray-400">Beheer je account en voorkeuren</p>
+          <p className="text-slate-200">Beheer je account en voorkeuren</p>
         </div>
 
         {/* Account Info */}
@@ -35,7 +35,7 @@ export default function SettingsPage() {
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-slate-200 mb-2">
                 Naam
               </label>
               <div className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white">
@@ -44,11 +44,11 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-slate-200 mb-2">
                 E-mailadres
               </label>
               <div className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white flex items-center gap-2">
-                <Mail className="w-4 h-4 text-gray-400" />
+                <Mail className="w-4 h-4 text-slate-200" />
                 {session?.user?.email || 'Niet ingesteld'}
               </div>
             </div>
@@ -69,8 +69,8 @@ export default function SettingsPage() {
             </p>
             
             <div className="border-t border-orange-500/20 pt-3 mt-3">
-              <p className="text-sm text-gray-400 mb-2 font-semibold">Wat WritGo doet:</p>
-              <ul className="text-sm text-gray-400 space-y-2">
+              <p className="text-sm text-slate-200 mb-2 font-semibold">Wat WritGo doet:</p>
+              <ul className="text-sm text-slate-200 space-y-2">
                 <li className="flex items-start gap-2">
                   <span>📝</span>
                   <span><strong>Content Genereren:</strong> 1500 woorden, 100% menselijk scorend, SEO geoptimaliseerd</span>
@@ -91,8 +91,8 @@ export default function SettingsPage() {
             </div>
 
             <div className="border-t border-orange-500/20 pt-3 mt-3">
-              <p className="text-sm text-gray-400 mb-2 font-semibold">Writgo Regels:</p>
-              <ul className="text-xs text-gray-400 space-y-1">
+              <p className="text-sm text-slate-200 mb-2 font-semibold">Writgo Regels:</p>
+              <ul className="text-xs text-slate-200 space-y-1">
                 <li>• Geen verboden woorden zoals "duiken in" of "cruciale"</li>
                 <li>• E-E-A-T optimalisatie voor Google rankings</li>
                 <li>• Natuurlijke, menselijke schrijfstijl</li>
@@ -113,7 +113,7 @@ export default function SettingsPage() {
             
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
               <p className="text-sm font-semibold mb-2">📧 Contact</p>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-slate-200">
                 Stuur een email naar <a href="mailto:support@writgo.nl" className="text-orange-400 hover:text-orange-300 underline">support@writgo.nl</a>
               </p>
             </div>

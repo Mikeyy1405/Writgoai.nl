@@ -180,7 +180,7 @@ export default function ContentOverviewPage() {
   const getSourceBadge = (source: 'wordpress' | 'generated') => {
     if (source === 'wordpress') {
       return (
-        <span className="inline-flex items-center px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs font-medium">
+        <span className="inline-flex items-center px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs font-medium">
           WordPress
         </span>
       );
@@ -239,7 +239,7 @@ export default function ContentOverviewPage() {
           <h1 className="text-3xl font-bold text-orange-500 mb-2">
             📄 Content Overzicht
           </h1>
-          <p className="text-gray-400">Al je gegenereerde artikelen op één plek</p>
+          <p className="text-slate-200">Al je gegenereerde artikelen op één plek</p>
         </div>
 
         {/* Stats Cards */}
@@ -247,7 +247,7 @@ export default function ContentOverviewPage() {
           <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm mb-1">Totaal</p>
+                <p className="text-slate-200 text-sm mb-1">Totaal</p>
                 <p className="text-3xl font-bold text-white">{stats?.total || 0}</p>
               </div>
               <FileText className="w-10 h-10 text-orange-500 opacity-50" />
@@ -256,7 +256,7 @@ export default function ContentOverviewPage() {
           <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm mb-1">Gegenereerd</p>
+                <p className="text-slate-200 text-sm mb-1">Gegenereerd</p>
                 <p className="text-3xl font-bold text-blue-400">{stats?.generated || 0}</p>
               </div>
               <div className="text-3xl">✨</div>
@@ -265,16 +265,16 @@ export default function ContentOverviewPage() {
           <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm mb-1">WordPress</p>
-                <p className="text-3xl font-bold text-purple-400">{stats?.wordpress || 0}</p>
+                <p className="text-slate-200 text-sm mb-1">WordPress</p>
+                <p className="text-3xl font-bold text-orange-400">{stats?.wordpress || 0}</p>
               </div>
-              <Globe className="w-10 h-10 text-purple-500 opacity-50" />
+              <Globe className="w-10 h-10 text-orange-500 opacity-50" />
             </div>
           </div>
           <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm mb-1">Gepubliceerd</p>
+                <p className="text-slate-200 text-sm mb-1">Gepubliceerd</p>
                 <p className="text-3xl font-bold text-green-400">{stats?.published || 0}</p>
               </div>
               <div className="text-3xl">✓</div>
@@ -283,7 +283,7 @@ export default function ContentOverviewPage() {
           <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm mb-1">Concepten</p>
+                <p className="text-slate-200 text-sm mb-1">Concepten</p>
                 <p className="text-3xl font-bold text-orange-400">{stats?.draft || 0}</p>
               </div>
               <div className="text-3xl">⏳</div>
@@ -296,7 +296,7 @@ export default function ContentOverviewPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-200" />
               <input
                 type="text"
                 value={searchQuery}
@@ -354,11 +354,11 @@ export default function ContentOverviewPage() {
           </div>
         ) : filteredContent.length === 0 ? (
           <div className="bg-gray-900 rounded-xl p-12 border border-gray-800 text-center">
-            <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-400 mb-2">
+            <FileText className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-200 mb-2">
               {searchQuery || statusFilter !== 'all' ? 'Geen resultaten' : 'Nog geen content'}
             </h3>
-            <p className="text-gray-500">
+            <p className="text-slate-200">
               {searchQuery || statusFilter !== 'all' 
                 ? 'Probeer een andere zoekopdracht of filter' 
                 : 'Ga naar het dashboard om je eerste artikel te maken'
@@ -382,12 +382,12 @@ export default function ContentOverviewPage() {
                         {getSourceBadge(item.source)}
                       </div>
                       <div className="flex flex-wrap items-center gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-gray-400">
+                        <div className="flex items-center gap-2 text-slate-200">
                           <Globe className="w-4 h-4" />
                           <span>{item.projectName}</span>
                         </div>
                         {item.wordCount && (
-                          <span className="text-gray-400">
+                          <span className="text-slate-200">
                             📝 {item.wordCount} woorden
                           </span>
                         )}
@@ -405,7 +405,7 @@ export default function ContentOverviewPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-4 text-sm text-slate-200">
                       {item.createdAt && (
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
@@ -437,7 +437,7 @@ export default function ContentOverviewPage() {
               <h2 className="text-2xl font-bold text-white mb-4">
                 🔄 Artikel Herschrijven
               </h2>
-              <p className="text-gray-400 mb-6">
+              <p className="text-slate-200 mb-6">
                 Herschrijf "{selectedContent.title}" met AI-verbeteringen
               </p>
 
@@ -451,7 +451,7 @@ export default function ContentOverviewPage() {
                   />
                   <div>
                     <div className="text-white font-medium">Verbeter SEO</div>
-                    <div className="text-sm text-gray-400">Optimaliseer voor betere rankings</div>
+                    <div className="text-sm text-slate-200">Optimaliseer voor betere rankings</div>
                   </div>
                 </label>
 
@@ -464,7 +464,7 @@ export default function ContentOverviewPage() {
                   />
                   <div>
                     <div className="text-white font-medium">Voeg Interne Links Toe</div>
-                    <div className="text-sm text-gray-400">Link naar gerelateerde content</div>
+                    <div className="text-sm text-slate-200">Link naar gerelateerde content</div>
                   </div>
                 </label>
 
@@ -477,7 +477,7 @@ export default function ContentOverviewPage() {
                   />
                   <div>
                     <div className="text-white font-medium">Maak Langer</div>
-                    <div className="text-sm text-gray-400">Voeg 500-1000 woorden toe</div>
+                    <div className="text-sm text-slate-200">Voeg 500-1000 woorden toe</div>
                   </div>
                 </label>
 
@@ -490,7 +490,7 @@ export default function ContentOverviewPage() {
                   />
                   <div>
                     <div className="text-white font-medium">Verbeter Structuur</div>
-                    <div className="text-sm text-gray-400">Betere kopjes en paragrafen</div>
+                    <div className="text-sm text-slate-200">Betere kopjes en paragrafen</div>
                   </div>
                 </label>
               </div>

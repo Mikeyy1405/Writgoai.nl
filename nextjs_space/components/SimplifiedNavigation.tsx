@@ -83,21 +83,21 @@ export default function SimplifiedNavigation({
         {/* Logo */}
         <div className="p-6 border-b border-gray-700">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-2xl">W</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
                 WritGo
               </h1>
-              <p className="text-xs text-gray-400">Content Platform</p>
+              <p className="text-xs text-white">Content Platform</p>
             </div>
           </div>
         </div>
 
         {/* Welcome Message */}
-        <div className="px-6 py-4 bg-gradient-to-r from-orange-500/10 to-pink-500/10 border-b border-gray-700">
-          <p className="text-sm text-gray-300">
+        <div className="px-6 py-4 bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-b border-gray-700">
+          <p className="text-sm text-white">
             ✨ Maak elke dag content voor al je WordPress sites
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function SimplifiedNavigation({
                   flex flex-col px-4 py-4 rounded-xl
                   transition-all duration-200 group
                   ${isActive 
-                    ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg shadow-orange-500/30' 
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30' 
                     : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   }
                 `}
@@ -126,7 +126,7 @@ export default function SimplifiedNavigation({
                   <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? '' : 'group-hover:scale-110 transition-transform'}`} />
                   <span className="font-semibold text-base">{item.label}</span>
                 </div>
-                <p className={`text-xs ml-9 ${isActive ? 'text-white/80' : 'text-gray-500'}`}>
+                <p className={`text-xs ml-9 ${isActive ? 'text-white/90' : 'text-slate-200'}`}>
                   {item.description}
                 </p>
               </Link>
@@ -136,8 +136,8 @@ export default function SimplifiedNavigation({
 
         {/* Info Box */}
         <div className="p-4 mx-4 mb-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-          <p className="text-xs text-gray-300 font-semibold mb-2">💡 Snelle workflow:</p>
-          <ol className="text-xs text-gray-400 space-y-1">
+          <p className="text-xs text-white font-semibold mb-2">💡 Snelle workflow:</p>
+          <ol className="text-xs text-slate-200 space-y-1">
             <li>1. Voeg WordPress site toe</li>
             <li>2. Voer onderwerp in</li>
             <li>3. Klik "Genereer"</li>

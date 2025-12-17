@@ -322,12 +322,12 @@ export default function UnifiedDashboardPage() {
         {/* Topical Authority Banner - NEW */}
         <div 
           onClick={() => window.location.href = '/topical-authority'}
-          className="bg-gradient-to-r from-purple-900/50 via-indigo-900/50 to-blue-900/50 border-2 border-purple-500/50 rounded-2xl p-6 md:p-8 shadow-2xl cursor-pointer hover:border-purple-400 transition-all hover:scale-[1.01] group"
+          className="bg-gradient-to-r from-orange-900/50 via-orange-900/50 to-blue-900/50 border-2 border-orange-500/50 rounded-2xl p-6 md:p-8 shadow-2xl cursor-pointer hover:border-orange-400 transition-all hover:scale-[1.01] group"
         >
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="bg-purple-500/20 p-3 rounded-xl border border-purple-500/50 group-hover:bg-purple-500/30 transition-colors">
-                <Map className="w-8 h-8 text-purple-400" />
+              <div className="bg-orange-500/20 p-3 rounded-xl border border-orange-500/50 group-hover:bg-orange-500/30 transition-colors">
+                <Map className="w-8 h-8 text-orange-400" />
               </div>
               <div>
                 <h2 className="text-xl md:text-2xl font-bold text-white mb-2 flex items-center gap-2">
@@ -339,23 +339,23 @@ export default function UnifiedDashboardPage() {
                 <p className="text-sm md:text-base text-gray-300 mb-2">
                   Bouw complete topical authority met 400-500 gestructureerde artikelen
                 </p>
-                <div className="flex flex-wrap gap-2 text-xs text-gray-400">
-                  <span className="bg-purple-500/10 px-2 py-1 rounded border border-purple-500/30">
+                <div className="flex flex-wrap gap-2 text-xs text-slate-200">
+                  <span className="bg-orange-500/10 px-2 py-1 rounded border border-orange-500/30">
                     ✓ Automatische niche detectie
                   </span>
-                  <span className="bg-purple-500/10 px-2 py-1 rounded border border-purple-500/30">
+                  <span className="bg-orange-500/10 px-2 py-1 rounded border border-orange-500/30">
                     ✓ Pillar + Subtopic structuur
                   </span>
-                  <span className="bg-purple-500/10 px-2 py-1 rounded border border-purple-500/30">
+                  <span className="bg-orange-500/10 px-2 py-1 rounded border border-orange-500/30">
                     ✓ DataForSEO integratie
                   </span>
-                  <span className="bg-purple-500/10 px-2 py-1 rounded border border-purple-500/30">
+                  <span className="bg-orange-500/10 px-2 py-1 rounded border border-orange-500/30">
                     ✓ WordPress sitemap analyse
                   </span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-purple-500 hover:bg-purple-400 px-6 py-3 rounded-xl font-semibold text-white transition-colors group-hover:gap-4">
+            <div className="flex items-center gap-2 bg-orange-500 hover:bg-orange-400 px-6 py-3 rounded-xl font-semibold text-white transition-colors group-hover:gap-4">
               <span>Start Planning</span>
               <ArrowRight className="w-5 h-5" />
             </div>
@@ -449,10 +449,10 @@ export default function UnifiedDashboardPage() {
               {/* Sites List */}
               <div className="space-y-2 max-h-[400px] overflow-y-auto wordpress-sites-scroll smooth-scroll">
                 {projects.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-slate-200">
                     <Globe className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Nog geen sites</p>
-                    <p className="text-xs mt-1 text-gray-500">Voeg je eerste WordPress site toe</p>
+                    <p className="text-xs mt-1 text-slate-200">Voeg je eerste WordPress site toe</p>
                   </div>
                 ) : (
                   projects.map((project) => (
@@ -474,22 +474,22 @@ export default function UnifiedDashboardPage() {
                             )}
                           </div>
                           {project.wordpressUrl && (
-                            <p className="text-xs text-gray-400 truncate">{project.wordpressUrl}</p>
+                            <p className="text-xs text-slate-200 truncate">{project.wordpressUrl}</p>
                           )}
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-slate-200 mt-1">
                             {project._count?.savedContent || 0} artikelen
                           </p>
                         </div>
                         <div className="flex gap-1">
                           <button
                             onClick={() => handleEditSite(project)}
-                            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                            className="p-1.5 text-slate-200 hover:text-white hover:bg-gray-700 rounded transition-colors"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteSite(project.id, project.name)}
-                            className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded transition-colors"
+                            className="p-1.5 text-slate-200 hover:text-red-400 hover:bg-gray-700 rounded transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -582,7 +582,7 @@ export default function UnifiedDashboardPage() {
                     
                     <div className="space-y-2">
                       <p className="text-sm font-semibold text-white">{generatedContent.title}</p>
-                      <div className="flex gap-3 text-xs text-gray-400">
+                      <div className="flex gap-3 text-xs text-slate-200">
                         <span>📝 {generatedContent.wordCount} woorden</span>
                         <span>🖼️ {generatedContent.imageCount} afbeeldingen</span>
                       </div>
@@ -633,7 +633,7 @@ export default function UnifiedDashboardPage() {
                   <p className="text-xs text-gray-300">
                     ✨ <strong>Writgo AI</strong> genereert:
                   </p>
-                  <ul className="text-xs text-gray-400 mt-2 space-y-1 ml-4">
+                  <ul className="text-xs text-slate-200 mt-2 space-y-1 ml-4">
                     <li>• 1500 woorden, 100% menselijk</li>
                     <li>• SEO geoptimaliseerd</li>
                     <li>• Flux Pro afbeeldingen</li>
@@ -657,10 +657,10 @@ export default function UnifiedDashboardPage() {
                   <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
                 </div>
               ) : recentContent.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
+                <div className="text-center py-12 text-slate-200">
                   <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">Nog geen content</p>
-                  <p className="text-xs mt-1 text-gray-500">Genereer je eerste artikel!</p>
+                  <p className="text-xs mt-1 text-slate-200">Genereer je eerste artikel!</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -678,13 +678,13 @@ export default function UnifiedDashboardPage() {
                         </div>
                         
                         {content.project && (
-                          <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <p className="text-xs text-slate-200 flex items-center gap-1">
                             <Globe className="w-3 h-3" />
                             {content.project.name}
                           </p>
                         )}
                         
-                        <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center justify-between text-xs text-slate-200">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {formatDate(content.createdAt)}
@@ -706,17 +706,17 @@ export default function UnifiedDashboardPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-800/50 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-white">{projects.length}</div>
-                  <div className="text-xs text-gray-400 mt-1">Sites</div>
+                  <div className="text-xs text-slate-200 mt-1">Sites</div>
                 </div>
                 <div className="bg-gray-800/50 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-white">{recentContent.length}</div>
-                  <div className="text-xs text-gray-400 mt-1">Artikelen</div>
+                  <div className="text-xs text-slate-200 mt-1">Artikelen</div>
                 </div>
                 <div className="bg-gray-800/50 rounded-lg p-3 text-center col-span-2">
                   <div className="text-2xl font-bold text-green-400">
                     {recentContent.filter(c => c.publishedAt).length}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">Gepubliceerd</div>
+                  <div className="text-xs text-slate-200 mt-1">Gepubliceerd</div>
                 </div>
               </div>
             </div>

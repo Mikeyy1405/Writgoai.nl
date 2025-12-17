@@ -124,12 +124,12 @@ export default function TopicalAuthorityMapPage() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold mb-2">{map.niche}</h1>
-              <p className="text-gray-600">{map.description}</p>
+              <p className="text-slate-200">{map.description}</p>
             </div>
             <div className={`px-4 py-2 rounded-full text-sm font-medium ${
               map.status === 'active' ? 'bg-green-100 text-green-700' :
               map.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-              'bg-gray-100 text-gray-700'
+              'bg-gray-100 text-white'
             }`}>
               {map.status === 'active' ? 'Actief' : 
                map.status === 'completed' ? 'Voltooid' : 'Concept'}
@@ -154,23 +154,23 @@ export default function TopicalAuthorityMapPage() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{map.totalArticlesTarget}</div>
-              <div className="text-sm text-gray-600">Target Artikelen</div>
+              <div className="text-sm text-slate-200">Target Artikelen</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-600">{map.totalArticlesPlanned}</div>
-              <div className="text-sm text-gray-600">Gepland</div>
+              <div className="text-sm text-slate-200">Gepland</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{map.totalArticlesGenerated}</div>
-              <div className="text-sm text-gray-600">Gegenereerd</div>
+              <div className="text-sm text-slate-200">Gegenereerd</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{map.totalArticlesPublished}</div>
-              <div className="text-sm text-gray-600">Gepubliceerd</div>
+              <div className="text-sm text-slate-200">Gepubliceerd</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{map.pillars?.length || 0}</div>
-              <div className="text-sm text-gray-600">Pillars</div>
+              <div className="text-2xl font-bold text-orange-600">{map.pillars?.length || 0}</div>
+              <div className="text-sm text-slate-200">Pillars</div>
             </div>
           </div>
         </div>
@@ -196,19 +196,19 @@ export default function TopicalAuthorityMapPage() {
                 >
                   <div className="flex items-center gap-3 flex-1">
                     {isExpanded ? (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-5 h-5 text-slate-200" />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="w-5 h-5 text-slate-200" />
                     )}
                     <div className="flex-1">
                       <h3 className="font-bold text-lg">{pillar.title}</h3>
-                      <p className="text-sm text-gray-600">{pillar.description}</p>
+                      <p className="text-sm text-slate-200">{pillar.description}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="text-sm font-medium">{pillarProgress}% voltooid</div>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-slate-200">
                         {pillar.subtopics?.length || 0} subtopics
                       </div>
                     </div>
@@ -236,18 +236,18 @@ export default function TopicalAuthorityMapPage() {
                           >
                             <div className="flex items-center gap-3 flex-1">
                               {isSubExpanded ? (
-                                <ChevronDown className="w-4 h-4 text-gray-400" />
+                                <ChevronDown className="w-4 h-4 text-slate-200" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                                <ChevronRight className="w-4 h-4 text-slate-200" />
                               )}
                               <div className="flex-1">
                                 <h4 className="font-semibold">{subtopic.title}</h4>
-                                <p className="text-xs text-gray-600">{subtopic.description}</p>
+                                <p className="text-xs text-slate-200">{subtopic.description}</p>
                               </div>
                             </div>
                             <div className="text-right">
                               <div className="text-xs font-medium">{subtopicProgress}%</div>
-                              <div className="text-xs text-gray-600">
+                              <div className="text-xs text-slate-200">
                                 {subtopic.articles?.length || 0} artikelen
                               </div>
                             </div>
@@ -267,11 +267,11 @@ export default function TopicalAuthorityMapPage() {
                                     ) : article.status === 'generated' ? (
                                       <FileText className="w-4 h-4 text-blue-600" />
                                     ) : (
-                                      <Clock className="w-4 h-4 text-gray-400" />
+                                      <Clock className="w-4 h-4 text-slate-200" />
                                     )}
                                     <div className="flex-1">
                                       <div className="font-medium text-sm">{article.title}</div>
-                                      <div className="text-xs text-gray-600">
+                                      <div className="text-xs text-slate-200">
                                         {article.focusKeyword} • {article.wordCountTarget} woorden
                                       </div>
                                     </div>
