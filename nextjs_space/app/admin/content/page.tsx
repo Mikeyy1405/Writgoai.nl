@@ -15,7 +15,7 @@ export default async function ContentPage() {
     <div className="space-y-8 p-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Content</h1>
+        <h1 className="text-3xl font-bold text-white">Content</h1>
         <p className="text-gray-600 mt-2">Maak en beheer je blog posts en social media content</p>
       </div>
 
@@ -24,14 +24,14 @@ export default async function ContentPage() {
         {/* Blog Posts */}
         <Link
           href="/admin/content/blog"
-          className="bg-white rounded-lg border-2 border-gray-200 p-8 hover:border-orange-500 hover:shadow-lg transition-all group"
+          className="bg-slate-900 rounded-lg border-2 border-slate-700 p-8 hover:border-orange-500 hover:shadow-lg transition-all group"
         >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
               <FileText className="w-8 h-8 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+              <h2 className="text-2xl font-bold text-white group-hover:text-orange-600 transition-colors">
                 Blog Posts
               </h2>
               <p className="text-sm text-gray-600">Maak AI-gegenereerde blog content</p>
@@ -66,14 +66,14 @@ export default async function ContentPage() {
         {/* Social Media Posts */}
         <Link
           href="/admin/content/social"
-          className="bg-white rounded-lg border-2 border-gray-200 p-8 hover:border-orange-500 hover:shadow-lg transition-all group"
+          className="bg-slate-900 rounded-lg border-2 border-slate-700 p-8 hover:border-orange-500 hover:shadow-lg transition-all group"
         >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
               <Share2 className="w-8 h-8 text-green-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+              <h2 className="text-2xl font-bold text-white group-hover:text-orange-600 transition-colors">
                 Social Media
               </h2>
               <p className="text-sm text-gray-600">Maak AI-gegenereerde social posts</p>
@@ -111,8 +111,8 @@ export default async function ContentPage() {
         <div className="flex items-start gap-4">
           <Globe className="w-6 h-6 text-orange-600 mt-1" />
           <div>
-            <h3 className="font-semibold text-gray-900 mb-2">💡 Tip: Project selectie</h3>
-            <p className="text-gray-700 text-sm">
+            <h3 className="font-semibold text-white mb-2">💡 Tip: Project selectie</h3>
+            <p className="text-slate-300 text-sm">
               Bij het maken van content selecteer je eerst een project. Elk project heeft zijn eigen
               WordPress en social media connecties. De AI genereert unieke content gebaseerd op het project.
             </p>

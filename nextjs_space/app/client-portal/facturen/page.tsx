@@ -135,11 +135,11 @@ export default function ClientInvoicesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-500/20 text-gray-400';
+      case 'draft': return 'bg-slate-8000/20 text-gray-400';
       case 'sent': return 'bg-blue-500/20 text-blue-400';
       case 'paid': return 'bg-green-500/20 text-green-400';
       case 'overdue': return 'bg-red-500/20 text-red-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      default: return 'bg-slate-8000/20 text-gray-400';
     }
   };
 
@@ -172,9 +172,9 @@ export default function ClientInvoicesPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-white/10 rounded-xl"></div>
+            <div key={i} className="h-32 bg-slate-900/10 rounded-xl"></div>
           ))}
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function ClientInvoicesPage() {
       <div className="flex items-center gap-4 mb-8">
         <Link
           href="/client-portal"
-          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+          className="p-2 hover:bg-slate-900/10 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-gray-400" />
         </Link>
@@ -218,7 +218,7 @@ export default function ClientInvoicesPage() {
       {/* Invoices List */}
       <div className="space-y-4">
         {invoices.length === 0 ? (
-          <div className="text-center py-12 bg-white/5 rounded-xl border border-white/10">
+          <div className="text-center py-12 bg-slate-900/5 rounded-xl border border-white/10">
             <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">Geen facturen gevonden</p>
           </div>
@@ -226,10 +226,10 @@ export default function ClientInvoicesPage() {
           invoices.map((invoice) => (
             <div
               key={invoice.id}
-              className="bg-white/5 border border-white/10 rounded-xl overflow-hidden"
+              className="bg-slate-900/5 border border-white/10 rounded-xl overflow-hidden"
             >
               <div
-                className="p-6 cursor-pointer hover:bg-white/5 transition-colors"
+                className="p-6 cursor-pointer hover:bg-slate-900/5 transition-colors"
                 onClick={() => setExpandedId(expandedId === invoice.id ? null : invoice.id)}
               >
                 <div className="flex items-center justify-between">
@@ -268,7 +268,7 @@ export default function ClientInvoicesPage() {
 
               {/* Expanded Details */}
               {expandedId === invoice.id && (
-                <div className="border-t border-white/10 p-6 bg-white/5">
+                <div className="border-t border-white/10 p-6 bg-slate-900/5">
                   <h4 className="text-sm font-medium text-gray-400 mb-4">Factuur Items</h4>
                   <div className="space-y-3">
                     {invoice.items.map((item) => (

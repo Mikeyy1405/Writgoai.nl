@@ -153,11 +153,11 @@ export default function BlogIdeasPage() {
 
   const getPriorityBadge = (priority: string) => {
     const colors: Record<string, string> = {
-      low: 'bg-gray-500',
+      low: 'bg-slate-8000',
       medium: 'bg-yellow-500',
       high: 'bg-red-500',
     };
-    return <Badge className={colors[priority] || 'bg-gray-500'}>{priority}</Badge>;
+    return <Badge className={colors[priority] || 'bg-slate-8000'}>{priority}</Badge>;
   };
 
   const getStatusBadge = (status: string) => {
@@ -174,7 +174,7 @@ export default function BlogIdeasPage() {
       written: 'Geschreven',
     };
     return (
-      <Badge className={colors[status] || 'bg-gray-500'}>
+      <Badge className={colors[status] || 'bg-slate-8000'}>
         {labels[status] || status}
       </Badge>
     );

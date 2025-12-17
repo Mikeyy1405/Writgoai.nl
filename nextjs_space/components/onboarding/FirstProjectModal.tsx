@@ -49,7 +49,7 @@ export default function FirstProjectModal() {
         {/* Header */}
         <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-white">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+            <div className="w-16 h-16 bg-slate-900 bg-opacity-20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
               <Sparkles className="w-8 h-8" />
             </div>
             <div>

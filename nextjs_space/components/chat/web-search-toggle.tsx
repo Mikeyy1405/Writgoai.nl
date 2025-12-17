@@ -15,7 +15,7 @@ export function WebSearchToggle({ enabled, onChange }: WebSearchToggleProps) {
       className={`flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
         enabled 
           ? 'border-blue-500 bg-blue-50 text-blue-700' 
-          : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+          : 'border-slate-700 hover:border-blue-500 hover:bg-blue-50'
       }`}
       title={enabled ? 'Web zoeken uitschakelen' : 'Web zoeken inschakelen'}
     >

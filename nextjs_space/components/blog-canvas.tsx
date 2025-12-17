@@ -308,12 +308,12 @@ export default function BlogCanvas({
       TableRow,
       TableHeader.configure({
         HTMLAttributes: {
-          class: 'border border-gray-300 bg-gray-50 px-4 py-2 font-semibold',
+          class: 'border border-slate-600 bg-slate-800 px-4 py-2 font-semibold',
         },
       }),
       TableCell.configure({
         HTMLAttributes: {
-          class: 'border border-gray-300 px-4 py-2',
+          class: 'border border-slate-600 px-4 py-2',
         },
       }),
       Highlight.configure({
@@ -434,7 +434,7 @@ export default function BlogCanvas({
               // Header row
               tableHTML += '<thead><tr>';
               cells.forEach(cell => {
-                tableHTML += `<th class="border border-gray-300 bg-gray-50 px-4 py-2 font-semibold">${cell.trim()}</th>`;
+                tableHTML += `<th class="border border-slate-600 bg-slate-800 px-4 py-2 font-semibold">${cell.trim()}</th>`;
               });
               tableHTML += '</tr></thead><tbody>';
             } else if (idx === 1 && /^[-:\s|]+$/.test(row)) {
@@ -443,7 +443,7 @@ export default function BlogCanvas({
               // Data row
               tableHTML += '<tr>';
               cells.forEach(cell => {
-                tableHTML += `<td class="border border-gray-300 px-4 py-2">${cell.trim()}</td>`;
+                tableHTML += `<td class="border border-slate-600 px-4 py-2">${cell.trim()}</td>`;
               });
               tableHTML += '</tr>';
             }
@@ -1518,7 +1518,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleBold().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('bold') ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('bold') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Vet (Ctrl+B)"
               >
@@ -1528,7 +1528,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('italic') ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('italic') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Cursief (Ctrl+I)"
               >
@@ -1538,7 +1538,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('underline') ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('underline') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Onderstreept (Ctrl+U)"
               >
@@ -1548,7 +1548,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleStrike().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('strike') ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('strike') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Doorgestreept"
               >
@@ -1564,7 +1564,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 1 }) ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Titel 1"
               >
@@ -1574,7 +1574,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 2 }) ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Titel 2"
               >
@@ -1584,7 +1584,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('heading', { level: 3 }) ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Titel 3"
               >
@@ -1600,7 +1600,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('bulletList') ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('bulletList') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Lijst met opsommingstekens"
               >
@@ -1610,7 +1610,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('orderedList') ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('orderedList') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Genummerde lijst"
               >
@@ -1626,7 +1626,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'left' }) ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Links uitlijnen"
               >
@@ -1636,7 +1636,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'center' }) ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Centreren"
               >
@@ -1646,7 +1646,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'right' }) ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Rechts uitlijnen"
               >
@@ -1656,7 +1656,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().setTextAlign('justify').run()}
-                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'justify' }) ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive({ textAlign: 'justify' }) ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Uitvullen"
               >
@@ -1673,7 +1673,7 @@ Style: Modern, high-quality, visually appealing.
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`h-8 w-8 p-0 ${editor.isActive('link') ? 'bg-gray-100 text-gray-700' : ''}`}
+                    className={`h-8 w-8 p-0 ${editor.isActive('link') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                     disabled={isGenerating}
                     title="Link toevoegen"
                   >
@@ -1752,9 +1752,9 @@ Style: Modern, high-quality, visually appealing.
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-px bg-gray-200" />
+                      <div className="flex-1 h-px bg-slate-700" />
                       <span className="text-sm text-gray-500">OF</span>
-                      <div className="flex-1 h-px bg-gray-200" />
+                      <div className="flex-1 h-px bg-slate-700" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="image-url">Afbeelding URL</Label>
@@ -1808,7 +1808,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleCode().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('code') ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('code') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Code"
               >
@@ -1819,7 +1819,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
-                className={`h-8 w-8 p-0 ${editor.isActive('blockquote') ? 'bg-gray-100 text-gray-700' : ''}`}
+                className={`h-8 w-8 p-0 ${editor.isActive('blockquote') ? 'bg-slate-800/50 text-slate-300' : ''}`}
                 disabled={isGenerating}
                 title="Citaat"
               >
@@ -2105,7 +2105,7 @@ Style: Modern, high-quality, visually appealing.
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="h-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                className="h-8 text-gray-500 hover:text-slate-300 hover:bg-slate-800/50"
                 title="Editor sluiten"
               >
                 <X className="w-4 h-4" />
@@ -2471,8 +2471,8 @@ Style: Modern, high-quality, visually appealing.
             {/* Selected Text Preview */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Geselecteerde tekst:</Label>
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg max-h-32 overflow-y-auto">
-                <p className="text-sm text-gray-700">{selectedText}</p>
+              <div className="p-3 bg-slate-800 border border-slate-700 rounded-lg max-h-32 overflow-y-auto">
+                <p className="text-sm text-slate-300">{selectedText}</p>
               </div>
             </div>
 
@@ -2595,7 +2595,7 @@ Style: Modern, high-quality, visually appealing.
             {/* Current Image Preview */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Huidige afbeelding:</Label>
-              <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
+              <div className="relative w-full aspect-video bg-slate-800/50 rounded-lg overflow-hidden">
                 <img
                   src={selectedImageSrc}
                   alt="Current"
@@ -2711,7 +2711,7 @@ Style: Modern, high-quality, visually appealing.
                     Originele tekst:
                   </Label>
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedText}</p>
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">{selectedText}</p>
                   </div>
                 </div>
 
@@ -2723,7 +2723,7 @@ Style: Modern, high-quality, visually appealing.
                   </Label>
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div
-                      className="text-sm text-gray-700 prose prose-sm max-w-none"
+                      className="text-sm text-slate-300 prose prose-sm max-w-none"
                       dangerouslySetInnerHTML={{ __html: previewText }}
                     />
                   </div>
@@ -2739,7 +2739,7 @@ Style: Modern, high-quality, visually appealing.
                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
                     Originele afbeelding:
                   </Label>
-                  <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-red-200">
+                  <div className="relative w-full aspect-video bg-slate-800/50 rounded-lg overflow-hidden border-2 border-red-200">
                     <img
                       src={selectedImageSrc}
                       alt="Original"
@@ -2754,7 +2754,7 @@ Style: Modern, high-quality, visually appealing.
                     <div className="w-2 h-2 rounded-full bg-green-500"></div>
                     Nieuwe afbeelding:
                   </Label>
-                  <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-green-200">
+                  <div className="relative w-full aspect-video bg-slate-800/50 rounded-lg overflow-hidden border-2 border-green-200">
                     <img
                       src={previewImageUrl}
                       alt="New"

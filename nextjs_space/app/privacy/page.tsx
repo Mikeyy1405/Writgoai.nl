@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       <PublicNav />
       <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/5 backdrop-blur-xl border border-orange-500/20 rounded-3xl p-8 md:p-12">
+          <div className="bg-slate-900/5 backdrop-blur-xl border border-orange-500/20 rounded-3xl p-8 md:p-12">
             <h1 className="text-4xl font-bold text-white mb-2">
               Privacy Policy
             </h1>
@@ -179,7 +179,7 @@ export default function PrivacyPage() {
               <p className="mb-4">
                 Voor vragen over dit privacybeleid:
               </p>
-              <div className="bg-white/5 border border-orange-500/20 rounded-2xl p-6 mb-4 space-y-3">
+              <div className="bg-slate-900/5 border border-orange-500/20 rounded-2xl p-6 mb-4 space-y-3">
                 <p className="mb-2">
                   <strong className="text-white">Bedrijf:</strong>{' '}
                   <span className="text-orange-500">Writgo Media</span>

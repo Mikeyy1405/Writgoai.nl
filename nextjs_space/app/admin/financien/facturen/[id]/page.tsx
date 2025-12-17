@@ -157,9 +157,9 @@ export default function InvoiceDetailPage() {
       case 'reminded':
         return 'bg-red-500/20 text-red-400';
       case 'draft':
-        return 'bg-gray-500/20 text-gray-400';
+        return 'bg-slate-8000/20 text-gray-400';
       default:
-        return 'bg-gray-500/20 text-gray-400';
+        return 'bg-slate-8000/20 text-gray-400';
     }
   };
 
@@ -180,8 +180,8 @@ export default function InvoiceDetailPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-4xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
-          <div className="h-96 bg-white/10 rounded-xl"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-900/10 rounded-xl"></div>
         </div>
       </div>
     );
@@ -204,7 +204,7 @@ export default function InvoiceDetailPage() {
         <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/financien/facturen"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 bg-slate-900/10 hover:bg-slate-900/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </Link>
@@ -249,7 +249,7 @@ export default function InvoiceDetailPage() {
               href={invoice.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors"
+              className="px-4 py-2 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg flex items-center gap-2 transition-colors"
             >
               <FileText className="w-4 h-4" />
               Bekijk in Moneybird
@@ -258,7 +258,7 @@ export default function InvoiceDetailPage() {
         </div>
 
         {/* Invoice Details */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6 space-y-6">
           {/* Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -289,7 +289,7 @@ export default function InvoiceDetailPage() {
             <h2 className="text-xl font-semibold text-white mb-4">Factuurregels</h2>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-white/5">
+                <thead className="bg-slate-900/5">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">
                       Beschrijving
@@ -375,7 +375,7 @@ export default function InvoiceDetailPage() {
                   value={sendEmail}
                   onChange={(e) => setSendEmail(e.target.value)}
                   placeholder="klant@voorbeeld.nl"
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#ff6b35]"
+                  className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#ff6b35]"
                 />
               </div>
               <div className="flex gap-3">
@@ -389,7 +389,7 @@ export default function InvoiceDetailPage() {
                 <button
                   onClick={() => setShowSendModal(false)}
                   disabled={sending}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
                 >
                   Annuleren
                 </button>
@@ -412,7 +412,7 @@ export default function InvoiceDetailPage() {
                   step="0.01"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                  className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                 />
               </div>
               <div>
@@ -421,7 +421,7 @@ export default function InvoiceDetailPage() {
                   type="date"
                   value={paymentDate}
                   onChange={(e) => setPaymentDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                  className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                 />
               </div>
               <div className="flex gap-3">
@@ -435,7 +435,7 @@ export default function InvoiceDetailPage() {
                 <button
                   onClick={() => setShowPaymentModal(false)}
                   disabled={registering}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
                 >
                   Annuleren
                 </button>

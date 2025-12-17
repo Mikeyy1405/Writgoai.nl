@@ -37,7 +37,7 @@ export default function AffiliateProductGrid({
       {(title || description) && (
         <div className="mb-6 text-center">
           {title && (
-            <h3 className="text-2xl font-bold text-gray-700 mb-2">
+            <h3 className="text-2xl font-bold text-slate-300 mb-2">
               {title}
             </h3>
           )}

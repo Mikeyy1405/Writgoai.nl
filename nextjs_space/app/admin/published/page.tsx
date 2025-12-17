@@ -43,7 +43,7 @@ export default async function PublishedPage() {
     <div className="space-y-8 p-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Gepubliceerde Content</h1>
+        <h1 className="text-3xl font-bold text-white">Gepubliceerde Content</h1>
         <p className="text-gray-600 mt-2">Overzicht van al je gepubliceerde blog posts en social media content</p>
       </div>
 
@@ -52,7 +52,7 @@ export default async function PublishedPage() {
         <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
           <div className="flex items-center gap-3 mb-2">
             <FileText className="w-6 h-6 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Blog Posts</h3>
+            <h3 className="text-lg font-semibold text-white">Blog Posts</h3>
           </div>
           <p className="text-3xl font-bold text-blue-600">{publishedBlogs.length}</p>
           <p className="text-sm text-gray-600 mt-1">Gepubliceerd op WordPress</p>
@@ -61,7 +61,7 @@ export default async function PublishedPage() {
         <div className="bg-green-50 rounded-lg border border-green-200 p-6">
           <div className="flex items-center gap-3 mb-2">
             <Share2 className="w-6 h-6 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Social Posts</h3>
+            <h3 className="text-lg font-semibold text-white">Social Posts</h3>
           </div>
           <p className="text-3xl font-bold text-green-600">{publishedSocials.length}</p>
           <p className="text-sm text-gray-600 mt-1">Gepubliceerd via Getlate</p>
@@ -70,8 +70,8 @@ export default async function PublishedPage() {
 
       {/* Blog Posts Section */}
       {publishedBlogs.length > 0 && (
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-slate-900 rounded-lg border p-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />
             Gepubliceerde Blog Posts
           </h2>
@@ -80,9 +80,9 @@ export default async function PublishedPage() {
               const project = blog.projectId ? projectMap[blog.projectId] : null;
               
               return (
-                <div key={blog.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div key={blog.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-800 transition-colors">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{blog.title}</h3>
+                    <h3 className="font-semibold text-white">{blog.title}</h3>
                     {blog.excerpt && (
                       <p className="text-sm text-gray-600 mt-1 line-clamp-2">{blog.excerpt}</p>
                     )}
@@ -126,8 +126,8 @@ export default async function PublishedPage() {
 
       {/* Social Posts Section */}
       {publishedSocials.length > 0 && (
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-slate-900 rounded-lg border p-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <Share2 className="w-5 h-5 text-green-600" />
             Gepubliceerde Social Posts
           </h2>
@@ -136,9 +136,9 @@ export default async function PublishedPage() {
               const project = social.projectId ? projectMap[social.projectId] : null;
               
               return (
-                <div key={social.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div key={social.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-800 transition-colors">
                   <div className="flex-1">
-                    <p className="text-gray-900 line-clamp-3">{social.content}</p>
+                    <p className="text-white line-clamp-3">{social.content}</p>
                     <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                       {project && (
                         <span className="flex items-center gap-1">
@@ -178,9 +178,9 @@ export default async function PublishedPage() {
 
       {/* Empty State */}
       {publishedBlogs.length === 0 && publishedSocials.length === 0 && (
-        <div className="bg-white rounded-lg border p-12 text-center">
+        <div className="bg-slate-900 rounded-lg border p-12 text-center">
           <Share2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             Nog geen content gepubliceerd
           </h3>
           <p className="text-gray-600">

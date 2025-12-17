@@ -219,7 +219,7 @@ export default function ProjectsPage() {
                 <div className={`px-2 py-1 rounded text-xs font-medium ${
                   project.status === 'active' 
                     ? 'bg-green-500/10 text-green-400' 
-                    : 'bg-gray-500/10 text-gray-400'
+                    : 'bg-slate-8000/10 text-gray-400'
                 }`}>
                   {project.status === 'active' ? 'Actief' : 'Inactief'}
                 </div>

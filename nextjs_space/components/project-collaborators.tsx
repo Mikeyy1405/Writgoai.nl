@@ -90,7 +90,7 @@ export default function ProjectCollaborators({ projectId }: ProjectCollaborators
                 <div>📧 <strong>Email:</strong> {formData.email}</div>
                 <div>🔑 <strong>Wachtwoord:</strong> {formData.password}</div>
                 <div>🔗 <strong>Login URL:</strong></div>
-                <div className="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                <div className="text-xs bg-slate-800/50 dark:bg-gray-800 p-2 rounded">
                   {loginUrl}
                 </div>
               </div>

@@ -239,7 +239,7 @@ export function EmailCampaignManager() {
               className={`p-4 rounded-lg border-2 transition-colors ${
                 targetAudience === 'all'
                   ? 'border-purple-600 bg-purple-50 dark:bg-purple-950'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-purple-300'
+                  : 'border-slate-700 dark:border-gray-800 hover:border-purple-300'
               }`}
             >
               <Users className="h-6 w-6 mx-auto mb-2 text-purple-600" />
@@ -254,7 +254,7 @@ export function EmailCampaignManager() {
               className={`p-4 rounded-lg border-2 transition-colors ${
                 targetAudience === 'new'
                   ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-blue-300'
+                  : 'border-slate-700 dark:border-gray-800 hover:border-blue-300'
               }`}
             >
               <Zap className="h-6 w-6 mx-auto mb-2 text-blue-600" />
@@ -269,7 +269,7 @@ export function EmailCampaignManager() {
               className={`p-4 rounded-lg border-2 transition-colors ${
                 targetAudience === 'active'
                   ? 'border-green-600 bg-green-50 dark:bg-green-950'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-green-300'
+                  : 'border-slate-700 dark:border-gray-800 hover:border-green-300'
               }`}
             >
               <Calendar className="h-6 w-6 mx-auto mb-2 text-green-600" />
@@ -284,7 +284,7 @@ export function EmailCampaignManager() {
               className={`p-4 rounded-lg border-2 transition-colors ${
                 targetAudience === 'inactive'
                   ? 'border-orange-600 bg-orange-50 dark:bg-orange-950'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-orange-300'
+                  : 'border-slate-700 dark:border-gray-800 hover:border-orange-300'
               }`}
             >
               <Mail className="h-6 w-6 mx-auto mb-2 text-orange-600" />

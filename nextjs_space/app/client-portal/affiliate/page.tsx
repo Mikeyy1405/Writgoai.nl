@@ -440,7 +440,7 @@ export default function AffiliatePage() {
                             className={
                               referral.status === 'active'
                                 ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-700'
+                                : 'bg-slate-800/50 text-slate-300'
                             }
                           >
                             {referral.status === 'active' ? 'Actief' : referral.status}

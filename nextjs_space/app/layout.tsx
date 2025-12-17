@@ -112,7 +112,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="nl">
+    <html lang="nl" className="dark">
       <head>
         <meta name="google-site-verification" content="p_boU5OFOBKAI5HGrq85ZU5MOXuddbZPLEU0wtDmAhI" />
         <link rel="manifest" href="/manifest.json" />
@@ -123,7 +123,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="format-detection" content="telephone=no" />
       </head>
-      <body className="font-sans">
+      <body className="font-sans bg-black text-white">
         <Providers>
           {children}
           <InstallPrompt />

@@ -439,14 +439,14 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
               <Button
                 size="sm"
                 onClick={() => setShowSidebar(false)}
-                className="bg-white/20 hover:bg-white/30 border-none"
+                className="bg-slate-900/20 hover:bg-slate-900/30 border-none"
               >
                 <PanelLeftClose className="w-4 h-4" />
               </Button>
             </div>
             <Button
               onClick={startNewChat}
-              className="w-full bg-white text-blue-400 hover:bg-zinc-900 font-semibold"
+              className="w-full bg-slate-900 text-blue-400 hover:bg-zinc-900 font-semibold"
             >
               <Plus className="w-4 h-4 mr-2" />
               Nieuw gesprek
@@ -471,7 +471,7 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
                     className={`p-3 rounded-lg border-2 cursor-pointer transition-all group ${
                       activeConversationId === conv.id
                         ? 'bg-zinc-900 border-blue-300'
-                        : 'bg-white border-gray-200 hover:border-blue-200'
+                        : 'bg-slate-900 border-slate-700 hover:border-blue-200'
                     }`}
                     onClick={() => {
                       setActiveConversationId(conv.id);
@@ -480,7 +480,7 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm text-gray-700 truncate">
+                        <h4 className="font-medium text-sm text-slate-300 truncate">
                           {conv.title}
                         </h4>
                         <p className="text-xs text-gray-500 mt-1">
@@ -524,12 +524,12 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
                 <Button
                   size="sm"
                   onClick={() => setShowSidebar(true)}
-                  className="bg-white/20 hover:bg-white/30 border-none mr-2"
+                  className="bg-slate-900/20 hover:bg-slate-900/30 border-none mr-2"
                 >
                   <PanelLeft className="w-4 h-4" />
                 </Button>
               )}
-              <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-slate-900/20 backdrop-blur rounded-lg flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-white animate-pulse" />
               </div>
               <div>
@@ -538,7 +538,7 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
               </div>
             </div>
             {isProcessing && (
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur px-3 py-1 rounded-full">
+              <div className="flex items-center gap-2 bg-slate-900/20 backdrop-blur px-3 py-1 rounded-full">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="text-sm font-medium">Bezig...</span>
               </div>
@@ -562,9 +562,9 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
                   <div className={`max-w-[80%] ${
                     message.role === 'user' 
                       ? 'bg-blue-600 text-white' 
-                      : 'bg-white border-2 border-gray-200'
+                      : 'bg-slate-900 border-2 border-slate-700'
                   } rounded-2xl px-4 py-3 shadow-sm`}>
-                    <div className={`text-sm whitespace-pre-wrap ${message.role === 'user' ? 'text-white' : 'text-gray-700'}`}>
+                    <div className={`text-sm whitespace-pre-wrap ${message.role === 'user' ? 'text-white' : 'text-slate-300'}`}>
                       {message.content.split('\n').map((line, i) => {
                         // Parse markdown-style bold
                         if (line.includes('**')) {
@@ -615,14 +615,14 @@ export default function WritgoAIAgent({ clientData, onSuggestion, onActionComple
         </ScrollArea>
 
         {/* Input */}
-        <div className="p-4 border-t bg-gray-50">
+        <div className="p-4 border-t bg-slate-800">
           <div className="flex gap-2">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
               placeholder="Vraag me iets of geef een opdracht..."
-              className="flex-1 bg-white border-2"
+              className="flex-1 bg-slate-900 border-2"
               disabled={isProcessing}
             />
             <Button

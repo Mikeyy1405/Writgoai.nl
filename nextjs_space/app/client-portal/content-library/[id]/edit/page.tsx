@@ -370,7 +370,7 @@ export default function EditArticlePage() {
 
               {/* Originality.AI Checker */}
               {formData.content && formData.content.length > 100 && (
-                <div className="pt-4 border-t border-gray-200">
+                <div className="pt-4 border-t border-slate-700">
                   <OriginalityChecker
                     content={formData.content}
                     contentId={articleId}

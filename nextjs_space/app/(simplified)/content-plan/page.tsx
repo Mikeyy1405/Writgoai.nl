@@ -71,7 +71,7 @@ function getPriorityBadge(priority: string) {
       };
     default:
       return {
-        className: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
+        className: 'bg-slate-8000/20 text-gray-400 border border-gray-500/30',
         text: priority.toUpperCase()
       };
   }

@@ -13,7 +13,7 @@ export default function PrivacybeleidPage() {
       <PublicNav />
       <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/5 backdrop-blur-xl border border-blue-500/20 rounded-3xl p-8 md:p-12">
+          <div className="bg-slate-900/5 backdrop-blur-xl border border-blue-500/20 rounded-3xl p-8 md:p-12">
             <h1 className="text-4xl font-bold text-white mb-2">
               Privacybeleid (AVG/GDPR)
             </h1>
@@ -26,7 +26,7 @@ export default function PrivacybeleidPage() {
               <h2 className="text-2xl font-semibold text-white mt-8 mb-4">
                 1. Wie zijn wij?
               </h2>
-              <div className="bg-white/5 border border-blue-500/20 rounded-2xl p-6 mb-4">
+              <div className="bg-slate-900/5 border border-blue-500/20 rounded-2xl p-6 mb-4">
                 <p className="mb-2">
                   <strong className="text-white">Bedrijfsnaam:</strong>{' '}
                   <span className="text-blue-400">Writgo Media</span>
@@ -364,7 +364,7 @@ export default function PrivacybeleidPage() {
                 Als u niet tevreden bent met hoe wij uw gegevens verwerken, heeft u het recht 
                 om een klacht in te dienen bij de Nederlandse toezichthouder:
               </p>
-              <div className="bg-white/5 border border-blue-500/20 rounded-2xl p-6 mb-4">
+              <div className="bg-slate-900/5 border border-blue-500/20 rounded-2xl p-6 mb-4">
                 <p className="mb-2">
                   <strong className="text-white">Autoriteit Persoonsgegevens</strong>
                 </p>

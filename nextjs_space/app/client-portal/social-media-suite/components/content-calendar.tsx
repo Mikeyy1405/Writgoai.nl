@@ -179,7 +179,7 @@ export default function ContentCalendar({ projectId }: ContentCalendarProps) {
       scheduled: 'bg-blue-500/20 text-blue-300 border-blue-500/50',
       published: 'bg-green-500/20 text-green-300 border-green-500/50',
       failed: 'bg-red-500/20 text-red-300 border-red-500/50',
-      draft: 'bg-gray-500/20 text-gray-300 border-gray-500/50',
+      draft: 'bg-slate-8000/20 text-gray-300 border-gray-500/50',
     };
     return styles[status as keyof typeof styles] || styles.draft;
   };

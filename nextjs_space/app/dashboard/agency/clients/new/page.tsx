@@ -66,7 +66,7 @@ export default function NewClientPage() {
             <div className="bg-black/30 rounded-lg p-4 mb-6">
               <p className="text-sm text-gray-400 mb-2">Inloggegevens:</p>
               <p className="text-white"><strong>Email:</strong> {formData.email}</p>
-              <p className="text-white"><strong>Wachtwoord:</strong> <code className="bg-white/10 px-2 py-1 rounded">{generatedPassword}</code></p>
+              <p className="text-white"><strong>Wachtwoord:</strong> <code className="bg-slate-900/10 px-2 py-1 rounded">{generatedPassword}</code></p>
             </div>
 
             <div className="flex gap-3 justify-center">
@@ -75,7 +75,7 @@ export default function NewClientPage() {
                   navigator.clipboard.writeText(`Email: ${formData.email}\nWachtwoord: ${generatedPassword}`);
                   toast.success('Gekopieerd!');
                 }}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
               >
                 Kopieer Gegevens
               </button>
@@ -99,7 +99,7 @@ export default function NewClientPage() {
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/dashboard/agency/clients"
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-900/10 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-400" />
           </Link>
@@ -111,7 +111,7 @@ export default function NewClientPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6 space-y-6">
             {/* Name */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
@@ -123,7 +123,7 @@ export default function NewClientPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 placeholder="John Doe"
               />
             </div>
@@ -139,7 +139,7 @@ export default function NewClientPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 placeholder="john@example.com"
               />
             </div>
@@ -154,7 +154,7 @@ export default function NewClientPage() {
                 type="text"
                 value={formData.companyName}
                 onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 placeholder="Acme B.V."
               />
             </div>
@@ -169,7 +169,7 @@ export default function NewClientPage() {
                 type="url"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 placeholder="https://example.com"
               />
             </div>
@@ -186,7 +186,7 @@ export default function NewClientPage() {
                     type="checkbox"
                     checked={formData.generatePassword}
                     onChange={(e) => setFormData({ ...formData, generatePassword: e.target.checked })}
-                    className="rounded border-gray-600 bg-white/5"
+                    className="rounded border-gray-600 bg-slate-900/5"
                   />
                   <span className="text-gray-400 text-sm">Genereer automatisch wachtwoord</span>
                 </label>
@@ -196,7 +196,7 @@ export default function NewClientPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required={!formData.generatePassword}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                     placeholder="Kies een wachtwoord"
                     minLength={6}
                   />
@@ -209,7 +209,7 @@ export default function NewClientPage() {
           <div className="flex justify-end gap-3">
             <Link
               href="/dashboard/agency/clients"
-              className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
             >
               Annuleren
             </Link>

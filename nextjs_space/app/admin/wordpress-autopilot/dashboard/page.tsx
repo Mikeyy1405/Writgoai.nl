@@ -140,10 +140,10 @@ export default function WordPressAutopilotDashboard() {
 
   if (sites.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+      <div className="min-h-screen bg-slate-800 flex items-center justify-center p-8">
         <div className="text-center">
           <div className="text-6xl mb-4">🤖</div>
-          <h1 className="text-3xl font-bold mb-4 text-gray-900">Geen WordPress Sites</h1>
+          <h1 className="text-3xl font-bold mb-4 text-white">Geen WordPress Sites</h1>
           <p className="text-gray-600 mb-6">
             Voeg je eerste WordPress site toe om te beginnen met automatische content generatie
           </p>
@@ -159,13 +159,13 @@ export default function WordPressAutopilotDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-800">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-slate-900 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-white">
                 ⚡ WordPress Autopilot Dashboard
               </h1>
               <p className="text-gray-600 mt-1">
@@ -186,8 +186,8 @@ export default function WordPressAutopilotDashboard() {
         <div className="grid grid-cols-12 gap-6">
           {/* Sites Sidebar */}
           <div className="col-span-3">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h3 className="font-bold text-gray-900 mb-4">Jouw Sites</h3>
+            <div className="bg-slate-900 rounded-lg shadow-sm p-4">
+              <h3 className="font-bold text-white mb-4">Jouw Sites</h3>
               <div className="space-y-2">
                 {sites.map((site) => (
                   <button
@@ -196,10 +196,10 @@ export default function WordPressAutopilotDashboard() {
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
                       selectedSite?.id === site.id
                         ? 'bg-blue-50 border-2 border-blue-600'
-                        : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                        : 'bg-slate-800 border border-slate-700 hover:bg-slate-800/50'
                     }`}
                   >
-                    <div className="font-medium text-gray-900">{site.name}</div>
+                    <div className="font-medium text-white">{site.name}</div>
                     <div className="text-xs text-gray-500 mt-1">{site.siteUrl}</div>
                     <div className="flex items-center mt-2">
                       <span
@@ -226,10 +226,10 @@ export default function WordPressAutopilotDashboard() {
             {selectedSite && (
               <>
                 {/* Site Header */}
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div className="bg-slate-900 rounded-lg shadow-sm p-6 mb-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">{selectedSite.name}</h2>
+                      <h2 className="text-2xl font-bold text-white">{selectedSite.name}</h2>
                       <p className="text-gray-600">{selectedSite.siteUrl}</p>
                     </div>
                     <button
@@ -248,21 +248,21 @@ export default function WordPressAutopilotDashboard() {
                 {/* Stats Cards */}
                 {metrics && (
                   <div className="grid grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white rounded-lg shadow-sm p-4">
+                    <div className="bg-slate-900 rounded-lg shadow-sm p-4">
                       <div className="text-sm text-gray-600">Totaal Posts</div>
-                      <div className="text-2xl font-bold text-gray-900">{metrics.totalPosts}</div>
+                      <div className="text-2xl font-bold text-white">{metrics.totalPosts}</div>
                     </div>
-                    <div className="bg-white rounded-lg shadow-sm p-4">
+                    <div className="bg-slate-900 rounded-lg shadow-sm p-4">
                       <div className="text-sm text-gray-600">Deze Maand</div>
-                      <div className="text-2xl font-bold text-gray-900">{metrics.postsThisMonth}</div>
+                      <div className="text-2xl font-bold text-white">{metrics.postsThisMonth}</div>
                     </div>
-                    <div className="bg-white rounded-lg shadow-sm p-4">
+                    <div className="bg-slate-900 rounded-lg shadow-sm p-4">
                       <div className="text-sm text-gray-600">Gem. Woorden</div>
-                      <div className="text-2xl font-bold text-gray-900">{metrics.averageWordCount}</div>
+                      <div className="text-2xl font-bold text-white">{metrics.averageWordCount}</div>
                     </div>
-                    <div className="bg-white rounded-lg shadow-sm p-4">
+                    <div className="bg-slate-900 rounded-lg shadow-sm p-4">
                       <div className="text-sm text-gray-600">Authority Score</div>
-                      <div className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-white">
                         {metrics.topicalAuthorityScore}%
                       </div>
                     </div>
@@ -270,8 +270,8 @@ export default function WordPressAutopilotDashboard() {
                 )}
 
                 {/* View Tabs */}
-                <div className="bg-white rounded-lg shadow-sm mb-6">
-                  <div className="border-b border-gray-200">
+                <div className="bg-slate-900 rounded-lg shadow-sm mb-6">
+                  <div className="border-b border-slate-700">
                     <div className="flex">
                       {[
                         { id: 'overview', label: '📊 Overzicht', icon: '📊' },
@@ -284,7 +284,7 @@ export default function WordPressAutopilotDashboard() {
                           className={`px-6 py-3 font-medium ${
                             view === tab.id
                               ? 'border-b-2 border-blue-600 text-blue-600'
-                              : 'text-gray-600 hover:text-gray-900'
+                              : 'text-gray-600 hover:text-white'
                           }`}
                         >
                           {tab.label}
@@ -301,9 +301,9 @@ export default function WordPressAutopilotDashboard() {
                           <h3 className="text-lg font-bold mb-4">Recente Content</h3>
                           <div className="space-y-2">
                             {metrics.recentPosts.slice(0, 5).map((post: any) => (
-                              <div key={post.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div key={post.id} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
                                 <div className="flex-1">
-                                  <div className="font-medium text-gray-900">{post.title}</div>
+                                  <div className="font-medium text-white">{post.title}</div>
                                   <div className="text-sm text-gray-500">
                                     {new Date(post.publishedAt).toLocaleDateString('nl-NL')}
                                   </div>
@@ -325,14 +325,14 @@ export default function WordPressAutopilotDashboard() {
 
                         <div>
                           <h3 className="text-lg font-bold mb-4">Content Coverage</h3>
-                          <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="bg-slate-800 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm text-gray-600">Topical Authority</span>
-                              <span className="text-sm font-bold text-gray-900">
+                              <span className="text-sm font-bold text-white">
                                 {metrics.contentCoverage.percentage}%
                               </span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div className="w-full bg-slate-700 rounded-full h-3">
                               <div
                                 className="bg-blue-600 rounded-full h-3 transition-all"
                                 style={{ width: `${metrics.contentCoverage.percentage}%` }}
@@ -353,10 +353,10 @@ export default function WordPressAutopilotDashboard() {
                         ) : (
                           <div className="space-y-3">
                             {content.map((item) => (
-                              <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+                              <div key={item.id} className="border border-slate-700 rounded-lg p-4">
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
-                                    <div className="font-medium text-gray-900">{item.title}</div>
+                                    <div className="font-medium text-white">{item.title}</div>
                                     <div className="text-sm text-gray-500 mt-1">
                                       {item.focusKeyword} • {new Date(item.scheduledDate).toLocaleDateString('nl-NL')}
                                     </div>
@@ -372,7 +372,7 @@ export default function WordPressAutopilotDashboard() {
                                           ? 'bg-yellow-100 text-yellow-700'
                                           : item.status === 'failed'
                                           ? 'bg-red-100 text-red-700'
-                                          : 'bg-gray-100 text-gray-700'
+                                          : 'bg-slate-800/50 text-slate-300'
                                       }`}
                                     >
                                       {item.status === 'published' && '✓ Gepubliceerd'}
@@ -442,10 +442,10 @@ export default function WordPressAutopilotDashboard() {
 
                         <div>
                           <h3 className="text-lg font-bold mb-4">Content Quality</h3>
-                          <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="bg-slate-800 rounded-lg p-4">
                             <div className="flex items-center justify-between">
-                              <span className="text-gray-700">Gem. Woordenaantal</span>
-                              <span className="text-xl font-bold text-gray-900">
+                              <span className="text-slate-300">Gem. Woordenaantal</span>
+                              <span className="text-xl font-bold text-white">
                                 {metrics.averageWordCount}
                               </span>
                             </div>

@@ -66,7 +66,7 @@ export default function AffiliateProductCard({
         target="_blank"
         rel="nofollow noopener noreferrer sponsored"
         className={`
-          group block p-4 bg-white border-2 border-gray-200 rounded-xl
+          group block p-4 bg-slate-900 border-2 border-slate-700 rounded-xl
           hover:border-orange-400 hover:shadow-lg
           transition-all duration-300
           ${className}
@@ -74,7 +74,7 @@ export default function AffiliateProductCard({
       >
         <div className="flex gap-4">
           {/* Image */}
-          <div className="relative w-20 h-20 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden">
+          <div className="relative w-20 h-20 flex-shrink-0 bg-slate-800 rounded-lg overflow-hidden">
             {product.imageUrl ? (
               <Image
                 src={product.imageUrl}
@@ -92,7 +92,7 @@ export default function AffiliateProductCard({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-gray-700 mb-1 line-clamp-2 group-hover:text-orange-600 transition-colors">
+            <h4 className="font-semibold text-slate-300 mb-1 line-clamp-2 group-hover:text-orange-600 transition-colors">
               {product.title}
             </h4>
             <div className="flex items-center gap-2 mb-1">
@@ -123,7 +123,7 @@ export default function AffiliateProductCard({
       target="_blank"
       rel="nofollow noopener noreferrer sponsored"
       className={`
-        group block bg-white border-2 border-gray-200 rounded-xl overflow-hidden
+        group block bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden
         hover:border-orange-400 hover:shadow-xl
         transition-all duration-300
         ${className}
@@ -157,7 +157,7 @@ export default function AffiliateProductCard({
 
       {/* Content */}
       <div className="p-5">
-        <h3 className="font-bold text-lg text-gray-700 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+        <h3 className="font-bold text-lg text-slate-300 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
           {product.title}
         </h3>
 

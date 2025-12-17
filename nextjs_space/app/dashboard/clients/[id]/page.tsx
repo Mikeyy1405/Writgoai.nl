@@ -208,9 +208,9 @@ export default function ClientDetailPage() {
   const activeSubscription = client.ClientSubscription.find(sub => sub.status === 'ACTIVE');
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-800">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-slate-900 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <Button
@@ -221,7 +221,7 @@ export default function ClientDetailPage() {
               Terug
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-700">Klantbeheer: {client.name}</h1>
+              <h1 className="text-2xl font-bold text-slate-300">Klantbeheer: {client.name}</h1>
               <p className="text-gray-600">Beheer abonnement en details</p>
             </div>
           </div>
@@ -241,23 +241,23 @@ export default function ClientDetailPage() {
                   <div className="text-sm text-gray-600 mb-1">Naam</div>
                   <div className="font-medium">{client.name}</div>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700">
+                <div className="flex items-center gap-2 text-slate-300">
                   <Mail className="w-4 h-4" />
                   {client.email}
                 </div>
                 {client.phone && (
-                  <div className="flex items-center gap-2 text-gray-700">
+                  <div className="flex items-center gap-2 text-slate-300">
                     <Phone className="w-4 h-4" />
                     {client.phone}
                   </div>
                 )}
                 {client.companyName && (
-                  <div className="flex items-center gap-2 text-gray-700">
+                  <div className="flex items-center gap-2 text-slate-300">
                     <Building2 className="w-4 h-4" />
                     {client.companyName}
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-gray-700">
+                <div className="flex items-center gap-2 text-slate-300">
                   <Calendar className="w-4 h-4" />
                   Klant sinds {new Date(client.createdAt).toLocaleDateString('nl-NL')}
                 </div>
@@ -324,7 +324,7 @@ export default function ClientDetailPage() {
                   <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <div className="font-bold text-xl text-gray-700">{activeSubscription.Package.tier}</div>
+                        <div className="font-bold text-xl text-slate-300">{activeSubscription.Package.tier}</div>
                         <div className="text-sm text-gray-600">{activeSubscription.Package.displayName}</div>
                       </div>
                       <div className="text-right">
@@ -332,13 +332,13 @@ export default function ClientDetailPage() {
                         <div className="text-xs text-gray-600">per maand</div>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-700 mb-3">{activeSubscription.Package.description}</div>
+                    <div className="text-sm text-slate-300 mb-3">{activeSubscription.Package.description}</div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="bg-white rounded p-2 border">
+                      <div className="bg-slate-900 rounded p-2 border">
                         <div className="text-gray-600">Artikelen gebruikt</div>
                         <div className="font-semibold">{activeSubscription.articlesUsed}</div>
                       </div>
-                      <div className="bg-white rounded p-2 border">
+                      <div className="bg-slate-900 rounded p-2 border">
                         <div className="text-gray-600">Reels gebruikt</div>
                         <div className="font-semibold">{activeSubscription.reelsUsed}</div>
                       </div>
@@ -368,7 +368,7 @@ export default function ClientDetailPage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-gray-300">
+              <Card className="border-slate-600">
                 <CardContent className="py-8 text-center">
                   <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-600 font-medium">Geen actief abonnement</p>
@@ -413,7 +413,7 @@ export default function ClientDetailPage() {
                       const selectedPkg = packages.find(p => p.id === selectedPackageId);
                       return selectedPkg ? (
                         <>
-                          <div className="font-semibold text-gray-700 mb-1">{selectedPkg.displayName}</div>
+                          <div className="font-semibold text-slate-300 mb-1">{selectedPkg.displayName}</div>
                           <div className="text-sm text-gray-600 mb-2">{selectedPkg.description}</div>
                           <div className="text-lg font-bold text-[#FF6B35]">€{selectedPkg.monthlyPrice}/maand</div>
                         </>
@@ -452,7 +452,7 @@ export default function ClientDetailPage() {
                 <CardContent>
                   <div className="space-y-3">
                     {client.ClientSubscription.map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={sub.id} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
                         <div>
                           <div className="font-medium">{sub.Package.tier}</div>
                           <div className="text-sm text-gray-600">

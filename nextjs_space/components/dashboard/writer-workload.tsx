@@ -58,10 +58,10 @@ export function WriterWorkload({ writers }: WriterWorkloadProps) {
             ).length;
 
             return (
-              <div key={writer.id} className="bg-gray-50 rounded-lg p-4">
+              <div key={writer.id} className="bg-slate-800 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h4 className="font-medium text-gray-700">{writer.name || 'Onbekende writer'}</h4>
+                    <h4 className="font-medium text-slate-300">{writer.name || 'Onbekende writer'}</h4>
                     <div className="flex items-center space-x-2 mt-1">
                       <div className="flex items-center space-x-1 text-sm text-gray-600">
                         <Clock className="w-3 h-3" />

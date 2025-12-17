@@ -45,7 +45,7 @@ export function ProjectSelector({ value, onChange }: ProjectSelectorProps) {
 
   if (projects.length === 0) {
     return (
-      <div className="text-sm text-gray-600 dark:text-gray-400 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+      <div className="text-sm text-gray-600 dark:text-gray-400 p-4 bg-slate-800 dark:bg-gray-800 rounded-lg">
         Geen projecten. Maak eerst een project aan.
       </div>
     );
@@ -56,7 +56,7 @@ export function ProjectSelector({ value, onChange }: ProjectSelectorProps) {
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+        className="w-full px-4 py-2 pr-10 border border-slate-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-slate-900 dark:bg-gray-800 text-white dark:text-gray-100"
       >
         {projects.map((project) => (
           <option key={project.id} value={project.id}>

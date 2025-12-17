@@ -178,7 +178,7 @@ export default function NewRequestPage() {
             <div className="flex gap-3 justify-center">
               <Link
                 href="/client-portal"
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
               >
                 Naar Dashboard
               </Link>
@@ -218,7 +218,7 @@ export default function NewRequestPage() {
           <div className="flex items-center gap-4">
             <Link
               href="/client-portal"
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-900/10 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </Link>
@@ -232,7 +232,7 @@ export default function NewRequestPage() {
           </div>
 
           {/* Credits Display */}
-          <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+          <div className="bg-slate-900/5 border border-white/10 rounded-lg px-4 py-2">
             <div className="flex items-center gap-2">
               {isUnlimited ? (
                 <>
@@ -252,7 +252,7 @@ export default function NewRequestPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Type Selection */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <label className="text-sm font-medium text-gray-300 mb-4 block">Wat voor project is dit? *</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {requestTypes.map((type) => {
@@ -268,8 +268,8 @@ export default function NewRequestPage() {
                       isSelected
                         ? 'bg-green-500/20 border-green-500/50'
                         : canAfford
-                        ? 'bg-white/5 border-white/10 hover:border-white/20'
-                        : 'bg-white/5 border-red-500/30 opacity-60'
+                        ? 'bg-slate-900/5 border-white/10 hover:border-white/20'
+                        : 'bg-slate-900/5 border-red-500/30 opacity-60'
                     }`}
                   >
                     <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-green-400' : canAfford ? 'text-gray-400' : 'text-red-400'}`} />
@@ -325,7 +325,7 @@ export default function NewRequestPage() {
           </div>
 
           {/* Title & Description */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-4">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6 space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">Titel *</label>
               <input
@@ -333,7 +333,7 @@ export default function NewRequestPage() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
+                className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
                 placeholder="Korte beschrijving van je project"
               />
             </div>
@@ -344,21 +344,21 @@ export default function NewRequestPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required
                 rows={6}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 resize-none"
+                className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 resize-none"
                 placeholder="Vertel ons meer over wat je nodig hebt. Wat wil je bereiken? Zijn er specifieke eisen?"
               />
             </div>
           </div>
 
           {/* Budget & Deadline */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-2 block">Budget indicatie</label>
                 <select
                   value={formData.budget}
                   onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-green-500"
+                  className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-green-500"
                 >
                   <option value="" className="bg-[#1a1a1a]">Selecteer...</option>
                   <option value="< €500" className="bg-[#1a1a1a]">&lt; €500</option>
@@ -374,7 +374,7 @@ export default function NewRequestPage() {
                 <select
                   value={formData.deadline}
                   onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-green-500"
+                  className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-green-500"
                 >
                   <option value="" className="bg-[#1a1a1a]">Selecteer...</option>
                   <option value="Zo snel mogelijk" className="bg-[#1a1a1a]">Zo snel mogelijk</option>
@@ -391,7 +391,7 @@ export default function NewRequestPage() {
           <div className="flex justify-end gap-3">
             <Link
               href="/client-portal"
-              className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
             >
               Annuleren
             </Link>

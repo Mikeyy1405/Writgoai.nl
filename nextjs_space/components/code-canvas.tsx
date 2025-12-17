@@ -206,7 +206,7 @@ ${js}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
           {/* Code Editor */}
           <div className="border-r flex flex-col h-full bg-slate-50">
-            <div className="border-b bg-white p-2">
+            <div className="border-b bg-slate-900 p-2">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="html" className="flex items-center gap-2">
@@ -291,7 +291,7 @@ ${js}
             </div>
 
             {/* Actions */}
-            <div className="border-t bg-white p-3 flex items-center justify-between">
+            <div className="border-t bg-slate-900 p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -317,7 +317,7 @@ ${js}
           </div>
 
           {/* Preview */}
-          <div className="flex flex-col h-full bg-white">
+          <div className="flex flex-col h-full bg-slate-900">
             <div className="border-b bg-gradient-to-r from-blue-50 to-purple-50 p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-blue-600" />
@@ -332,7 +332,7 @@ ${js}
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-auto bg-white">
+            <div className="flex-1 overflow-auto bg-slate-900">
               <iframe
                 ref={iframeRef}
                 title="Preview"

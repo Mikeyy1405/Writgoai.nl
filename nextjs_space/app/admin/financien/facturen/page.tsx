@@ -94,7 +94,7 @@ function FacturenContent() {
       case 'paid':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'draft':
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        return 'bg-slate-8000/20 text-gray-400 border-gray-500/30';
       case 'open':
       case 'pending_payment':
         return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
@@ -102,7 +102,7 @@ function FacturenContent() {
       case 'reminded':
         return 'bg-red-500/20 text-red-400 border-red-500/30';
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        return 'bg-slate-8000/20 text-gray-400 border-gray-500/30';
     }
   };
 
@@ -124,8 +124,8 @@ function FacturenContent() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-7xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
-          <div className="h-96 bg-white/10 rounded-xl"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-900/10 rounded-xl"></div>
         </div>
       </div>
     );
@@ -138,7 +138,7 @@ function FacturenContent() {
         <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/financien"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 bg-slate-900/10 hover:bg-slate-900/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </Link>
@@ -160,7 +160,7 @@ function FacturenContent() {
             className={`px-4 py-2 rounded-lg transition-colors ${
               stateFilter === 'all'
                 ? 'bg-[#ff6b35] text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                : 'bg-slate-900/5 text-gray-400 hover:bg-slate-900/10'
             }`}
           >
             Alle
@@ -170,7 +170,7 @@ function FacturenContent() {
             className={`px-4 py-2 rounded-lg transition-colors ${
               stateFilter === 'draft'
                 ? 'bg-[#ff6b35] text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                : 'bg-slate-900/5 text-gray-400 hover:bg-slate-900/10'
             }`}
           >
             Concepten
@@ -180,7 +180,7 @@ function FacturenContent() {
             className={`px-4 py-2 rounded-lg transition-colors ${
               stateFilter === 'open'
                 ? 'bg-[#ff6b35] text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                : 'bg-slate-900/5 text-gray-400 hover:bg-slate-900/10'
             }`}
           >
             Open
@@ -190,7 +190,7 @@ function FacturenContent() {
             className={`px-4 py-2 rounded-lg transition-colors ${
               stateFilter === 'paid'
                 ? 'bg-[#ff6b35] text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                : 'bg-slate-900/5 text-gray-400 hover:bg-slate-900/10'
             }`}
           >
             Betaald
@@ -200,7 +200,7 @@ function FacturenContent() {
             className={`px-4 py-2 rounded-lg transition-colors ${
               stateFilter === 'late'
                 ? 'bg-[#ff6b35] text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                : 'bg-slate-900/5 text-gray-400 hover:bg-slate-900/10'
             }`}
           >
             Te laat
@@ -208,10 +208,10 @@ function FacturenContent() {
         </div>
 
         {/* Invoices Table */}
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/5">
+              <thead className="bg-slate-900/5">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
                     Factuurnummer
@@ -235,7 +235,7 @@ function FacturenContent() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {invoices.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={invoice.id} className="hover:bg-slate-900/5 transition-colors">
                     <td className="px-6 py-4">
                       <p className="text-white font-medium">{invoice.invoice_id}</p>
                     </td>
@@ -310,8 +310,8 @@ export default function FacturenPage() {
     <React.Suspense fallback={
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-7xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
-          <div className="h-96 bg-white/10 rounded-xl"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-900/10 rounded-xl"></div>
         </div>
       </div>
     }>

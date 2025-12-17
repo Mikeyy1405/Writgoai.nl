@@ -276,7 +276,7 @@ export default function ClientCreditsManager() {
                     <p className="text-sm text-gray-500 mt-1">{selectedClient.companyName}</p>
                   )}
                 </div>
-                <Badge className={selectedClient.subscriptionStatus === 'active' ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-300'}>
+                <Badge className={selectedClient.subscriptionStatus === 'active' ? 'bg-green-500/20 text-green-300' : 'bg-slate-8000/20 text-gray-300'}>
                   {selectedClient.subscriptionPlan || 'geen plan'}
                 </Badge>
               </div>

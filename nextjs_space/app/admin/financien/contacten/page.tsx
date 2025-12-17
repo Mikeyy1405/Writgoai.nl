@@ -55,8 +55,8 @@ export default function ContactenPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-7xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
-          <div className="h-96 bg-white/10 rounded-xl"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-900/10 rounded-xl"></div>
         </div>
       </div>
     );
@@ -69,7 +69,7 @@ export default function ContactenPage() {
         <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/financien"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 bg-slate-900/10 hover:bg-slate-900/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </Link>
@@ -101,12 +101,12 @@ export default function ContactenPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Zoek op naam, email of bedrijf..."
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#ff6b35]"
+                className="w-full pl-10 pr-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#ff6b35]"
               />
             </div>
             <button
               type="submit"
-              className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
             >
               Zoeken
             </button>
@@ -114,10 +114,10 @@ export default function ContactenPage() {
         </div>
 
         {/* Contacts Table */}
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/5">
+              <thead className="bg-slate-900/5">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
                     Bedrijf / Naam
@@ -135,7 +135,7 @@ export default function ContactenPage() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {contacts.map((contact) => (
-                  <tr key={contact.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={contact.id} className="hover:bg-slate-900/5 transition-colors">
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-white font-medium">

@@ -593,7 +593,7 @@ KRITIEK: Antwoord ALTIJD in het ${responseLanguage === 'nl' ? 'Nederlands' : 'En
         className="fixed bottom-6 right-6 h-16 w-16 bg-orange-600 hover:bg-orange-700 text-white rounded-full shadow-[0_0_20px_rgba(234,88,12,0.3)] flex items-center justify-center transition-all duration-300 z-50 hover:scale-110 group"
       >
         <Bot size={32} className="group-hover:rotate-12 transition-transform" />
-        <span className="absolute top-0 right-0 h-4 w-4 bg-white rounded-full border-2 border-gray-900"></span>
+        <span className="absolute top-0 right-0 h-4 w-4 bg-slate-900 rounded-full border-2 border-gray-900"></span>
       </button>
     );
   }
@@ -689,9 +689,9 @@ KRITIEK: Antwoord ALTIJD in het ${responseLanguage === 'nl' ? 'Nederlands' : 'En
                     </div>
                     <div className="bg-gray-800 border border-gray-700 px-4 py-3 rounded-2xl rounded-tl-none">
                         <div className="flex gap-1">
-                            <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"></div>
-                            <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce delay-100"></div>
-                            <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce delay-200"></div>
+                            <div className="w-1.5 h-1.5 bg-slate-8000 rounded-full animate-bounce"></div>
+                            <div className="w-1.5 h-1.5 bg-slate-8000 rounded-full animate-bounce delay-100"></div>
+                            <div className="w-1.5 h-1.5 bg-slate-8000 rounded-full animate-bounce delay-200"></div>
                         </div>
                     </div>
               </div>

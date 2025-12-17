@@ -62,7 +62,7 @@ export function TaskStats({ stats }: TaskStatsProps) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-700">
+            <div className="text-2xl font-bold text-slate-300">
               {item.value}
             </div>
           </CardContent>

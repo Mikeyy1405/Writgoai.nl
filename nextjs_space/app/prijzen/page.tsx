@@ -85,7 +85,7 @@ export default function PrijzenPage() {
     { name: 'Instagram', icon: Instagram, color: 'text-pink-500' },
     { name: 'Facebook', icon: Facebook, color: 'text-blue-600' },
     { name: 'Twitter/X', icon: Twitter, color: 'text-sky-500' },
-    { name: 'TikTok', icon: Video, color: 'text-black' },
+    { name: 'TikTok', icon: Video, color: 'text-white' },
     { name: 'Pinterest', icon: TrendingUp, color: 'text-red-500' },
     { name: 'Google My Business', icon: Globe, color: 'text-orange-500' },
     { name: 'YouTube', icon: Youtube, color: 'text-red-600' },
@@ -340,7 +340,7 @@ export default function PrijzenPage() {
                 Start vandaag en laat AI jouw content marketing overnemen
               </p>
               <Link href="/registreren">
-                <Button size="lg" className="bg-white text-orange-600 hover:bg-gray-100 px-8 h-12 text-lg font-semibold border-0">
+                <Button size="lg" className="bg-slate-900 text-orange-600 hover:bg-slate-800/50 px-8 h-12 text-lg font-semibold border-0">
                   Start Nu →
                 </Button>
               </Link>

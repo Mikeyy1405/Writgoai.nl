@@ -156,7 +156,7 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { color: string; icon: any }> = {
-      idea: { color: 'bg-gray-100 text-gray-700', icon: FileText },
+      idea: { color: 'bg-slate-800/50 text-slate-300', icon: FileText },
       queued: { color: 'bg-blue-100 text-blue-600', icon: Clock },
       writing: { color: 'bg-orange-100 text-orange-800', icon: Edit3 },
       completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle2 },
@@ -429,7 +429,7 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-slate-300">
                 Artikel titel
               </label>
               <input
@@ -437,7 +437,7 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
                 value={newIdeaTitle}
                 onChange={(e) => setNewIdeaTitle(e.target.value)}
                 placeholder="Bijv: De beste yogalessen in Amsterdam"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                 disabled={isAddingIdea}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !isAddingIdea) {
@@ -635,7 +635,7 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
                 <div className="flex items-center gap-2 text-sm">
                   <Tag className="w-4 h-4 text-orange-600" />
                   <span className="font-medium">Focus Keyword:</span>
-                  <span className="text-gray-700">{idea.focusKeyword}</span>
+                  <span className="text-slate-300">{idea.focusKeyword}</span>
                 </div>
                 
                 {idea.secondaryKeywords && idea.secondaryKeywords.length > 0 && (
@@ -659,7 +659,7 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
                   <div className="flex items-center gap-2 text-sm">
                     <TrendingUp className="w-4 h-4 text-blue-600" />
                     <span className="font-medium">Zoekvolume:</span>
-                    <span className="text-gray-700">{idea.searchVolume.toLocaleString()}/maand</span>
+                    <span className="text-slate-300">{idea.searchVolume.toLocaleString()}/maand</span>
                   </div>
                 )}
                 
@@ -667,7 +667,7 @@ export default function ContentIdeasList({ ideas, onRefresh, projectId, language
                   <div className="flex items-center gap-2 text-sm">
                     <Target className="w-4 h-4 text-purple-600" />
                     <span className="font-medium">SEO Moeilijkheid:</span>
-                    <span className="text-gray-700">{idea.difficulty}/100</span>
+                    <span className="text-slate-300">{idea.difficulty}/100</span>
                   </div>
                 )}
               </div>

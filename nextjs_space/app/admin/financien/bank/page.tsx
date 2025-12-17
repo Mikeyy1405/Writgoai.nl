@@ -69,8 +69,8 @@ export default function BankPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-7xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
-          <div className="h-96 bg-white/10 rounded-xl"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-900/10 rounded-xl"></div>
         </div>
       </div>
     );
@@ -82,7 +82,7 @@ export default function BankPage() {
         <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/financien"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 bg-slate-900/10 hover:bg-slate-900/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </Link>
@@ -117,7 +117,7 @@ export default function BankPage() {
                 className={`p-4 rounded-xl border transition-colors text-left ${
                   selectedAccount === account.id
                     ? 'bg-[#ff6b35]/10 border-[#ff6b35]'
-                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    : 'bg-slate-900/5 border-white/10 hover:bg-slate-900/10'
                 }`}
               >
                 <p className="text-white font-semibold">{account.name}</p>
@@ -135,10 +135,10 @@ export default function BankPage() {
         )}
 
         {/* Transactions */}
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/5">
+              <thead className="bg-slate-900/5">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
                     Datum
@@ -159,7 +159,7 @@ export default function BankPage() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {transactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={transaction.id} className="hover:bg-slate-900/5 transition-colors">
                     <td className="px-6 py-4">
                       <p className="text-gray-300 text-sm">
                         {new Date(transaction.transactionDate).toLocaleDateString('nl-NL')}

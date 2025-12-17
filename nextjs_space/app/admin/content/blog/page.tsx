@@ -107,22 +107,22 @@ export default function BlogContentPage() {
     <div className="space-y-6 p-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Blog Post Generator</h1>
+        <h1 className="text-3xl font-bold text-white">Blog Post Generator</h1>
         <p className="text-gray-600 mt-2">Maak AI-gegenereerde blog content voor je projecten</p>
       </div>
 
       {mode === 'create' ? (
-        <div className="bg-white rounded-lg border p-8 space-y-6">
+        <div className="bg-slate-900 rounded-lg border p-8 space-y-6">
           {/* Project Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               <Globe className="w-4 h-4 inline mr-2" />
               Selecteer Project
             </label>
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             >
               <option value="">Kies een project...</option>
               {projects.map((project) => (
@@ -133,7 +133,7 @@ export default function BlogContentPage() {
               ))}
             </select>
             {selectedProject && (
-              <div className="mt-3 p-4 bg-gray-50 rounded-lg space-y-1 text-sm">
+              <div className="mt-3 p-4 bg-slate-800 rounded-lg space-y-1 text-sm">
                 {selectedProject.niche && (
                   <p><strong>Niche:</strong> {selectedProject.niche}</p>
                 )}
@@ -149,7 +149,7 @@ export default function BlogContentPage() {
 
           {/* Topic Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Onderwerp / Topic
             </label>
             <input
@@ -157,13 +157,13 @@ export default function BlogContentPage() {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="bijv. De voordelen van AI in marketing"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
 
           {/* Keywords Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Keywords (optioneel, komma gescheiden)
             </label>
             <input
@@ -171,7 +171,7 @@ export default function BlogContentPage() {
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
               placeholder="bijv. AI, marketing, automatisering"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
 
@@ -197,9 +197,9 @@ export default function BlogContentPage() {
       ) : (
         <div className="space-y-6">
           {/* Preview */}
-          <div className="bg-white rounded-lg border p-8">
+          <div className="bg-slate-900 rounded-lg border p-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-white">
                 <Eye className="w-6 h-6 inline mr-2" />
                 Preview
               </h2>
@@ -208,7 +208,7 @@ export default function BlogContentPage() {
                   setMode('create');
                   setGeneratedPost(null);
                 }}
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="text-sm text-gray-600 hover:text-white"
               >
                 ← Terug
               </button>
@@ -218,55 +218,55 @@ export default function BlogContentPage() {
               <div className="space-y-6">
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Titel</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Titel</label>
                   <input
                     type="text"
                     value={generatedPost.title}
                     onChange={(e) => setGeneratedPost({ ...generatedPost, title: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-2 border border-slate-600 rounded-lg"
                   />
                 </div>
 
                 {/* Excerpt */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Samenvatting</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Samenvatting</label>
                   <textarea
                     value={generatedPost.excerpt}
                     onChange={(e) => setGeneratedPost({ ...generatedPost, excerpt: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-2 border border-slate-600 rounded-lg"
                   />
                 </div>
 
                 {/* Content */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Content</label>
                   <textarea
                     value={generatedPost.content}
                     onChange={(e) => setGeneratedPost({ ...generatedPost, content: e.target.value })}
                     rows={20}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm"
+                    className="w-full px-4 py-2 border border-slate-600 rounded-lg font-mono text-sm"
                   />
                 </div>
 
                 {/* SEO Fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Meta Description</label>
                     <textarea
                       value={generatedPost.metaDescription}
                       onChange={(e) => setGeneratedPost({ ...generatedPost, metaDescription: e.target.value })}
                       rows={2}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-4 py-2 border border-slate-600 rounded-lg text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Focus Keyword</label>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Focus Keyword</label>
                     <input
                       type="text"
                       value={generatedPost.focusKeyword}
                       onChange={(e) => setGeneratedPost({ ...generatedPost, focusKeyword: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-4 py-2 border border-slate-600 rounded-lg"
                     />
                   </div>
                 </div>

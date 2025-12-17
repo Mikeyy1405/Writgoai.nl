@@ -48,7 +48,7 @@ export default function RapportenPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-7xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
         </div>
       </div>
     );
@@ -60,7 +60,7 @@ export default function RapportenPage() {
         <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/financien"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 bg-slate-900/10 hover:bg-slate-900/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </Link>
@@ -76,7 +76,7 @@ export default function RapportenPage() {
         </div>
 
         {/* Report Generator */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6 mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">Rapport Genereren</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -84,7 +84,7 @@ export default function RapportenPage() {
               <select
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
               >
                 <option value="profit_loss">Winst & Verlies</option>
                 <option value="balance">Balans</option>
@@ -97,7 +97,7 @@ export default function RapportenPage() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
               />
             </div>
             <div>
@@ -106,7 +106,7 @@ export default function RapportenPage() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
               />
             </div>
             <div className="flex items-end">
@@ -123,7 +123,7 @@ export default function RapportenPage() {
 
         {/* Report Results */}
         {reportData && (
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-white">
                 {reportData.type === 'profit_loss' && 'Winst & Verlies Rekening'}
@@ -140,19 +140,19 @@ export default function RapportenPage() {
             {reportData.type === 'profit_loss' && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white/5 p-4 rounded-lg">
+                  <div className="bg-slate-900/5 p-4 rounded-lg">
                     <p className="text-gray-400 text-sm mb-1">Totale Omzet</p>
                     <p className="text-2xl font-bold text-green-400">
                       €{reportData.data.revenue.toFixed(2)}
                     </p>
                   </div>
-                  <div className="bg-white/5 p-4 rounded-lg">
+                  <div className="bg-slate-900/5 p-4 rounded-lg">
                     <p className="text-gray-400 text-sm mb-1">Totale Kosten</p>
                     <p className="text-2xl font-bold text-red-400">
                       €{reportData.data.expenses.toFixed(2)}
                     </p>
                   </div>
-                  <div className="bg-white/5 p-4 rounded-lg">
+                  <div className="bg-slate-900/5 p-4 rounded-lg">
                     <p className="text-gray-400 text-sm mb-1">Nettowinst</p>
                     <p
                       className={`text-2xl font-bold ${
@@ -173,7 +173,7 @@ export default function RapportenPage() {
                       {reportData.data.expensesByCategory.map((cat: any) => (
                         <div
                           key={cat.category}
-                          className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
+                          className="flex items-center justify-between p-3 bg-slate-900/5 rounded-lg"
                         >
                           <span className="text-white">{cat.category}</span>
                           <span className="text-red-400 font-semibold">
@@ -193,7 +193,7 @@ export default function RapportenPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-4">Activa</h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between p-3 bg-white/5 rounded-lg">
+                    <div className="flex justify-between p-3 bg-slate-900/5 rounded-lg">
                       <span className="text-gray-300">Vorderingen</span>
                       <span className="text-white font-semibold">
                         €{reportData.data.assets.receivables.toFixed(2)}
@@ -212,7 +212,7 @@ export default function RapportenPage() {
                     Passiva & Eigen Vermogen
                   </h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between p-3 bg-white/5 rounded-lg">
+                    <div className="flex justify-between p-3 bg-slate-900/5 rounded-lg">
                       <span className="text-gray-300">Eigen Vermogen</span>
                       <span className="text-white font-semibold">
                         €{reportData.data.liabilities.equity.toFixed(2)}
@@ -234,7 +234,7 @@ export default function RapportenPage() {
               <div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-white/5">
+                    <thead className="bg-slate-900/5">
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">
                           Maand
@@ -252,7 +252,7 @@ export default function RapportenPage() {
                     </thead>
                     <tbody className="divide-y divide-white/10">
                       {reportData.data.months.map((month: any) => (
-                        <tr key={month.month} className="hover:bg-white/5">
+                        <tr key={month.month} className="hover:bg-slate-900/5">
                           <td className="px-4 py-3 text-white">{month.month}</td>
                           <td className="px-4 py-3 text-green-400">
                             €{month.income.toFixed(2)}
@@ -278,7 +278,7 @@ export default function RapportenPage() {
         )}
 
         {!reportData && (
-          <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-12 text-center">
             <FileBarChart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">
               Selecteer een rapport type en klik op "Genereer" om te beginnen

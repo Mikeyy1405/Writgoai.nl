@@ -44,7 +44,7 @@ const PLATFORM_CONFIG: Record<string, { name: string; icon: LucideIcon; color: s
   x: { 
     name: 'X (Twitter)', 
     icon: Twitter, 
-    color: 'text-gray-700 dark:text-white' 
+    color: 'text-slate-300 dark:text-white' 
   },
   youtube: { 
     name: 'YouTube', 

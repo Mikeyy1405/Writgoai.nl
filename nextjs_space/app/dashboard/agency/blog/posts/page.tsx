@@ -273,7 +273,7 @@ export default function BlogPostsPage() {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-zinc-800">
+            <thead className="bg-slate-800 dark:bg-zinc-800">
               <tr>
                 <th className="px-4 py-3 text-left">
                   <Checkbox
@@ -296,7 +296,7 @@ export default function BlogPostsPage() {
               {filteredPosts.map((post) => (
                 <tr
                   key={post.id}
-                  className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+                  className="hover:bg-slate-800 dark:hover:bg-zinc-800/50 transition-colors"
                 >
                   <td className="px-4 py-3">
                     <Checkbox

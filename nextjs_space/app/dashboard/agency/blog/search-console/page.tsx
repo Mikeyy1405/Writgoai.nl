@@ -78,7 +78,7 @@ export default function SearchConsolePage() {
       {/* Info Card */}
       <Card className="p-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
         <h3 className="font-semibold mb-4">Wat krijg je na verbinding?</h3>
-        <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+        <ul className="space-y-2 text-sm text-slate-300 dark:text-gray-300">
           <li className="flex gap-2">
             <span className="text-blue-600">✓</span>
             <span>Performance data per artikel (clicks, impressions, CTR, positie)</span>
@@ -105,7 +105,7 @@ export default function SearchConsolePage() {
       {/* Setup Instructions */}
       <Card className="p-6">
         <h3 className="font-semibold mb-4">Hoe te verbinden?</h3>
-        <ol className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <ol className="space-y-3 text-sm text-slate-300 dark:text-gray-300">
           <li className="flex gap-3">
             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#FF9933] text-white flex items-center justify-center text-xs font-bold">
               1

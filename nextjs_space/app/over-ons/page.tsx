@@ -305,12 +305,12 @@ export default function OverOnsPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/prijzen">
-                  <Button size="lg" className="bg-white text-orange-600 hover:bg-gray-100 px-8 h-12 text-lg font-semibold border-0">
+                  <Button size="lg" className="bg-slate-900 text-orange-600 hover:bg-slate-800/50 px-8 h-12 text-lg font-semibold border-0">
                     Bekijk Pakketten
                   </Button>
                 </Link>
                 <Link href="/contact">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 h-12 text-lg font-semibold">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-slate-900/10 px-8 h-12 text-lg font-semibold">
                     Neem Contact Op
                   </Button>
                 </Link>

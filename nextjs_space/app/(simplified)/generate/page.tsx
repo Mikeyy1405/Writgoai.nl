@@ -642,7 +642,7 @@ export default function QuickGeneratePage() {
                   <div className="pt-4 border-t border-gray-700">
                     <div className="text-xs text-gray-400 mb-2">Content Preview:</div>
                     <div
-                      className="text-sm text-gray-300 max-h-96 overflow-y-auto prose prose-invert prose-sm bg-white/5 p-4 rounded"
+                      className="text-sm text-gray-300 max-h-96 overflow-y-auto prose prose-invert prose-sm bg-slate-900/5 p-4 rounded"
                       dangerouslySetInnerHTML={{
                         __html: generatedArticle.content.substring(0, 2000) + '...',
                       }}

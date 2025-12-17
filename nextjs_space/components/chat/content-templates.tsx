@@ -444,11 +444,11 @@ export function ContentTemplates({ onSelectTemplate }: ContentTemplatesProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => handleOpenTemplate(template)}
-                className="h-auto py-2 px-3 text-left justify-start bg-white dark:bg-gray-900 hover:bg-orange-50 dark:hover:bg-orange-950/50 border-orange-200 dark:border-orange-800"
+                className="h-auto py-2 px-3 text-left justify-start bg-slate-900 dark:bg-gray-900 hover:bg-orange-50 dark:hover:bg-orange-950/50 border-orange-200 dark:border-orange-800"
               >
                 <Icon className="w-4 h-4 mr-2 text-orange-600 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-gray-700 dark:text-gray-100 truncate">
+                  <div className="text-xs font-medium text-slate-300 dark:text-gray-100 truncate">
                     {template.name}
                   </div>
                   <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate">

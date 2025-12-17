@@ -25,7 +25,7 @@ interface Post {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-500',
+  draft: 'bg-slate-8000',
   scheduled: 'bg-blue-500',
   published: 'bg-green-500',
   failed: 'bg-red-500',

@@ -97,14 +97,14 @@ export default function SocialMediaSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-800 p-6 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-slate-800 p-6">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -112,7 +112,7 @@ export default function SocialMediaSettingsPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center">
               <Share2 className="w-6 h-6 text-orange-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-700">Social Media Koppelen</h1>
+            <h1 className="text-3xl font-bold text-slate-300">Social Media Koppelen</h1>
           </div>
           <p className="text-gray-600 ml-15">
             Koppel je social media accounts via Late.dev om automatisch content te kunnen plaatsen
@@ -120,7 +120,7 @@ export default function SocialMediaSettingsPage() {
         </div>
 
         {/* Status Card */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
+        <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-700 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {connected ? (
@@ -129,17 +129,17 @@ export default function SocialMediaSettingsPage() {
                     <CheckCircle className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-700">Gekoppeld</h3>
+                    <h3 className="font-semibold text-slate-300">Gekoppeld</h3>
                     <p className="text-sm text-gray-600">Social media is actief</p>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-slate-800/50 rounded-full flex items-center justify-center">
                     <AlertCircle className="w-5 h-5 text-gray-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-700">Niet gekoppeld</h3>
+                    <h3 className="font-semibold text-slate-300">Niet gekoppeld</h3>
                     <p className="text-sm text-gray-600">Voeg je API key toe om te koppelen</p>
                   </div>
                 </>
@@ -154,12 +154,12 @@ export default function SocialMediaSettingsPage() {
         </div>
 
         {/* Configuration Card */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Late.dev Configuratie</h3>
+        <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-700">
+          <h3 className="text-lg font-semibold text-slate-300 mb-4">Late.dev Configuratie</h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">
+              <label className="block text-sm font-medium mb-2 text-slate-300">
                 Late.dev API Key
               </label>
               <input
@@ -167,7 +167,7 @@ export default function SocialMediaSettingsPage() {
                 value={lateDevApiKey}
                 onChange={(e) => setLateDevApiKey(e.target.value)}
                 placeholder="Voer je Late.dev API key in"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 disabled={saving}
               />
               <p className="text-sm text-gray-600 mt-2 flex items-center gap-2">

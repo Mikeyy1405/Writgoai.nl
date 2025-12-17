@@ -206,7 +206,7 @@ export default function NewInvoicePage() {
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/admin/invoices"
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-900/10 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-400" />
           </Link>
@@ -221,7 +221,7 @@ export default function NewInvoicePage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Invoice Mode Selector */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <label className="text-sm font-medium text-gray-300 mb-3 block">
               Type factuur
             </label>
@@ -232,7 +232,7 @@ export default function NewInvoicePage() {
                 className={`p-4 rounded-lg border-2 transition-all ${
                   invoiceMode === 'custom'
                     ? 'border-green-500 bg-green-500/10'
-                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                    : 'border-white/10 bg-slate-900/5 hover:bg-slate-900/10'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -251,7 +251,7 @@ export default function NewInvoicePage() {
                 className={`p-4 rounded-lg border-2 transition-all ${
                   invoiceMode === 'assignment'
                     ? 'border-green-500 bg-green-500/10'
-                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                    : 'border-white/10 bg-slate-900/5 hover:bg-slate-900/10'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -268,7 +268,7 @@ export default function NewInvoicePage() {
           </div>
 
           {/* Client Selection */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
               <User className="w-4 h-4" />
               Klant *
@@ -277,7 +277,7 @@ export default function NewInvoicePage() {
               value={selectedClient}
               onChange={(e) => setSelectedClient(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
             >
               <option value="" className="bg-[#1a1a1a]">Selecteer een klant...</option>
               {clients.map(client => (
@@ -309,7 +309,7 @@ export default function NewInvoicePage() {
 
           {/* Quick Items for Custom Invoices */}
           {invoiceMode === 'custom' && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+            <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
               <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                 <Zap className="w-5 h-5 text-yellow-400" />
                 Snelle items
@@ -323,7 +323,7 @@ export default function NewInvoicePage() {
                       key={index}
                       type="button"
                       onClick={() => addQuickItem(item)}
-                      className="p-3 bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/30 rounded-lg transition-all group"
+                      className="p-3 bg-slate-900/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/30 rounded-lg transition-all group"
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Icon className="w-4 h-4 text-gray-400 group-hover:text-green-400" />
@@ -338,7 +338,7 @@ export default function NewInvoicePage() {
           )}
 
           {/* Invoice Items */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-white">Factuur Items</h3>
               <button
@@ -361,7 +361,7 @@ export default function NewInvoicePage() {
                       onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                       placeholder="Beschrijving"
                       required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                      className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                     />
                   </div>
                   <div className="w-24">
@@ -373,7 +373,7 @@ export default function NewInvoicePage() {
                       min="0.01"
                       step="0.01"
                       required
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                      className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                     />
                   </div>
                   <div className="w-32">
@@ -387,7 +387,7 @@ export default function NewInvoicePage() {
                         min="0"
                         step="0.01"
                         required
-                        className="w-full pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                        className="w-full pl-9 pr-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                       />
                     </div>
                   </div>
@@ -423,7 +423,7 @@ export default function NewInvoicePage() {
                         type="number"
                         value={taxRate}
                         onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                        className="w-16 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-sm focus:outline-none"
+                        className="w-16 px-2 py-1 bg-slate-900/5 border border-white/10 rounded text-white text-sm focus:outline-none"
                       />
                       %
                     </span>
@@ -439,7 +439,7 @@ export default function NewInvoicePage() {
           </div>
 
           {/* Additional Info */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
@@ -450,7 +450,7 @@ export default function NewInvoicePage() {
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
@@ -459,7 +459,7 @@ export default function NewInvoicePage() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+                  className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
                   placeholder="Optionele notities..."
                 />
               </div>
@@ -470,7 +470,7 @@ export default function NewInvoicePage() {
           <div className="flex justify-end gap-3">
             <Link
               href="/admin/invoices"
-              className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
             >
               Annuleren
             </Link>

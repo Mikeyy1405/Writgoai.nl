@@ -141,7 +141,7 @@ export default function RequestsPage() {
       case 'reviewed': return 'bg-yellow-500/20 text-yellow-400';
       case 'converted': return 'bg-green-500/20 text-green-400';
       case 'rejected': return 'bg-red-500/20 text-red-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      default: return 'bg-slate-8000/20 text-gray-400';
     }
   };
 
@@ -159,9 +159,9 @@ export default function RequestsPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-white/10 rounded-xl"></div>
+            <div key={i} className="h-32 bg-slate-900/10 rounded-xl"></div>
           ))}
         </div>
       </div>
@@ -190,7 +190,7 @@ export default function RequestsPage() {
             className={`px-4 py-2 rounded-lg transition-colors ${
               statusFilter === status
                 ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                : 'bg-slate-900/5 text-gray-400 hover:bg-slate-900/10'
             }`}
           >
             {status === 'all' ? 'Alle' : getStatusLabel(status)}
@@ -201,7 +201,7 @@ export default function RequestsPage() {
       {/* Requests List */}
       <div className="space-y-4">
         {requests.length === 0 ? (
-          <div className="text-center py-12 bg-white/5 rounded-xl border border-white/10">
+          <div className="text-center py-12 bg-slate-900/5 rounded-xl border border-white/10">
             <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">Geen verzoeken gevonden</p>
           </div>
@@ -209,7 +209,7 @@ export default function RequestsPage() {
           requests.map((request) => (
             <div
               key={request.id}
-              className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all"
+              className="bg-slate-900/5 border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4">
@@ -286,7 +286,7 @@ export default function RequestsPage() {
               )}
 
               {request.adminResponse && (
-                <div className="mt-4 p-3 bg-white/5 rounded-lg">
+                <div className="mt-4 p-3 bg-slate-900/5 rounded-lg">
                   <p className="text-sm text-gray-400 mb-1">Admin response:</p>
                   <p className="text-gray-300">{request.adminResponse}</p>
                 </div>
@@ -310,7 +310,7 @@ export default function RequestsPage() {
                   type="number"
                   value={convertModal.budget}
                   onChange={(e) => setConvertModal({ ...convertModal, budget: e.target.value })}
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                   placeholder="0.00"
                 />
               </div>
@@ -320,7 +320,7 @@ export default function RequestsPage() {
                   type="date"
                   value={convertModal.deadline}
                   onChange={(e) => setConvertModal({ ...convertModal, deadline: e.target.value })}
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
@@ -329,7 +329,7 @@ export default function RequestsPage() {
                   value={convertModal.response}
                   onChange={(e) => setConvertModal({ ...convertModal, response: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500 resize-none"
+                  className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500 resize-none"
                   placeholder="Optionele reactie naar de klant..."
                 />
               </div>
@@ -338,7 +338,7 @@ export default function RequestsPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setConvertModal(null)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
               >
                 Annuleren
               </button>

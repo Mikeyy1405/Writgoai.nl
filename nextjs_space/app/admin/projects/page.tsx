@@ -39,7 +39,7 @@ export default async function ProjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Projecten</h1>
+          <h1 className="text-3xl font-bold text-white">Projecten</h1>
           <p className="text-gray-600 mt-2">Beheer je 200 websites</p>
         </div>
         <Link
@@ -54,9 +54,9 @@ export default async function ProjectsPage() {
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projectsWithCounts.length === 0 ? (
-          <div className="col-span-full bg-white rounded-lg border p-12 text-center">
+          <div className="col-span-full bg-slate-900 rounded-lg border p-12 text-center">
             <Globe className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-white mb-2">
               Geen projecten gevonden
             </h3>
             <p className="text-gray-600 mb-6">
@@ -79,12 +79,12 @@ export default async function ProjectsPage() {
               <Link
                 key={project.id}
                 href={`/admin/projects/${project.id}`}
-                className="bg-white rounded-lg border p-6 hover:border-orange-500 hover:shadow-lg transition-all group"
+                className="bg-slate-900 rounded-lg border p-6 hover:border-orange-500 hover:shadow-lg transition-all group"
               >
                 {/* Project Name */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+                    <h3 className="text-lg font-bold text-white group-hover:text-orange-600 transition-colors">
                       {project.name}
                     </h3>
                     {project.siteUrl && (
@@ -119,15 +119,15 @@ export default async function ProjectsPage() {
                 </div>
 
                 {/* Content Stats */}
-                <div className="pt-4 border-t border-gray-200">
+                <div className="pt-4 border-t border-slate-700">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs text-gray-500">Blog Posts</p>
-                      <p className="text-xl font-bold text-gray-900">{project.blogCount}</p>
+                      <p className="text-xl font-bold text-white">{project.blogCount}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Social Posts</p>
-                      <p className="text-xl font-bold text-gray-900">{project.socialCount}</p>
+                      <p className="text-xl font-bold text-white">{project.socialCount}</p>
                     </div>
                   </div>
                 </div>

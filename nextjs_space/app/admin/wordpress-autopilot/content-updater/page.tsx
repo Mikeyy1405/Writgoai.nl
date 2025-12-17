@@ -120,10 +120,10 @@ export default function ContentUpdaterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-slate-800">
+      <div className="bg-slate-900 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">✨ AI Content Updater</h1>
+          <h1 className="text-3xl font-bold text-white">✨ AI Content Updater</h1>
           <p className="text-gray-600 mt-1">
             Analyseer en verbeter bestaande WordPress content met AI
           </p>
@@ -134,8 +134,8 @@ export default function ContentUpdaterPage() {
         <div className="grid grid-cols-12 gap-6">
           {/* Sites Sidebar */}
           <div className="col-span-3">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h3 className="font-bold text-gray-900 mb-4">Selecteer Site</h3>
+            <div className="bg-slate-900 rounded-lg shadow-sm p-4">
+              <h3 className="font-bold text-white mb-4">Selecteer Site</h3>
               <div className="space-y-2">
                 {sites.map((site) => (
                   <button
@@ -144,10 +144,10 @@ export default function ContentUpdaterPage() {
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
                       selectedSite?.id === site.id
                         ? 'bg-blue-50 border-2 border-blue-600'
-                        : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                        : 'bg-slate-800 border border-slate-700 hover:bg-slate-800/50'
                     }`}
                   >
-                    <div className="font-medium text-gray-900">{site.name}</div>
+                    <div className="font-medium text-white">{site.name}</div>
                     <div className="text-xs text-gray-500 mt-1">{site.totalPosts} posts</div>
                   </button>
                 ))}
@@ -157,8 +157,8 @@ export default function ContentUpdaterPage() {
 
           {/* Content List */}
           <div className="col-span-5">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h3 className="font-bold text-gray-900 mb-4">Gepubliceerde Content</h3>
+            <div className="bg-slate-900 rounded-lg shadow-sm p-4">
+              <h3 className="font-bold text-white mb-4">Gepubliceerde Content</h3>
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
                 {content.map((item) => (
                   <button
@@ -170,10 +170,10 @@ export default function ContentUpdaterPage() {
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
                       selectedContent?.id === item.id
                         ? 'bg-blue-50 border-2 border-blue-600'
-                        : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                        : 'bg-slate-800 border border-slate-700 hover:bg-slate-800/50'
                     }`}
                   >
-                    <div className="font-medium text-gray-900 text-sm">{item.title}</div>
+                    <div className="font-medium text-white text-sm">{item.title}</div>
                     <div className="text-xs text-gray-500 mt-1">
                       {new Date(item.publishedAt).toLocaleDateString('nl-NL')}
                     </div>
@@ -190,7 +190,7 @@ export default function ContentUpdaterPage() {
 
           {/* Suggestions Panel */}
           <div className="col-span-4">
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-slate-900 rounded-lg shadow-sm p-6">
               {!selectedContent && (
                 <div className="text-center py-12 text-gray-500">
                   <div className="text-4xl mb-4">👈</div>
@@ -207,16 +207,16 @@ export default function ContentUpdaterPage() {
 
               {selectedContent && !loading && suggestions && (
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  <h3 className="text-lg font-bold text-white mb-4">
                     {selectedContent.title}
                   </h3>
 
                   {/* Score Cards */}
                   <div className="grid grid-cols-3 gap-2 mb-6">
                     {Object.entries(suggestions.currentScore).map(([key, value]) => (
-                      <div key={key} className="bg-gray-50 rounded-lg p-3">
+                      <div key={key} className="bg-slate-800 rounded-lg p-3">
                         <div className="text-xs text-gray-600 capitalize">{key}</div>
-                        <div className="text-lg font-bold text-gray-900">{value}</div>
+                        <div className="text-lg font-bold text-white">{value}</div>
                         <div className="text-xs text-green-600">
                           → {suggestions.potentialScore[key as keyof typeof suggestions.potentialScore]}
                         </div>
@@ -226,7 +226,7 @@ export default function ContentUpdaterPage() {
 
                   {/* Suggestions */}
                   <div className="space-y-3 mb-6">
-                    <h4 className="font-bold text-gray-900">Verbeter Suggesties</h4>
+                    <h4 className="font-bold text-white">Verbeter Suggesties</h4>
                     {suggestions.suggestions.map((suggestion, idx) => (
                       <div
                         key={idx}
@@ -254,7 +254,7 @@ export default function ContentUpdaterPage() {
                             {suggestion.priority}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700">{suggestion.description}</p>
+                        <p className="text-sm text-slate-300">{suggestion.description}</p>
                         <p className="text-xs text-gray-500 mt-1">💡 {suggestion.estimatedImpact}</p>
                       </div>
                     ))}

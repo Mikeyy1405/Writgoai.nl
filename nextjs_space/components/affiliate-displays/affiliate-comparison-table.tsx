@@ -51,7 +51,7 @@ export default function AffiliateComparisonTable({
         <X className="w-5 h-5 text-red-300 mx-auto" />
       );
     }
-    return <span className="text-gray-700">{value}</span>;
+    return <span className="text-slate-300">{value}</span>;
   };
 
   return (
@@ -60,7 +60,7 @@ export default function AffiliateComparisonTable({
       {(title || description) && (
         <div className="mb-6 text-center">
           {title && (
-            <h3 className="text-2xl font-bold text-gray-700 mb-2">
+            <h3 className="text-2xl font-bold text-slate-300 mb-2">
               {title}
             </h3>
           )}
@@ -75,7 +75,7 @@ export default function AffiliateComparisonTable({
       <div className="min-w-[768px]">
         <div className="grid gap-4" style={{ gridTemplateColumns: `200px repeat(${products.length}, 1fr)` }}>
           {/* Header Row */}
-          <div className="bg-gray-50 p-4 rounded-t-xl border border-gray-200">
+          <div className="bg-slate-800 p-4 rounded-t-xl border border-slate-700">
             <h4 className="font-semibold text-gray-600">Specificaties</h4>
           </div>
 
@@ -86,7 +86,7 @@ export default function AffiliateComparisonTable({
                 p-4 rounded-t-xl border-2 relative
                 ${product.isRecommended 
                   ? 'border-orange-400 bg-orange-50' 
-                  : 'border-gray-200 bg-white'
+                  : 'border-slate-700 bg-slate-900'
                 }
               `}
             >
@@ -101,7 +101,7 @@ export default function AffiliateComparisonTable({
 
               {/* Image */}
               {product.imageUrl && (
-                <div className="relative w-full h-32 mb-3 bg-white rounded-lg overflow-hidden">
+                <div className="relative w-full h-32 mb-3 bg-slate-900 rounded-lg overflow-hidden">
                   <Image
                     src={product.imageUrl}
                     alt={product.title}
@@ -113,7 +113,7 @@ export default function AffiliateComparisonTable({
               )}
 
               {/* Title */}
-              <h4 className="font-bold text-gray-700 mb-2 line-clamp-2 min-h-[2.5rem]">
+              <h4 className="font-bold text-slate-300 mb-2 line-clamp-2 min-h-[2.5rem]">
                 {product.title}
               </h4>
 
@@ -151,7 +151,7 @@ export default function AffiliateComparisonTable({
                   flex items-center justify-center gap-2
                   ${product.isRecommended
                     ? 'bg-orange-500 text-white hover:bg-orange-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700'
                   }
                 `}
               >
@@ -168,9 +168,9 @@ export default function AffiliateComparisonTable({
               <div 
                 key={`label-${featureIndex}`}
                 className={`
-                  p-4 font-medium text-gray-700 border-l border-r border-gray-200
+                  p-4 font-medium text-slate-300 border-l border-r border-slate-700
                   ${featureIndex === allFeatures.length - 1 ? 'rounded-b-xl border-b' : ''}
-                  ${featureIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
+                  ${featureIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-900'}
                 `}
               >
                 {featureLabel}
@@ -183,9 +183,9 @@ export default function AffiliateComparisonTable({
                   <div
                     key={`value-${featureIndex}-${productIndex}`}
                     className={`
-                      p-4 text-center border-r border-gray-200
+                      p-4 text-center border-r border-slate-700
                       ${featureIndex === allFeatures.length - 1 ? 'rounded-b-xl border-b' : ''}
-                      ${featureIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
+                      ${featureIndex % 2 === 0 ? 'bg-slate-800' : 'bg-slate-900'}
                       ${product.isRecommended ? 'border-l-2 border-r-2 border-orange-400' : ''}
                     `}
                   >

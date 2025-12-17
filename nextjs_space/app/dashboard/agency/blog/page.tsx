@@ -204,7 +204,7 @@ export default function BlogDashboardPage() {
             {stats?.topPosts.map((post) => (
               <div
                 key={post.id}
-                className="flex justify-between items-center p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg"
+                className="flex justify-between items-center p-3 bg-slate-800 dark:bg-zinc-800 rounded-lg"
               >
                 <div className="flex-1">
                   <Link
@@ -238,7 +238,7 @@ export default function BlogDashboardPage() {
             {stats?.recentPosts.map((post) => (
               <div
                 key={post.id}
-                className="flex justify-between items-center p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg"
+                className="flex justify-between items-center p-3 bg-slate-800 dark:bg-zinc-800 rounded-lg"
               >
                 <div className="flex-1">
                   <Link
@@ -272,7 +272,7 @@ export default function BlogDashboardPage() {
             {stats.postsByCategory.map((item) => (
               <div
                 key={item.category}
-                className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg text-center"
+                className="p-4 bg-slate-800 dark:bg-zinc-800 rounded-lg text-center"
               >
                 <p className="text-2xl font-bold text-[#FF9933]">{item._count}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">

@@ -108,7 +108,7 @@ export function AIFloatingAssistant({ onTaskCreated }: AIFloatingAssistantProps)
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsMinimized(!isMinimized)}
-                    className="h-8 w-8 text-white hover:bg-white/20"
+                    className="h-8 w-8 text-white hover:bg-slate-900/20"
                   >
                     {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
                   </Button>
@@ -116,7 +116,7 @@ export function AIFloatingAssistant({ onTaskCreated }: AIFloatingAssistantProps)
                     variant="ghost"
                     size="icon"
                     onClick={handleClose}
-                    className="h-8 w-8 text-white hover:bg-white/20"
+                    className="h-8 w-8 text-white hover:bg-slate-900/20"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -185,8 +185,8 @@ export function AIFloatingAssistant({ onTaskCreated }: AIFloatingAssistantProps)
                     </div>
 
                     {response.tasks && response.tasks.length > 0 && (
-                      <div className="bg-white border border-orange-100 rounded-lg p-3">
-                        <h4 className="font-semibold text-gray-700 text-sm mb-2">
+                      <div className="bg-slate-900 border border-orange-100 rounded-lg p-3">
+                        <h4 className="font-semibold text-slate-300 text-sm mb-2">
                           Aangemaakte taken ({response.tasks.length}):
                         </h4>
                         <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -195,7 +195,7 @@ export function AIFloatingAssistant({ onTaskCreated }: AIFloatingAssistantProps)
                               key={task.id}
                               className="border rounded p-2 bg-orange-50 text-xs"
                             >
-                              <div className="font-semibold text-gray-700">{task.title}</div>
+                              <div className="font-semibold text-slate-300">{task.title}</div>
                               <div className="text-gray-600 mt-0.5">
                                 📅 {format(new Date(task.deadline), 'dd MMM yyyy', { locale: nl })}
                               </div>
@@ -209,9 +209,9 @@ export function AIFloatingAssistant({ onTaskCreated }: AIFloatingAssistantProps)
 
                 {/* Quick Examples */}
                 {!response && (
-                  <div className="mt-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <h4 className="font-semibold text-gray-700 text-xs mb-2">Voorbeelden:</h4>
-                    <ul className="space-y-1 text-xs text-gray-700">
+                  <div className="mt-4 bg-slate-800 rounded-lg p-3 border border-slate-700">
+                    <h4 className="font-semibold text-slate-300 text-xs mb-2">Voorbeelden:</h4>
+                    <ul className="space-y-1 text-xs text-slate-300">
                       <li className="flex items-start gap-1">
                         <span className="text-writgo-orange">•</span>
                         <span>"Plan 10 teksten voor bedrijf X morgen"</span>

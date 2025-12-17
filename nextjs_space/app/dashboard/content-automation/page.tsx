@@ -332,13 +332,13 @@ export default function ContentAutomationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-800">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-slate-900 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-700">Content Automatisering</h1>
+              <h1 className="text-3xl font-bold text-slate-300">Content Automatisering</h1>
               <p className="text-gray-600 mt-1">Automatische content planning en publicatie</p>
             </div>
             <Dialog open={wpDialogOpen} onOpenChange={setWpDialogOpen}>
@@ -500,7 +500,7 @@ export default function ContentAutomationPage() {
         {/* Content Plans Overview */}
         {selectedClient && contentPlans.length > 0 && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-700">Content Kalender</h2>
+            <h2 className="text-2xl font-bold text-slate-300">Content Kalender</h2>
             {contentPlans.map((plan) => {
               // Groepeer artikelen per week
               const articlesByWeek: { [key: number]: any[] } = {};
@@ -520,7 +520,7 @@ export default function ContentAutomationPage() {
                       <CardTitle className="text-2xl">
                         📅 {monthNames[plan.month - 1]} {plan.year}
                       </CardTitle>
-                      <Badge className="bg-white text-[#1e3a8a] text-lg px-4 py-1">
+                      <Badge className="bg-slate-900 text-[#1e3a8a] text-lg px-4 py-1">
                         {plan.PlannedArticles.length} artikelen
                       </Badge>
                     </div>
@@ -532,7 +532,7 @@ export default function ContentAutomationPage() {
                     <div className="space-y-6">
                       {Object.keys(articlesByWeek).sort((a, b) => Number(a) - Number(b)).map((week) => (
                         <div key={week}>
-                          <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-slate-300 mb-3 flex items-center gap-2">
                             <Calendar className="h-5 w-5 text-[#FF6B35]" />
                             Week {week}
                           </h3>
@@ -548,7 +548,7 @@ export default function ContentAutomationPage() {
                                 return (
                                   <div
                                     key={article.id}
-                                    className="flex items-start gap-4 p-4 bg-white border-2 border-gray-200 rounded-lg hover:shadow-md transition-all"
+                                    className="flex items-start gap-4 p-4 bg-slate-900 border-2 border-slate-700 rounded-lg hover:shadow-md transition-all"
                                   >
                                     {/* Datum Block */}
                                     <div className="flex-shrink-0 text-center bg-gradient-to-br from-[#1e3a8a] to-[#FF6B35] text-white rounded-lg p-3 min-w-[70px]">
@@ -562,7 +562,7 @@ export default function ContentAutomationPage() {
                                       <div className="flex items-start gap-2 mb-2">
                                         <FileText className="h-5 w-5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
                                         <div className="flex-1">
-                                          <h4 className="font-semibold text-gray-700 text-lg leading-tight">
+                                          <h4 className="font-semibold text-slate-300 text-lg leading-tight">
                                             {normalizeTitle(article.title)}
                                           </h4>
                                         </div>
@@ -626,7 +626,7 @@ export default function ContentAutomationPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
+              <h3 className="text-lg font-medium text-slate-300 mb-2">
                 Nog geen content plannen
               </h3>
               <p className="text-gray-600">

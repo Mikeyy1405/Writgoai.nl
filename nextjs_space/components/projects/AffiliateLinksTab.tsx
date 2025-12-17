@@ -342,7 +342,7 @@ export default function AffiliateLinksTab({ projectId }: { projectId: string }) 
                     <span className={`px-2 py-0.5 text-xs rounded ${
                       link.isActive 
                         ? 'bg-green-500/10 text-green-400' 
-                        : 'bg-gray-500/10 text-gray-400'
+                        : 'bg-slate-8000/10 text-gray-400'
                     }`}>
                       {link.isActive ? 'Actief' : 'Inactief'}
                     </span>

@@ -111,9 +111,9 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-800">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-slate-900 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -125,7 +125,7 @@ export default function ClientsPage() {
                 Terug
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-700 flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-slate-300 flex items-center gap-2">
                   <Users className="w-6 h-6 text-[#FF6B35]" />
                   Klanten Beheer
                 </h1>
@@ -219,7 +219,7 @@ export default function ClientsPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
-                          <h3 className="text-lg font-semibold text-gray-700">{client.name}</h3>
+                          <h3 className="text-lg font-semibold text-slate-300">{client.name}</h3>
                           {subscription && (
                             <Badge className="bg-[#FF6B35] text-white">
                               <Crown className="w-3 h-3 mr-1" />
@@ -267,7 +267,7 @@ export default function ClientsPage() {
                             {subscription ? (
                               <div className="bg-gradient-to-br from-orange-50 to-white border border-orange-200 rounded-lg p-3">
                                 <div className="text-xs text-gray-600 mb-1">Actief Abonnement</div>
-                                <div className="font-semibold text-gray-700">{subscription.Package.displayName}</div>
+                                <div className="font-semibold text-slate-300">{subscription.Package.displayName}</div>
                                 <div className="text-sm text-gray-600">€{subscription.Package.monthlyPrice}/maand</div>
                                 <div className="text-xs text-gray-500 mt-2">
                                   Artikelen: {subscription.articlesUsed} gebruikt
@@ -279,7 +279,7 @@ export default function ClientsPage() {
                                 )}
                               </div>
                             ) : (
-                              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                              <div className="bg-slate-800 border border-slate-700 rounded-lg p-3">
                                 <div className="flex items-center gap-2 text-gray-600">
                                   <XCircle className="w-4 h-4" />
                                   <span className="text-sm">Geen actief abonnement</span>

@@ -124,7 +124,7 @@ export default function AffiliateDisplaysDemo() {
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-700 mb-2">
+        <h1 className="text-3xl font-bold text-slate-300 mb-2">
           Affiliate Display Opties
         </h1>
         <p className="text-gray-600">
@@ -168,8 +168,8 @@ export default function AffiliateDisplaysDemo() {
               Simpele inline link die naadloos in je tekst past. Perfect voor natuurlijke productverwijzingen.
             </p>
             
-            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <p className="text-gray-700 leading-relaxed">
+            <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
+              <p className="text-slate-300 leading-relaxed">
                 Op zoek naar de beste noise cancelling koptelefoon? Kijk dan eens naar de{' '}
                 <AffiliateTextLink 
                   text="Sony WH-1000XM5"

@@ -29,7 +29,7 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-slate-900 shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Navigation */}
@@ -38,34 +38,34 @@ export function DashboardHeader() {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">W</span>
               </div>
-              <span className="text-xl font-bold text-gray-700">Writgo Planning</span>
+              <span className="text-xl font-bold text-slate-300">Writgo Planning</span>
             </Link>
 
             <nav className="hidden md:flex space-x-6">
               <Link 
                 href="/dashboard" 
-                className="flex items-center space-x-2 text-gray-700 hover:text-writgo-orange transition-colors"
+                className="flex items-center space-x-2 text-slate-300 hover:text-writgo-orange transition-colors"
               >
                 <BarChart3 className="w-4 h-4" />
                 <span>{t('nav.dashboard')}</span>
               </Link>
               <Link 
                 href="/tasks" 
-                className="flex items-center space-x-2 text-gray-700 hover:text-writgo-orange transition-colors"
+                className="flex items-center space-x-2 text-slate-300 hover:text-writgo-orange transition-colors"
               >
                 <Calendar className="w-4 h-4" />
                 <span>{t('nav.tasks')}</span>
               </Link>
               <Link 
                 href="/calendar" 
-                className="flex items-center space-x-2 text-gray-700 hover:text-writgo-orange transition-colors"
+                className="flex items-center space-x-2 text-slate-300 hover:text-writgo-orange transition-colors"
               >
                 <Calendar className="w-4 h-4" />
                 <span>{t('nav.calendar')}</span>
               </Link>
               <Link 
                 href="/writers" 
-                className="flex items-center space-x-2 text-gray-700 hover:text-writgo-orange transition-colors"
+                className="flex items-center space-x-2 text-slate-300 hover:text-writgo-orange transition-colors"
               >
                 <Users className="w-4 h-4" />
                 <span>{t('nav.writers')}</span>

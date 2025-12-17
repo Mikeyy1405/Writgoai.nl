@@ -242,7 +242,7 @@ export default function ProductBoxInserter({ open, onClose, onInsert, projectId 
                   >
                     <div className="flex gap-4 items-start">
                       {product.image && (
-                        <div className="relative w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg">
+                        <div className="relative w-20 h-20 flex-shrink-0 bg-slate-800/50 rounded-lg">
                           <Image
                             src={product.image}
                             alt={product.title}

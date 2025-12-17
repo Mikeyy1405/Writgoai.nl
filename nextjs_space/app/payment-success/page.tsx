@@ -103,7 +103,7 @@ function PaymentSuccessContent() {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-2">
+                <label className="text-sm font-medium text-slate-300 block mb-2">
                   Email
                 </label>
                 <div className="flex gap-2">
@@ -111,7 +111,7 @@ function PaymentSuccessContent() {
                     type="text"
                     value={credentials.email}
                     readOnly
-                    className="flex-1 px-4 py-3 bg-gray-50 border rounded-lg font-mono text-sm"
+                    className="flex-1 px-4 py-3 bg-slate-800 border rounded-lg font-mono text-sm"
                   />
                   <Button
                     variant="outline"
@@ -125,7 +125,7 @@ function PaymentSuccessContent() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-2">
+                <label className="text-sm font-medium text-slate-300 block mb-2">
                   Wachtwoord
                 </label>
                 <div className="flex gap-2">
@@ -133,7 +133,7 @@ function PaymentSuccessContent() {
                     type="text"
                     value={credentials.password}
                     readOnly
-                    className="flex-1 px-4 py-3 bg-gray-50 border rounded-lg font-mono text-sm"
+                    className="flex-1 px-4 py-3 bg-slate-800 border rounded-lg font-mono text-sm"
                   />
                   <Button
                     variant="outline"

@@ -177,11 +177,11 @@ export default function InvoicesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-500/20 text-gray-400';
+      case 'draft': return 'bg-slate-8000/20 text-gray-400';
       case 'sent': return 'bg-blue-500/20 text-blue-400';
       case 'paid': return 'bg-green-500/20 text-green-400';
       case 'overdue': return 'bg-red-500/20 text-red-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      default: return 'bg-slate-8000/20 text-gray-400';
     }
   };
 
@@ -212,10 +212,10 @@ export default function InvoicesPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 bg-white/10 rounded-xl"></div>
+              <div key={i} className="h-24 bg-slate-900/10 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -245,15 +245,15 @@ export default function InvoicesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
           <p className="text-gray-400 text-sm mb-2">Totaal Betaald</p>
           <p className="text-3xl font-bold text-green-400">€{totalPaid.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</p>
         </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
           <p className="text-gray-400 text-sm mb-2">Openstaand</p>
           <p className="text-3xl font-bold text-orange-400">€{totalUnpaid.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</p>
         </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
           <p className="text-gray-400 text-sm mb-2">Totaal</p>
           <p className="text-3xl font-bold text-white">€{(totalPaid + totalUnpaid).toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</p>
         </div>
@@ -268,13 +268,13 @@ export default function InvoicesPage() {
             placeholder="Zoek op factuurnummer of klant..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            className="w-full pl-12 pr-4 py-3 bg-slate-900/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500"
+          className="px-4 py-3 bg-slate-900/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500"
         >
           {statusOptions.map(option => (
             <option key={option.value} value={option.value} className="bg-[#1a1a1a]">
@@ -352,7 +352,7 @@ export default function InvoicesPage() {
           filteredInvoices.map((invoice) => (
             <div
               key={invoice.id}
-              className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all"
+              className="bg-slate-900/5 border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -423,7 +423,7 @@ export default function InvoicesPage() {
                     value={invoice.status}
                     onChange={(e) => updateStatus(invoice.id, e.target.value)}
                     onClick={(e) => e.stopPropagation()}
-                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none"
+                    className="px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none"
                   >
                     <option value="draft" className="bg-[#1a1a1a]">Concept</option>
                     <option value="sent" className="bg-[#1a1a1a]">Verzonden</option>
@@ -433,7 +433,7 @@ export default function InvoicesPage() {
 
                   <Link
                     href={`/dashboard/agency/invoices/${invoice.id}`}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-2 hover:bg-slate-900/10 rounded-lg transition-colors"
                   >
                     <Eye className="w-5 h-5 text-gray-400" />
                   </Link>

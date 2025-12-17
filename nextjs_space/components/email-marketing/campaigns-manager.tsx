@@ -58,9 +58,9 @@ export function CampaignsManager() {
       case 'scheduled':
         return 'bg-yellow-500';
       case 'draft':
-        return 'bg-gray-500';
+        return 'bg-slate-8000';
       default:
-        return 'bg-gray-500';
+        return 'bg-slate-8000';
     }
   };
 

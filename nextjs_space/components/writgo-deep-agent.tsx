@@ -2610,8 +2610,8 @@ export default function WritgoDeepAgent() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                  <p className="text-sm text-gray-700">
+                <div className="p-3 bg-slate-800 border border-slate-700 rounded-lg">
+                  <p className="text-sm text-slate-300">
                     WritgoAI gebruikt een gedeelde Late.dev integratie. Je hoeft geen API key in te vullen.
                   </p>
                 </div>
@@ -4109,7 +4109,7 @@ export default function WritgoDeepAgent() {
                     localStorage.removeItem('writgo_last_conversation_id');
                     toast.success('Nieuwe chat gestart');
                   }}
-                  className="flex-shrink-0 hover:bg-gray-100"
+                  className="flex-shrink-0 hover:bg-slate-800/50"
                   style={{
                     backgroundColor: BRAND_COLORS.background,
                     borderColor: BRAND_COLORS.border,
@@ -4126,7 +4126,7 @@ export default function WritgoDeepAgent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-shrink-0 hover:bg-gray-100"
+                      className="flex-shrink-0 hover:bg-slate-800/50"
                       style={{
                         backgroundColor: BRAND_COLORS.background,
                         borderColor: BRAND_COLORS.border,
@@ -4170,7 +4170,7 @@ export default function WritgoDeepAgent() {
                               loadConversation(conv);
                               setShowHistoryDropdown(false);
                             }}
-                            className="cursor-pointer hover:bg-gray-50"
+                            className="cursor-pointer hover:bg-slate-800"
                             style={{ 
                               color: currentConversation?.id === conv.id ? BRAND_COLORS.orange : BRAND_COLORS.textPrimary,
                               backgroundColor: currentConversation?.id === conv.id ? BRAND_COLORS.backgroundSoft : 'transparent'
@@ -4203,7 +4203,7 @@ export default function WritgoDeepAgent() {
                             setShowSettings(true);
                             setShowHistoryDropdown(false);
                           }}
-                          className="hover:bg-gray-50"
+                          className="hover:bg-slate-800"
                           style={{ color: BRAND_COLORS.textPrimary }}
                         >
                           <Settings className="w-4 h-4 mr-2" />
@@ -5091,7 +5091,7 @@ export default function WritgoDeepAgent() {
                   size="icon"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={loading || uploading}
-                  className="shrink-0 w-10 h-10 rounded-lg hover:bg-gray-100"
+                  className="shrink-0 w-10 h-10 rounded-lg hover:bg-slate-800/50"
                   style={{ 
                     color: BRAND_COLORS.textSecondary
                   }}
@@ -5105,7 +5105,7 @@ export default function WritgoDeepAgent() {
                 </Button>
                 
                 <div className="flex-1 flex flex-col gap-2 min-w-0">
-                  <div className="relative flex items-center gap-2 rounded-2xl border shadow-sm bg-white" style={{ borderColor: BRAND_COLORS.border }}>
+                  <div className="relative flex items-center gap-2 rounded-2xl border shadow-sm bg-slate-900" style={{ borderColor: BRAND_COLORS.border }}>
                     <Textarea
                       id="message-input"
                       ref={inputRef}

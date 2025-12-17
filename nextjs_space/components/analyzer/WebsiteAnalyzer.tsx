@@ -80,7 +80,7 @@ function ResultField({
   };
 
   const getConfidenceBg = (conf?: number) => {
-    if (!conf) return 'bg-gray-500/20';
+    if (!conf) return 'bg-slate-8000/20';
     if (conf >= 80) return 'bg-green-500/20';
     if (conf >= 60) return 'bg-yellow-500/20';
     return 'bg-orange-500/20';

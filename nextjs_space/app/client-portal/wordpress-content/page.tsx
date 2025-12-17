@@ -386,7 +386,7 @@ export default function WordPressContentPage() {
               <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Featured Image */}
                 {post.featuredImage && (
-                  <div className="relative aspect-video bg-gray-200">
+                  <div className="relative aspect-video bg-slate-700">
                     <img
                       src={post.featuredImage}
                       alt={post.title}
@@ -482,7 +482,7 @@ export default function WordPressContentPage() {
           {selectedPost && (
             <div className="space-y-4">
               {/* Post Info */}
-              <Card className="p-4 bg-gray-50">
+              <Card className="p-4 bg-slate-800">
                 <h4 className="font-semibold mb-1">{selectedPost.title}</h4>
                 <p className="text-sm text-gray-600 mb-2">{selectedPost.excerpt}</p>
                 <div className="flex items-center gap-4 text-xs text-gray-500">

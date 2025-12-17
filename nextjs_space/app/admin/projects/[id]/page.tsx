@@ -87,7 +87,7 @@ export default function ProjectSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Project laden...</p>
@@ -98,10 +98,10 @@ export default function ProjectSettingsPage() {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-800 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Project niet gevonden</h2>
+          <h2 className="text-xl font-semibold text-white mb-2">Project niet gevonden</h2>
           <button
             onClick={() => router.push('/admin/clients')}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -114,20 +114,20 @@ export default function ProjectSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-800">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-slate-900 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-white">
                   {project.name}
                 </h1>
                 <p className="text-sm text-gray-600 mt-1">
@@ -146,7 +146,7 @@ export default function ProjectSettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b">
+      <div className="bg-slate-900 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-8 overflow-x-auto">
             {tabs.map((tab) => {
@@ -159,7 +159,7 @@ export default function ProjectSettingsPage() {
                     flex items-center gap-2 px-4 py-4 border-b-2 transition-colors whitespace-nowrap
                     ${activeTab === tab.id
                       ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                      : 'border-transparent text-gray-600 hover:text-white'
                     }
                   `}
                 >
@@ -248,11 +248,11 @@ function OverviewTab({
   return (
     <div className="space-y-6">
       {/* Brand Settings */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-slate-900 rounded-lg border p-6">
         <h2 className="text-lg font-semibold mb-4">Merk Instellingen</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Brand Voice
             </label>
             <textarea
@@ -265,7 +265,7 @@ function OverviewTab({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Doelgroep
             </label>
             <textarea
@@ -278,7 +278,7 @@ function OverviewTab({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Content Richtlijnen
             </label>
             <textarea
@@ -291,7 +291,7 @@ function OverviewTab({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Content Tone
             </label>
             <select
@@ -309,11 +309,11 @@ function OverviewTab({
       </div>
 
       {/* SEO Settings */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-slate-900 rounded-lg border p-6">
         <h2 className="text-lg font-semibold mb-4">SEO Instellingen</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Default SEO Title
             </label>
             <input
@@ -326,7 +326,7 @@ function OverviewTab({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Default SEO Description
             </label>
             <textarea
@@ -341,7 +341,7 @@ function OverviewTab({
       </div>
 
       {/* Content Settings */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-slate-900 rounded-lg border p-6">
         <h2 className="text-lg font-semibold mb-4">Content Instellingen</h2>
         <div className="space-y-4">
           <label className="flex items-center gap-3">
@@ -352,7 +352,7 @@ function OverviewTab({
               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div>
-              <div className="font-medium text-gray-900">Automatisch Affiliate Links Toevoegen</div>
+              <div className="font-medium text-white">Automatisch Affiliate Links Toevoegen</div>
               <div className="text-sm text-gray-600">Voeg relevante affiliate links automatisch toe aan content</div>
             </div>
           </label>
@@ -365,7 +365,7 @@ function OverviewTab({
               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div>
-              <div className="font-medium text-gray-900">Knowledge Base Gebruiken</div>
+              <div className="font-medium text-white">Knowledge Base Gebruiken</div>
               <div className="text-sm text-gray-600">Gebruik knowledge base informatie bij content generatie</div>
             </div>
           </label>
@@ -373,7 +373,7 @@ function OverviewTab({
       </div>
 
       {/* Publishing Settings */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-slate-900 rounded-lg border p-6">
         <h2 className="text-lg font-semibold mb-4">Publicatie Instellingen</h2>
         <div className="space-y-4">
           <label className="flex items-center gap-3">
@@ -384,7 +384,7 @@ function OverviewTab({
               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div>
-              <div className="font-medium text-gray-900">Automatisch Blogs Publiceren</div>
+              <div className="font-medium text-white">Automatisch Blogs Publiceren</div>
               <div className="text-sm text-gray-600">Publiceer gegenereerde blogs automatisch</div>
             </div>
           </label>
@@ -397,7 +397,7 @@ function OverviewTab({
               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div>
-              <div className="font-medium text-gray-900">Automatisch Social Media Posten</div>
+              <div className="font-medium text-white">Automatisch Social Media Posten</div>
               <div className="text-sm text-gray-600">Post gegenereerde social media content automatisch</div>
             </div>
           </label>
@@ -531,13 +531,13 @@ function AffiliateLinksTab({ projectId }: { projectId: string }) {
 
       {/* Add/Edit Form */}
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg border p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-slate-900 rounded-lg border p-6 space-y-4">
           <h3 className="font-semibold text-lg">
             {editingLink ? 'Link Bewerken' : 'Nieuwe Affiliate Link'}
           </h3>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Naam *
             </label>
             <input
@@ -551,7 +551,7 @@ function AffiliateLinksTab({ projectId }: { projectId: string }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               URL *
             </label>
             <input
@@ -565,7 +565,7 @@ function AffiliateLinksTab({ projectId }: { projectId: string }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Beschrijving
             </label>
             <textarea
@@ -578,7 +578,7 @@ function AffiliateLinksTab({ projectId }: { projectId: string }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Categorie
             </label>
             <input
@@ -591,7 +591,7 @@ function AffiliateLinksTab({ projectId }: { projectId: string }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Keywords (komma gescheiden)
             </label>
             <input
@@ -611,7 +611,7 @@ function AffiliateLinksTab({ projectId }: { projectId: string }) {
                 setEditingLink(null);
                 setFormData({ name: '', url: '', description: '', category: '', keywords: '' });
               }}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border rounded-lg hover:bg-slate-800"
             >
               Annuleren
             </button>
@@ -628,23 +628,23 @@ function AffiliateLinksTab({ projectId }: { projectId: string }) {
       {/* Links List */}
       <div className="grid gap-4">
         {links.length === 0 ? (
-          <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+          <div className="bg-slate-900 rounded-lg border p-8 text-center text-gray-500">
             Nog geen affiliate links toegevoegd
           </div>
         ) : (
           links.map((link) => (
-            <div key={link.id} className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
+            <div key={link.id} className="bg-slate-900 rounded-lg border p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-medium text-gray-900">{link.name}</h3>
+                    <h3 className="font-medium text-white">{link.name}</h3>
                     {link.category && (
                       <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
                         {link.category}
                       </span>
                     )}
                     {!link.isActive && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                      <span className="px-2 py-1 bg-slate-800/50 text-slate-300 text-xs rounded">
                         Inactief
                       </span>
                     )}
@@ -665,7 +665,7 @@ function AffiliateLinksTab({ projectId }: { projectId: string }) {
                       {link.keywords.map((keyword, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                          className="px-2 py-1 bg-slate-800/50 text-slate-300 text-xs rounded"
                         >
                           {keyword}
                         </span>
@@ -810,13 +810,13 @@ function KnowledgeBaseTab({ projectId }: { projectId: string }) {
 
       {/* Add/Edit Form */}
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg border p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-slate-900 rounded-lg border p-6 space-y-4">
           <h3 className="font-semibold text-lg">
             {editingItem ? 'Document Bewerken' : 'Nieuw Knowledge Base Document'}
           </h3>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Titel *
             </label>
             <input
@@ -830,7 +830,7 @@ function KnowledgeBaseTab({ projectId }: { projectId: string }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Type
             </label>
             <select
@@ -846,7 +846,7 @@ function KnowledgeBaseTab({ projectId }: { projectId: string }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Content *
             </label>
             <textarea
@@ -860,7 +860,7 @@ function KnowledgeBaseTab({ projectId }: { projectId: string }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Tags (komma gescheiden)
             </label>
             <input
@@ -880,7 +880,7 @@ function KnowledgeBaseTab({ projectId }: { projectId: string }) {
                 setEditingItem(null);
                 setFormData({ title: '', content: '', type: 'document', tags: '' });
               }}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border rounded-lg hover:bg-slate-800"
             >
               Annuleren
             </button>
@@ -897,21 +897,21 @@ function KnowledgeBaseTab({ projectId }: { projectId: string }) {
       {/* Items List */}
       <div className="grid gap-4">
         {items.length === 0 ? (
-          <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+          <div className="bg-slate-900 rounded-lg border p-8 text-center text-gray-500">
             Nog geen knowledge base items toegevoegd
           </div>
         ) : (
           items.map((item) => (
-            <div key={item.id} className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
+            <div key={item.id} className="bg-slate-900 rounded-lg border p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-medium text-gray-900">{item.title}</h3>
+                    <h3 className="font-medium text-white">{item.title}</h3>
                     <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
                       {item.type}
                     </span>
                     {!item.isActive && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                      <span className="px-2 py-1 bg-slate-800/50 text-slate-300 text-xs rounded">
                         Inactief
                       </span>
                     )}
@@ -924,7 +924,7 @@ function KnowledgeBaseTab({ projectId }: { projectId: string }) {
                       {item.tags.map((tag, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                          className="px-2 py-1 bg-slate-800/50 text-slate-300 text-xs rounded"
                         >
                           {tag}
                         </span>
@@ -960,7 +960,7 @@ function IntegrationsTab({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">Integraties</h2>
-      <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+      <div className="bg-slate-900 rounded-lg border p-8 text-center text-gray-500">
         <Plug className="w-12 h-12 mx-auto mb-4 text-gray-400" />
         <p className="text-lg font-medium mb-2">Integraties Overzicht</p>
         <p className="text-sm">WordPress, Getlate en andere integraties worden hier getoond</p>
@@ -974,7 +974,7 @@ function SocialMediaTab({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">Social Media Accounts</h2>
-      <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+      <div className="bg-slate-900 rounded-lg border p-8 text-center text-gray-500">
         <Share2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
         <p className="text-lg font-medium mb-2">Social Media Overzicht</p>
         <p className="text-sm">Gekoppelde social media accounts worden hier getoond</p>

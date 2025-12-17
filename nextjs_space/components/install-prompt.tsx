@@ -110,12 +110,12 @@ export default function InstallPrompt() {
   if (isIOS && !deferredPrompt) {
     return (
       <div 
-        className="fixed bottom-4 left-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-4 border-2"
+        className="fixed bottom-4 left-4 right-4 z-50 bg-slate-900 dark:bg-gray-800 rounded-lg shadow-2xl p-4 border-2"
         style={{ borderColor: brand.accentColor || brand.primaryColor }}
       >
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          className="absolute top-2 right-2 text-gray-500 hover:text-slate-300 dark:hover:text-gray-300"
         >
           <X className="h-5 w-5" />
         </button>
@@ -124,7 +124,7 @@ export default function InstallPrompt() {
             <Download className="h-6 w-6" style={{ color: brand.accentColor || brand.primaryColor }} />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-700 dark:text-gray-100 mb-1">
+            <h3 className="font-semibold text-slate-300 dark:text-gray-100 mb-1">
               Installeer {brand.companyName}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -144,12 +144,12 @@ export default function InstallPrompt() {
   // Android/Chrome Install Button
   return (
     <div 
-      className="fixed bottom-4 left-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-4 border-2"
+      className="fixed bottom-4 left-4 right-4 z-50 bg-slate-900 dark:bg-gray-800 rounded-lg shadow-2xl p-4 border-2"
       style={{ borderColor: brand.accentColor || brand.primaryColor }}
     >
       <button
         onClick={handleDismiss}
-        className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        className="absolute top-2 right-2 text-gray-500 hover:text-slate-300 dark:hover:text-gray-300"
       >
         <X className="h-5 w-5" />
       </button>
@@ -158,7 +158,7 @@ export default function InstallPrompt() {
           <Download className="h-8 w-8" style={{ color: brand.accentColor || brand.primaryColor }} />
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-700 dark:text-gray-100 mb-1">
+          <h3 className="font-semibold text-slate-300 dark:text-gray-100 mb-1">
             Installeer {brand.companyName}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">

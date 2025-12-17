@@ -83,7 +83,7 @@ export function SocialPreview({
 
         {/* Google Preview */}
         <TabsContent value="google" className="space-y-4">
-          <div className="bg-white p-4 rounded border border-gray-300">
+          <div className="bg-slate-900 p-4 rounded border border-slate-600">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">
                 W
@@ -107,9 +107,9 @@ export function SocialPreview({
 
         {/* Facebook Preview */}
         <TabsContent value="facebook" className="space-y-4">
-          <div className="bg-white rounded border border-gray-300 overflow-hidden">
+          <div className="bg-slate-900 rounded border border-slate-600 overflow-hidden">
             {featuredImage ? (
-              <div className="aspect-video bg-gray-200 relative overflow-hidden">
+              <div className="aspect-video bg-slate-700 relative overflow-hidden">
                 <img 
                   src={featuredImage} 
                   alt="Preview" 
@@ -117,13 +117,13 @@ export function SocialPreview({
                 />
               </div>
             ) : (
-              <div className="aspect-video bg-gray-200 flex items-center justify-center">
+              <div className="aspect-video bg-slate-700 flex items-center justify-center">
                 <ImageIcon className="w-12 h-12 text-gray-400" />
               </div>
             )}
-            <div className="p-3 bg-gray-50">
+            <div className="p-3 bg-slate-800">
               <div className="text-xs text-gray-500 uppercase mb-1">WRITGO.NL</div>
-              <div className="text-base font-semibold text-gray-700 mb-1">
+              <div className="text-base font-semibold text-slate-300 mb-1">
                 {truncate(finalOgTitle, 70)}
               </div>
               <div className="text-sm text-gray-600">
@@ -161,9 +161,9 @@ export function SocialPreview({
 
         {/* Twitter Preview */}
         <TabsContent value="twitter" className="space-y-4">
-          <div className="bg-white rounded-2xl border border-gray-300 overflow-hidden">
+          <div className="bg-slate-900 rounded-2xl border border-slate-600 overflow-hidden">
             {featuredImage ? (
-              <div className="aspect-video bg-gray-200 relative overflow-hidden">
+              <div className="aspect-video bg-slate-700 relative overflow-hidden">
                 <img 
                   src={featuredImage} 
                   alt="Preview" 
@@ -171,12 +171,12 @@ export function SocialPreview({
                 />
               </div>
             ) : (
-              <div className="aspect-video bg-gray-200 flex items-center justify-center">
+              <div className="aspect-video bg-slate-700 flex items-center justify-center">
                 <ImageIcon className="w-12 h-12 text-gray-400" />
               </div>
             )}
-            <div className="p-3 border-t border-gray-200">
-              <div className="text-sm font-semibold text-gray-700 mb-1">
+            <div className="p-3 border-t border-slate-700">
+              <div className="text-sm font-semibold text-slate-300 mb-1">
                 {truncate(finalTwitterTitle, 70)}
               </div>
               <div className="text-xs text-gray-600 mb-2">
@@ -218,9 +218,9 @@ export function SocialPreview({
 
         {/* LinkedIn Preview */}
         <TabsContent value="linkedin" className="space-y-4">
-          <div className="bg-white rounded border border-gray-300 overflow-hidden">
+          <div className="bg-slate-900 rounded border border-slate-600 overflow-hidden">
             {featuredImage ? (
-              <div className="aspect-video bg-gray-200 relative overflow-hidden">
+              <div className="aspect-video bg-slate-700 relative overflow-hidden">
                 <img 
                   src={featuredImage} 
                   alt="Preview" 
@@ -228,12 +228,12 @@ export function SocialPreview({
                 />
               </div>
             ) : (
-              <div className="aspect-video bg-gray-200 flex items-center justify-center">
+              <div className="aspect-video bg-slate-700 flex items-center justify-center">
                 <ImageIcon className="w-12 h-12 text-gray-400" />
               </div>
             )}
             <div className="p-3">
-              <div className="text-base font-semibold text-gray-700 mb-1">
+              <div className="text-base font-semibold text-slate-300 mb-1">
                 {truncate(finalOgTitle, 70)}
               </div>
               <div className="text-sm text-gray-600 mb-2">

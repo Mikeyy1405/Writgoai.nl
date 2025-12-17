@@ -97,7 +97,7 @@ export default function AffiliateProductCarousel({
       {(title || description) && (
         <div className="mb-6 text-center">
           {title && (
-            <h3 className="text-2xl font-bold text-gray-700 mb-2">
+            <h3 className="text-2xl font-bold text-slate-300 mb-2">
               {title}
             </h3>
           )}
@@ -130,7 +130,7 @@ export default function AffiliateProductCarousel({
               disabled={!canGoPrev}
               className={`
                 absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4
-                w-12 h-12 rounded-full bg-white shadow-lg
+                w-12 h-12 rounded-full bg-slate-900 shadow-lg
                 flex items-center justify-center
                 transition-all duration-200
                 ${canGoPrev 
@@ -148,7 +148,7 @@ export default function AffiliateProductCarousel({
               disabled={!canGoNext && !autoPlay}
               className={`
                 absolute right-0 top-1/2 -translate-y-1/2 translate-x-4
-                w-12 h-12 rounded-full bg-white shadow-lg
+                w-12 h-12 rounded-full bg-slate-900 shadow-lg
                 flex items-center justify-center
                 transition-all duration-200
                 ${canGoNext || autoPlay

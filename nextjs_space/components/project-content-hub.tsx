@@ -294,7 +294,7 @@ export default function ProjectContentHub({ projectId, projectUrl }: ProjectCont
               onClick={() => router.push(`/client-portal/projects/${projectId}?tab=integrations`)}
               variant="outline"
               size="sm"
-              className="gap-2 border-orange-300 bg-white hover:bg-orange-100 w-full sm:w-auto"
+              className="gap-2 border-orange-300 bg-slate-900 hover:bg-orange-100 w-full sm:w-auto"
             >
               <Settings className="h-4 w-4" />
               Configureer WordPress

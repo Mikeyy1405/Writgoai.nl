@@ -28,7 +28,7 @@ export function ReasoningModeSelector({ value, onChange }: ReasoningModeSelector
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-slate-700 hover:border-blue-500 hover:bg-blue-50 transition-colors"
         title="Kies reasoning mode"
       >
         {getIcon(value)}
@@ -41,7 +41,7 @@ export function ReasoningModeSelector({ value, onChange }: ReasoningModeSelector
             className="fixed inset-0 z-40" 
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full mt-2 left-0 z-50 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-2">
+          <div className="absolute top-full mt-2 left-0 z-50 w-64 bg-slate-900 rounded-lg shadow-lg border border-slate-700 p-2">
             <div className="text-xs font-semibold text-gray-500 px-3 py-2">
               Reasoning Mode
             </div>
@@ -54,7 +54,7 @@ export function ReasoningModeSelector({ value, onChange }: ReasoningModeSelector
                     onChange(key);
                     setIsOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3 ${
+                  className={`w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/50 transition-colors flex items-center gap-3 ${
                     value === key ? 'bg-blue-50' : ''
                   }`}
                 >

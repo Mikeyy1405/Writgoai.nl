@@ -156,7 +156,7 @@ export function PublishingPanel({
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      draft: { label: 'Concept', className: 'bg-gray-500/20 text-gray-300 border-gray-500/50' },
+      draft: { label: 'Concept', className: 'bg-slate-8000/20 text-gray-300 border-gray-500/50' },
       published: { label: 'Gepubliceerd', className: 'bg-green-500/20 text-green-400 border-green-500/50' },
       scheduled: { label: 'Ingepland', className: 'bg-blue-500/20 text-blue-400 border-blue-500/50' },
     };

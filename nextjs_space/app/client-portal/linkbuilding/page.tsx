@@ -345,7 +345,7 @@ export default function LinkbuildingPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-700 mb-2 flex items-center gap-2">
+        <h1 className="text-3xl font-bold text-slate-300 mb-2 flex items-center gap-2">
           <Link2 className="h-8 w-8 text-orange-500" />
           Linkbuilding Netwerk
         </h1>
@@ -722,25 +722,25 @@ export default function LinkbuildingPage() {
                       </div>
 
                       <div className="grid grid-cols-4 gap-4 mb-4">
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-center p-4 bg-slate-800 rounded-lg">
                           <div className="text-2xl font-bold text-orange-500">
                             {partnership.linksGiven}
                           </div>
                           <div className="text-sm text-gray-600">Links Gegeven</div>
                         </div>
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-center p-4 bg-slate-800 rounded-lg">
                           <div className="text-2xl font-bold text-green-500">
                             {partnership.linksReceived}
                           </div>
                           <div className="text-sm text-gray-600">Links Ontvangen</div>
                         </div>
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-center p-4 bg-slate-800 rounded-lg">
                           <div className="text-2xl font-bold text-blue-500">
                             {partnership.creditsEarned.toFixed(0)}
                           </div>
                           <div className="text-sm text-gray-600">Credits Verdiend</div>
                         </div>
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-center p-4 bg-slate-800 rounded-lg">
                           <div className="text-2xl font-bold text-purple-500">
                             {partnership.maxLinksPerMonth}
                           </div>

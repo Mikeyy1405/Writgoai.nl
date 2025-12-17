@@ -27,7 +27,7 @@ export default function ProductCTABox({
     <div className={`my-8 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-50 border-2 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300 ${className}`}>
       <div className="grid md:grid-cols-[300px_1fr] gap-6 p-6">
         {/* Product Image */}
-        <div className="relative aspect-square rounded-xl overflow-hidden bg-white shadow-md">
+        <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-900 shadow-md">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -37,16 +37,16 @@ export default function ProductCTABox({
               sizes="300px"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-800/50">
               <ShoppingBag className="h-20 w-20 text-gray-300" />
             </div>
           )}
           
           {/* Rating Badge */}
           {rating && (
-            <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md flex items-center gap-1">
+            <div className="absolute top-3 right-3 bg-slate-900/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md flex items-center gap-1">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-semibold text-gray-700">{rating}</span>
+              <span className="text-sm font-semibold text-slate-300">{rating}</span>
             </div>
           )}
         </div>
@@ -54,7 +54,7 @@ export default function ProductCTABox({
         {/* Product Info */}
         <div className="flex flex-col justify-between">
           <div className="space-y-3">
-            <h3 className="text-2xl font-bold text-gray-700 leading-tight">
+            <h3 className="text-2xl font-bold text-slate-300 leading-tight">
               {title}
             </h3>
             

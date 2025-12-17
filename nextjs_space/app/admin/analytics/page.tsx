@@ -251,7 +251,7 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Blogs</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                    <div className="w-24 bg-slate-700 rounded-full h-2">
                       <div 
                         className="bg-blue-500 h-2 rounded-full" 
                         style={{ 
@@ -265,7 +265,7 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Social Posts</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                    <div className="w-24 bg-slate-700 rounded-full h-2">
                       <div 
                         className="bg-green-500 h-2 rounded-full" 
                         style={{ 
@@ -279,7 +279,7 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Videos</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                    <div className="w-24 bg-slate-700 rounded-full h-2">
                       <div 
                         className="bg-purple-500 h-2 rounded-full" 
                         style={{ 
@@ -310,7 +310,7 @@ export default function AnalyticsPage() {
                   <span className="text-sm text-muted-foreground">Success Rate</span>
                   <span className="font-bold text-green-600">{analytics.performanceMetrics.successRate.toFixed(1)}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
                   <div 
                     className="bg-green-500 h-2 rounded-full" 
                     style={{ width: `${analytics.performanceMetrics.successRate}%` }}
@@ -323,7 +323,7 @@ export default function AnalyticsPage() {
                   <span className="text-sm text-muted-foreground">Error Rate</span>
                   <span className="font-bold text-red-600">{analytics.performanceMetrics.errorRate.toFixed(1)}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
                   <div 
                     className="bg-red-500 h-2 rounded-full" 
                     style={{ width: `${analytics.performanceMetrics.errorRate}%` }}
@@ -387,7 +387,7 @@ export default function AnalyticsPage() {
               <div key={model.model} className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="font-medium">{model.model}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
                     <div 
                       className="bg-orange-500 h-2 rounded-full" 
                       style={{ 

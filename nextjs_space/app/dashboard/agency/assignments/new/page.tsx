@@ -102,7 +102,7 @@ export default function NewAssignmentPage() {
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/dashboard/agency/assignments"
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-900/10 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-400" />
           </Link>
@@ -118,7 +118,7 @@ export default function NewAssignmentPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Client Selection */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
               <User className="w-4 h-4" />
               Klant *
@@ -127,7 +127,7 @@ export default function NewAssignmentPage() {
               value={formData.clientId}
               onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
               required
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
             >
               <option value="" className="bg-[#1a1a1a]">Selecteer een klant...</option>
               {clients.map(client => (
@@ -139,7 +139,7 @@ export default function NewAssignmentPage() {
           </div>
 
           {/* Type Selection */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
               <FileText className="w-4 h-4" />
               Type Opdracht *
@@ -153,7 +153,7 @@ export default function NewAssignmentPage() {
                   className={`p-4 rounded-lg border text-left transition-all ${
                     formData.type === type.value
                       ? 'bg-blue-500/20 border-blue-500/50 text-white'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                      : 'bg-slate-900/5 border-white/10 text-gray-400 hover:border-white/20'
                   }`}
                 >
                   <span className="text-2xl block mb-1">{type.label.split(' ')[0]}</span>
@@ -164,7 +164,7 @@ export default function NewAssignmentPage() {
           </div>
 
           {/* Title & Description */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-4">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6 space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">Titel *</label>
               <input
@@ -172,7 +172,7 @@ export default function NewAssignmentPage() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 placeholder="Bijv. SEO blog artikelen schrijven"
               />
             </div>
@@ -183,14 +183,14 @@ export default function NewAssignmentPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required
                 rows={4}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+                className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
                 placeholder="Gedetailleerde beschrijving van de opdracht..."
               />
             </div>
           </div>
 
           {/* Priority, Deadline, Budget */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Priority */}
               <div>
@@ -200,7 +200,7 @@ export default function NewAssignmentPage() {
                 <select
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 >
                   {priorityOptions.map(p => (
                     <option key={p.value} value={p.value} className="bg-[#1a1a1a]">
@@ -220,7 +220,7 @@ export default function NewAssignmentPage() {
                   type="date"
                   value={formData.deadline}
                   onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -234,7 +234,7 @@ export default function NewAssignmentPage() {
                   type="number"
                   value={formData.budget}
                   onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                   placeholder="0.00"
                   step="0.01"
                 />
@@ -243,13 +243,13 @@ export default function NewAssignmentPage() {
           </div>
 
           {/* Notes */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+          <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6">
             <label className="text-sm font-medium text-gray-300 mb-2 block">Notities (intern)</label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+              className="w-full px-4 py-3 bg-slate-900/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
               placeholder="Interne notities over deze opdracht..."
             />
           </div>
@@ -258,7 +258,7 @@ export default function NewAssignmentPage() {
           <div className="flex justify-end gap-3">
             <Link
               href="/dashboard/agency/assignments"
-              className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg transition-colors"
             >
               Annuleren
             </Link>

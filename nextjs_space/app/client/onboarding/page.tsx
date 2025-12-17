@@ -211,7 +211,7 @@ export default function ClientOnboardingPage() {
                           ? 'bg-green-500 border-green-500 text-white'
                           : isActive
                           ? 'bg-[#FF6B35] border-[#FF6B35] text-white'
-                          : 'bg-white border-gray-300 text-gray-400'
+                          : 'bg-slate-900 border-slate-600 text-gray-400'
                       }`}
                     >
                       {isCompleted ? (
@@ -358,14 +358,14 @@ export default function ClientOnboardingPage() {
                         className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                           formData.contentStyle.includes(style)
                             ? 'border-[#FF6B35] bg-[#FF6B35]/5'
-                            : 'border-gray-300 hover:border-gray-400'
+                            : 'border-slate-600 hover:border-gray-400'
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                             formData.contentStyle.includes(style)
                               ? 'border-[#FF6B35] bg-[#FF6B35]'
-                              : 'border-gray-300'
+                              : 'border-slate-600'
                           }`}>
                             {formData.contentStyle.includes(style) && (
                               <CheckCircle2 className="h-3 w-3 text-white" />
@@ -431,7 +431,7 @@ export default function ClientOnboardingPage() {
                         className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                           formData.imageSize === size.value
                             ? 'border-[#FF6B35] bg-[#FF6B35]/5'
-                            : 'border-gray-300 hover:border-gray-400'
+                            : 'border-slate-600 hover:border-gray-400'
                         }`}
                       >
                         <span className="font-medium text-sm">{size.label}</span>
@@ -452,7 +452,7 @@ export default function ClientOnboardingPage() {
                         className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                           formData.imageStyle === style.value
                             ? 'border-[#FF6B35] bg-[#FF6B35]/5'
-                            : 'border-gray-300 hover:border-gray-400'
+                            : 'border-slate-600 hover:border-gray-400'
                         }`}
                       >
                         <span className="font-medium text-sm">{style.label}</span>
@@ -495,21 +495,21 @@ export default function ClientOnboardingPage() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-[#0B3C5D] mb-1">Social Media Accounts Vereist via Buffer.com</h4>
-                      <p className="text-sm text-gray-700 mb-3">
+                      <p className="text-sm text-slate-300 mb-3">
                         <strong>Belangrijk:</strong> Wij publiceren de content <u>op de social media accounts die jij beschikbaar stelt via Buffer.com</u>. 
                         Je verbindt jouw eigen Facebook, Instagram, LinkedIn, Twitter/X, etc. met je Buffer account.
                       </p>
-                      <p className="text-sm text-gray-700 mb-3">
+                      <p className="text-sm text-slate-300 mb-3">
                         Heb je nog geen Buffer account? 
                         <a href="https://buffer.com" target="_blank" rel="noopener noreferrer" className="text-[#FF6B35] hover:underline ml-1 font-medium">
                           Maak hier gratis een account aan →
                         </a>
                       </p>
-                      <div className="bg-white/70 p-3 rounded border border-orange-200 space-y-2">
+                      <div className="bg-slate-900/70 p-3 rounded border border-orange-200 space-y-2">
                         <p className="text-xs text-gray-600">
                           <strong>✅ Wat moet je doen:</strong>
                         </p>
-                        <ol className="text-xs text-gray-700 list-decimal list-inside space-y-1 ml-2">
+                        <ol className="text-xs text-slate-300 list-decimal list-inside space-y-1 ml-2">
                           <li>Maak een gratis Buffer.com account aan (als je die nog niet hebt)</li>
                           <li>Verbind jouw social media accounts (Instagram, Facebook, LinkedIn, etc.) met Buffer</li>
                           <li>Vul hieronder je Buffer.com inloggegevens in</li>
@@ -533,7 +533,7 @@ export default function ClientOnboardingPage() {
                         placeholder="je@email.com"
                         value={formData.bufferEmail}
                         onChange={(e) => handleInputChange('bufferEmail', e.target.value)}
-                        className="bg-white"
+                        className="bg-slate-900"
                         required
                       />
                     </div>
@@ -547,7 +547,7 @@ export default function ClientOnboardingPage() {
                         placeholder="••••••••"
                         value={formData.bufferPassword}
                         onChange={(e) => handleInputChange('bufferPassword', e.target.value)}
-                        className="bg-white"
+                        className="bg-slate-900"
                         required
                       />
                       <p className="text-xs text-gray-600 mt-1">
@@ -583,7 +583,7 @@ export default function ClientOnboardingPage() {
                             className={`px-4 py-2 rounded-lg border-2 cursor-pointer transition-all ${
                               formData.publishingDays.includes(day)
                                 ? 'border-[#FF6B35] bg-[#FF6B35] text-white'
-                                : 'border-gray-300 hover:border-gray-400'
+                                : 'border-slate-600 hover:border-gray-400'
                             }`}
                           >
                             {DAY_LABELS[day]}

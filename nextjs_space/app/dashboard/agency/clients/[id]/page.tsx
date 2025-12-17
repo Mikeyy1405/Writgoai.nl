@@ -274,7 +274,7 @@ export default function ClientDetailPage() {
       case 'active': return 'bg-green-500/20 text-green-400 border-green-500/50';
       case 'trialing': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
       case 'canceled': case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/50';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+      default: return 'bg-slate-8000/20 text-gray-400 border-gray-500/50';
     }
   };
 

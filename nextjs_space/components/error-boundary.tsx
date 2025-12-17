@@ -40,7 +40,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         <Card className="p-6 m-4">
           <div className="flex flex-col items-center justify-center text-center space-y-4">
             <AlertTriangle className="h-12 w-12 text-orange-500" />
-            <h2 className="text-xl font-bold text-gray-700">
+            <h2 className="text-xl font-bold text-slate-300">
               Er is iets misgegaan
             </h2>
             <p className="text-gray-400 max-w-md">
@@ -51,7 +51,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 <summary className="cursor-pointer font-medium">
                   Technische details
                 </summary>
-                <pre className="mt-2 p-2 bg-gray-100 rounded text-left overflow-auto">
+                <pre className="mt-2 p-2 bg-slate-800/50 rounded text-left overflow-auto">
                   {this.state.error.message}
                 </pre>
               </details>

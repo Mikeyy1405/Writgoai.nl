@@ -159,7 +159,7 @@ export default function ContentPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-700 mb-2">
+          <h1 className="text-3xl font-bold text-slate-300 mb-2">
             📅 Content Kalender
           </h1>
           <p className="text-gray-600">
@@ -170,7 +170,7 @@ export default function ContentPage() {
           onClick={handleRefresh}
           disabled={refreshing}
           variant="outline"
-          className="border-gray-300"
+          className="border-slate-600"
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Ververs
@@ -181,14 +181,14 @@ export default function ContentPage() {
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filters:</span>
+          <span className="text-sm font-medium text-slate-300">Filters:</span>
         </div>
         
         {/* Platform Filter */}
         <select
           value={filterPlatform}
           onChange={(e) => setFilterPlatform(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9933] focus:border-transparent"
+          className="px-3 py-2 rounded-lg border border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9933] focus:border-transparent"
         >
           <option value="all">Alle Platforms</option>
           {uniquePlatforms.map(platform => (
@@ -202,7 +202,7 @@ export default function ContentPage() {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9933] focus:border-transparent"
+          className="px-3 py-2 rounded-lg border border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9933] focus:border-transparent"
         >
           <option value="all">Alle Types</option>
           <option value="article">📝 Artikelen</option>
@@ -216,7 +216,7 @@ export default function ContentPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+            <h3 className="text-lg font-semibold text-slate-300 mb-2">
               Geen content gevonden
             </h3>
             <p className="text-gray-500">
@@ -236,10 +236,10 @@ export default function ContentPage() {
               <div key={date}>
                 {/* Date Header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-xl font-bold text-gray-700">
+                  <h2 className="text-xl font-bold text-slate-300">
                     {dateLabel}
                   </h2>
-                  <div className="flex-1 h-px bg-gray-200" />
+                  <div className="flex-1 h-px bg-slate-700" />
                   <span className="text-sm text-gray-500">
                     {items.length} {items.length === 1 ? 'item' : 'items'}
                   </span>
@@ -252,13 +252,13 @@ export default function ContentPage() {
                     const statusConfig = STATUS_CONFIG[item.status];
                     
                     return (
-                      <Card key={item.id} className="border-gray-200 hover:shadow-md transition-shadow">
+                      <Card key={item.id} className="border-slate-700 hover:shadow-md transition-shadow">
                         <CardContent className="p-5">
                           <div className="flex items-start gap-4">
                             {/* Time */}
                             <div className="flex flex-col items-center justify-center min-w-[60px] text-center">
                               <Clock className="w-5 h-5 text-gray-400 mb-1" />
-                              <div className="text-sm font-semibold text-gray-700">
+                              <div className="text-sm font-semibold text-slate-300">
                                 {format(parseISO(item.scheduledFor), 'HH:mm')}
                               </div>
                             </div>
@@ -282,7 +282,7 @@ export default function ContentPage() {
                               </div>
 
                               {/* Title & Preview */}
-                              <h3 className="font-semibold text-gray-700 mb-2">
+                              <h3 className="font-semibold text-slate-300 mb-2">
                                 {item.title}
                               </h3>
                               {item.preview && (
@@ -294,7 +294,7 @@ export default function ContentPage() {
                               {/* Media Preview */}
                               {item.mediaUrl && (
                                 <div className="mb-3">
-                                  <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                                  <div className="w-full h-32 rounded-lg bg-slate-800/50 flex items-center justify-center">
                                     <ImageIcon className="w-8 h-8 text-gray-400" />
                                   </div>
                                 </div>
@@ -311,7 +311,7 @@ export default function ContentPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleDownload(item)}
-                                    className="text-gray-600 hover:text-gray-700"
+                                    className="text-gray-600 hover:text-slate-300"
                                   >
                                     <Download className="w-4 h-4" />
                                   </Button>
@@ -320,7 +320,7 @@ export default function ContentPage() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => handleViewLive(item)}
-                                      className="text-gray-600 hover:text-gray-700"
+                                      className="text-gray-600 hover:text-slate-300"
                                     >
                                       <ExternalLink className="w-4 h-4" />
                                     </Button>
@@ -346,10 +346,10 @@ export default function ContentPage() {
           <div className="flex items-start gap-3">
             <div className="text-2xl">ℹ️</div>
             <div>
-              <h3 className="font-semibold text-gray-700 mb-2">
+              <h3 className="font-semibold text-slate-300 mb-2">
                 Content wordt automatisch beheerd
               </h3>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-slate-300">
                 Al je content wordt automatisch gegenereerd, gepland en gepubliceerd op je verbonden platforms. 
                 Je hoeft niets te doen - het systeem werkt volledig autonoom. Deze kalender is alleen voor inzicht, 
                 niet voor bewerken.

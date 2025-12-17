@@ -130,7 +130,7 @@ export default function BlogSEOPage() {
             .map((post) => (
               <div
                 key={post.id}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg hover:shadow-md transition-shadow"
+                className="flex items-center justify-between p-4 bg-slate-800 dark:bg-zinc-800 rounded-lg hover:shadow-md transition-shadow"
               >
                 <div className="flex-1">
                   <Link
@@ -191,7 +191,7 @@ export default function BlogSEOPage() {
           <Search className="w-5 h-5 text-blue-600" />
           SEO Best Practices
         </h3>
-        <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+        <ul className="space-y-2 text-sm text-slate-300 dark:text-gray-300">
           <li className="flex gap-2">
             <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
             <span>Gebruik relevante keywords in je titel en eerste paragraaf</span>

@@ -167,7 +167,7 @@ export default function ProjectKnowledgeBase({ projectId }: ProjectKnowledgeBase
       case 'normal':
         return <Badge className="bg-blue-500">Normaal</Badge>;
       case 'low':
-        return <Badge className="bg-gray-500">Laag</Badge>;
+        return <Badge className="bg-slate-8000">Laag</Badge>;
       default:
         return <Badge>{importance}</Badge>;
     }

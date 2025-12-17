@@ -291,7 +291,7 @@ export default function SocialConnectPage() {
     <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-700">Social Media Koppelen</h1>
+        <h1 className="text-3xl font-bold text-slate-300">Social Media Koppelen</h1>
         <p className="text-gray-600 mt-2">
           Koppel je social media accounts om automatisch posts te kunnen plaatsen via WritGo.
         </p>
@@ -325,7 +325,7 @@ export default function SocialConnectPage() {
             return (
               <div
                 key={platform.id}
-                className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                className="bg-slate-900 border border-slate-700 rounded-lg p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -334,7 +334,7 @@ export default function SocialConnectPage() {
                     </div>
                     
                     <div>
-                      <h3 className="font-semibold text-lg text-gray-700">{platform.name}</h3>
+                      <h3 className="font-semibold text-lg text-slate-300">{platform.name}</h3>
                       <p className="text-sm text-gray-500">{platform.description}</p>
                       {connected.length > 0 && (
                         <div className="flex items-center gap-2 text-sm text-green-600 mt-1">
@@ -366,11 +366,11 @@ export default function SocialConnectPage() {
 
                 {/* Show connected accounts */}
                 {connected.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                  <div className="mt-4 pt-4 border-t border-slate-700 space-y-2">
                     {connected.map(account => (
                       <div 
                         key={account.id} 
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg group"
+                        className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg group"
                       >
                         {account.profileImage ? (
                           <img
@@ -385,7 +385,7 @@ export default function SocialConnectPage() {
                         )}
                         
                         <div className="flex-1">
-                          <p className="font-medium text-gray-700">{account.displayName}</p>
+                          <p className="font-medium text-slate-300">{account.displayName}</p>
                           {account.accountHandle && (
                             <p className="text-sm text-gray-600">@{account.accountHandle}</p>
                           )}

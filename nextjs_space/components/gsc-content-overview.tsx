@@ -115,7 +115,7 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
       case 'PROCESSING':
         return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
       default:
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
+        return 'bg-slate-8000/10 text-gray-400 border-gray-500/30';
     }
   };
 
@@ -166,7 +166,7 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
         <Button
           onClick={fetchContent}
           disabled={loading}
-          className="bg-white/10 hover:bg-white/20 border border-white/20"
+          className="bg-slate-900/10 hover:bg-slate-900/20 border border-white/20"
         >
           {loading ? (
             <>
@@ -185,7 +185,7 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-4 bg-white/5 border-white/10">
+          <Card className="p-4 bg-slate-900/5 border-white/10">
             <div className="text-sm text-gray-400 mb-1">Totaal Pagina's</div>
             <div className="text-3xl font-black text-white">{summary.totalPages}</div>
           </Card>
@@ -197,7 +197,7 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
             <div className="text-sm text-gray-400 mb-1">Moet Verbeterd</div>
             <div className="text-3xl font-black text-yellow-400">{summary.needsImprovement}</div>
           </Card>
-          <Card className="p-4 bg-gray-500/10 border-gray-500/20">
+          <Card className="p-4 bg-slate-8000/10 border-gray-500/20">
             <div className="text-sm text-gray-400 mb-1">Lage Zichtbaarheid</div>
             <div className="text-3xl font-black text-gray-400">{summary.lowVisibility}</div>
           </Card>
@@ -210,14 +210,14 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
           <Button
             onClick={() => setActiveTab('all')}
             variant={activeTab === 'all' ? 'default' : 'outline'}
-            className={activeTab === 'all' ? 'bg-white/20' : 'bg-white/5'}
+            className={activeTab === 'all' ? 'bg-slate-900/20' : 'bg-slate-900/5'}
           >
             Alle ({pages.length})
           </Button>
           <Button
             onClick={() => setActiveTab('high')}
             variant={activeTab === 'high' ? 'default' : 'outline'}
-            className={activeTab === 'high' ? 'bg-green-500/20 border-green-500/30' : 'bg-white/5'}
+            className={activeTab === 'high' ? 'bg-green-500/20 border-green-500/30' : 'bg-slate-900/5'}
           >
             <TrendingUp className="w-4 h-4 mr-2" />
             Top ({categories?.highPerformers?.length || 0})
@@ -225,7 +225,7 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
           <Button
             onClick={() => setActiveTab('improve')}
             variant={activeTab === 'improve' ? 'default' : 'outline'}
-            className={activeTab === 'improve' ? 'bg-yellow-500/20 border-yellow-500/30' : 'bg-white/5'}
+            className={activeTab === 'improve' ? 'bg-yellow-500/20 border-yellow-500/30' : 'bg-slate-900/5'}
           >
             <AlertCircle className="w-4 h-4 mr-2" />
             Verbeteren ({categories?.needsImprovement?.length || 0})
@@ -233,7 +233,7 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
           <Button
             onClick={() => setActiveTab('low')}
             variant={activeTab === 'low' ? 'default' : 'outline'}
-            className={activeTab === 'low' ? 'bg-gray-500/20 border-gray-500/30' : 'bg-white/5'}
+            className={activeTab === 'low' ? 'bg-slate-8000/20 border-gray-500/30' : 'bg-slate-900/5'}
           >
             <TrendingDown className="w-4 h-4 mr-2" />
             Laag ({categories?.lowVisibility?.length || 0})
@@ -244,7 +244,7 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
       {/* Content List */}
       <div className="space-y-3">
         {getDisplayPages().length === 0 && !loading && (
-          <Card className="p-8 bg-white/5 border-white/10 text-center">
+          <Card className="p-8 bg-slate-900/5 border-white/10 text-center">
             <p className="text-gray-400">
               {pages.length === 0 
                 ? 'Klik op "Ververs Data" om je content te analyseren' 
@@ -254,7 +254,7 @@ export default function GSCContentOverview({ projectId, onContentAnalyzed }: GSC
         )}
 
         {getDisplayPages().map((page, index) => (
-          <Card key={index} className="p-4 bg-white/5 border-white/10 hover:bg-white/10 transition-all">
+          <Card key={index} className="p-4 bg-slate-900/5 border-white/10 hover:bg-slate-900/10 transition-all">
             <div className="flex items-start gap-4">
               {/* Status Icon */}
               <div className="mt-1">

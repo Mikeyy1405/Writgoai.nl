@@ -675,8 +675,8 @@ function ContentResearchPage() {
     switch (priority) {
       case 'high': return 'bg-red-500/10 text-red-500 border-red-500/20';
       case 'medium': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
-      case 'low': return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
-      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+      case 'low': return 'bg-slate-8000/10 text-gray-500 border-gray-500/20';
+      default: return 'bg-slate-8000/10 text-gray-500 border-gray-500/20';
     }
   };
 

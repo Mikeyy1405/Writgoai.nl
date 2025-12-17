@@ -36,7 +36,7 @@ export function EnhancedChatMessage({ content, role, timestamp }: EnhancedChatMe
 
   return (
     <div className="flex justify-start mb-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 max-w-[85%] shadow-md border border-gray-200 dark:border-gray-700">
+      <div className="bg-slate-900 dark:bg-gray-800 rounded-2xl px-4 py-3 max-w-[85%] shadow-md border border-slate-700 dark:border-gray-700">
         <div className="prose prose-sm dark:prose-invert max-w-none">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -79,7 +79,7 @@ export function EnhancedChatMessage({ content, role, timestamp }: EnhancedChatMe
                 }
 
                 return (
-                  <code className="bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                  <code className="bg-slate-800/50 dark:bg-gray-700 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
                     {children}
                   </code>
                 );
@@ -98,7 +98,7 @@ export function EnhancedChatMessage({ content, role, timestamp }: EnhancedChatMe
               },
               img({ src, alt }) {
                 return (
-                  <div className="my-4 rounded-lg overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+                  <div className="my-4 rounded-lg overflow-hidden shadow-lg border border-slate-700 dark:border-gray-700">
                     <img
                       src={src}
                       alt={alt || 'AI Generated Image'}

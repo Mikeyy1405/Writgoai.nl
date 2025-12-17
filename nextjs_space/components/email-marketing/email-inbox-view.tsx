@@ -66,7 +66,7 @@ export function EmailInboxView() {
       case 'urgent':
         return 'bg-orange-500';
       default:
-        return 'bg-gray-500';
+        return 'bg-slate-8000';
     }
   };
 
@@ -81,7 +81,7 @@ export function EmailInboxView() {
       case 'spam':
         return 'bg-red-500';
       default:
-        return 'bg-gray-500';
+        return 'bg-slate-8000';
     }
   };
 

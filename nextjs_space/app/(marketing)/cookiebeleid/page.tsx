@@ -14,7 +14,7 @@ export default function CookiebeleidPage() {
       <PublicNav />
       <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/5 backdrop-blur-xl border border-blue-500/20 rounded-3xl p-8 md:p-12">
+          <div className="bg-slate-900/5 backdrop-blur-xl border border-blue-500/20 rounded-3xl p-8 md:p-12">
             <div className="flex items-center gap-4 mb-4">
               <Cookie className="w-12 h-12 text-blue-500" />
               <h1 className="text-4xl font-bold text-white">
@@ -71,7 +71,7 @@ export default function CookiebeleidPage() {
                       niet worden uitgeschakeld.
                     </p>
                     
-                    <div className="bg-white/5 rounded-xl p-4 mt-4">
+                    <div className="bg-slate-900/5 rounded-xl p-4 mt-4">
                       <h4 className="text-white font-semibold mb-3">Specifieke cookies:</h4>
                       <div className="space-y-4 text-sm">
                         <div>
@@ -120,7 +120,7 @@ export default function CookiebeleidPage() {
                       Wij gebruiken deze informatie om de website te verbeteren.
                     </p>
                     
-                    <div className="bg-white/5 rounded-xl p-4 mt-4">
+                    <div className="bg-slate-900/5 rounded-xl p-4 mt-4">
                       <h4 className="text-white font-semibold mb-3">Specifieke cookies:</h4>
                       <div className="space-y-4 text-sm">
                         <div>
@@ -162,7 +162,7 @@ export default function CookiebeleidPage() {
                       marketingcampagnes te meten.
                     </p>
                     
-                    <div className="bg-white/5 rounded-xl p-4 mt-4">
+                    <div className="bg-slate-900/5 rounded-xl p-4 mt-4">
                       <h4 className="text-white font-semibold mb-3">Specifieke cookies:</h4>
                       <div className="space-y-4 text-sm">
                         <div>
@@ -205,7 +205,7 @@ export default function CookiebeleidPage() {
                       Deze cookies onthouden uw voorkeuren en personalisatie-instellingen.
                     </p>
                     
-                    <div className="bg-white/5 rounded-xl p-4 mt-4">
+                    <div className="bg-slate-900/5 rounded-xl p-4 mt-4">
                       <h4 className="text-white font-semibold mb-3">Specifieke cookies:</h4>
                       <div className="space-y-4 text-sm">
                         <div>

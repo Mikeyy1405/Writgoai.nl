@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-white text-black hover:bg-zinc-200 font-semibold transition-all"
+                className="w-full bg-slate-900 text-white hover:bg-zinc-200 font-semibold transition-all"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -137,7 +137,7 @@ export default function ForgotPasswordPage() {
               <div className="flex flex-col gap-2">
                 <Button
                   onClick={() => router.push('/inloggen')}
-                  className="w-full bg-white text-black hover:bg-zinc-200 font-semibold transition-all"
+                  className="w-full bg-slate-900 text-white hover:bg-zinc-200 font-semibold transition-all"
                 >
                   Naar inloggen
                 </Button>

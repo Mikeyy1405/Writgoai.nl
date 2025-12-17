@@ -62,8 +62,8 @@ export default function BTWPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-7xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
-          <div className="h-96 bg-white/10 rounded-xl"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-900/10 rounded-xl"></div>
         </div>
       </div>
     );
@@ -75,7 +75,7 @@ export default function BTWPage() {
         <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/financien"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 bg-slate-900/10 hover:bg-slate-900/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </Link>
@@ -91,7 +91,7 @@ export default function BTWPage() {
         </div>
 
         {/* BTW Calculator */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6 mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">
             Nieuw BTW Rapport Genereren
           </h2>
@@ -101,7 +101,7 @@ export default function BTWPage() {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
               >
                 {[0, 1, 2, 3, 4].map((offset) => {
                   const year = new Date().getFullYear() - offset;
@@ -118,7 +118,7 @@ export default function BTWPage() {
               <select
                 value={selectedQuarter}
                 onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
-                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                className="w-full px-4 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
               >
                 <option value="1">Q1 (Jan-Mrt)</option>
                 <option value="2">Q2 (Apr-Jun)</option>
@@ -138,10 +138,10 @@ export default function BTWPage() {
         </div>
 
         {/* Reports Table */}
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/5">
+              <thead className="bg-slate-900/5">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
                     Periode
@@ -168,7 +168,7 @@ export default function BTWPage() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {reports.map((report) => (
-                  <tr key={report.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={report.id} className="hover:bg-slate-900/5 transition-colors">
                     <td className="px-6 py-4">
                       <p className="text-white font-medium">
                         Q{report.quarter} {report.year}
@@ -217,7 +217,7 @@ export default function BTWPage() {
                             ? 'bg-green-500/20 text-green-400'
                             : report.status === 'submitted'
                             ? 'bg-blue-500/20 text-blue-400'
-                            : 'bg-gray-500/20 text-gray-400'
+                            : 'bg-slate-8000/20 text-gray-400'
                         }`}
                       >
                         {report.status === 'paid'

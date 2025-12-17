@@ -27,10 +27,10 @@ export default function BolcomProductBox({
       href={affiliateUrl}
       target="_blank"
       rel="nofollow noopener noreferrer"
-      className={`block my-6 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-orange-300 hover:shadow-lg transition-all ${className}`}
+      className={`block my-6 p-4 bg-slate-900 border-2 border-slate-700 rounded-lg hover:border-orange-300 hover:shadow-lg transition-all ${className}`}
     >
       <div className="flex gap-4">
-        <div className="relative w-20 h-20 flex-shrink-0 bg-gray-50 rounded overflow-hidden">
+        <div className="relative w-20 h-20 flex-shrink-0 bg-slate-800 rounded overflow-hidden">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -47,7 +47,7 @@ export default function BolcomProductBox({
         </div>
         
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-gray-700 mb-1 line-clamp-2">
+          <h4 className="font-semibold text-slate-300 mb-1 line-clamp-2">
             {title}
           </h4>
           <div className="flex items-center gap-3">

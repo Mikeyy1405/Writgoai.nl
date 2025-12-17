@@ -167,9 +167,9 @@ export default function ContentOverviewPage() {
       case 'scheduled':
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'draft':
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-slate-800/50 text-slate-200 border-slate-600';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-slate-800/50 text-slate-200 border-slate-600';
     }
   }
   
@@ -303,14 +303,14 @@ export default function ContentOverviewPage() {
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-50">
+        <Card className="bg-slate-800">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-700">
+            <CardTitle className="text-sm font-medium text-slate-300">
               Concepten
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-gray-800">{stats.draft}</p>
+            <p className="text-2xl font-bold text-slate-200">{stats.draft}</p>
           </CardContent>
         </Card>
       </div>

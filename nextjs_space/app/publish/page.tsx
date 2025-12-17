@@ -105,7 +105,7 @@ export default function PublishPage() {
               Publiceer je content naar WordPress en social media
             </p>
           </div>
-          <div className="bg-white rounded-xl p-12 text-center shadow-lg">
+          <div className="bg-slate-900 rounded-xl p-12 text-center shadow-lg">
             <Send className="w-16 h-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-slate-800 mb-2">
               Nog geen artikelen om te publiceren
@@ -140,7 +140,7 @@ export default function PublishPage() {
           {articles.map((article) => (
             <div
               key={article.id}
-              className="bg-white rounded-xl p-6 shadow-lg border border-slate-200"
+              className="bg-slate-900 rounded-xl p-6 shadow-lg border border-slate-200"
             >
               <div className="flex gap-6">
                 {/* Thumbnail */}

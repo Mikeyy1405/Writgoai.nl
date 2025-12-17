@@ -293,7 +293,7 @@ export default function AIImageGeneratorDialog({
                 <ImageIcon className="w-5 h-5 text-orange-500" />
                 Gegenereerde Afbeelding
               </Label>
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200">
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-700">
                 <Image
                   src={generatedImage}
                   alt="Gegenereerde afbeelding"

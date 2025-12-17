@@ -565,7 +565,7 @@ export default function AdminOrdersPage() {
             ) : (
               <div className="h-full flex items-center justify-center p-12">
                 <div className="text-center">
-                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-700" />
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                   <h3 className="text-lg font-semibold text-gray-400 mb-2">
                     Selecteer een opdracht
                   </h3>

@@ -402,7 +402,7 @@ export default function LandingPage() {
               Begin vandaag nog gratis en ervaar de kracht van AI-gedreven content creatie
             </p>
             <Link href="/client-register">
-              <Button size="lg" className="bg-white text-orange-600 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-xl">
+              <Button size="lg" className="bg-slate-900 text-orange-600 hover:bg-slate-800/50 px-8 py-6 text-lg rounded-xl shadow-xl">
                 Start Gratis - Krijg 100 Credits
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>

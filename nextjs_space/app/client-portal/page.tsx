@@ -142,7 +142,7 @@ export default function ClientDashboard() {
       case 'new': return 'bg-blue-500/20 text-blue-400';
       case 'converted': return 'bg-green-500/20 text-green-400';
       case 'rejected': return 'bg-red-500/20 text-red-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      default: return 'bg-slate-8000/20 text-gray-400';
     }
   };
 
@@ -176,10 +176,10 @@ export default function ClientDashboard() {
     return (
       <div className="space-y-8">
         <div className="animate-pulse space-y-8">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
           <div className="grid grid-cols-4 gap-6">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-32 bg-white/10 rounded-xl"></div>
+              <div key={i} className="h-32 bg-slate-900/10 rounded-xl"></div>
             ))}
           </div>
         </div>

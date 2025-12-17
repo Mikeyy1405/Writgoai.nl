@@ -118,7 +118,7 @@ export default function AccountPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-700 mb-2">
+        <h1 className="text-3xl font-bold text-slate-300 mb-2">
           ⚙️ Account Instellingen
         </h1>
         <p className="text-gray-600">
@@ -128,20 +128,20 @@ export default function AccountPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-gray-100 p-1">
-          <TabsTrigger value="package" className="data-[state=active]:bg-white">
+        <TabsList className="bg-slate-800/50 p-1">
+          <TabsTrigger value="package" className="data-[state=active]:bg-slate-900">
             <Package className="w-4 h-4 mr-2" />
             Pakket
           </TabsTrigger>
-          <TabsTrigger value="billing" className="data-[state=active]:bg-white">
+          <TabsTrigger value="billing" className="data-[state=active]:bg-slate-900">
             <CreditCard className="w-4 h-4 mr-2" />
             Betaling
           </TabsTrigger>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-white">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-slate-900">
             <User className="w-4 h-4 mr-2" />
             Bedrijfsprofiel
           </TabsTrigger>
-          <TabsTrigger value="support" className="data-[state=active]:bg-white">
+          <TabsTrigger value="support" className="data-[state=active]:bg-slate-900">
             <HelpCircle className="w-4 h-4 mr-2" />
             Support
           </TabsTrigger>
@@ -158,7 +158,7 @@ export default function AccountPage() {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-bold text-gray-700">
+                    <h3 className="text-2xl font-bold text-slate-300">
                       📦 {packageInfo.name} PAKKET
                     </h3>
                     {packageInfo.badge && (
@@ -177,15 +177,15 @@ export default function AccountPage() {
                 {packageInfo.features.map((feature, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-gray-700">{feature}</span>
+                    <span className="text-slate-300">{feature}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="bg-slate-800 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Volgende betaling:</span>
-                  <span className="font-semibold text-gray-700">1 januari 2026</span>
+                  <span className="font-semibold text-slate-300">1 januari 2026</span>
                 </div>
               </div>
 
@@ -193,7 +193,7 @@ export default function AccountPage() {
                 <Button className="bg-gradient-to-r from-[#FF9933] to-[#FFAD33] hover:opacity-90">
                   Upgrade naar DOMINANT
                 </Button>
-                <Button variant="outline" className="border-gray-300">
+                <Button variant="outline" className="border-slate-600">
                   Downgrade
                 </Button>
               </div>
@@ -202,10 +202,10 @@ export default function AccountPage() {
 
           {/* All Packages */}
           <div>
-            <h3 className="text-xl font-bold text-gray-700 mb-4">Andere Pakketten</h3>
+            <h3 className="text-xl font-bold text-slate-300 mb-4">Andere Pakketten</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Object.entries(PACKAGES).map(([key, pkg]) => (
-                <Card key={key} className={`border-2 ${key === currentPackage ? 'border-[#FF9933]' : 'border-gray-200'} hover:border-[#FF9933] transition-colors`}>
+                <Card key={key} className={`border-2 ${key === currentPackage ? 'border-[#FF9933]' : 'border-slate-700'} hover:border-[#FF9933] transition-colors`}>
                   <CardContent className="p-6">
                     <div className="text-center mb-4">
                       {pkg.badge && (
@@ -213,8 +213,8 @@ export default function AccountPage() {
                           {pkg.badge}
                         </span>
                       )}
-                      <h4 className="font-bold text-lg text-gray-700 mb-2">{pkg.name}</h4>
-                      <div className="text-2xl font-bold text-gray-700">
+                      <h4 className="font-bold text-lg text-slate-300 mb-2">{pkg.name}</h4>
+                      <div className="text-2xl font-bold text-slate-300">
                         €{pkg.price}
                       </div>
                       <div className="text-xs text-gray-500">per maand</div>
@@ -242,17 +242,17 @@ export default function AccountPage() {
               <CardTitle>Betaalmethode</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg mb-4">
+              <div className="flex items-center justify-between p-4 border border-slate-700 rounded-lg mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
                     iD
                   </div>
                   <div>
-                    <div className="font-medium text-gray-700">iDEAL via Moneybird</div>
+                    <div className="font-medium text-slate-300">iDEAL via Moneybird</div>
                     <div className="text-sm text-gray-500">Laatst gebruikt: 1 december 2025</div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="border-gray-300">
+                <Button variant="outline" size="sm" className="border-slate-600">
                   Wijzig
                 </Button>
               </div>
@@ -264,7 +264,7 @@ export default function AccountPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Facturen</span>
-                <Button variant="outline" size="sm" className="border-gray-300">
+                <Button variant="outline" size="sm" className="border-slate-600">
                   <Download className="w-4 h-4 mr-2" />
                   Download alle
                 </Button>
@@ -277,11 +277,11 @@ export default function AccountPage() {
                   { date: 'Nov 2025', amount: 497, status: 'paid' },
                   { date: 'Okt 2025', amount: 197, status: 'paid' },
                 ].map((invoice, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-[#FF9933]/50 hover:bg-gray-50 transition-all">
+                  <div key={index} className="flex items-center justify-between p-4 border border-slate-700 rounded-lg hover:border-[#FF9933]/50 hover:bg-slate-800 transition-all">
                     <div className="flex items-center gap-3">
                       <FileText className="w-5 h-5 text-gray-400" />
                       <div>
-                        <div className="font-medium text-gray-700">{invoice.date}</div>
+                        <div className="font-medium text-slate-300">{invoice.date}</div>
                         <div className="text-sm text-gray-500">€{invoice.amount}</div>
                       </div>
                     </div>
@@ -412,14 +412,14 @@ export default function AccountPage() {
         <TabsContent value="support" className="space-y-6">
           {/* Support Options */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border-2 border-gray-200 hover:border-[#FF9933] transition-colors cursor-pointer">
+            <Card className="border-2 border-slate-700 hover:border-[#FF9933] transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                     <HelpCircle className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-700 mb-2">Veelgestelde vragen (FAQ)</h3>
+                    <h3 className="font-semibold text-slate-300 mb-2">Veelgestelde vragen (FAQ)</h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Vind snel antwoorden op veel gestelde vragen
                     </p>
@@ -431,14 +431,14 @@ export default function AccountPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-gray-200 hover:border-[#FF9933] transition-colors cursor-pointer">
+            <Card className="border-2 border-slate-700 hover:border-[#FF9933] transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                     <Mail className="w-6 h-6 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-700 mb-2">Email Support</h3>
+                    <h3 className="font-semibold text-slate-300 mb-2">Email Support</h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Stuur ons een email en we helpen je verder
                     </p>
@@ -450,14 +450,14 @@ export default function AccountPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-gray-200 hover:border-[#FF9933] transition-colors cursor-pointer">
+            <Card className="border-2 border-slate-700 hover:border-[#FF9933] transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                     <MessageSquare className="w-6 h-6 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-700 mb-2">WhatsApp Support</h3>
+                    <h3 className="font-semibold text-slate-300 mb-2">WhatsApp Support</h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Direct contact via WhatsApp
                     </p>
@@ -469,14 +469,14 @@ export default function AccountPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-gray-200 hover:border-[#FF9933] transition-colors cursor-pointer">
+            <Card className="border-2 border-slate-700 hover:border-[#FF9933] transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
                     <FileText className="w-6 h-6 text-orange-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-700 mb-2">Tutorial Videos</h3>
+                    <h3 className="font-semibold text-slate-300 mb-2">Tutorial Videos</h3>
                     <p className="text-sm text-gray-600 mb-3">
                       Bekijk instructievideo's
                     </p>

@@ -254,7 +254,7 @@ export default function BrandingPage() {
                 <div>
                   <Label htmlFor="logoDark" className="text-white">Logo voor Lichte Achtergrond</Label>
                   <label className="block mt-2">
-                    <div className="border border-zinc-700 rounded-lg p-4 text-center cursor-pointer hover:border-[#FF6B35] transition-colors bg-white">
+                    <div className="border border-zinc-700 rounded-lg p-4 text-center cursor-pointer hover:border-[#FF6B35] transition-colors bg-slate-900">
                       {uploadingFile === 'logoDark' ? (
                         <Loader2 className="w-6 h-6 mx-auto animate-spin text-[#FF6B35]" />
                       ) : settings.logoDarkUrl ? (

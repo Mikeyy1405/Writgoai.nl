@@ -8,7 +8,7 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white shadow-lg rounded-lg p-8 md:p-12">
+        <div className="bg-slate-900 shadow-lg rounded-lg p-8 md:p-12">
           <h1 className="text-4xl font-bold text-slate-700 mb-2">
             Algemene Voorwaarden
           </h1>

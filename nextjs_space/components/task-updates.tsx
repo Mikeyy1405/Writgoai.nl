@@ -143,7 +143,7 @@ export function TaskUpdates({ taskId, isClientView = false, authToken }: TaskUpd
       case 'DEADLINE_CHANGE':
         return { label: 'Deadline wijziging', icon: Calendar, color: 'bg-orange-500' };
       default:
-        return { label: 'Algemeen', icon: FileText, color: 'bg-gray-500' };
+        return { label: 'Algemeen', icon: FileText, color: 'bg-slate-8000' };
     }
   }
 

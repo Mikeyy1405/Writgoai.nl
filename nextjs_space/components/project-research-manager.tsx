@@ -41,7 +41,7 @@ const STATUS_LABELS = {
 };
 
 const STATUS_COLORS = {
-  not_started: 'bg-gray-500',
+  not_started: 'bg-slate-8000',
   in_progress: 'bg-blue-500',
   completed: 'bg-green-500',
   needs_review: 'bg-orange-500',

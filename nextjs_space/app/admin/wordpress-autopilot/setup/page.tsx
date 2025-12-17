@@ -67,7 +67,7 @@ export default function WordPressAutopilotSetup() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-white mb-2">
             ⚡ WordPress Content Autopilot
           </h1>
           <p className="text-lg text-gray-600">
@@ -100,7 +100,7 @@ export default function WordPressAutopilotSetup() {
                         ? 'bg-blue-600 text-white animate-pulse'
                         : step > s.id
                         ? 'bg-green-500 text-white'
-                        : 'bg-gray-200'
+                        : 'bg-slate-700'
                     }`}
                   >
                     {s.icon}
@@ -117,8 +117,8 @@ export default function WordPressAutopilotSetup() {
 
         {/* Form Card */}
         {step === 'form' && (
-          <div className="bg-white rounded-lg shadow-xl p-8">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">
+          <div className="bg-slate-900 rounded-lg shadow-xl p-8">
+            <h2 className="text-2xl font-bold mb-6 text-white">
               WordPress Site Toevoegen
             </h2>
 
@@ -131,13 +131,13 @@ export default function WordPressAutopilotSetup() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Site Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Site Naam *
                 </label>
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Bijv: Mijn Lifestyle Blog"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -146,13 +146,13 @@ export default function WordPressAutopilotSetup() {
 
               {/* Site URL */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   WordPress URL *
                 </label>
                 <input
                   type="url"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="https://jouwsite.nl"
                   value={formData.siteUrl}
                   onChange={(e) => setFormData({ ...formData, siteUrl: e.target.value })}
@@ -161,13 +161,13 @@ export default function WordPressAutopilotSetup() {
 
               {/* Username */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   WordPress Username *
                 </label>
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="admin"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -176,13 +176,13 @@ export default function WordPressAutopilotSetup() {
 
               {/* Application Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Application Password *
                 </label>
                 <input
                   type="password"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="xxxx xxxx xxxx xxxx"
                   value={formData.applicationPassword}
                   onChange={(e) =>
@@ -203,11 +203,11 @@ export default function WordPressAutopilotSetup() {
 
               {/* Posting Frequency */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Posting Frequentie
                 </label>
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.postingFrequency}
                   onChange={(e) =>
                     setFormData({
@@ -225,11 +225,11 @@ export default function WordPressAutopilotSetup() {
 
               {/* Language */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Taal
                 </label>
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.language}
                   onChange={(e) =>
                     setFormData({ ...formData, language: e.target.value as any })
@@ -257,9 +257,9 @@ export default function WordPressAutopilotSetup() {
 
         {/* Processing Steps */}
         {(step === 'verifying' || step === 'generating') && (
-          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
+          <div className="bg-slate-900 rounded-lg shadow-xl p-8 text-center">
             <div className="animate-spin w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-white mb-2">
               {step === 'verifying' ? 'Verbinding Testen...' : 'Strategie Genereren...'}
             </h2>
             <p className="text-gray-600">
@@ -272,37 +272,37 @@ export default function WordPressAutopilotSetup() {
 
         {/* Complete */}
         {step === 'complete' && strategy && (
-          <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="bg-slate-900 rounded-lg shadow-xl p-8">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Autopilot Actief!</h2>
+              <h2 className="text-3xl font-bold text-white mb-2">Autopilot Actief!</h2>
               <p className="text-gray-600">Je WordPress Content Autopilot is succesvol geconfigureerd</p>
             </div>
 
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-bold mb-4 text-gray-900">📊 Content Strategie</h3>
+              <h3 className="text-lg font-bold mb-4 text-white">📊 Content Strategie</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm text-gray-600">Niche</div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-white">
                     {strategy.strategy?.niche || 'Gedetecteerd'}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600">Main Topics</div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-white">
                     {strategy.strategy?.mainTopics?.length || 0} topics
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600">Content Items</div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-white">
                     {strategy.calendar?.totalItems || 0} gepland
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600">Eerste Post</div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-white">
                     {strategy.calendar?.nextPostDate
                       ? new Date(strategy.calendar.nextPostDate).toLocaleDateString('nl-NL')
                       : 'Binnenkort'}

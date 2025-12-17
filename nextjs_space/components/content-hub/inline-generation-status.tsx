@@ -45,8 +45,8 @@ export default function InlineGenerationStatus({
       <div className="flex items-center gap-3">
         <div className="flex-1 space-y-1">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-100">Overall Progress</span>
-            <span className="text-gray-700 dark:text-gray-300 font-semibold">{progress}%</span>
+            <span className="font-medium text-slate-300 dark:text-gray-100">Overall Progress</span>
+            <span className="text-slate-300 dark:text-gray-300 font-semibold">{progress}%</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -66,9 +66,9 @@ export default function InlineGenerationStatus({
       {currentPhase && (
         <div className="flex items-center gap-2 text-sm">
           {getPhaseIcon(currentPhase.status)}
-          <span className="font-medium text-gray-700 dark:text-gray-100">{currentPhase.name}</span>
+          <span className="font-medium text-slate-300 dark:text-gray-100">{currentPhase.name}</span>
           {currentPhase.message && (
-            <span className="text-gray-700 dark:text-gray-300">- {currentPhase.message}</span>
+            <span className="text-slate-300 dark:text-gray-300">- {currentPhase.message}</span>
           )}
         </div>
       )}
@@ -82,7 +82,7 @@ export default function InlineGenerationStatus({
               phase.status === 'in-progress' ? 'bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700' :
               phase.status === 'completed' ? 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700' :
               phase.status === 'failed' ? 'bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700' :
-              'bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700'
+              'bg-slate-800/50 dark:bg-gray-800 border border-slate-600 dark:border-gray-700'
             }`}
           >
             {getPhaseIcon(phase.status)}

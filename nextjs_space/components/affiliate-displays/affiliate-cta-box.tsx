@@ -39,9 +39,9 @@ export default function AffiliateCTABox({
   variant = 'default'
 }: AffiliateCTABoxProps) {
   const variants = {
-    default: 'bg-white border-2 border-gray-200',
+    default: 'bg-slate-900 border-2 border-slate-700',
     gradient: 'bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200',
-    bordered: 'bg-white border-3 border-orange-400 shadow-lg'
+    bordered: 'bg-slate-900 border-3 border-orange-400 shadow-lg'
   };
 
   return (
@@ -68,7 +68,7 @@ export default function AffiliateCTABox({
           {/* Image */}
           {imageUrl && (
             <div className="flex-shrink-0">
-              <div className="relative w-full md:w-48 h-48 bg-white rounded-xl overflow-hidden shadow-md">
+              <div className="relative w-full md:w-48 h-48 bg-slate-900 rounded-xl overflow-hidden shadow-md">
                 <Image
                   src={imageUrl}
                   alt={title}
@@ -83,7 +83,7 @@ export default function AffiliateCTABox({
           {/* Content */}
           <div className="flex-1 flex flex-col justify-between">
             <div>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-700 mb-2">
+              <h3 className="text-2xl md:text-3xl font-bold text-slate-300 mb-2">
                 {title}
               </h3>
 
@@ -102,7 +102,7 @@ export default function AffiliateCTABox({
                 </div>
               )}
 
-              <p className="text-gray-700 mb-4 text-lg">
+              <p className="text-slate-300 mb-4 text-lg">
                 {description}
               </p>
 
@@ -111,7 +111,7 @@ export default function AffiliateCTABox({
                   {features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700">{feature}</span>
+                      <span className="text-slate-300">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -119,7 +119,7 @@ export default function AffiliateCTABox({
             </div>
 
             {/* Price & CTA */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-4 border-t border-slate-700">
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-bold text-orange-600">
                   {price}

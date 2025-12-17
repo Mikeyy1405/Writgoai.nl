@@ -42,10 +42,10 @@ export default function BlogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
+    <div className="min-h-screen bg-slate-800 dark:bg-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Blog Posts</h1>
+          <h1 className="text-3xl font-bold text-white dark:text-white">Blog Posts</h1>
           <button
             onClick={() => setShowModal(true)}
             disabled={!projectId}
@@ -56,8 +56,8 @@ export default function BlogPage() {
           </button>
         </div>
 
-        <div className="mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+        <div className="mb-6 bg-slate-900 dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+          <label className="block text-sm font-medium mb-2 text-slate-300 dark:text-gray-300">
             Selecteer Project
           </label>
           <ProjectSelector value={projectId} onChange={setProjectId} />
@@ -68,13 +68,13 @@ export default function BlogPage() {
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
           </div>
         ) : !projectId ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
+          <div className="text-center py-12 bg-slate-900 dark:bg-gray-800 rounded-lg">
             <p className="text-gray-600 dark:text-gray-400">
               Selecteer een project om blogs te bekijken
             </p>
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
+          <div className="text-center py-12 bg-slate-900 dark:bg-gray-800 rounded-lg">
             <p className="text-gray-600 dark:text-gray-400 mb-4">Nog geen blog posts</p>
             <button
               onClick={() => setShowModal(true)}
@@ -88,9 +88,9 @@ export default function BlogPage() {
             {posts.map((post) => (
               <div
                 key={post.id}
-                className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                className="bg-slate-900 dark:bg-gray-800 p-6 rounded-lg border border-slate-700 dark:border-gray-700 hover:shadow-md transition-shadow"
               >
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold mb-2 text-white dark:text-white">
                   {post.title}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
@@ -101,7 +101,7 @@ export default function BlogPage() {
                     className={`px-2 py-1 text-xs rounded ${
                       post.status === 'published'
                         ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                        : 'bg-slate-800/50 text-slate-300 dark:bg-gray-700 dark:text-gray-300'
                     }`}
                   >
                     {post.status}
@@ -173,13 +173,13 @@ function CreateBlogModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
+      <div className="bg-slate-900 dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-4 text-white dark:text-white">
           Nieuwe Blog Post
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium mb-2 text-slate-300 dark:text-gray-300">
               Titel *
             </label>
             <input
@@ -187,12 +187,12 @@ function CreateBlogModal({
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-slate-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-900 dark:bg-gray-700 text-white dark:text-white"
               placeholder="Voer een titel in"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium mb-2 text-slate-300 dark:text-gray-300">
               Content *
             </label>
             <textarea
@@ -200,7 +200,7 @@ function CreateBlogModal({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={10}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-slate-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-900 dark:bg-gray-700 text-white dark:text-white"
               placeholder="Schrijf je blog content..."
             />
           </div>
@@ -213,7 +213,7 @@ function CreateBlogModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-900 dark:text-white"
+              className="flex-1 px-4 py-2 border border-slate-600 dark:border-gray-600 rounded-lg hover:bg-slate-800 dark:hover:bg-gray-700 transition-colors text-white dark:text-white"
             >
               Annuleren
             </button>

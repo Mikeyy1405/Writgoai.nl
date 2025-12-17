@@ -248,15 +248,15 @@ export default function ProjectViewPage() {
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; color: string }> = {
       published: { label: 'Gepubliceerd', color: 'bg-green-500' },
-      draft: { label: 'Concept', color: 'bg-gray-500' },
+      draft: { label: 'Concept', color: 'bg-slate-8000' },
       scheduled: { label: 'Ingepland', color: 'bg-blue-500' },
       completed: { label: 'Voltooid', color: 'bg-green-500' },
       in_progress: { label: 'Bezig', color: 'bg-yellow-500' },
       planned: { label: 'Gepland', color: 'bg-purple-500' },
-      todo: { label: 'Te doen', color: 'bg-gray-500' },
+      todo: { label: 'Te doen', color: 'bg-slate-8000' },
     };
 
-    const config = statusConfig[status] || { label: status, color: 'bg-gray-500' };
+    const config = statusConfig[status] || { label: status, color: 'bg-slate-8000' };
     return <Badge className={config.color}>{config.label}</Badge>;
   };
 
@@ -269,7 +269,7 @@ export default function ProjectViewPage() {
       low: { color: 'bg-blue-500' },
     };
 
-    const config = priorityConfig[priority] || { color: 'bg-gray-500' };
+    const config = priorityConfig[priority] || { color: 'bg-slate-8000' };
     return <Badge className={`${config.color} ml-2`}>{priority}</Badge>;
   };
 

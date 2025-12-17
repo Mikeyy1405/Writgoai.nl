@@ -110,7 +110,7 @@ export default function AssignmentsPage() {
       case 'review': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
       case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      default: return 'bg-slate-8000/20 text-gray-400 border-gray-500/30';
     }
   };
 
@@ -149,10 +149,10 @@ export default function AssignmentsPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-48 bg-white/10 rounded-xl"></div>
+              <div key={i} className="h-48 bg-slate-900/10 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -189,13 +189,13 @@ export default function AssignmentsPage() {
             placeholder="Zoek opdrachten..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            className="w-full pl-12 pr-4 py-3 bg-slate-900/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500"
+          className="px-4 py-3 bg-slate-900/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500"
         >
           {statusOptions.map(option => (
             <option key={option.value} value={option.value} className="bg-[#1a1a1a]">
@@ -288,7 +288,7 @@ export default function AssignmentsPage() {
         /* List View */
         <div className="space-y-4">
           {filteredAssignments.length === 0 ? (
-            <div className="text-center py-12 bg-white/5 rounded-xl border border-white/10">
+            <div className="text-center py-12 bg-slate-900/5 rounded-xl border border-white/10">
               <ClipboardList className="w-12 h-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400">Geen opdrachten gevonden</p>
             </div>
@@ -332,7 +332,7 @@ function AssignmentCard({
   return (
     <Link
       href={`/dashboard/agency/assignments/${assignment.id}`}
-      className={`block bg-white/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all ${
+      className={`block bg-slate-900/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all ${
         isOverdue ? 'border-red-500/30' : ''
       }`}
     >

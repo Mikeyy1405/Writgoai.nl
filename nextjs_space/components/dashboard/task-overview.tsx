@@ -25,7 +25,7 @@ interface TaskOverviewProps {
 }
 
 const statusLabels: { [key: string]: { label: string; color: string } } = {
-  'NOT_STARTED': { label: 'Te starten', color: 'bg-gray-500' },
+  'NOT_STARTED': { label: 'Te starten', color: 'bg-slate-8000' },
   'ASSIGNED': { label: 'Toegewezen', color: 'bg-zinc-9000' },
   'IN_PROGRESS': { label: 'Bezig', color: 'bg-zinc-9000' },
   'REVIEW': { label: 'Review', color: 'bg-writgo-orange' },
@@ -56,9 +56,9 @@ export function TaskOverview({ tasks }: TaskOverviewProps) {
             const status = statusLabels[task.status] || statusLabels['NOT_STARTED'];
             
             return (
-              <div key={task.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+              <div key={task.id} className="bg-slate-800 rounded-lg p-4 hover:bg-slate-800/50 transition-colors">
                 <div className="flex items-start justify-between mb-3">
-                  <h4 className="font-medium text-gray-700 flex-1 pr-4">
+                  <h4 className="font-medium text-slate-300 flex-1 pr-4">
                     {task.title}
                   </h4>
                   <Badge 
@@ -85,7 +85,7 @@ export function TaskOverview({ tasks }: TaskOverviewProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-700">
                   <div className="text-xs text-gray-500">
                     Geschat: {task.estimatedHours}h • Prioriteit: {task.priority.toFixed(1)}
                   </div>

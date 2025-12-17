@@ -540,14 +540,14 @@ export function SOPCanvas() {
       <div className="flex-1 overflow-auto">
         <div className="max-w-5xl mx-auto p-6">
           {showPreview ? (
-            <Card className="p-6 bg-white dark:bg-zinc-900">
+            <Card className="p-6 bg-slate-900 dark:bg-zinc-900">
               <div 
                 className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: editor.getHTML() }}
               />
             </Card>
           ) : (
-            <Card className="bg-white dark:bg-zinc-900 overflow-hidden">
+            <Card className="bg-slate-900 dark:bg-zinc-900 overflow-hidden">
               <EditorContent editor={editor} />
             </Card>
           )}

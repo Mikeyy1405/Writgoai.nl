@@ -80,7 +80,7 @@ export default function CookieSettingsModal({ isOpen, onClose, onSave }: CookieS
                 </div>
                 <div className="ml-4">
                   <div className="w-12 h-6 bg-blue-500 rounded-full flex items-center justify-end px-1 cursor-not-allowed">
-                    <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
+                    <div className="w-4 h-4 bg-slate-900 rounded-full shadow-lg" />
                   </div>
                 </div>
               </div>
@@ -112,7 +112,7 @@ export default function CookieSettingsModal({ isOpen, onClose, onSave }: CookieS
                     } px-1`}
                     aria-label={`${preferences.analytics ? 'Uitschakelen' : 'Inschakelen'} analytische cookies`}
                   >
-                    <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
+                    <div className="w-4 h-4 bg-slate-900 rounded-full shadow-lg" />
                   </button>
                 </div>
               </div>
@@ -144,7 +144,7 @@ export default function CookieSettingsModal({ isOpen, onClose, onSave }: CookieS
                     } px-1`}
                     aria-label={`${preferences.marketing ? 'Uitschakelen' : 'Inschakelen'} marketing cookies`}
                   >
-                    <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
+                    <div className="w-4 h-4 bg-slate-900 rounded-full shadow-lg" />
                   </button>
                 </div>
               </div>
@@ -176,7 +176,7 @@ export default function CookieSettingsModal({ isOpen, onClose, onSave }: CookieS
                     } px-1`}
                     aria-label={`${preferences.functional ? 'Uitschakelen' : 'Inschakelen'} functionele cookies`}
                   >
-                    <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
+                    <div className="w-4 h-4 bg-slate-900 rounded-full shadow-lg" />
                   </button>
                 </div>
               </div>

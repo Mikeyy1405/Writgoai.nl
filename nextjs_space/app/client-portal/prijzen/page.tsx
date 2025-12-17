@@ -106,7 +106,7 @@ export default function PricingPage() {
           <div className="flex items-center gap-4">
             <Link
               href="/client-portal"
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-900/10 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </Link>
@@ -120,7 +120,7 @@ export default function PricingPage() {
           </div>
 
           {/* Credits Display */}
-          <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+          <div className="bg-slate-900/5 border border-white/10 rounded-lg px-4 py-2">
             <div className="flex items-center gap-2">
               {isUnlimited ? (
                 <>
@@ -162,9 +162,9 @@ export default function PricingPage() {
             return (
               <div
                 key={service.key}
-                className={`bg-white/5 border rounded-xl p-6 transition-all ${
+                className={`bg-slate-900/5 border rounded-xl p-6 transition-all ${
                   canAfford
-                    ? 'border-white/10 hover:border-green-500/50 hover:bg-white/10'
+                    ? 'border-white/10 hover:border-green-500/50 hover:bg-slate-900/10'
                     : 'border-red-500/20 opacity-60'
                 }`}
               >

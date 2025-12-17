@@ -108,8 +108,8 @@ export default function ContactDetailPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-4xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
-          <div className="h-96 bg-white/10 rounded-xl"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-900/10 rounded-xl"></div>
         </div>
       </div>
     );
@@ -132,7 +132,7 @@ export default function ContactDetailPage() {
         <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/financien/contacten"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 bg-slate-900/10 hover:bg-slate-900/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </Link>
@@ -164,7 +164,7 @@ export default function ContactDetailPage() {
               <button
                 onClick={handleCancel}
                 disabled={saving}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors"
+                className="px-4 py-2 bg-slate-900/10 hover:bg-slate-900/20 text-white rounded-lg flex items-center gap-2 transition-colors"
               >
                 <X className="w-4 h-4" />
                 Annuleren
@@ -174,7 +174,7 @@ export default function ContactDetailPage() {
         </div>
 
         {/* Contact Details */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl p-6 space-y-6">
           {/* Basic Info */}
           <div>
             <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
@@ -189,7 +189,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.company_name || ''}
                     onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.company_name || '-'}</p>
@@ -206,7 +206,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.firstname || ''}
                     onChange={(e) => setFormData({ ...formData, firstname: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.firstname || '-'}</p>
@@ -219,7 +219,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.lastname || ''}
                     onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.lastname || '-'}</p>
@@ -242,7 +242,7 @@ export default function ContactDetailPage() {
                     type="email"
                     value={formData.email || ''}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.email || '-'}</p>
@@ -255,7 +255,7 @@ export default function ContactDetailPage() {
                     type="tel"
                     value={formData.phone || ''}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.phone || '-'}</p>
@@ -278,7 +278,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.address1 || ''}
                     onChange={(e) => setFormData({ ...formData, address1: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.address1 || '-'}</p>
@@ -291,7 +291,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.address2 || ''}
                     onChange={(e) => setFormData({ ...formData, address2: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.address2 || '-'}</p>
@@ -304,7 +304,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.zipcode || ''}
                     onChange={(e) => setFormData({ ...formData, zipcode: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.zipcode || '-'}</p>
@@ -317,7 +317,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.city || ''}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.city || '-'}</p>
@@ -330,7 +330,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.country || ''}
                     onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.country || '-'}</p>
@@ -353,7 +353,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={formData.tax_number || ''}
                     onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.tax_number || '-'}</p>
@@ -368,7 +368,7 @@ export default function ContactDetailPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, chamber_of_commerce: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
+                    className="w-full px-3 py-2 bg-slate-900/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#ff6b35]"
                   />
                 ) : (
                   <p className="text-white">{contact.chamber_of_commerce || '-'}</p>

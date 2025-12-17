@@ -57,7 +57,7 @@ export function MailboxConnections() {
       case 'outlook':
         return <Badge className="bg-blue-500">Outlook</Badge>;
       case 'custom':
-        return <Badge className="bg-gray-500">Custom IMAP</Badge>;
+        return <Badge className="bg-slate-8000">Custom IMAP</Badge>;
       default:
         return <Badge>{provider}</Badge>;
     }

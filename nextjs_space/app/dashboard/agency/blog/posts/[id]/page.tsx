@@ -159,9 +159,9 @@ export default function EditBlogPostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
+    <div className="min-h-screen bg-slate-800 dark:bg-zinc-900">
       {/* Header */}
-      <div className="bg-white dark:bg-zinc-900 border-b sticky top-0 z-10">
+      <div className="bg-slate-900 dark:bg-zinc-900 border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

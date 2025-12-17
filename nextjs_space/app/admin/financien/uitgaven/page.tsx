@@ -47,8 +47,8 @@ export default function UitgavenPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-8">
         <div className="animate-pulse space-y-6 max-w-7xl mx-auto">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
-          <div className="h-96 bg-white/10 rounded-xl"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-900/10 rounded-xl"></div>
         </div>
       </div>
     );
@@ -60,7 +60,7 @@ export default function UitgavenPage() {
         <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/financien"
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 bg-slate-900/10 hover:bg-slate-900/20 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </Link>
@@ -75,10 +75,10 @@ export default function UitgavenPage() {
           </div>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+        <div className="bg-slate-900/5 border border-white/10 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/5">
+              <thead className="bg-slate-900/5">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
                     Leverancier
@@ -99,7 +99,7 @@ export default function UitgavenPage() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {expenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={expense.id} className="hover:bg-slate-900/5 transition-colors">
                     <td className="px-6 py-4">
                       <p className="text-white font-medium">{expense.supplierName}</p>
                       <p className="text-gray-400 text-sm">{expense.invoiceNumber}</p>
@@ -122,7 +122,7 @@ export default function UitgavenPage() {
                             ? 'bg-green-500/20 text-green-400'
                             : expense.status === 'pending'
                             ? 'bg-yellow-500/20 text-yellow-400'
-                            : 'bg-gray-500/20 text-gray-400'
+                            : 'bg-slate-8000/20 text-gray-400'
                         }`}
                       >
                         {expense.status === 'paid' ? 'Betaald' : expense.status === 'pending' ? 'In behandeling' : expense.status}

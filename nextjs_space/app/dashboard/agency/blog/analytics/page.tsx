@@ -122,7 +122,7 @@ export default function BlogAnalyticsPage() {
             .map((post, index) => (
               <div
                 key={post.id}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg hover:shadow-md transition-shadow"
+                className="flex items-center justify-between p-4 bg-slate-800 dark:bg-zinc-800 rounded-lg hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center gap-4 flex-1">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FF9933] text-white font-bold">

@@ -20,7 +20,7 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
   const { data: session } = useSession();
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 backdrop-blur-sm bg-white/95">
+    <header className="sticky top-0 z-40 bg-slate-900 border-b border-slate-700 backdrop-blur-sm bg-slate-900/95">
       <div className="flex items-center justify-between h-16 px-4 lg:px-8">
         {/* Mobile Menu Button */}
         <Button
@@ -41,7 +41,7 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-600 hover:text-gray-700 hover:bg-gray-100"
+            className="text-gray-600 hover:text-slate-300 hover:bg-slate-800/50"
           >
             <HelpCircle className="w-5 h-5" />
           </Button>
@@ -50,7 +50,7 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-600 hover:text-gray-700 hover:bg-gray-100 relative"
+            className="text-gray-600 hover:text-slate-300 hover:bg-slate-800/50 relative"
           >
             <Bell className="w-5 h-5" />
             {/* Notification dot - hide for now */}
@@ -62,7 +62,7 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 text-gray-700 hover:text-gray-700 hover:bg-gray-100"
+                className="flex items-center gap-2 text-slate-300 hover:text-slate-300 hover:bg-slate-800/50"
               >
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-[#FF9933] to-[#FFAD33] text-white text-sm font-medium">
                   {session?.user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -72,29 +72,29 @@ export function SimplifiedHeader({ onMobileMenuToggle }: SimplifiedHeaderProps) 
                 </span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-white border-gray-200">
-              <DropdownMenuLabel className="text-gray-700">
+            <DropdownMenuContent align="end" className="w-56 bg-slate-900 border-slate-700">
+              <DropdownMenuLabel className="text-slate-300">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{session?.user?.name || 'Gebruiker'}</span>
                   <span className="text-xs text-gray-500">{session?.user?.email}</span>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-gray-200" />
+              <DropdownMenuSeparator className="bg-slate-700" />
               <DropdownMenuItem 
-                className="text-gray-700 focus:bg-gray-100 focus:text-gray-700 cursor-pointer"
+                className="text-slate-300 focus:bg-slate-800/50 focus:text-slate-300 cursor-pointer"
                 onClick={() => window.location.href = '/admin/account'}
               >
                 <User className="w-4 h-4 mr-2" />
                 Account instellingen
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="text-gray-700 focus:bg-gray-100 focus:text-gray-700 cursor-pointer"
+                className="text-slate-300 focus:bg-slate-800/50 focus:text-slate-300 cursor-pointer"
                 onClick={() => window.location.href = '/admin/account?tab=support'}
               >
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Help & Support
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-200" />
+              <DropdownMenuSeparator className="bg-slate-700" />
               <DropdownMenuItem
                 className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer"
                 onClick={() => signOut({ callbackUrl: '/client-login' })}

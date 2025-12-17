@@ -311,7 +311,7 @@ export default function BlogPostPage() {
             <Link href="/inloggen">
               <Button
                 size="lg"
-                className="bg-white text-orange-600 hover:bg-orange-50 shadow-lg"
+                className="bg-slate-900 text-orange-600 hover:bg-orange-50 shadow-lg"
               >
                 Start Gratis Trial
               </Button>

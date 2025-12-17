@@ -160,7 +160,7 @@ export default function AffiliatePayoutsAdmin() {
       rejected: { label: 'Afgewezen', color: 'bg-red-500' }
     };
 
-    const config = statusConfig[status] || { label: status, color: 'bg-gray-500' };
+    const config = statusConfig[status] || { label: status, color: 'bg-slate-8000' };
     return (
       <Badge className={`${config.color} text-white`}>
         {config.label}
@@ -496,7 +496,7 @@ export default function AffiliatePayoutsAdmin() {
                                     className={
                                       ref.referredClient.subscriptionStatus === 'active'
                                         ? 'bg-green-500'
-                                        : 'bg-gray-500'
+                                        : 'bg-slate-8000'
                                     }
                                   >
                                     {ref.referredClient.subscriptionStatus}

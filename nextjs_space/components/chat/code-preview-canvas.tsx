@@ -335,7 +335,7 @@ ${js}
 
           {/* Preview Side */}
           {(viewMode === 'preview' || viewMode === 'split') && (
-            <div className={`${viewMode === 'split' ? 'flex-1' : 'w-full'} flex flex-col bg-white`}>
+            <div className={`${viewMode === 'split' ? 'flex-1' : 'w-full'} flex flex-col bg-slate-900`}>
               <div className="px-4 py-3 bg-muted/20 border-b border-border flex items-center justify-between">
                 <Label className="text-sm font-medium text-foreground">Live Preview</Label>
                 <PlayIcon className="w-4 h-4 text-green-500" />

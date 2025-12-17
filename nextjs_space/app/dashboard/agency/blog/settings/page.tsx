@@ -95,7 +95,7 @@ export default function BlogSettingsPage() {
             {categories.map((category) => (
               <div
                 key={category}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg"
+                className="flex items-center justify-between p-3 bg-slate-800 dark:bg-zinc-800 rounded-lg"
               >
                 <span>{category}</span>
                 <Button
@@ -188,7 +188,7 @@ export default function BlogSettingsPage() {
         <h2 className="text-xl font-semibold mb-4">Integraties</h2>
         
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-slate-800 dark:bg-zinc-800 rounded-lg">
             <div>
               <h4 className="font-medium">Google Search Console</h4>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -198,7 +198,7 @@ export default function BlogSettingsPage() {
             <Button variant="outline">Verbinden</Button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-slate-800 dark:bg-zinc-800 rounded-lg">
             <div>
               <h4 className="font-medium">Google Analytics</h4>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -208,7 +208,7 @@ export default function BlogSettingsPage() {
             <Button variant="outline">Verbinden</Button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-slate-800 dark:bg-zinc-800 rounded-lg">
             <div>
               <h4 className="font-medium">Twitter Auto-Post</h4>
               <p className="text-sm text-gray-500 dark:text-gray-400">

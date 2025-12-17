@@ -58,7 +58,7 @@ export function ProfessionalContentCard({ content, onEdit, onPreview, onPublish,
             content.status === 'published' ? 'bg-green-500' :
             content.status === 'draft' ? 'bg-blue-500' :
             content.status === 'generating' ? 'bg-yellow-500' :
-            'bg-gray-500'
+            'bg-slate-8000'
           }>
             {content.status === 'draft' ? 'Klaar' :
              content.status === 'generating' ? 'Bezig...' :
@@ -168,7 +168,7 @@ export function ProfessionalContentCard({ content, onEdit, onPreview, onPublish,
               )}
             </div>
             
-            <p className="text-sm text-gray-700 line-clamp-3 mb-3">
+            <p className="text-sm text-slate-300 line-clamp-3 mb-3">
               {content.socialCaption}
             </p>
             

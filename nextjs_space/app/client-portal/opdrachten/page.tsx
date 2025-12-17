@@ -63,7 +63,7 @@ export default function ClientAssignmentsPage() {
       case 'review': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
       case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      default: return 'bg-slate-8000/20 text-gray-400 border-gray-500/30';
     }
   };
 
@@ -101,9 +101,9 @@ export default function ClientAssignmentsPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] p-3 sm:p-4 md:p-6 lg:p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-12 bg-white/10 rounded w-1/3"></div>
+          <div className="h-12 bg-slate-900/10 rounded w-1/3"></div>
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-white/10 rounded-xl"></div>
+            <div key={i} className="h-32 bg-slate-900/10 rounded-xl"></div>
           ))}
         </div>
       </div>
@@ -116,7 +116,7 @@ export default function ClientAssignmentsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Link
           href="/client-portal"
-          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+          className="p-2 hover:bg-slate-900/10 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
         </Link>
@@ -138,7 +138,7 @@ export default function ClientAssignmentsPage() {
             className={`px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm ${
               filter === f
                 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                : 'bg-slate-900/5 text-gray-400 hover:bg-slate-900/10'
             }`}
           >
             {f === 'all' ? 'Alle' : f === 'active' ? 'Actief' : 'Voltooid'}
@@ -149,7 +149,7 @@ export default function ClientAssignmentsPage() {
       {/* Assignments List */}
       <div className="space-y-4">
         {filteredAssignments.length === 0 ? (
-          <div className="text-center py-12 bg-white/5 rounded-xl border border-white/10">
+          <div className="text-center py-12 bg-slate-900/5 rounded-xl border border-white/10">
             <ClipboardList className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">Geen opdrachten gevonden</p>
           </div>
@@ -157,7 +157,7 @@ export default function ClientAssignmentsPage() {
           filteredAssignments.map((assignment) => (
             <div
               key={assignment.id}
-              className="bg-white/5 border border-white/10 rounded-xl p-4 sm:p-6"
+              className="bg-slate-900/5 border border-white/10 rounded-xl p-4 sm:p-6"
             >
               <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 mb-4">
                 <div className="flex items-start gap-3 sm:gap-4 flex-1">

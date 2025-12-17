@@ -254,7 +254,7 @@ function DashboardContent() {
               href="/admin/settings"
               className="group relative bg-gradient-to-br from-gray-500/20 to-gray-600/10 border border-gray-500/30 hover:border-gray-400/50 rounded-xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[80px] flex items-center gap-4"
             >
-              <div className="p-3 bg-gray-500/20 rounded-xl group-hover:bg-gray-500/30 transition-colors">
+              <div className="p-3 bg-slate-8000/20 rounded-xl group-hover:bg-slate-8000/30 transition-colors">
                 <Settings className="w-6 h-6 text-gray-400" />
               </div>
               <div className="flex-1 min-w-0">
