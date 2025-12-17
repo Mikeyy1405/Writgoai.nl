@@ -101,7 +101,7 @@ export default function SchrijvenPage() {
           language,
           wordCount,
           imageCount: includeImages ? imageCount : 0,
-          projectId: selectedProject || undefined,
+          projectId: (selectedProject && selectedProject !== 'none') ? selectedProject : undefined,
           includeImages,
           includeFAQ,
           includeYouTube,
@@ -242,7 +242,7 @@ export default function SchrijvenPage() {
                 <SelectValue placeholder="Selecteer een project" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Geen project</SelectItem>
+                <SelectItem value="none">Geen project</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
