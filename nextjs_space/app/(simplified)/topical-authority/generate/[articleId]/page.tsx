@@ -63,7 +63,7 @@ export default function AutoGeneratePage({ params }: { params: { articleId: stri
       updateStep('generate', 'loading');
       console.log('[AutoGenerate] Generating content...');
       
-      const contentResponse = await fetch('/api/client/content/generate', {
+      const contentResponse = await fetch('/api/client/content/generate-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -74,6 +74,8 @@ export default function AutoGeneratePage({ params }: { params: { articleId: stri
           contentType: 'blog',
         })
       });
+      
+      console.log('[AutoGenerate] Content response status:', contentResponse.status);
       
       if (!contentResponse.ok) {
         const errorText = await contentResponse.text();
@@ -87,6 +89,9 @@ export default function AutoGeneratePage({ params }: { params: { articleId: stri
       if (!contentData.success) {
         throw new Error(contentData.error || 'Content generatie mislukt');
       }
+      
+      // contentData now has: { success, id, title, content, wordCount }
+      console.log('[AutoGenerate] Saved content ID:', contentData.id);
       
       updateStep('generate', 'success', 'AI content gegenereerd');
       
