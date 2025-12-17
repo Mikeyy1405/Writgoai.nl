@@ -45,6 +45,13 @@ const TABLE_NAME_MAP: Record<string, string> = {
   contentStrategy: 'ContentStrategy',
   contentCalendarItem: 'ContentCalendarItem',
   autopilotSettings: 'AutopilotSettings',
+  // Topical Authority tables
+  topicalAuthorityMap: 'TopicalAuthorityMap',
+  pillarTopic: 'PillarTopic',
+  subtopic: 'Subtopic',
+  plannedArticle: 'PlannedArticle',
+  wordPressSitemapCache: 'WordPressSitemapCache',
+  dataForSEOCache: 'DataForSEOCache',
 };
 
 // Create a Proxy that intercepts property access and returns table-specific handlers

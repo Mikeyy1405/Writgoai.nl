@@ -143,10 +143,33 @@ export async function parseWordPressSitemap(
         .map((u: any) => u.loc)
         .filter((url: string) => {
           // Filter out non-article URLs
-          return !url.includes('/tag/') && 
-                 !url.includes('/category/') && 
-                 !url.includes('/author/') &&
-                 !url.includes('/page/');
+          const excludePatterns = [
+            '/tag/', '/category/', '/author/', '/page/',
+            '/contact', '/over-ons', '/about', '/about-us',
+            '/privacy', '/disclaimer', '/algemene-voorwaarden',
+            '/cookie', '/terms', '/policy',
+            '/home', '/homepage', '/index',
+          ];
+          
+          // Check if URL contains any exclude patterns
+          if (excludePatterns.some(pattern => url.toLowerCase().includes(pattern))) {
+            return false;
+          }
+          
+          // Filter URLs that end with just the domain (homepage)
+          const urlObj = new URL(url);
+          if (urlObj.pathname === '/' || urlObj.pathname === '') {
+            return false;
+          }
+          
+          // Only include URLs with actual content paths
+          // Blog posts usually have patterns like:
+          // - /2024/12/post-name/
+          // - /post-name/
+          // - /blog/post-name/
+          const hasContentPath = urlObj.pathname.split('/').filter(Boolean).length >= 1;
+          
+          return hasContentPath;
         });
     }
 
@@ -224,6 +247,24 @@ async function parseSubSitemap(sitemapUrl: string): Promise<string[]> {
 }
 
 /**
+ * Clean title by removing site name suffixes
+ */
+function cleanTitle(title: string): string {
+  // Common separators: -, |, –, —, :
+  const separators = [' - ', ' | ', ' – ', ' — ', ' : '];
+  
+  for (const sep of separators) {
+    if (title.includes(sep)) {
+      // Split and take the first part (actual title)
+      const parts = title.split(sep);
+      return parts[0].trim();
+    }
+  }
+  
+  return title.trim();
+}
+
+/**
  * Fetch article data from a URL
  */
 async function fetchArticleData(url: string): Promise<WordPressSitemapEntry | null> {
@@ -241,16 +282,21 @@ async function fetchArticleData(url: string): Promise<WordPressSitemapEntry | nu
 
     const html = await response.text();
 
-    // Extract title from <title> tag or og:title
+    // Extract title - prefer og:title (usually cleaner) over <title> tag
     let title = '';
-    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
-    if (titleMatch) {
-      title = titleMatch[1].trim();
-    }
-
+    
+    // Try og:title first (best option - usually clean without site name)
     const ogTitleMatch = html.match(/property="og:title"\s+content="([^"]+)"/i);
     if (ogTitleMatch) {
       title = ogTitleMatch[1].trim();
+    }
+    
+    // Fallback to <title> tag but clean it
+    if (!title) {
+      const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+      if (titleMatch) {
+        title = cleanTitle(titleMatch[1].trim());
+      }
     }
 
     // Extract excerpt/description
