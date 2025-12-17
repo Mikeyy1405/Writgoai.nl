@@ -127,6 +127,7 @@ Schrijf het volledige artikel nu:
       data: {
         title: safeTitle,
         content: content,
+        type: 'blog-article',  // Fix: Add required type field
         projectId: safeProjectId || null,
         clientId: client.id,
         status: 'draft',
