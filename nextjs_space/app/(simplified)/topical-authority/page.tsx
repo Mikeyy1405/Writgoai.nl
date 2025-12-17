@@ -32,6 +32,8 @@ export default function TopicalAuthorityDashboard() {
   const [sortBy, setSortBy] = useState('volume');
   const [searchQuery, setSearchQuery] = useState('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadProjects();
@@ -217,6 +219,76 @@ export default function TopicalAuthorityDashboard() {
       alert(`❌ Fout: ${error.message}`);
     } finally {
       setGeneratingId(null);
+    }
+  };
+
+  const handleCancelMap = async (mapId: string) => {
+    if (!confirm('Weet je zeker dat je deze generatie wilt annuleren?')) {
+      return;
+    }
+    
+    try {
+      setCancellingId(mapId);
+      setError(null);
+      
+      const response = await fetch('/api/client/topical-authority/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mapId })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('✅ Generatie geannuleerd');
+        // Refresh maps
+        await loadMaps();
+      } else {
+        throw new Error(data.error || 'Annuleren mislukt');
+      }
+    } catch (error: any) {
+      console.error('[Cancel] Error:', error);
+      setError(error.message);
+      alert(`❌ Fout: ${error.message}`);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const handleDeleteMap = async (mapId: string) => {
+    if (!confirm('Weet je zeker dat je deze map wilt verwijderen? Dit kan niet ongedaan worden gemaakt.\n\nAlle artikelen in deze map worden ook verwijderd.')) {
+      return;
+    }
+    
+    try {
+      setDeletingId(mapId);
+      setError(null);
+      
+      const response = await fetch(`/api/client/topical-authority/delete?mapId=${mapId}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`✅ Map verwijderd (${data.data.deletedArticles} artikelen)`);
+        // Clear selected map if it was deleted
+        if (selectedMap?.id === mapId) {
+          setSelectedMap(null);
+          setArticles([]);
+          setStats(null);
+        }
+        // Refresh maps
+        await loadMaps();
+      } else {
+        throw new Error(data.error || 'Verwijderen mislukt');
+      }
+    } catch (error: any) {
+      console.error('[Delete] Error:', error);
+      setError(error.message);
+      alert(`❌ Fout: ${error.message}`);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -564,6 +636,10 @@ export default function TopicalAuthorityDashboard() {
                 key={map.id}
                 map={map}
                 onClick={() => setSelectedMap(map)}
+                onCancel={handleCancelMap}
+                onDelete={handleDeleteMap}
+                isCancelling={cancellingId === map.id}
+                isDeleting={deletingId === map.id}
               />
             ))}
           </div>
@@ -574,30 +650,78 @@ export default function TopicalAuthorityDashboard() {
 }
 
 // Map Card Component - BLACK/ORANGE/WHITE Theme
-function MapCard({ map, onClick }: { map: any; onClick: () => void }) {
+function MapCard({ 
+  map, 
+  onClick, 
+  onCancel, 
+  onDelete,
+  isCancelling,
+  isDeleting 
+}: { 
+  map: any; 
+  onClick: () => void;
+  onCancel: (mapId: string) => void;
+  onDelete: (mapId: string) => void;
+  isCancelling: boolean;
+  isDeleting: boolean;
+}) {
   const progress = Math.round((map.totalArticlesPublished / map.totalArticlesTarget) * 100) || 0;
   
   return (
     <div
-      onClick={onClick}
-      className="bg-slate-900 rounded-xl border-2 border-slate-800 p-6 hover:border-orange-500 cursor-pointer transition-all shadow-lg hover:shadow-xl"
+      className="bg-slate-900 rounded-xl border-2 border-slate-800 p-6 transition-all shadow-lg hover:shadow-xl"
     >
       <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="font-bold text-lg mb-1 text-white">{map.niche}</h3>
+        <div onClick={onClick} className="cursor-pointer flex-1">
+          <h3 className="font-bold text-lg mb-1 text-white hover:text-orange-500 transition-colors">{map.niche}</h3>
           <p className="text-sm text-slate-400">{map.description}</p>
         </div>
-        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-          map.status === 'active' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-          map.status === 'completed' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-          'bg-slate-800 text-slate-400 border border-slate-700'
-        }`}>
-          {map.status === 'active' ? 'Actief' : 
-           map.status === 'completed' ? 'Voltooid' : 'Concept'}
+        <div className="flex flex-col gap-2 items-end">
+          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+            map.status === 'active' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+            map.status === 'completed' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+            map.status === 'generating' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+            map.status === 'cancelled' ? 'bg-slate-500/20 text-slate-400 border border-slate-500/30' :
+            'bg-slate-800 text-slate-400 border border-slate-700'
+          }`}>
+            {map.status === 'active' ? 'Actief' : 
+             map.status === 'completed' ? 'Voltooid' : 
+             map.status === 'generating' ? '🔄 Bezig' :
+             map.status === 'cancelled' ? 'Geannuleerd' : 
+             'Concept'}
+          </div>
+          
+          {/* Action buttons */}
+          <div className="flex gap-1">
+            {map.status === 'generating' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancel(map.id);
+                }}
+                disabled={isCancelling}
+                className="px-2 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-yellow-500/30"
+                title="Annuleer generatie"
+              >
+                {isCancelling ? '...' : '⏸️'}
+              </button>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(map.id);
+              }}
+              disabled={isDeleting}
+              className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-red-500/30"
+              title="Verwijder map"
+            >
+              {isDeleting ? '...' : '🗑️'}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div onClick={onClick} className="cursor-pointer space-y-3">
         {/* Progress */}
         <div>
           <div className="flex items-center justify-between text-sm mb-2">
@@ -646,55 +770,74 @@ function CreateMapWizard({ projectId, onClose, onSuccess }: {
   const [success, setSuccess] = useState(false);
 
   const handleGenerate = async () => {
+    let progressInterval: NodeJS.Timeout | null = null;
+    
     try {
+      console.log('[Create Wizard] Starting generation...');
       setLoading(true);
       setProgress(10);
       setStatus('🔍 Website analyseren...');
       setError('');
       
       // Simulate progress during analysis
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev < 90) return prev + 5;
           return prev;
         });
       }, 500);
       
+      console.log('[Create Wizard] Sending request to API...');
+      const requestBody = {
+        projectId,
+        autoAnalyze: true,
+        targetArticles: 450,
+        useDataForSEO: true,
+        analyzeExistingContent: true,
+        location: 'Netherlands',
+        language: 'nl',
+      };
+      console.log('[Create Wizard] Request body:', requestBody);
+      
       const response = await fetch('/api/client/topical-authority/generate-map', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId,
-          autoAnalyze: true,
-          targetArticles: 450,
-          useDataForSEO: true,
-          analyzeExistingContent: true,
-          location: 'Netherlands',
-          language: 'nl',
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      clearInterval(progressInterval);
+      console.log('[Create Wizard] Response status:', response.status);
+      console.log('[Create Wizard] Response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      
       setProgress(95);
       setStatus('✅ Map genereren...');
 
       // Check content type
       const contentType = response.headers.get('content-type');
+      console.log('[Create Wizard] Content-Type:', contentType);
+      
       if (!contentType?.includes('application/json')) {
         const text = await response.text();
-        console.error('[Generate Map] Got HTML instead of JSON:', text.substring(0, 200));
-        throw new Error('API returned HTML instead of JSON');
+        console.error('[Create Wizard] ❌ Got HTML instead of JSON:', text.substring(0, 500));
+        throw new Error('API returned HTML instead of JSON. De server heeft een fout geretourneerd.');
       }
 
       const data = await response.json();
+      console.log('[Create Wizard] Response data:', data);
 
       if (data.success) {
+        console.log('[Create Wizard] ✅ Success!');
         setProgress(100);
         setStatus(`✅ Klaar! ${data.data.totalArticles} artikelen gegenereerd`);
         setSuccess(true);
         
         // Auto-close after 2 seconds and redirect to the map
         setTimeout(() => {
+          console.log('[Create Wizard] Redirecting...');
           onSuccess();
           onClose();
           // Navigate to the new map's article list (refresh the page to show the new map)
@@ -703,15 +846,40 @@ function CreateMapWizard({ projectId, onClose, onSuccess }: {
           }
         }, 2000);
       } else {
+        console.error('[Create Wizard] ❌ API returned error:', data);
         setProgress(0);
         setStatus('');
-        setError(data.details || data.error || 'Onbekende fout');
+        
+        // Show detailed error with technical details if available
+        const errorMessage = data.details || data.error || 'Onbekende fout';
+        const technicalDetails = data.technicalDetails ? `\n\nTechnische details: ${data.technicalDetails}` : '';
+        
+        setError(errorMessage + technicalDetails);
         setLoading(false);
       }
     } catch (error: any) {
+      console.error('[Create Wizard] ❌ Exception:', error);
+      console.error('[Create Wizard] Error stack:', error.stack);
+      
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      
       setProgress(0);
       setStatus('');
-      setError(error.message || 'Fout bij genereren map');
+      
+      // Provide more detailed error messages
+      let errorMessage = error.message || 'Fout bij genereren map';
+      
+      if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+        errorMessage = 'Netwerk fout. Controleer je internetverbinding en probeer het opnieuw.';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout. De generatie duurt te lang. Probeer het opnieuw.';
+      } else if (error.message.includes('HTML')) {
+        errorMessage = 'Server fout. De API heeft een HTML pagina geretourneerd in plaats van JSON. Dit kan een routing probleem zijn.';
+      }
+      
+      setError(errorMessage);
       setLoading(false);
     }
   };
