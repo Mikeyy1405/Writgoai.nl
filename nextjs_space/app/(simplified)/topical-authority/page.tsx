@@ -221,48 +221,45 @@ function MapCard({ map, onClick }: { map: any; onClick: () => void }) {
   );
 }
 
-// Create Map Wizard Component
+// Create Map Wizard Component - AUTOMATIC VERSION
 function CreateMapWizard({ projectId, onClose, onSuccess }: {
   projectId: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    niche: '',
-    description: '',
-    targetArticles: 450,
-    location: 'Netherlands',
-    language: 'nl',
-    useDataForSEO: true,
-    analyzeExistingContent: true,
-  });
+  const [error, setError] = useState<string>('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleGenerate = async () => {
     try {
       setLoading(true);
+      setError('');
       
       const response = await fetch('/api/client/topical-authority/generate-map', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId,
-          ...formData,
+          // Automatische instellingen - geen handmatige invoer nodig
+          autoAnalyze: true, // Automatisch website analyseren
+          targetArticles: 450, // Default 450 artikelen
+          useDataForSEO: true, // Altijd DataForSEO gebruiken
+          analyzeExistingContent: true, // Altijd bestaande content analyseren
+          location: 'Netherlands',
+          language: 'nl',
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        alert(`Topical Authority Map gegenereerd! \n\nTotaal artikelen: ${data.data.totalArticles}\nGeschat tijdsbestek: ${data.data.estimatedTimeToComplete}`);
+        alert(`✅ Topical Authority Map gegenereerd!\n\nTotaal artikelen: ${data.data.totalArticles}\nGeschat tijdsbestek: ${data.data.estimatedTimeToComplete}`);
         onSuccess();
       } else {
-        alert('Fout bij genereren map: ' + (data.details || data.error));
+        setError(data.details || data.error || 'Onbekende fout');
       }
     } catch (error: any) {
-      alert('Fout: ' + error.message);
+      setError(error.message || 'Fout bij genereren map');
     } finally {
       setLoading(false);
     }
@@ -270,96 +267,92 @@ function CreateMapWizard({ projectId, onClose, onSuccess }: {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full">
         <div className="p-6 border-b border-slate-700">
-          <h2 className="text-2xl font-bold text-white">Nieuwe Topical Authority Map</h2>
-          <p className="text-slate-200 mt-1">Genereer een complete content strategie met 400-500 artikelen</p>
+          <h2 className="text-2xl font-bold text-white">Automatische Topical Authority Map</h2>
+          <p className="text-slate-200 mt-1">Genereer automatisch 400-500 gestructureerde artikelen voor je WordPress site</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Niche */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-white">Niche / Onderwerp *</label>
-            <input
-              type="text"
-              value={formData.niche}
-              onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
-              placeholder="b.v. WordPress SEO, E-commerce Marketing, Piano Leren"
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              required
-            />
+        <div className="p-6 space-y-6">
+          {/* Info Box */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <h3 className="text-white font-medium mb-3 flex items-center gap-2">
+              <span className="text-lg">ℹ️</span>
+              Automatische Analyse & Generatie
+            </h3>
+            <ul className="space-y-2">
+              <li className="flex items-start gap-2 text-slate-200 text-sm">
+                <span className="text-green-400 mt-0.5">✓</span>
+                <span>Website wordt automatisch geanalyseerd</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-200 text-sm">
+                <span className="text-green-400 mt-0.5">✓</span>
+                <span>Niche wordt automatisch gedetecteerd</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-200 text-sm">
+                <span className="text-green-400 mt-0.5">✓</span>
+                <span>400-500 artikelen worden gepland op basis van content gaps</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-200 text-sm">
+                <span className="text-green-400 mt-0.5">✓</span>
+                <span>DataForSEO keyword metrics worden toegevoegd</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-200 text-sm">
+                <span className="text-green-400 mt-0.5">✓</span>
+                <span>Bestaande content wordt geanalyseerd voor internal links</span>
+              </li>
+            </ul>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-white">Beschrijving (optioneel)</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Extra context over je niche en doelgroep"
-              rows={3}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
+          {/* Expected Results */}
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+            <h3 className="text-orange-400 font-medium mb-2 text-sm">Wat je krijgt:</h3>
+            <ul className="space-y-1 text-slate-200 text-sm">
+              <li>• 5-10 Pillar Topics (hoofdonderwerpen)</li>
+              <li>• 40-50 Subtopics per pillar</li>
+              <li>• 8-10 Artikelen per subtopic</li>
+              <li>• Totaal: ~450 gestructureerde artikelen</li>
+              <li>• Geschatte tijd: 12-15 maanden (1 artikel/dag)</li>
+            </ul>
           </div>
 
-          {/* Target Articles */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-white">Aantal Artikelen</label>
-            <input
-              type="number"
-              value={formData.targetArticles}
-              onChange={(e) => setFormData({ ...formData, targetArticles: parseInt(e.target.value) })}
-              min={100}
-              max={1000}
-              step={50}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-            <p className="text-sm text-slate-200 mt-1">Aanbevolen: 400-500 artikelen voor complete topical authority</p>
-          </div>
-
-          {/* Options */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.useDataForSEO}
-                onChange={(e) => setFormData({ ...formData, useDataForSEO: e.target.checked })}
-                className="rounded"
-              />
-              <span className="text-sm text-white">Gebruik DataForSEO voor keyword metrics</span>
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.analyzeExistingContent}
-                onChange={(e) => setFormData({ ...formData, analyzeExistingContent: e.target.checked })}
-                className="rounded"
-              />
-              <span className="text-sm text-white">Analyseer bestaande WordPress content</span>
-            </label>
-          </div>
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+              <p className="text-red-400 text-sm font-medium mb-1">❌ Fout bij genereren:</p>
+              <p className="text-red-300 text-sm">{error}</p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 text-slate-200 hover:bg-slate-800 rounded-lg"
+              className="px-6 py-3 text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
               disabled={loading}
             >
               Annuleren
             </button>
             <button
-              type="submit"
-              className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-2"
+              onClick={handleGenerate}
+              className="px-8 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {loading ? 'Genereren...' : 'Genereer Map'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Bezig met analyseren en genereren...
+                </>
+              ) : (
+                <>
+                  <span className="text-lg">🚀</span>
+                  Analyseer & Genereer Map
+                </>
+              )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
