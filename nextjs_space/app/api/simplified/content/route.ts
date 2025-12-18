@@ -59,8 +59,35 @@ export async function GET(request: Request) {
 
     console.log(`[Content API] Fetching content for client ${client.id}...`);
 
+    // STEP 1: Check projects first
+    console.log('[Content API] STEP 1: Checking projects for client...');
+    const allProjects = await prisma.project.findMany({
+      where: {
+        clientId: client.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        websiteUrl: true,
+      },
+    });
+    
+    console.log('[Content API] Projects found:', allProjects.length);
+    if (allProjects.length === 0) {
+      console.warn('[Content API] ⚠️ NO PROJECTS FOUND for this client!');
+    } else {
+      console.log('[Content API] Project details:');
+      allProjects.forEach((p, idx) => {
+        console.log(`[Content API]   ${idx + 1}. ${p.name} (ID: ${p.id})`);
+        console.log(`[Content API]      - websiteUrl: ${p.websiteUrl || 'NOT SET'}`);
+      });
+      
+      const projectsWithUrls = allProjects.filter(p => p.websiteUrl);
+      console.log(`[Content API] Projects with websiteUrl: ${projectsWithUrls.length}/${allProjects.length}`);
+    }
+
     // FAST: Only database queries, NO external API calls
-    console.log('[Content API] Starting parallel database queries...');
+    console.log('[Content API] STEP 2: Starting parallel database queries...');
     const [generatedContent, cachedWordPressPosts] = await Promise.all([
       // Generated content
       prisma.savedContent.findMany({
@@ -103,30 +130,50 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    console.log(`[Content API] Generated content: ${generatedContent.length} items`);
-    console.log(`[Content API] Cached WordPress posts: ${cachedWordPressPosts.length} items`);
+    console.log('[Content API] STEP 3: Query results:');
+    console.log(`[Content API]   - Generated content: ${generatedContent.length} items`);
+    console.log(`[Content API]   - Cached WordPress posts: ${cachedWordPressPosts.length} items`);
+    
+    if (generatedContent.length === 0 && cachedWordPressPosts.length === 0) {
+      console.warn('[Content API] ⚠️ NO CONTENT FOUND at all!');
+      console.warn('[Content API] This could mean:');
+      console.warn('[Content API]   1. No content has been generated yet');
+      console.warn('[Content API]   2. WordPress cache is empty (needs background fetch)');
+      console.warn('[Content API]   3. Projects are not properly set up');
+    }
     
     // Log first few items for debugging
     if (generatedContent.length > 0) {
-      console.log('[Content API] Sample generated content:', {
-        id: generatedContent[0].id,
-        title: generatedContent[0].title,
-        projectId: generatedContent[0].projectId,
-        hasProject: !!generatedContent[0].project
+      console.log('[Content API] Sample generated content (first 3):');
+      generatedContent.slice(0, 3).forEach((item, idx) => {
+        console.log(`[Content API]   ${idx + 1}. "${item.title}" (ID: ${item.id})`);
+        console.log(`[Content API]      - projectId: ${item.projectId}`);
+        console.log(`[Content API]      - hasProject: ${!!item.project}`);
+        console.log(`[Content API]      - status: ${item.status}`);
+        console.log(`[Content API]      - createdAt: ${item.createdAt}`);
       });
     }
     
     if (cachedWordPressPosts.length > 0) {
-      console.log('[Content API] Sample WordPress post:', {
-        id: cachedWordPressPosts[0].id,
-        title: cachedWordPressPosts[0].title,
-        projectId: cachedWordPressPosts[0].projectId,
-        hasProject: !!cachedWordPressPosts[0].project
+      console.log('[Content API] Sample WordPress posts (first 3):');
+      cachedWordPressPosts.slice(0, 3).forEach((item, idx) => {
+        console.log(`[Content API]   ${idx + 1}. "${item.title}" (ID: ${item.id})`);
+        console.log(`[Content API]      - projectId: ${item.projectId}`);
+        console.log(`[Content API]      - hasProject: ${!!item.project}`);
+        console.log(`[Content API]      - url: ${item.url}`);
+        console.log(`[Content API]      - publishedDate: ${item.publishedDate}`);
       });
     }
 
     // Map to unified format
-    console.log('[Content API] Mapping generated content...');
+    console.log('[Content API] STEP 4: Mapping to unified format...');
+    
+    // Check how many items will be filtered out
+    const generatedWithoutProject = generatedContent.filter(item => !item.project);
+    if (generatedWithoutProject.length > 0) {
+      console.warn(`[Content API] ⚠️ Filtering out ${generatedWithoutProject.length} generated items without project!`);
+    }
+    
     const mappedGenerated = generatedContent
       .filter(item => item.project)
       .map(item => ({
@@ -141,9 +188,13 @@ export async function GET(request: Request) {
         projectName: item.project.name || item.project.websiteUrl || 'Unknown Project',
         wordCount: item.wordCount || undefined,
       }));
-    console.log(`[Content API] Mapped generated: ${mappedGenerated.length} items`);
+    console.log(`[Content API]   - Mapped generated: ${mappedGenerated.length} items (${generatedWithoutProject.length} filtered)`);
 
-    console.log('[Content API] Mapping WordPress posts...');
+    const wordpressWithoutProject = cachedWordPressPosts.filter(item => !item.project);
+    if (wordpressWithoutProject.length > 0) {
+      console.warn(`[Content API] ⚠️ Filtering out ${wordpressWithoutProject.length} WordPress items without project!`);
+    }
+    
     const mappedWordPress = cachedWordPressPosts
       .filter(item => item.project)
       .map(item => ({
@@ -157,10 +208,10 @@ export async function GET(request: Request) {
         projectId: item.project.id,
         projectName: item.project.name || item.project.websiteUrl || 'Unknown Project',
       }));
-    console.log(`[Content API] Mapped WordPress: ${mappedWordPress.length} items`);
+    console.log(`[Content API]   - Mapped WordPress: ${mappedWordPress.length} items (${wordpressWithoutProject.length} filtered)`);
 
     // Combine and sort by date (newest first)
-    console.log('[Content API] Combining and sorting content...');
+    console.log('[Content API] STEP 5: Combining and sorting content...');
     const allContent = [...mappedGenerated, ...mappedWordPress].sort((a, b) => {
       // ✅ CRITICAL FIX: Wrap in new Date() to handle string dates from database
       const dateA = new Date(a.publishedDate || a.createdAt || new Date(0));
@@ -174,9 +225,10 @@ export async function GET(request: Request) {
       
       return dateB.getTime() - dateA.getTime();
     });
-    console.log(`[Content API] Total combined content: ${allContent.length} items`);
+    console.log(`[Content API]   - Total combined content: ${allContent.length} items`);
 
     // Calculate stats
+    console.log('[Content API] STEP 6: Calculating stats...');
     const stats = {
       total: allContent.length,
       generated: mappedGenerated.length,
@@ -185,7 +237,7 @@ export async function GET(request: Request) {
       published: allContent.filter(c => c.status === 'published').length,
       scheduled: allContent.filter(c => c.status === 'scheduled').length,
     };
-    console.log('[Content API] Stats:', stats);
+    console.log('[Content API]   - Stats:', JSON.stringify(stats, null, 2));
 
     const duration = Date.now() - startTime;
     const response = {
@@ -194,12 +246,21 @@ export async function GET(request: Request) {
       stats: stats,
     };
     
-    console.log(`[Content API] ✅ Success in ${duration}ms`);
-    console.log('[Content API] Response structure:', {
+    console.log('[Content API] STEP 7: Preparing response...');
+    console.log(`[Content API]   - Duration: ${duration}ms`);
+    console.log('[Content API]   - Response structure:', {
       success: response.success,
       contentLength: response.content.length,
       stats: response.stats
     });
+    
+    if (allContent.length === 0) {
+      console.warn('[Content API] ⚠️ WARNING: Returning EMPTY content array!');
+      console.warn('[Content API] Client will see 0 items in Content Overview');
+    } else {
+      console.log(`[Content API] ✅ SUCCESS: Returning ${allContent.length} items`);
+    }
+    
     console.log('[Content API] ========== END ==========');
 
     return NextResponse.json(response);
