@@ -162,8 +162,16 @@ export async function GET(request: Request) {
     // Combine and sort by date (newest first)
     console.log('[Content API] Combining and sorting content...');
     const allContent = [...mappedGenerated, ...mappedWordPress].sort((a, b) => {
-      const dateA = a.publishedDate || a.createdAt || new Date(0);
-      const dateB = b.publishedDate || b.createdAt || new Date(0);
+      // ✅ CRITICAL FIX: Wrap in new Date() to handle string dates from database
+      const dateA = new Date(a.publishedDate || a.createdAt || new Date(0));
+      const dateB = new Date(b.publishedDate || b.createdAt || new Date(0));
+      
+      // Check for invalid dates
+      if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+        console.warn('[Content API] Invalid date detected:', { a: a.title, b: b.title });
+        return 0;
+      }
+      
       return dateB.getTime() - dateA.getTime();
     });
     console.log(`[Content API] Total combined content: ${allContent.length} items`);
