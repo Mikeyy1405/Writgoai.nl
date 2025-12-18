@@ -71,11 +71,14 @@ export default withAuth(
       '/client-portal/content-planner': '/topical-authority',
       '/client-portal/content-library': '/content',
       '/client-portal/settings': '/instellingen',
+      '/client-portal/account': '/account',
       
       // Dashboard redirects
       '/dashboard/overzicht': '/dashboard',
       '/dashboard/content': '/content',
       '/dashboard/instellingen': '/instellingen',
+      '/dashboard/platforms': '/platforms',
+      '/dashboard/account': '/account',
     };
     
     if (ROUTE_MAPPING[path]) {
@@ -181,7 +184,9 @@ export const config = {
     '/instellingen/:path*',
     '/topical-authority/:path*',
     '/performance/:path*',
-    '/blog/:path*',              // ✅ ADDED: Blog route (protected)
+    '/blog/:path*',              // Blog route (protected)
+    '/platforms/:path*',         // ✅ ADDED: Platforms route (protected)
+    '/account/:path*',           // ✅ ADDED: Account route (protected)
     
     // New unified planning page (protected)
     '/client-portal/planning/:path*',

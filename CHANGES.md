@@ -8,17 +8,64 @@
 
 ## 🎯 Summary
 
-This update implements **Quick Wins** and **Critical Fixes** from the WritGo Route Consolidation Plan:
+This update implements **Phase 1** of the WritGo Route Consolidation Plan:
 
+**Subtask 1 (Completed):**
 - ✅ Migrated blog to simplified interface with dark theme
 - ✅ Added middleware redirects for legacy routes
 - ✅ Implemented deprecation banners on legacy layouts
 - ✅ Updated navigation to include blog
 - ✅ Created comprehensive route migration documentation
 
+**Subtask 2 (Completed - Phase 1):**
+- ✅ Migrated 3 core dashboard routes to (simplified)
+- ✅ Created /platforms route with dark theme
+- ✅ Created /account route with dark theme
+- ✅ Updated SimplifiedNavigation to 8 menu items
+- ✅ Added 5 new redirects in middleware
+- ✅ Updated middleware matcher for new routes
+
 ---
 
 ## 📋 Changes by Category
+
+### 🆕 NEW: Core Dashboard Routes (Subtask 2 - Phase 1)
+
+**Files Created:**
+- `app/(simplified)/platforms/page.tsx` - Platform connections management
+- `app/(simplified)/account/page.tsx` - Account & billing page
+- `app/api/simplified/platforms/route.ts` - Platforms API
+
+**Visual Changes:**
+- 🎨 Dark theme applied to all new routes
+- 🟠 Orange accent colors consistent with blog
+- 📱 Responsive layouts for all screen sizes
+- 🎯 Improved navigation with 8 menu items
+- 💳 Comprehensive account management interface
+
+**Technical Changes:**
+- Platforms route with mock API data (ready for database integration)
+- Account tabs: Package, Billing, Profile, Support
+- SimplifiedNavigation updated with 3 new routes
+- Middleware redirects for legacy dashboard routes
+- Protected routes with authentication
+
+**Navigation Updates:**
+```typescript
+New menu items:
+1. Dashboard (existing, moved to simplified)
+2. Content Planning (existing)
+3. Content Overzicht (existing)
+4. Blog (from Subtask 1)
+5. Platforms ← NEW
+6. Performance ← NEW
+7. Account ← NEW
+8. Instellingen (existing)
+```
+
+---
+
+## 📋 Legacy Changes (Subtask 1)
 
 ### 🎨 NEW: Blog Dark Theme (Critical Fix #1)
 
@@ -209,19 +256,26 @@ hover:scale-110
 
 ## 📊 Impact Analysis
 
-### Before Changes
+### Before Changes (Start of Project)
 - 8 routes in simplified (3%)
 - Blog isolated with light theme
 - No legacy route redirects
 - No deprecation warnings
 - Inconsistent navigation
 
-### After Changes
+### After Subtask 1
 - 13 routes in simplified (5%)
 - Blog integrated with dark theme
 - 7 active redirects working
 - 2 deprecation banners active
 - Unified navigation with blog
+
+### After Subtask 2 (Phase 1)
+- 17 routes in simplified (7%)
+- 3 core dashboard routes migrated
+- 12 active redirects working
+- Consistent dark theme across all routes
+- 8-item unified navigation
 
 ### Breaking Changes
 - ⚠️ `/blog` now requires authentication (was public)

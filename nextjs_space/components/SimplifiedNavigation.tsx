@@ -9,20 +9,26 @@ import {
   Settings,
   LogOut,
   Map,
-  BookOpen
+  BookOpen,
+  Share2,
+  TrendingUp,
+  User
 } from 'lucide-react';
 
 /**
- * SUPER VEREENVOUDIGDE NAVIGATIE - 5 menu items
+ * SUPER VEREENVOUDIGDE NAVIGATIE - 8 menu items
  * 
  * Desktop: Fixed sidebar links (altijd zichtbaar)
  * Mobiel: Slide-in sidebar met hamburger menu
  * 
- * 5 functies:
+ * 8 functies:
  * - 🏠 Dashboard (alles op één scherm)
  * - 🗺️ Content Planning (Topical Authority Maps)
  * - 📄 Content (uitgebreid overzicht)
  * - 📖 Blog (WritGo blog artikelen)
+ * - 🔗 Platforms (social media connections)
+ * - 📊 Performance (metrics & analytics)
+ * - 👤 Account (profile & billing)
  * - ⚙️ Instellingen
  */
 
@@ -52,10 +58,28 @@ const menuItems = [
     description: 'WritGo blog artikelen'
   },
   { 
+    href: '/platforms', 
+    label: 'Platforms', 
+    icon: Share2,
+    description: 'Social media verbindingen'
+  },
+  { 
+    href: '/performance', 
+    label: 'Performance', 
+    icon: TrendingUp,
+    description: 'Metrics & analytics'
+  },
+  { 
+    href: '/account', 
+    label: 'Account', 
+    icon: User,
+    description: 'Profiel & pakket'
+  },
+  { 
     href: '/instellingen', 
     label: 'Instellingen', 
     icon: Settings,
-    description: 'Account & voorkeuren'
+    description: 'Voorkeuren & configuratie'
   },
 ];
 

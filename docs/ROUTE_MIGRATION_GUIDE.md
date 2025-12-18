@@ -34,15 +34,18 @@ This document tracks the migration of legacy routes to the new **Simplified Inte
 
 The following redirects are now active in middleware:
 
-| Legacy Route | Redirects To | Status |
-|--------------|--------------|--------|
-| `/client-portal/dashboard` | `/dashboard` | ✅ Active |
-| `/client-portal/content-planner` | `/topical-authority` | ✅ Active |
-| `/client-portal/content-library` | `/content` | ✅ Active |
-| `/client-portal/settings` | `/instellingen` | ✅ Active |
-| `/dashboard/overzicht` | `/dashboard` | ✅ Active |
-| `/dashboard/content` | `/content` | ✅ Active |
-| `/dashboard/instellingen` | `/instellingen` | ✅ Active |
+| Legacy Route | Redirects To | Status | Added In |
+|--------------|--------------|--------|----------|
+| `/client-portal/dashboard` | `/dashboard` | ✅ Active | Subtask 1 |
+| `/client-portal/content-planner` | `/topical-authority` | ✅ Active | Subtask 1 |
+| `/client-portal/content-library` | `/content` | ✅ Active | Subtask 1 |
+| `/client-portal/settings` | `/instellingen` | ✅ Active | Subtask 1 |
+| `/client-portal/account` | `/account` | ✅ Active | Phase 1 |
+| `/dashboard/overzicht` | `/dashboard` | ✅ Active | Subtask 1 |
+| `/dashboard/content` | `/content` | ✅ Active | Subtask 1 |
+| `/dashboard/instellingen` | `/instellingen` | ✅ Active | Subtask 1 |
+| `/dashboard/platforms` | `/platforms` | ✅ Active | Phase 1 |
+| `/dashboard/account` | `/account` | ✅ Active | Phase 1 |
 
 ---
 
@@ -50,13 +53,16 @@ The following redirects are now active in middleware:
 
 These are the canonical routes users should use:
 
-| Route | Purpose | Component | Protection |
-|-------|---------|-----------|------------|
-| `/dashboard` | Unified Dashboard | `(simplified)/page.tsx` | ✅ Protected |
-| `/topical-authority` | Content Planning | `(simplified)/topical-authority` | ✅ Protected |
-| `/content` | Content Overview | `(simplified)/content` | ✅ Protected |
-| `/blog` | WritGo Blog | `(simplified)/blog` | ✅ Protected |
-| `/instellingen` | Settings | `(simplified)/instellingen` | ✅ Protected |
+| Route | Purpose | Component | Protection | Phase |
+|-------|---------|-----------|------------|-------|
+| `/dashboard` | Unified Dashboard | `(simplified)/page.tsx` | ✅ Protected | Phase 1 |
+| `/topical-authority` | Content Planning | `(simplified)/topical-authority` | ✅ Protected | Existing |
+| `/content` | Content Overview | `(simplified)/content` | ✅ Protected | Existing |
+| `/blog` | WritGo Blog | `(simplified)/blog` | ✅ Protected | Subtask 1 |
+| `/platforms` | Platform Connections | `(simplified)/platforms` | ✅ Protected | Phase 1 |
+| `/performance` | Performance Metrics | `(simplified)/performance` | ✅ Protected | Existing |
+| `/account` | Account & Billing | `(simplified)/account` | ✅ Protected | Phase 1 |
+| `/instellingen` | Settings | `(simplified)/instellingen` | ✅ Protected | Existing |
 
 ---
 
@@ -91,10 +97,11 @@ Routes to migrate in Phase 2:
 ## 📊 Migration Statistics
 
 - **Total Routes:** 248
-- **Simplified Routes:** 13 (5% - up from 3%)
-- **Deprecated Routes:** 210 (85%)
-- **Active Redirects:** 7
+- **Simplified Routes:** 17 (7% - up from 3%)
+- **Deprecated Routes:** ~200 (81%)
+- **Active Redirects:** 10 (up from 7)
 - **Deprecation Banners:** 2
+- **Phase 1 Progress:** 3 core routes migrated ✅
 
 ---
 
