@@ -60,6 +60,29 @@ export default function TopicalAuthorityListPage() {
     loadArticles();
   }, [mapId]);
 
+  // Poll for status updates when articles are generating
+  useEffect(() => {
+    // Check if any articles are currently generating
+    const hasGeneratingArticles = articles.some(a => a.status === 'generating');
+    
+    if (!hasGeneratingArticles) {
+      return; // No need to poll
+    }
+    
+    console.log('[Topical Authority List] Starting polling - articles are generating');
+    
+    // Poll every 5 seconds
+    const interval = setInterval(() => {
+      console.log('[Topical Authority List] Polling for status updates...');
+      loadArticles();
+    }, 5000);
+    
+    return () => {
+      console.log('[Topical Authority List] Stopping polling');
+      clearInterval(interval);
+    };
+  }, [articles, mapId]);
+
   const loadArticles = async () => {
     try {
       setLoading(true);
@@ -190,7 +213,7 @@ export default function TopicalAuthorityListPage() {
         </div>
         
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <div className="bg-orange-50 rounded-lg p-4 border-2 border-orange-200">
             <div className="text-orange-600 text-2xl font-bold">
               {stats.total}
@@ -215,6 +238,14 @@ export default function TopicalAuthorityListPage() {
             </div>
             <div className="text-gray-600 text-sm">Gepubliceerd</div>
           </div>
+          {stats.failed > 0 && (
+            <div className="bg-red-50 rounded-lg p-4 border-2 border-red-200">
+              <div className="text-red-600 text-2xl font-bold">
+                {stats.failed}
+              </div>
+              <div className="text-gray-600 text-sm">Mislukt</div>
+            </div>
+          )}
           <div className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
             <div className="text-gray-600 text-2xl font-bold">
               {stats.withPillar}/{stats.total}
@@ -283,6 +314,18 @@ export default function TopicalAuthorityListPage() {
               >
                 Gepubliceerd ({stats.published})
               </button>
+              {stats.failed > 0 && (
+                <button
+                  onClick={() => setFilter('failed')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    filter === 'failed' 
+                      ? 'bg-red-500 text-white' 
+                      : 'bg-red-50 text-red-600 hover:bg-red-100'
+                  }`}
+                >
+                  Mislukt ({stats.failed})
+                </button>
+              )}
             </div>
             
             <div className="flex gap-2 ml-auto">
@@ -362,13 +405,14 @@ export default function TopicalAuthorityListPage() {
               
               <button
                 onClick={() => generateArticle(article.id)}
-                disabled={article.status !== 'planned' || generatingId === article.id}
+                disabled={article.status !== 'planned' && article.status !== 'failed'}
                 className={`
                   px-6 py-3 rounded-lg font-medium whitespace-nowrap flex items-center gap-2
-                  ${article.status === 'planned' 
+                  ${article.status === 'planned' || article.status === 'failed'
                     ? 'bg-primary text-white hover:bg-primary/90' 
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }
+                  ${article.status === 'failed' ? '!bg-red-500 hover:!bg-red-600' : ''}
                 `}
               >
                 {generatingId === article.id && (
@@ -378,6 +422,7 @@ export default function TopicalAuthorityListPage() {
                 {article.status === 'generating' && '⏳ Bezig...'}
                 {article.status === 'generated' && '✅ Gegenereerd'}
                 {article.status === 'published' && '📤 Gepubliceerd'}
+                {article.status === 'failed' && '🔄 Opnieuw'}
               </button>
             </div>
           </div>

@@ -102,25 +102,32 @@ export default function AutoGeneratePage({ params }: { params: { articleId: stri
       updateStep('save', 'loading');
       console.log('[AutoGenerate] Updating article status...');
       
-      const updateResponse = await fetch(
-        `/api/client/topical-authority/articles/${params.articleId}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            status: 'generated',
-            contentId: contentData.contentId || contentData.id,
-            generatedAt: new Date().toISOString(),
-          })
+      try {
+        const updateResponse = await fetch(
+          `/api/client/topical-authority/articles/${params.articleId}`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'generated',
+              contentId: contentData.contentId || contentData.id,
+            })
+          }
+        );
+        
+        if (!updateResponse.ok) {
+          throw new Error('Status update failed');
         }
-      );
-      
-      if (!updateResponse.ok) {
-        console.warn('[AutoGenerate] Could not update article status, but content was generated');
-        // Continue anyway since content was generated successfully
+        
+        const updateData = await updateResponse.json();
+        console.log('[AutoGenerate] Status updated:', updateData);
+        
+        updateStep('save', 'success', 'Artikel opgeslagen');
+      } catch (updateError: any) {
+        console.error('[AutoGenerate] Error updating status:', updateError);
+        // Still mark as success since content was generated
+        updateStep('save', 'success', 'Artikel opgeslagen (status update pending)');
       }
-      
-      updateStep('save', 'success', 'Artikel opgeslagen');
       
       // Success! Redirect na 2 seconden
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -135,6 +142,23 @@ export default function AutoGeneratePage({ params }: { params: { articleId: stri
       setSteps(prev => prev.map(step => 
         step.status === 'loading' ? { ...step, status: 'error', message: error.message } : step
       ));
+      
+      // Update article status to 'failed' so it doesn't stay stuck on 'generating'
+      try {
+        console.log('[AutoGenerate] Updating status to failed...');
+        await fetch(
+          `/api/client/topical-authority/articles/${params.articleId}`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'failed',
+            })
+          }
+        );
+      } catch (updateError) {
+        console.error('[AutoGenerate] Failed to update status to failed:', updateError);
+      }
     }
   }
 

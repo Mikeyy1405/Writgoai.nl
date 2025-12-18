@@ -121,6 +121,7 @@ export async function GET(
       generating: articlesList.filter(a => a.status === 'generating').length,
       generated: articlesList.filter(a => a.status === 'generated').length,
       published: articlesList.filter(a => a.status === 'published').length,
+      failed: articlesList.filter(a => a.status === 'failed').length,
       withPillar: articlesList.filter(a => a.pillar !== null).length,
       withoutPillar: articlesList.filter(a => a.pillar === null).length,
     };
