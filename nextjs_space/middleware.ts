@@ -62,6 +62,27 @@ export default withAuth(
       return NextResponse.redirect(new URL('/content', req.url));
     }
     
+    // ===================================
+    // LEGACY ROUTE REDIRECTS
+    // ===================================
+    const ROUTE_MAPPING: Record<string, string> = {
+      // Client portal redirects
+      '/client-portal/dashboard': '/dashboard',
+      '/client-portal/content-planner': '/topical-authority',
+      '/client-portal/content-library': '/content',
+      '/client-portal/settings': '/instellingen',
+      
+      // Dashboard redirects
+      '/dashboard/overzicht': '/dashboard',
+      '/dashboard/content': '/content',
+      '/dashboard/instellingen': '/instellingen',
+    };
+    
+    if (ROUTE_MAPPING[path]) {
+      console.log(`🔄 Redirecting ${path} → ${ROUTE_MAPPING[path]}`);
+      return NextResponse.redirect(new URL(ROUTE_MAPPING[path], req.url));
+    }
+    
     // Allow public homepage (root path)
     if (path === '/') {
       return NextResponse.next();
@@ -160,6 +181,7 @@ export const config = {
     '/instellingen/:path*',
     '/topical-authority/:path*',
     '/performance/:path*',
+    '/blog/:path*',              // ✅ ADDED: Blog route (protected)
     
     // New unified planning page (protected)
     '/client-portal/planning/:path*',

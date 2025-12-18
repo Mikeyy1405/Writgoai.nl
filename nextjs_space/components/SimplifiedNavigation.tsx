@@ -8,19 +8,21 @@ import {
   FileText,
   Settings,
   LogOut,
-  Map
+  Map,
+  BookOpen
 } from 'lucide-react';
 
 /**
- * SUPER VEREENVOUDIGDE NAVIGATIE - 4 menu items
+ * SUPER VEREENVOUDIGDE NAVIGATIE - 5 menu items
  * 
  * Desktop: Fixed sidebar links (altijd zichtbaar)
  * Mobiel: Slide-in sidebar met hamburger menu
  * 
- * 4 functies:
+ * 5 functies:
  * - 🏠 Dashboard (alles op één scherm)
  * - 🗺️ Content Planning (Topical Authority Maps)
  * - 📄 Content (uitgebreid overzicht)
+ * - 📖 Blog (WritGo blog artikelen)
  * - ⚙️ Instellingen
  */
 
@@ -42,6 +44,12 @@ const menuItems = [
     label: 'Content Overzicht', 
     icon: FileText,
     description: 'Al je artikelen'
+  },
+  { 
+    href: '/blog', 
+    label: 'Blog', 
+    icon: BookOpen,
+    description: 'WritGo blog artikelen'
   },
   { 
     href: '/instellingen', 

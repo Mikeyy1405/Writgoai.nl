@@ -5,6 +5,7 @@ import { Menu } from 'lucide-react';
 import AdminSidebar from './AdminSidebar';
 import AdminMobileNav from './AdminMobileNav';
 import { PortalSwitcher } from '@/components/PortalSwitcher';
+import { DeprecatedRouteBanner } from '@/components/DeprecatedRouteBanner';
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;
@@ -47,6 +48,10 @@ export default function AdminLayoutClient({ children }: AdminLayoutClientProps) 
 
         {/* Page Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <DeprecatedRouteBanner 
+            newRoute="/dashboard"
+            message="Het Admin Portal is verouderd. Beheer functies zijn beschikbaar via het nieuwe dashboard."
+          />
           {children}
         </div>
       </main>

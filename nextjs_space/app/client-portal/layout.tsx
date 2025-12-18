@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { UnifiedLayout } from '@/components/dashboard/unified-layout';
 import WritgoAgentWidget from '@/components/writgo-agent-widget';
 import { getNavItems, isUserAdmin } from '@/lib/navigation-config';
+import { DeprecatedRouteBanner } from '@/components/DeprecatedRouteBanner';
 
 export default function ClientPortalLayout({
   children,
@@ -51,6 +52,10 @@ export default function ClientPortalLayout({
         headerTitle="Client Portal"
         headerDescription="Jouw persoonlijke content dashboard"
       >
+        <DeprecatedRouteBanner 
+          newRoute="/dashboard"
+          message="Het Client Portal is verouderd. Gebruik het nieuwe unified dashboard voor de beste ervaring."
+        />
         {children}
       </UnifiedLayout>
       {/* AI Agent Widget - altijd beschikbaar */}
