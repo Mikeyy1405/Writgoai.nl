@@ -59,10 +59,10 @@ const overviewItems: NavItem[] = [
 // "Zelf Doen" - AI Tools (gratis te gebruiken)
 const selfServiceItems: NavItem[] = [
   { label: 'Blog Generator', href: '/client-portal/blog-generator', icon: <PenTool size={20} /> },
+  { label: 'Content Generator', href: '/client-portal/content-generator', icon: <Wand2 size={20} /> },
   { label: 'Zoekwoord Onderzoek', href: '/client-portal/zoekwoord-onderzoek', icon: <Search size={20} />, badge: 'Nieuw', badgeColor: 'green' },
   { label: 'Site Planner', href: '/client-portal/site-planner', icon: <Map size={20} /> },
   { label: 'Topical Map Generator', href: '/dashboard/planning', icon: <Sparkles size={20} />, badge: 'Nieuw', badgeColor: 'orange' },
-  { label: 'Content Generator', href: '/client-portal/content-generator', icon: <Wand2 size={20} /> },
   { label: 'Afbeelding Generator', href: '/client-portal/image-specialist', icon: <Image size={20} /> },
 ];
 

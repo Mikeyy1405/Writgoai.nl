@@ -121,7 +121,9 @@ export default function PlanningPage() {
     }
   };
 
-  const estimatedCost = Math.ceil(targetArticles / 10); // Rough estimate
+  // Cost estimation: ~1 credit per 10 topics generated due to AI processing overhead
+  // This is a rough estimate; actual cost depends on API response size and complexity
+  const estimatedCost = Math.ceil(targetArticles / 10);
 
   const handleGenerate = async () => {
     if (!projectId) {
@@ -201,8 +203,10 @@ export default function PlanningPage() {
               if (data.error) {
                 throw new Error(data.error);
               }
-            } catch (e) {
+            } catch (e: any) {
               console.error('Parse error:', e);
+              // Don't show toast for every parse error as streaming may have incomplete JSON chunks
+              // Only critical errors are thrown and handled by the outer catch
             }
           }
         }
@@ -252,7 +256,7 @@ export default function PlanningPage() {
       });
     });
 
-    const csv = rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const csv = rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -348,7 +352,7 @@ export default function PlanningPage() {
   }
 
   if (!session) {
-    router.push('/client/login');
+    router.push('/login');
     return null;
   }
 
