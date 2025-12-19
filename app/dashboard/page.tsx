@@ -230,7 +230,7 @@ Output pure JSON array, geen markdown. Genereer ongeveer ${topicCount[0]} onderw
       
       toast.success(`${items.length} onderwerpen gegenereerd!`);
       
-      // Note: Credits are tracked but not deducted (pay-as-you-go model)
+      // Track usage for billing (pay-as-you-go model - logged but not blocking)
       await fetch('/api/client/credits/deduct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -569,7 +569,7 @@ Output pure JSON array, geen markdown. Genereer ongeveer ${topicCount[0]} onderw
             <div>
               <ProjectSelector
                 value={projectId}
-                onChange={(id) => setProjectId(id)}
+                onChange={(id, _project) => setProjectId(id)}
                 label="Project (optioneel)"
               />
             </div>
