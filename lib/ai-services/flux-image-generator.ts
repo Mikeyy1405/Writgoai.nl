@@ -278,12 +278,12 @@ export async function uploadImageToS3(
       Key: filename,
       Body: imageBuffer,
       ContentType: 'image/png',
-      ACL: 'public-read', // Make the image publicly accessible
+      // Note: ACL removed for better security - use bucket policies instead
     });
 
     await s3Client.send(command);
 
-    // Construct the public URL
+    // Construct the public URL (assumes bucket has public read policy)
     const s3Url = `https://${AWS_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${filename}`;
 
     console.log(`✅ Uploaded to S3: ${s3Url}`);

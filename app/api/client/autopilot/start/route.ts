@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
+export const maxDuration = 10; // Short timeout since job runs async
 
 /**
  * Start AutoPilot Job API
  * Starts autonomous content generation for an ArticleIdea
+ * The job runs asynchronously in the background
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -47,10 +48,25 @@ export async function POST(req: NextRequest) {
         id: articleIdeaId,
         clientId: client.id,
       },
+      include: {
+        client: {
+          include: {
+            projects: {
+              where: { isPrimary: true },
+              take: 1,
+            },
+          },
+        },
+      },
     });
 
     if (!articleIdea) {
       return NextResponse.json({ error: 'ArticleIdea not found or access denied' }, { status: 404 });
+    }
+
+    const primaryProject = articleIdea.client.projects[0];
+    if (!primaryProject) {
+      return NextResponse.json({ error: 'No primary project found for client' }, { status: 404 });
     }
 
     // Update article idea with autopilot scheduling
@@ -66,27 +82,28 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Start the autopilot job (async)
-    const jobPromise = runAutoPilotJob(articleIdeaId, client.id);
-
-    // Wait briefly to get the job ID
-    const job = await jobPromise.catch((error) => {
-      console.error('AutoPilot job error:', error);
-      return null;
+    // Start the autopilot job asynchronously (don't await)
+    // The job will run in the background and update its status in the database
+    runAutoPilotJob(articleIdeaId, client.id).catch((error) => {
+      console.error('AutoPilot job error (async):', error);
     });
 
-    if (!job) {
-      return NextResponse.json(
-        {
-          error: 'Failed to start autopilot job',
-        },
-        { status: 500 }
-      );
-    }
+    // Create initial job record to return immediately
+    const initialJob = await prisma.autoPilotJob.create({
+      data: {
+        clientId: client.id,
+        projectId: primaryProject.id,
+        articleIdeaId,
+        status: 'pending',
+        progress: 0,
+        currentStep: 'Starting AutoPilot...',
+        startedAt: new Date(),
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      jobId: job.id,
+      jobId: initialJob.id,
       message: 'AutoPilot job started successfully',
     });
   } catch (error: any) {
