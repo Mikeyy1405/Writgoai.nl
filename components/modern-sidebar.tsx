@@ -33,7 +33,9 @@ import {
   Users,
   FolderKanban,
   Send,
-  Bot
+  Bot,
+  Zap,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -64,6 +66,12 @@ const selfServiceItems: NavItem[] = [
   { label: 'Site Planner', href: '/client-portal/site-planner', icon: <Map size={20} /> },
   { label: 'Topical Map Generator', href: '/dashboard/planning', icon: <Sparkles size={20} />, badge: 'Nieuw', badgeColor: 'orange' },
   { label: 'Afbeelding Generator', href: '/client-portal/image-specialist', icon: <Image size={20} /> },
+];
+
+// AutoPilot - Autonomous AI Agent
+const autopilotItems: NavItem[] = [
+  { label: 'AutoPilot Dashboard', href: '/client-portal/autopilot', icon: <Zap size={20} />, badge: '🤖', badgeColor: 'blue' },
+  { label: 'Content Optimizer', href: '/client-portal/content-optimizer', icon: <RefreshCw size={20} />, badge: 'AI', badgeColor: 'green' },
 ];
 
 // "Laat Ons Doen" - Agency diensten (verzoeken/facturen)
@@ -204,6 +212,39 @@ export function ModernSidebar() {
                     flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
                     ${isActive(item.href)
                       ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/20'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    }
+                  `}
+                >
+                  {item.icon}
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && (
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getBadgeColor(item.badgeColor)}`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* AutoPilot Section - NEW */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 px-3 mb-2">
+              <Zap size={14} className="text-purple-500" />
+              <p className="text-purple-400 text-xs font-bold uppercase tracking-wider">AutoPilot</p>
+            </div>
+            <p className="text-gray-600 text-[10px] px-3 mb-2">Autonome AI Agent - volledig automatisch</p>
+            <nav className="space-y-1">
+              {autopilotItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={closeMobileMenu}
+                  className={`
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
+                    ${isActive(item.href)
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/20'
                       : 'text-gray-400 hover:text-white hover:bg-gray-800'
                     }
                   `}
