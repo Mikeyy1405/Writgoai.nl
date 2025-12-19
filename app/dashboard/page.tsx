@@ -188,7 +188,7 @@ Output pure JSON array, geen markdown. Genereer ongeveer ${topicCount[0]} onderw
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: prompt,
-          clientId: session?.user?.id,
+          clientId: (session?.user as any)?.id || session?.user?.email,
         }),
       });
 

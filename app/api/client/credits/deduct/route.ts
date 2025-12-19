@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     // This will track usage but not actually block (pay-as-you-go model)
     const result = await deductCredits(
-      session.user.id || session.user.email,
+      (session.user as any)?.id || session.user.email,
       amount,
       description
     );
