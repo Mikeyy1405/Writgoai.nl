@@ -7,6 +7,18 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
 /**
+ * Type definition for referred client from Map
+ */
+interface ReferredClient {
+  id: string;
+  email: string;
+  name: string;
+  subscriptionPlan: string | null;
+  subscriptionStatus: string | null;
+  createdAt: Date;
+}
+
+/**
  * Admin Affiliate Payouts API
  * GET: Haal alle affiliates met hun stats en payout requests op
  */
@@ -59,7 +71,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const referredClientsMap = new Map(referredClients.map(c => [c.id, c]));
+    const referredClientsMap = new Map<string, ReferredClient>(referredClients.map(c => [c.id, c]));
 
     // Haal alle earnings op gegroepeerd per affiliate
     const earnings = await prisma.affiliateEarning.findMany({
