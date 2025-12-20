@@ -31,8 +31,7 @@ export default function LoginPage() {
 
       if (data.user) {
         // Success! Redirect to dashboard
-        router.push('/dashboard');
-        router.refresh();
+        window.location.href = '/dashboard';
       }
     } catch (err) {
       console.error('Login error:', err);

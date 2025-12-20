@@ -34,8 +34,7 @@ export default function RegisterPage() {
 
       if (data.user) {
         // Auto-login after registration
-        router.push('/dashboard');
-        router.refresh();
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
       setError(err.message || 'Registration failed');
