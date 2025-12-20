@@ -1,26 +1,33 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  const supabase = createClient();
   
-  if (!session) {
+  // Check authentication
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
     redirect("/login");
   }
 
-  // Get user's projects
-  const projects = await prisma.project.findMany({
-    where: { userId: session.user.id },
-    include: {
-      _count: {
-        select: { articles: true }
-      }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+  // Get user's projects with article counts
+  const { data: projects, error: projectsError } = await supabase
+    .from('projects')
+    .select(`
+      *,
+      articles:articles(count)
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  const projectsWithCounts = projects?.map(p => ({
+    ...p,
+    articleCount: p.articles?.[0]?.count || 0
+  })) || [];
+
+  const totalArticles = projectsWithCounts.reduce((sum, p) => sum + p.articleCount, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
@@ -38,8 +45,10 @@ export default async function DashboardPage() {
               </Link>
               <div className="flex items-center space-x-3">
                 <div className="text-right">
-                  <div className="text-sm font-medium text-white">{session.user.name}</div>
-                  <div className="text-xs text-gray-400">{session.user.email}</div>
+                  <div className="text-sm font-medium text-white">
+                    {user.user_metadata?.name || user.email}
+                  </div>
+                  <div className="text-xs text-gray-400">{user.email}</div>
                 </div>
                 <form action="/api/auth/signout" method="POST">
                   <button
@@ -60,7 +69,7 @@ export default async function DashboardPage() {
         {/* Welcome Section */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-white mb-2">
-            Welkom terug, {session.user.name?.split(' ')[0]}! 👋
+            Welkom terug, {user.user_metadata?.name?.split(' ')[0] || 'daar'}! 👋
           </h1>
           <p className="text-gray-400 text-lg">
             Beheer je WordPress projecten en genereer automatisch SEO-geoptimaliseerde content
@@ -74,7 +83,7 @@ export default async function DashboardPage() {
               <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">📝</span>
               </div>
-              <span className="text-3xl font-bold text-white">{projects.length}</span>
+              <span className="text-3xl font-bold text-white">{projectsWithCounts.length}</span>
             </div>
             <h3 className="text-gray-400 text-sm font-medium">Actieve Projecten</h3>
           </div>
@@ -84,9 +93,7 @@ export default async function DashboardPage() {
               <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">📊</span>
               </div>
-              <span className="text-3xl font-bold text-white">
-                {projects.reduce((sum, p) => sum + p._count.articles, 0)}
-              </span>
+              <span className="text-3xl font-bold text-white">{totalArticles}</span>
             </div>
             <h3 className="text-gray-400 text-sm font-medium">Totaal Artikelen</h3>
           </div>
@@ -111,7 +118,7 @@ export default async function DashboardPage() {
             </button>
           </div>
 
-          {projects.length === 0 ? (
+          {projectsWithCounts.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">🚀</span>
@@ -128,7 +135,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {projects.map((project) => (
+              {projectsWithCounts.map((project) => (
                 <div
                   key={project.id}
                   className="bg-black/50 border border-gray-800 rounded-lg p-6 hover:border-orange-500/50 transition-all"
@@ -139,13 +146,13 @@ export default async function DashboardPage() {
                         {project.name}
                       </h3>
                       <p className="text-gray-400 text-sm mb-3">
-                        {project.websiteUrl}
+                        {project.website_url}
                       </p>
                       <div className="flex items-center space-x-4 text-sm">
                         <span className="text-gray-500">
-                          📄 {project._count.articles} artikelen
+                          📄 {project.articleCount} artikelen
                         </span>
-                        {project.wpUrl && (
+                        {project.wp_url && (
                           <span className="text-green-500">✓ WordPress verbonden</span>
                         )}
                       </div>

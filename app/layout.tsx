@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Providers } from "./providers";
+
 
 export const metadata: Metadata = {
   title: "WritGo AI - WordPress SEO Agent",
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <body>
-        <Providers>{children}</Providers>
+        {children}
       </body>
     </html>
   );
