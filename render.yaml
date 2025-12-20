@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: writgoai
+    name: writgoai-seo
     env: node
     region: frankfurt
     plan: starter
@@ -23,21 +23,8 @@ services:
         sync: false
       - key: CRON_SECRET
         generateValue: true
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-        sync: false
-      - key: AWS_BUCKET_NAME
-        sync: false
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_REGION
-        value: eu-west-1
 
-# Cron Jobs (Render doesn't support cron in render.yaml, use Render dashboard)
-# After deployment, add these cron jobs in Render dashboard:
+# Cron Jobs - WordPress AI SEO Agent Only
 # 
 # 1. Autopilot Scheduler (every 15 minutes)
 #    Path: /api/cron/autopilot-scheduler
@@ -47,18 +34,14 @@ services:
 #    Path: /api/cron/autopilot-projects
 #    Schedule: 0 9 * * *
 #
-# 3. Social Media Autopilot (daily at 10 AM)
-#    Path: /api/cron/social-media-autopilot
-#    Schedule: 0 10 * * *
+# 3. Autopilot Runner (hourly)
+#    Path: /api/cron/autopilot-runner
+#    Schedule: 0 * * * *
 #
-# 4. Linkbuilding Auto (daily at 3 AM)
-#    Path: /api/cron/linkbuilding-auto
-#    Schedule: 0 3 * * *
-#
-# 5. Sync GSC Data (daily at 2 AM)
+# 4. Sync GSC Data (daily at 2 AM)
 #    Path: /api/cron/sync-gsc-data
 #    Schedule: 0 2 * * *
 #
-# 6. Autopilot Runner (hourly)
-#    Path: /api/cron/autopilot-runner
-#    Schedule: 0 * * * *
+# 5. Auto Regenerate Plan (daily at 3 AM)
+#    Path: /api/cron/auto-regenerate-plan
+#    Schedule: 0 3 * * *
