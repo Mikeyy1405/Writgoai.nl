@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 interface DashboardLayoutProps {
   children: React.ReactNode;
   user: {
-    email: string;
+    email?: string;
     user_metadata?: {
       name?: string;
     };
@@ -106,13 +106,13 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           <div className="border-t border-gray-800 p-4">
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                {user.user_metadata?.name?.[0] || user.email[0].toUpperCase()}
+                {user.user_metadata?.name?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-white truncate">
-                  {user.user_metadata?.name || user.email}
+                  {user.user_metadata?.name || user.email || 'User'}
                 </div>
-                <div className="text-xs text-gray-400 truncate">{user.email}</div>
+                <div className="text-xs text-gray-400 truncate">{user.email || ''}</div>
               </div>
             </div>
             <button
