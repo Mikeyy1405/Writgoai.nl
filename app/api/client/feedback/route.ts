@@ -59,10 +59,10 @@ export async function POST(request: NextRequest) {
 
     // Notify admin
     try {
-      await sendEmail(
-        'support@WritgoAI.nl',
-        `Nieuwe feedback: ${title}`,
-        `
+      await sendEmail({
+        to: 'support@WritgoAI.nl',
+        subject: `Nieuwe feedback: ${title}`,
+        html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #FF6B35;">Nieuwe Feedback Ontvangen</h2>
             <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -79,8 +79,8 @@ export async function POST(request: NextRequest) {
             </a>
           </div>
         `,
-        `Nieuwe feedback van ${client.name} (${client.email})\n\nCategorie: ${category}\nTitel: ${title}\n\n${description}`
-      );
+        text: `Nieuwe feedback van ${client.name} (${client.email})\n\nCategorie: ${category}\nTitel: ${title}\n\n${description}`
+      });
     } catch (emailError) {
       console.error('Failed to send email notification:', emailError);
     }

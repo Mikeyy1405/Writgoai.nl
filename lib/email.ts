@@ -261,15 +261,17 @@ Test verzonden op: ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amst
   }
 }
 
+export interface SendEmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}
+
 /**
  * Generieke email verzenden functie
  */
-export async function sendEmail(
-  to: string,
-  subject: string,
-  html: string,
-  text?: string
-) {
+export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
   const mailOptions = {
     from: `"WritgoAI" <${process.env.SMTP_USER}>`,
     to,

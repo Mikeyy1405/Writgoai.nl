@@ -92,10 +92,10 @@ export async function POST(request: NextRequest) {
 
     // Send email notification to client
     try {
-      await sendEmail(
-        client.email,
-        subject || 'Nieuw bericht van WritgoAI',
-        `
+      await sendEmail({
+        to: client.email,
+        subject: subject || 'Nieuw bericht van WritgoAI',
+        html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #FF6B35;">Nieuw bericht van WritgoAI</h2>
             <p>Hallo ${client.name},</p>
@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
             </a>
           </div>
         `,
-        `Hallo ${client.name},\n\nJe hebt een nieuw bericht ontvangen van WritgoAI:\n\n${message}\n\nLog in om te reageren: ${process.env.NEXT_PUBLIC_APP_URL}/client-portal/messages`
-      );
+        text: `Hallo ${client.name},\n\nJe hebt een nieuw bericht ontvangen van WritgoAI:\n\n${message}\n\nLog in om te reageren: ${process.env.NEXT_PUBLIC_APP_URL}/client-portal/messages`
+      });
     } catch (emailError) {
       console.error('Failed to send email notification:', emailError);
     }
