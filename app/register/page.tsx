@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase-client';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,32 +18,35 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Sign up with Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: name,
-          }
-        }
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
 
-      if (data.user) {
-        // Auto-login after registration
-        window.location.href = '/dashboard';
+      if (!response.ok) {
+        setError(data.error || 'Registratie mislukt');
+        setLoading(false);
+        return;
       }
+
+      // Success - redirect
+      window.location.href = '/dashboard';
     } catch (err: any) {
-      setError(err.message || 'Registration failed');
-    } finally {
+      setError(err.message || 'Er ging iets mis');
       setLoading(false);
     }
   };
 
   const handleGoogleSignUp = async () => {
     try {
+      // Lazy load the supabase client only when needed
+      const { supabase } = await import('@/lib/supabase-client');
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
