@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       password,
       options: {
         data: {
-          name: name,
+          name,
         },
       },
     });
