@@ -7,7 +7,7 @@
 import { writeArticleWithClaude, ClaudeArticle } from '../ai-services/claude-writer';
 import { researchTopicWithPerplexity, PerplexityResearchResult } from '../ai-services/perplexity-research';
 import { generateArticleImageWithRetry } from '../ai-services/flux-image-generator';
-import { publishArticleToWordPress } from '../wordpress-publisher';
+import { publishToWordPress, getWordPressConfig } from '../wordpress-publisher';
 import { deductCredits, CREDIT_COSTS } from '../credits';
 import { PrismaClient } from '@prisma/client';
 
@@ -206,7 +206,14 @@ export async function runAutoPilotJob(
     let wordpressUrl: string | null = null;
 
     try {
-      const publishResult = await publishArticleToWordPress({
+      // Get WordPress config for project
+      const wpConfig = await getWordPressConfig({ projectId: project.id });
+      
+      if (!wpConfig) {
+        throw new Error('WordPress not configured for this project');
+      }
+
+      const publishResult = await publishToWordPress(wpConfig, {
         title: article.title,
         content: article.content,
         excerpt: article.metaDescription,
@@ -216,7 +223,6 @@ export async function runAutoPilotJob(
         seoDescription: article.metaDescription,
         focusKeyword: article.focusKeyword,
         useGutenberg: true,
-        projectId: project.id,
       });
 
       wordpressPostId = publishResult.id;

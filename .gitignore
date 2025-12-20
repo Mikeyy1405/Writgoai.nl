@@ -60,3 +60,6 @@ prisma/migrations/*_dev/
 # Backups
 *.backup
 *.bak
+
+# Archived scripts (cleanup)
+scripts/archive/

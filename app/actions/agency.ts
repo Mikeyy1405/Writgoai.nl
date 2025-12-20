@@ -174,10 +174,10 @@ export async function createRequest(input: {
 
     // Send email notification to admin
     try {
-      await sendEmail({
-        to: 'info@WritgoAI.nl',
-        subject: `Nieuw verzoek van ${client.name}`,
-        html: `
+      await sendEmail(
+        'info@WritgoAI.nl',
+        `Nieuw verzoek van ${client.name}`,
+        `
           <h2>Nieuw verzoek ontvangen</h2>
           <p><strong>Client:</strong> ${client.name} (${client.email})</p>
           <p><strong>Titel:</strong> ${input.title}</p>
@@ -185,8 +185,8 @@ export async function createRequest(input: {
           <p><strong>Urgentie:</strong> ${input.urgency || 'medium'}</p>
           <p><strong>Beschrijving:</strong></p>
           <p>${input.description}</p>
-        `,
-      });
+        `
+      );
     } catch (emailError) {
       console.error('Failed to send email notification:', emailError);
     }
