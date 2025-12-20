@@ -58,20 +58,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg"></div>
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg"></div>
             <span className="text-2xl font-bold text-white">WritGo AI</span>
           </Link>
           <h1 className="text-3xl font-bold text-white mb-2">Start vandaag nog</h1>
-          <p className="text-slate-400">Maak een gratis account en begin met content genereren</p>
+          <p className="text-gray-400">Maak een gratis account en begin met content genereren</p>
         </div>
 
         {/* Register Form */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
+        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
               <p className="text-red-400 text-sm">{error}</p>
@@ -81,7 +81,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
                 Volledige naam
               </label>
               <input
@@ -89,7 +89,7 @@ export default function RegisterPage() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 placeholder="Jan Jansen"
                 required
                 disabled={loading}
@@ -98,7 +98,7 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
               <input
@@ -106,7 +106,7 @@ export default function RegisterPage() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 placeholder="jouw@email.nl"
                 required
                 disabled={loading}
@@ -115,7 +115,7 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Wachtwoord
               </label>
               <input
@@ -123,13 +123,13 @@ export default function RegisterPage() {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 placeholder="••••••••"
                 required
                 disabled={loading}
                 minLength={8}
               />
-              <p className="mt-1 text-xs text-slate-500">Minimaal 8 tekens</p>
+              <p className="mt-1 text-xs text-gray-500">Minimaal 8 tekens</p>
             </div>
 
             {/* Terms */}
@@ -137,17 +137,17 @@ export default function RegisterPage() {
               <input
                 type="checkbox"
                 id="terms"
-                className="w-4 h-4 mt-1 rounded border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                className="w-4 h-4 mt-1 rounded border-gray-800 bg-black text-orange-500 focus:ring-orange-500"
                 required
                 disabled={loading}
               />
-              <label htmlFor="terms" className="ml-2 text-sm text-slate-300">
+              <label htmlFor="terms" className="ml-2 text-sm text-gray-300">
                 Ik ga akkoord met de{" "}
-                <a href="#" className="text-blue-400 hover:text-blue-300">
+                <a href="#" className="text-orange-400 hover:text-orange-300">
                   voorwaarden
                 </a>{" "}
                 en{" "}
-                <a href="#" className="text-blue-400 hover:text-blue-300">
+                <a href="#" className="text-orange-400 hover:text-orange-300">
                   privacybeleid
                 </a>
               </label>
@@ -157,7 +157,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Account wordt aangemaakt..." : "Account aanmaken"}
             </button>
@@ -166,10 +166,10 @@ export default function RegisterPage() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-700"></div>
+              <div className="w-full border-t border-gray-800"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-slate-800/50 text-slate-400">Of</span>
+              <span className="px-4 bg-gray-900/50 text-gray-400">Of</span>
             </div>
           </div>
 
@@ -179,7 +179,7 @@ export default function RegisterPage() {
               onClick={handleGoogleSignIn}
               type="button"
               disabled={loading}
-              className="w-full flex items-center justify-center px-6 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white hover:bg-slate-800 transition-all disabled:opacity-50"
+              className="w-full flex items-center justify-center px-6 py-3 bg-black border border-gray-800 rounded-lg text-white hover:bg-gray-900 transition-all disabled:opacity-50"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -192,9 +192,9 @@ export default function RegisterPage() {
           </div>
 
           {/* Login Link */}
-          <p className="mt-6 text-center text-sm text-slate-400">
+          <p className="mt-6 text-center text-sm text-gray-400">
             Al een account?{" "}
-            <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+            <Link href="/login" className="text-orange-400 hover:text-orange-300 font-medium">
               Log in
             </Link>
           </p>
@@ -202,13 +202,13 @@ export default function RegisterPage() {
 
         {/* Back to Home */}
         <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-slate-400 hover:text-slate-300">
+          <Link href="/" className="text-sm text-gray-400 hover:text-gray-300">
             ← Terug naar home
           </Link>
         </div>
 
         {/* Trust Badges */}
-        <div className="mt-8 flex items-center justify-center space-x-6 text-slate-500 text-sm">
+        <div className="mt-8 flex items-center justify-center space-x-6 text-gray-500 text-sm">
           <div className="flex items-center">
             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/>
