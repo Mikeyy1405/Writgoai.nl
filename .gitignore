@@ -1,65 +1,6 @@
-# Dependencies
 node_modules/
-/.pnp
-.pnp.js
-package-lock.json
-
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-/.build/
-.next
-.build
-
-# Production
-/build
-/dist
-
-# Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local env files
+.next/
 .env
-.env*.local
-.env.development
-.env.production
-
-# Vercel
-.vercel
-
-# Typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-Thumbs.db
-
-# Prisma
-prisma/migrations/*_dev/
-
-# Uploads
-/public/uploads/
-/uploads/
-
-# Backups
-*.backup
-*.bak
-
-# Archived scripts (cleanup)
-scripts/archive/
+.env.local
+*.log
+.DS_Store
