@@ -118,6 +118,11 @@ model Client {
   savedKeywords       Keyword[]
   articleIdeas        ArticleIdea[]
   autoPilotJobs       AutoPilotJob[]
+  assignments         Assignment[]
+  requests            Request[]
+  invoices            Invoice[]
+  subscriptions       Subscription[]
+  apiUsage            ApiUsage[]
 }
 
 // Project/Website voor elke client (kan meerdere websites/projecten hebben)
@@ -179,9 +184,10 @@ model Project {
   isPrimary Boolean @default(false) // Is dit het hoofdproject van de client
 
   // Relaties
-  savedContent   SavedContent[]
-  knowledgeBase  ProjectKnowledge[]
-  affiliateLinks AffiliateLink[]
+  savedContent       SavedContent[]
+  knowledgeBase      ProjectKnowledge[]
+  affiliateLinks     AffiliateLink[]
+  collaborators      ProjectCollaborator[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1034,4 +1040,216 @@ model BlogPost {
   @@index([status])
   @@index([publishedAt])
   @@index([category])
+}
+
+// Assignment - Client assignments/tasks
+model Assignment {
+  id          String  @id @default(cuid())
+  clientId    String
+  client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Assignment details
+  title       String
+  description String  @db.Text
+  type        String  // website, seo, content, marketing, support, other
+
+  // Status tracking
+  status      String  @default("pending") // pending, in_progress, completed, cancelled
+  priority    String  @default("normal") // low, normal, high, urgent
+
+  // Deadline
+  deadline    DateTime?
+  completedAt DateTime?
+
+  // Admin notes
+  assignedTo  String? // Admin email who handles this
+  adminNotes  String? @db.Text
+
+  // Deliverables
+  deliverables Json? // URLs, files, content, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
+  @@index([deadline])
+}
+
+// Request - Client support requests
+model Request {
+  id          String  @id @default(cuid())
+  clientId    String
+  client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Request details
+  title       String
+  description String  @db.Text
+  type        String  // technical, billing, feature, support, question, other
+
+  // Urgency and status
+  urgency     String  @default("medium") // low, medium, high
+  status      String  @default("open") // open, in_progress, resolved, closed
+
+  // Resolution
+  resolvedAt  DateTime?
+  resolution  String? @db.Text
+  resolvedBy  String? // Admin email who resolved this
+
+  // Admin notes
+  adminNotes  String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
+  @@index([urgency])
+}
+
+// Invoice - Client invoicing
+model Invoice {
+  id          String  @id @default(cuid())
+  clientId    String
+  client      Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Invoice details
+  invoiceNumber String  @unique
+  title         String
+  description   String? @db.Text
+  
+  // Items
+  items         Json    // Array of { description, quantity, unitPrice, total }
+  
+  // Amounts
+  subtotal      Float
+  tax           Float   @default(0)
+  total         Float
+
+  // Currency
+  currency      String  @default("EUR")
+
+  // Payment status
+  status        String  @default("pending") // pending, paid, overdue, cancelled
+  dueDate       DateTime
+  paidAt        DateTime?
+
+  // Payment details
+  paymentMethod String? // stripe, bank_transfer, paypal, other
+  paymentId     String? // External payment reference
+  
+  // Notes
+  notes         String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@index([dueDate])
+}
+
+// ProjectCollaborator - Project team members
+model ProjectCollaborator {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Collaborator details
+  email     String
+  role      String   @default("viewer") // owner, editor, viewer, commenter
+  
+  // Status
+  status    String   @default("pending") // pending, active, inactive
+  
+  // Invitation
+  invitedBy String?  // User ID who invited
+  invitedAt DateTime @default(now())
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+
+  // Permissions
+  canEdit   Boolean  @default(false)
+  canPublish Boolean @default(false)
+  canDelete Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, email])
+  @@index([projectId])
+  @@index([email])
+  @@index([status])
+}
+
+// Subscription - Client subscription tracking
+model Subscription {
+  id                   String    @id @default(cuid())
+  clientId             String
+  client               Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Plan details
+  planId               String?
+  planName             String    // starter, pro, business, enterprise
+  monthlyCredits       Float
+  priceEur             Float
+
+  // Stripe integration
+  stripeSubscriptionId String?   @unique
+  stripeCustomerId     String?
+  stripePriceId        String?
+
+  // Status
+  status               String    @default("active") // active, trialing, cancelled, past_due, unpaid
+
+  // Period
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  trialStart           DateTime?
+  trialEnd             DateTime?
+
+  // Cancellation
+  cancelledAt          DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([stripeSubscriptionId])
+}
+
+// ApiUsage - API usage statistics
+model ApiUsage {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Request details
+  endpoint    String
+  method      String   // GET, POST, PUT, DELETE
+  feature     String?  // chat, content_generation, image_generation, video_generation, etc.
+
+  // Response details
+  statusCode  Int
+  responseTime Float   // Response time in milliseconds
+
+  // Token usage (for AI calls)
+  inputTokens  Int     @default(0)
+  outputTokens Int     @default(0)
+
+  // Metadata
+  userAgent   String?
+  ipAddress   String?
+
+  timestamp   DateTime @default(now())
+
+  @@index([clientId])
+  @@index([timestamp])
+  @@index([feature])
+  @@index([endpoint])
 }
