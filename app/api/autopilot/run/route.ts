@@ -219,7 +219,31 @@ export async function POST(request: Request) {
 }
 
 async function handleCreateNew(supabase: any, project: any, insight: any) {
-  const topic = insight?.query || `SEO tips for ${project.name}`;
+  // Check if there's a scheduled article in content plan
+  const { data: plannedArticles } = await supabase
+    .from('content_plan')
+    .select('*')
+    .eq('project_id', project.id)
+    .eq('status', 'scheduled')
+    .lte('scheduled_date', new Date().toISOString())
+    .order('priority', { ascending: false })
+    .limit(1);
+
+  let topic, targetWordCount;
+  if (plannedArticles && plannedArticles.length > 0) {
+    const planned = plannedArticles[0];
+    topic = planned.title;
+    targetWordCount = planned.target_word_count || 1000;
+    
+    // Mark as in progress
+    await supabase
+      .from('content_plan')
+      .update({ status: 'in_progress' })
+      .eq('id', planned.id);
+  } else {
+    topic = insight?.query || `SEO tips for ${project.niche || project.name}`;
+    targetWordCount = 1000;
+  }
   
   await addLog(supabase, project.id, 'generate', `Generating new article: "${topic}"`);
 

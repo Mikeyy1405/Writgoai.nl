@@ -93,3 +93,60 @@ CREATE POLICY "Users can view their insights" ON performance_insights
 
 CREATE POLICY "System can manage insights" ON performance_insights
   FOR ALL WITH CHECK (true);
+
+-- Keywords Table
+CREATE TABLE IF NOT EXISTS keywords (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  keyword TEXT NOT NULL,
+  search_intent VARCHAR(50),
+  difficulty VARCHAR(20),
+  opportunity_score DECIMAL(3,1) DEFAULT 0,
+  article_angle TEXT,
+  target_word_count INTEGER,
+  status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Content Plan Table
+CREATE TABLE IF NOT EXISTS content_plan (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  keyword TEXT,
+  target_word_count INTEGER,
+  content_type VARCHAR(50),
+  priority VARCHAR(20),
+  scheduled_date TIMESTAMP WITH TIME ZONE,
+  status VARCHAR(20) DEFAULT 'scheduled',
+  rationale TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Add niche columns to projects table
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS niche VARCHAR(100);
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS niche_analysis JSONB;
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_keywords_project ON keywords(project_id, opportunity_score DESC);
+CREATE INDEX IF NOT EXISTS idx_content_plan_project ON content_plan(project_id, scheduled_date);
+
+-- RLS Policies
+ALTER TABLE keywords ENABLE ROW LEVEL SECURITY;
+ALTER TABLE content_plan ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their keywords" ON keywords
+  FOR SELECT USING (
+    project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+  );
+
+CREATE POLICY "System can manage keywords" ON keywords
+  FOR ALL WITH CHECK (true);
+
+CREATE POLICY "Users can view their content plan" ON content_plan
+  FOR SELECT USING (
+    project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+  );
+
+CREATE POLICY "System can manage content plan" ON content_plan
+  FOR ALL WITH CHECK (true);
