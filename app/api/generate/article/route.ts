@@ -1,10 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateAICompletion } from '@/lib/ai-client';
 
 export async function POST(request: Request) {
   try {
@@ -67,42 +63,22 @@ Requirements:
 
 Format the output as HTML with proper heading tags (<h2>, <h3>, <p>, <ul>, <li>, etc.).`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert SEO content writer who creates engaging, well-structured blog articles in Dutch. You always format your output as clean HTML.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+    const content = await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert SEO content writer who creates engaging, well-structured blog articles in Dutch. You always format your output as clean HTML.',
+      userPrompt: prompt,
       temperature: 0.7,
-      max_tokens: 4000,
+      maxTokens: 4000,
     });
-
-    const content = completion.choices[0].message.content || '';
     
     // Generate title with AI
-    const titleCompletion = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert at writing catchy, SEO-optimized blog titles in Dutch. Respond with only the title, nothing else.',
-        },
-        {
-          role: 'user',
-          content: `Create a catchy, SEO-optimized title for an article about: "${topic}"${keywords ? ` (keywords: ${keywords})` : ''}`,
-        },
-      ],
+    const title = (await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert at writing catchy, SEO-optimized blog titles in Dutch. Respond with only the title, nothing else.',
+      userPrompt: `Create a catchy, SEO-optimized title for an article about: "${topic}"${keywords ? ` (keywords: ${keywords})` : ''}`,
       temperature: 0.8,
-      max_tokens: 100,
-    });
-
-    const title = titleCompletion.choices[0].message.content?.trim() || topic;
+      maxTokens: 100,
+    })).trim() || topic;
 
     // Save to database
     const { data: article, error: dbError } = await supabase
