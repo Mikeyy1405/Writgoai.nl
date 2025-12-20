@@ -1,6 +1,62 @@
+"use client";
+
 import Link from "next/link";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Er is iets misgegaan");
+        setLoading(false);
+        return;
+      }
+
+      // Auto login after registration
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Account aangemaakt, maar inloggen mislukt. Probeer handmatig in te loggen.");
+        setTimeout(() => router.push("/login"), 2000);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (error) {
+      setError("Er is iets misgegaan. Probeer het opnieuw.");
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    signIn("google", { callbackUrl: "/dashboard" });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
@@ -16,7 +72,13 @@ export default function RegisterPage() {
 
         {/* Register Form */}
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
-          <form className="space-y-6">
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
@@ -25,10 +87,12 @@ export default function RegisterPage() {
               <input
                 type="text"
                 id="name"
-                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Jan Jansen"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -40,10 +104,12 @@ export default function RegisterPage() {
               <input
                 type="email"
                 id="email"
-                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="jouw@email.nl"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -55,10 +121,13 @@ export default function RegisterPage() {
               <input
                 type="password"
                 id="password"
-                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="••••••••"
                 required
+                disabled={loading}
+                minLength={8}
               />
               <p className="mt-1 text-xs text-slate-500">Minimaal 8 tekens</p>
             </div>
@@ -70,6 +139,7 @@ export default function RegisterPage() {
                 id="terms"
                 className="w-4 h-4 mt-1 rounded border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
                 required
+                disabled={loading}
               />
               <label htmlFor="terms" className="ml-2 text-sm text-slate-300">
                 Ik ga akkoord met de{" "}
@@ -86,9 +156,10 @@ export default function RegisterPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-blue-500/50 transition-all"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Account aanmaken
+              {loading ? "Account wordt aangemaakt..." : "Account aanmaken"}
             </button>
           </form>
 
@@ -104,7 +175,12 @@ export default function RegisterPage() {
 
           {/* Social Register */}
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-center px-6 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white hover:bg-slate-800 transition-all">
+            <button
+              onClick={handleGoogleSignIn}
+              type="button"
+              disabled={loading}
+              className="w-full flex items-center justify-center px-6 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white hover:bg-slate-800 transition-all disabled:opacity-50"
+            >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
