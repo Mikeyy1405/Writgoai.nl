@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -30,42 +30,8 @@ export default async function DashboardPage() {
   const totalArticles = projectsWithCounts.reduce((sum, p) => sum + p.articleCount, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      {/* Navigation */}
-      <nav className="border-b border-gray-800 bg-black/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg"></div>
-              <span className="text-xl font-bold text-white">WritGo AI</span>
-            </div>
-            <div className="flex items-center space-x-6">
-              <Link href="/dashboard" className="text-white font-medium">
-                Dashboard
-              </Link>
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
-                  <div className="text-sm font-medium text-white">
-                    {user.user_metadata?.name || user.email}
-                  </div>
-                  <div className="text-xs text-gray-400">{user.email}</div>
-                </div>
-                <form action="/api/auth/signout" method="POST">
-                  <button
-                    type="submit"
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    Uitloggen
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <DashboardLayout user={user}>
+      <div className="p-6 lg:p-12">
         {/* Welcome Section */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-white mb-2">
@@ -210,7 +176,7 @@ export default async function DashboardPage() {
             </p>
           </button>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
