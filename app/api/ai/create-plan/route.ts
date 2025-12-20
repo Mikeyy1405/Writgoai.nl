@@ -95,7 +95,7 @@ Respond in JSON:
   "strategy_summary": "Overall strategy explanation"
 }`;
 
-    const planData = await generateJSONCompletion({
+    const planData = await generateJSONCompletion<{ plan: any[]; strategy_summary: string }>({
       task: 'content',
       systemPrompt: 'You are an expert content strategist who creates data-driven publishing plans. Always respond with valid JSON.',
       userPrompt: planPrompt,
