@@ -273,7 +273,7 @@ Format the output as HTML with proper heading tags.`;
   const titleCompletion = await generateAICompletion({
       task: 'content',
       systemPrompt: 'You are an expert at writing catchy, SEO-optimized blog titles in Dutch. Respond with only the title.',
-      userPrompt: `Create a catchy title for: "${topic,
+      userPrompt: `Create a catchy title for: "${topic}"`,
       temperature: 0.8,
       maxTokens: 100,
     });
