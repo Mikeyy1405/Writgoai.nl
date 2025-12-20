@@ -1,39 +1,123 @@
-import { createClient } from "@/lib/supabase-server";
-import { redirect } from "next/navigation";
-import DashboardLayout from "@/components/DashboardLayout";
+'use client';
 
-export default async function ProjectsPage() {
-  const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    redirect("/login");
-  }
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import CreateProjectModal from '@/components/CreateProjectModal';
+
+export default function ProjectsPage() {
+  const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadProjects = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/projects/list');
+      const data = await response.json();
+      if (response.ok) {
+        setProjects(data.projects || []);
+      }
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const handleSuccess = () => {
+    loadProjects();
+    router.refresh();
+  };
 
   return (
-    <DashboardLayout user={user}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <div className="p-6 lg:p-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Projecten</h1>
-          <p className="text-gray-400 text-lg">
-            Beheer al je WordPress projecten op één plek
-          </p>
-        </div>
-
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">📝</span>
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">
-              Projecten pagina komt binnenkort
-            </h3>
-            <p className="text-gray-400">
-              Hier kun je straks al je WordPress projecten beheren
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2">Projecten</h1>
+            <p className="text-gray-400 text-lg">
+              Beheer al je WordPress projecten op één plek
             </p>
           </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+          >
+            + Nieuw Project
+          </button>
         </div>
+
+        {loading ? (
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
+            <div className="text-center py-12 text-gray-400">
+              Projecten laden...
+            </div>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">📝</span>
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                Nog geen projecten
+              </h3>
+              <p className="text-gray-400 mb-6">
+                Maak je eerste WordPress project aan om te beginnen
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+              >
+                + Maak je eerste project
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-6">
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-orange-500/50 transition-all"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      {project.name}
+                    </h3>
+                    <p className="text-gray-400 mb-4">{project.website_url}</p>
+                    <div className="flex items-center space-x-4 text-sm">
+                      <span className="text-green-500">✓ WordPress verbonden</span>
+                      <span className="text-gray-500">
+                        Toegevoegd: {new Date(project.created_at).toLocaleDateString('nl-NL')}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => router.push(`/dashboard/generate?project=${project.id}`)}
+                      className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                    >
+                      Genereer Content
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </DashboardLayout>
+
+      <CreateProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleSuccess}
+      />
+    </div>
   );
 }
