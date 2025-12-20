@@ -1008,3 +1008,30 @@ model ContentOptimizationLog {
   @@index([projectId])
   @@index([optimizedAt])
 }
+
+// BlogPost - Public blog posts for the WritgoAI.nl website
+model BlogPost {
+  id          String  @id @default(cuid())
+  title       String
+  slug        String  @unique
+  excerpt     String  @db.Text
+  content     String  @db.Text
+  featuredImage String?
+  metaTitle     String?
+  metaDescription String? @db.Text
+  focusKeyword  String?
+  category      String
+  tags          String[]
+  status        String  @default("draft") // draft, published, archived
+  authorName    String
+  readingTimeMinutes Int @default(5)
+  views         Int     @default(0)
+  publishedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([category])
+}
