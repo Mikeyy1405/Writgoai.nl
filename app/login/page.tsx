@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase-client';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,34 +17,27 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log('🔄 Attempting login...');
-      
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      console.log('Login response:', { data, error: signInError });
+      const data = await response.json();
 
-      if (signInError) {
-        console.error('❌ Login error:', signInError);
-        setError(signInError.message);
+      if (!response.ok) {
+        setError(data.error || 'Login mislukt');
         setLoading(false);
         return;
       }
 
-      if (data.user) {
-        console.log('✅ Login successful! User:', data.user.id);
-        setSuccess(true);
-        
-        // Wait a bit for session to be set
-        setTimeout(() => {
-          console.log('🔄 Redirecting to dashboard...');
-          window.location.href = '/dashboard';
-        }, 500);
-      }
+      // Success - redirect via window.location for full page reload
+      setSuccess(true);
+      window.location.href = '/dashboard';
     } catch (err) {
-      console.error('💥 Unexpected error:', err);
+      console.error('Login error:', err);
       setError('Er ging iets mis. Probeer het opnieuw.');
       setLoading(false);
     }
