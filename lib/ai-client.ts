@@ -1,67 +1,30 @@
 import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Model definitions
-export const AI_MODELS = {
-  // Content Generation (Best for blog posts)
-  GEMINI_3_PRO: 'gemini-2.0-flash-exp',
-  GEMINI_FLASH: 'gemini-2.0-flash-exp',
-  
-  // Coding & Technical
-  CLAUDE_OPUS: 'claude-3-5-sonnet-20241022',
-  CLAUDE_SONNET: 'claude-3-5-sonnet-20241022',
-  
-  // General & Fast
-  GPT_4_TURBO: 'gpt-4-turbo-preview',
-  GPT_4: 'gpt-4-turbo-preview',
-  
-  // Budget & High Volume
-  DEEPSEEK: 'gpt-4-turbo-preview', // Fallback to GPT for now
-} as const;
-
-export type AIModel = typeof AI_MODELS[keyof typeof AI_MODELS];
-
-// Task-based model selection
-export function selectModelForTask(task: 'content' | 'technical' | 'quick' | 'budget'): AIModel {
-  switch (task) {
-    case 'content':
-      return AI_MODELS.GEMINI_3_PRO; // 1M context, best for content
-    case 'technical':
-      return AI_MODELS.CLAUDE_OPUS; // Best for coding
-    case 'quick':
-      return AI_MODELS.GPT_4; // Fast responses
-    case 'budget':
-      return AI_MODELS.DEEPSEEK; // Cost-effective
-    default:
-      return AI_MODELS.GEMINI_3_PRO;
-  }
-}
-
-// OpenAI Client (for GPT models)
-const openaiClient = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// AIML API Client (OpenAI-compatible)
+const aimlClient = new OpenAI({
+  apiKey: process.env.AIML_API_KEY || '',
+  baseURL: 'https://api.aimlapi.com/v1',
 });
 
-// Anthropic Client (for Claude models)
-const anthropicClient = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || 'dummy-key',
-});
+// Best models for each task
+export const BEST_MODELS = {
+  CONTENT: 'gemini-2.0-flash-exp',      // 1M context, super cheap
+  TECHNICAL: 'claude-3-5-sonnet-20241022', // Best coding
+  QUICK: 'gpt-4o-mini',                  // Fast & reliable
+  BUDGET: 'deepseek-chat',               // Cheapest
+  IMAGE: 'flux-pro/v1.1',                // Best quality images
+};
 
-// Google AI Client (for Gemini models)
-const googleAI = new GoogleGenerativeAI(
-  process.env.GOOGLE_AI_API_KEY || 'dummy-key'
-);
-
-// Unified AI completion function
-export async function generateAICompletion(params: {
-  model?: AIModel;
+interface GenerateOptions {
+  model?: string;
   task?: 'content' | 'technical' | 'quick' | 'budget';
   systemPrompt: string;
   userPrompt: string;
   temperature?: number;
   maxTokens?: number;
-}): Promise<string> {
+}
+
+export async function generateAICompletion(options: GenerateOptions): Promise<string> {
   const {
     model,
     task = 'content',
@@ -69,154 +32,61 @@ export async function generateAICompletion(params: {
     userPrompt,
     temperature = 0.7,
     maxTokens = 4000,
-  } = params;
+  } = options;
 
-  const selectedModel = model || selectModelForTask(task);
+  const modelMap = {
+    content: BEST_MODELS.CONTENT,
+    technical: BEST_MODELS.TECHNICAL,
+    quick: BEST_MODELS.QUICK,
+    budget: BEST_MODELS.BUDGET,
+  };
+
+  const selectedModel = model || modelMap[task];
 
   try {
-    // Route to appropriate client based on model
-    if (selectedModel.startsWith('gemini')) {
-      return await generateWithGemini(selectedModel, systemPrompt, userPrompt, temperature);
-    } else if (selectedModel.startsWith('claude')) {
-      return await generateWithClaude(selectedModel, systemPrompt, userPrompt, temperature, maxTokens);
-    } else {
-      return await generateWithOpenAI(selectedModel, systemPrompt, userPrompt, temperature, maxTokens);
-    }
-  } catch (error: any) {
-    console.error(`Error with ${selectedModel}:`, error.message);
+    const completion = await aimlClient.chat.completions.create({
+      model: selectedModel,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature,
+      max_tokens: maxTokens,
+    });
+
+    return completion.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error('AI completion error:', error);
     
-    // Fallback to GPT-4 if primary model fails
-    if (selectedModel !== AI_MODELS.GPT_4) {
-      console.log('Falling back to GPT-4...');
-      return await generateWithOpenAI(AI_MODELS.GPT_4, systemPrompt, userPrompt, temperature, maxTokens);
+    // Fallback to budget model
+    if (selectedModel !== BEST_MODELS.BUDGET) {
+      const fallback = await aimlClient.chat.completions.create({
+        model: BEST_MODELS.BUDGET,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      });
+      return fallback.choices[0]?.message?.content || '';
     }
     
     throw error;
   }
 }
 
-// Gemini implementation
-async function generateWithGemini(
-  model: string,
-  systemPrompt: string,
-  userPrompt: string,
-  temperature: number
-): Promise<string> {
-  const genAI = googleAI.getGenerativeModel({ 
-    model,
-    systemInstruction: systemPrompt,
-  });
-
-  const result = await genAI.generateContent({
-    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-    generationConfig: {
-      temperature,
-      maxOutputTokens: 8192,
-    },
-  });
-
-  return result.response.text();
-}
-
-// Claude implementation
-async function generateWithClaude(
-  model: string,
-  systemPrompt: string,
-  userPrompt: string,
-  temperature: number,
-  maxTokens: number
-): Promise<string> {
-  const message = await anthropicClient.messages.create({
-    model,
-    max_tokens: maxTokens,
-    temperature,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: userPrompt,
-      },
-    ],
-  });
-
-  const textContent = message.content.find((c) => c.type === 'text');
-  return textContent && 'text' in textContent ? textContent.text : '';
-}
-
-// OpenAI implementation
-async function generateWithOpenAI(
-  model: string,
-  systemPrompt: string,
-  userPrompt: string,
-  temperature: number,
-  maxTokens: number
-): Promise<string> {
-  const completion = await openaiClient.chat.completions.create({
-    model,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    temperature,
-    max_tokens: maxTokens,
-  });
-
-  return completion.choices[0]?.message?.content || '';
-}
-
-// JSON completion (with retry for valid JSON)
-export async function generateJSONCompletion<T = any>(params: {
-  model?: AIModel;
-  task?: 'content' | 'technical' | 'quick' | 'budget';
-  systemPrompt: string;
-  userPrompt: string;
-  temperature?: number;
-}): Promise<T> {
-  const {
-    model,
-    task = 'content',
-    systemPrompt,
-    userPrompt,
-    temperature = 0.3,
-  } = params;
-
-  const selectedModel = model || selectModelForTask(task);
-
-  // For JSON, use OpenAI with structured output
-  if (selectedModel.startsWith('gpt')) {
-    const completion = await openaiClient.chat.completions.create({
-      model: selectedModel,
-      messages: [
-        { role: 'system', content: systemPrompt + '\n\nAlways respond with valid JSON.' },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature,
-      response_format: { type: 'json_object' },
-    });
-
-    const content = completion.choices[0]?.message?.content || '{}';
-    return JSON.parse(content);
-  }
-
-  // For other models, parse JSON from text
-  const result = await generateAICompletion({
-    model: selectedModel,
-    task,
-    systemPrompt: systemPrompt + '\n\nAlways respond with valid JSON only, no other text.',
-    userPrompt,
-    temperature,
-  });
-
-  // Extract JSON from response (handle markdown code blocks)
-  const jsonMatch = result.match(/```json\n?([\s\S]*?)\n?```/) || result.match(/\{[\s\S]*\}/);
-  const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : result;
+export async function generateJSONCompletion<T>(options: GenerateOptions): Promise<T> {
+  const content = await generateAICompletion(options);
   
-  return JSON.parse(jsonStr.trim());
+  try {
+    const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/```\n?([\s\S]*?)\n?```/);
+    const jsonString = jsonMatch ? jsonMatch[1] : content;
+    return JSON.parse(jsonString.trim());
+  } catch (error) {
+    console.error('JSON parsing error:', error);
+    throw new Error('Failed to parse AI response as JSON');
+  }
 }
 
-export default {
-  generateAICompletion,
-  generateJSONCompletion,
-  selectModelForTask,
-  AI_MODELS,
-};
+export default aimlClient;
