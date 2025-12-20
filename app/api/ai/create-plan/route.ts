@@ -95,23 +95,13 @@ Respond in JSON:
   "strategy_summary": "Overall strategy explanation"
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert content strategist who creates data-driven publishing plans. Always respond with valid JSON.',
-        },
-        {
-          role: 'user',
-          content: planPrompt,
-        },
-      ],
+    const planData = await generateJSONCompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert content strategist who creates data-driven publishing plans. Always respond with valid JSON.',
+      userPrompt: planPrompt,
       temperature: 0.6,
-      response_format: { type: 'json_object' },
+      maxTokens: 4000,
     });
-
-    const planData = JSON.parse(completion.choices[0].message.content || '{"plan":[]}');
 
     // Save content plan
     const now = new Date();
