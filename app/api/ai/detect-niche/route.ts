@@ -78,23 +78,19 @@ Respond in JSON format:
   "opportunities": ["opp1", "opp2", "opp3"]
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert SEO analyst who understands website niches and content strategies. Always respond with valid JSON.',
-        },
-        {
-          role: 'user',
-          content: analysisPrompt,
-        },
-      ],
+    const analysis = await generateJSONCompletion<{
+      niche: string;
+      sub_niches: string[];
+      target_audience: string;
+      content_style: string;
+      strengths: string[];
+      opportunities: string[];
+    }>({
+      task: 'content',
+      systemPrompt: 'You are an expert SEO analyst who understands website niches and content strategies. Always respond with valid JSON.',
+      userPrompt: analysisPrompt,
       temperature: 0.3,
-      response_format: { type: 'json_object' },
     });
-
-    const analysis = JSON.parse(completion.choices[0].message.content || '{}');
 
     // Save analysis to project
     await supabase

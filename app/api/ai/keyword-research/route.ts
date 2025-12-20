@@ -92,23 +92,21 @@ Respond in JSON format:
   ]
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert SEO keyword researcher with deep knowledge of search trends and ranking opportunities. Always respond with valid JSON.',
-        },
-        {
-          role: 'user',
-          content: researchPrompt,
-        },
-      ],
+    const research = await generateJSONCompletion<{
+      keywords: Array<{
+        keyword: string;
+        search_intent: string;
+        difficulty: string;
+        opportunity_score: number;
+        article_angle: string;
+        target_word_count: number;
+      }>;
+    }>({
+      task: 'content',
+      systemPrompt: 'You are an expert SEO keyword researcher with deep knowledge of search trends and ranking opportunities. Always respond with valid JSON.',
+      userPrompt: researchPrompt,
       temperature: 0.7,
-      response_format: { type: 'json_object' },
     });
-
-    const research = JSON.parse(completion.choices[0].message.content || '{"keywords":[]}');
 
     // Sort by opportunity score
     const keywords = research.keywords.sort((a: any, b: any) => b.opportunity_score - a.opportunity_score);

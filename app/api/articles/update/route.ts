@@ -68,20 +68,12 @@ Requirements:
 
 Provide the updated content:`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert SEO content writer who updates and improves blog articles in Dutch. You always format your output as clean HTML.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+    const completion = await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert SEO content writer who updates and improves blog articles in Dutch. You always format your output as clean HTML.',
+      userPrompt: prompt,
       temperature: 0.7,
-      max_tokens: 4000,
+      maxTokens: 4000,
     });
 
     const updatedContent = completion.choices[0].message.content || article.content;

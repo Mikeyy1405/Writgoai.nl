@@ -259,28 +259,24 @@ Requirements:
 
 Format the output as HTML with proper heading tags.`;
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4.1-mini',
-    messages: [
-      { role: 'system', content: 'You are an expert SEO content writer who creates engaging, well-structured blog articles in Dutch.' },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.7,
-    max_tokens: 4000,
-  });
+  const completion = await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert SEO content writer who creates engaging, well-structured blog articles in Dutch.',
+      userPrompt: prompt,
+      temperature: 0.7,
+      maxTokens: 4000,
+    });
 
   const content = completion.choices[0].message.content || '';
 
   // Generate title
-  const titleCompletion = await openai.chat.completions.create({
-    model: 'gpt-4.1-mini',
-    messages: [
-      { role: 'system', content: 'You are an expert at writing catchy, SEO-optimized blog titles in Dutch. Respond with only the title.' },
-      { role: 'user', content: `Create a catchy title for: "${topic}"` },
-    ],
-    temperature: 0.8,
-    max_tokens: 100,
-  });
+  const titleCompletion = await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert at writing catchy, SEO-optimized blog titles in Dutch. Respond with only the title.',
+      userPrompt: `Create a catchy title for: "${topic,
+      temperature: 0.8,
+      maxTokens: 100,
+    });
 
   const title = titleCompletion.choices[0].message.content?.trim() || topic;
 
@@ -350,15 +346,13 @@ Original Article: ${article.title}
 
 Add a new comprehensive section (300-500 words) that covers "${insight.query}" in depth. Make it engaging and SEO-optimized. Write in Dutch. Format as HTML.`;
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4.1-mini',
-    messages: [
-      { role: 'system', content: 'You are an expert SEO content writer.' },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.7,
-    max_tokens: 2000,
-  });
+  const completion = await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert SEO content writer.',
+      userPrompt: prompt,
+      temperature: 0.7,
+      maxTokens: 2000,
+    });
 
   const expansion = completion.choices[0].message.content || '';
   const updatedContent = article.content + '\n\n' + expansion;
@@ -431,15 +425,13 @@ Requirements:
 - Write in Dutch
 - Respond with only the new title`;
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4.1-mini',
-    messages: [
-      { role: 'system', content: 'You are an expert at writing SEO-optimized, click-worthy titles.' },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.8,
-    max_tokens: 100,
-  });
+  const completion = await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert at writing SEO-optimized, click-worthy titles.',
+      userPrompt: prompt,
+      temperature: 0.8,
+      maxTokens: 100,
+    });
 
   const newTitle = completion.choices[0].message.content?.trim() || article.title;
 
