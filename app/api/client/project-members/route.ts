@@ -163,10 +163,10 @@ export async function POST(req: NextRequest) {
     const inviteUrl = `${process.env.NEXTAUTH_URL}/project-view/${accessToken}`;
     
     try {
-      await sendEmail(
-        email,
-        `Uitnodiging voor project: ${project.name}`,
-        `
+      await sendEmail({
+        to: email,
+        subject: `Uitnodiging voor project: ${project.name}`,
+        html: `
           <h2>Je bent uitgenodigd voor een project</h2>
           <p>Hallo ${name || email},</p>
           <p>${client.name || client.email} heeft je uitgenodigd om samen te werken aan het project <strong>${project.name}</strong>.</p>
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
           <p>Of kopieer deze link: ${inviteUrl}</p>
           <p>Met vriendelijke groet,<br>WritgoAI Team</p>
         `
-      );
+      });
     } catch (emailError) {
       console.error('Error sending invitation email:', emailError);
       // Don't fail the request if email fails

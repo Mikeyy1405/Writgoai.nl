@@ -116,12 +116,12 @@ export async function POST(req: NextRequest) {
           }
         );
 
-        await sendEmail(
-          session.user.email,
-          emailTemplate.subject,
-          emailTemplate.html,
-          emailTemplate.text
-        );
+        await sendEmail({
+          to: session.user.email,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text
+        });
 
         console.log(`✅ Email notification sent to ${session.user.email} for published article: ${title}`);
       } catch (emailError) {
