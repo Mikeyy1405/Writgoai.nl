@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,6 +32,7 @@ export default function LoginPage() {
       if (data.user) {
         // Success! Redirect to dashboard
         router.push('/dashboard');
+        router.refresh();
       }
     } catch (err) {
       console.error('Login error:', err);
