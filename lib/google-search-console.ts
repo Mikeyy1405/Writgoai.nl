@@ -124,12 +124,12 @@ export class GoogleSearchConsoleClient {
       });
 
       const keywords = keywordData.data.rows?.map(row => ({
-        query: row.keys[0],
+        query: row.keys?.[0] || '',
         clicks: row.clicks || 0,
         impressions: row.impressions || 0,
         ctr: row.ctr || 0,
         position: row.position || 0,
-      })) || [];
+      })).filter(k => k.query) || [];
 
       pagePerformance.push({
         page: pageUrl,
