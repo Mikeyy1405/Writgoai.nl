@@ -23,11 +23,10 @@ export default function WriterPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Haal geselecteerde idee op
     const savedIdea = localStorage.getItem('selectedIdea');
     if (!savedIdea) {
       alert('Geen idee geselecteerd!');
-      router.push('/dashboard/simple-content');
+      router.push('/dashboard/simple-content/content-plan');
       return;
     }
     setIdea(JSON.parse(savedIdea));
@@ -58,7 +57,6 @@ export default function WriterPage() {
       };
       
       setArticle(generatedArticle);
-      // Sla artikel op voor editor
       localStorage.setItem('generatedArticle', JSON.stringify(generatedArticle));
       alert('✅ Artikel geschreven!');
     } catch (error) {
@@ -75,11 +73,11 @@ export default function WriterPage() {
   }
 
   function goBack() {
-    router.push('/dashboard/simple-content');
+    router.push('/dashboard/simple-content/content-plan');
   }
 
   if (!idea) {
-    return <div className="p-8">Loading...</div>;
+    return <div className="p-8">⏳ Laden...</div>;
   }
 
   return (
@@ -93,8 +91,8 @@ export default function WriterPage() {
           >
             ← Terug naar Content Plan
           </button>
-          <h1 className="text-4xl font-bold mb-2">✍️ Stap 2: Writer</h1>
-          <p className="text-gray-600">AI schrijft het artikel → Ga naar Editor</p>
+          <h1 className="text-4xl font-bold mb-2">✍️ Stap 3: Writer</h1>
+          <p className="text-gray-600">AI schrijft het artikel automatisch</p>
         </div>
 
         {/* Selected Idea */}
@@ -116,7 +114,7 @@ export default function WriterPage() {
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <h2 className="text-2xl font-bold mb-4">🤖 AI Schrijft Artikel</h2>
             <p className="text-gray-600 mb-6">
-              AI schrijft automatisch een volledig artikel
+              AI schrijft automatisch een volledig SEO-geoptimaliseerd artikel
             </p>
             <button
               onClick={generateArticle}
@@ -150,7 +148,7 @@ export default function WriterPage() {
                 onClick={goToEditor}
                 className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-lg font-semibold"
               >
-                Volgende: Editor →
+                Volgende: Editor & Bibliotheek →
               </button>
             </div>
           </div>
