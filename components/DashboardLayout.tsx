@@ -23,11 +23,6 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     { icon: '🚀', label: 'Simple Content', href: '/dashboard/simple-content' },
     { icon: '📝', label: 'Projecten', href: '/dashboard/projects' },
     { icon: '✍️', label: 'Artikelen', href: '/dashboard/articles' },
-    { icon: '🤖', label: 'AI Generator', href: '/dashboard/generate' },
-    { icon: '⚡', label: 'AutoPilot', href: '/dashboard/autopilot' },
-    { icon: '📰', label: 'WritGo Blog', href: '/dashboard/writgo-autopilot' },
-    { icon: '📊', label: 'Analytics', href: '/dashboard/analytics' },
-    { icon: '🎯', label: 'Keywords', href: '/dashboard/keywords' },
     { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
   ];
 
