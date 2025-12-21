@@ -95,7 +95,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Link href="/blog" className="text-blue-600 hover:text-blue-700 inline-block">
+          <Link href="/blog" className="text-orange-600 hover:text-orange-700 inline-block">
             ← Terug naar blog
           </Link>
         </div>
@@ -116,7 +116,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
         {/* Keyword Badge */}
         {article.focus_keyword && (
-          <span className="inline-block px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-full mb-4">
+          <span className="inline-block px-3 py-1 text-sm font-medium text-orange-600 bg-orange-50 rounded-full mb-4">
             {article.focus_keyword}
           </span>
         )}
@@ -151,16 +151,16 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         />
 
         {/* CTA Box */}
-        <div className="mt-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-center">
+        <div className="mt-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-8 text-center">
           <h3 className="text-2xl font-bold text-white mb-3">
             Wil jij ook automatisch SEO-content genereren?
           </h3>
-          <p className="text-blue-100 mb-6">
+          <p className="text-orange-100 mb-6">
             WritGo AI helpt je om automatisch hoogwaardige, SEO-geoptimaliseerde content te creëren en publiceren
           </p>
           <Link
             href="/auth/register"
-            className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+            className="inline-block bg-white text-orange-600 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-colors"
           >
             Start Gratis →
           </Link>

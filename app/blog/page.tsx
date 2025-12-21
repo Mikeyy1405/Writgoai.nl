@@ -37,7 +37,7 @@ export default async function BlogPage() {
       {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Link href="/" className="text-blue-600 hover:text-blue-700 mb-4 inline-block">
+          <Link href="/" className="text-orange-600 hover:text-orange-700 mb-4 inline-block">
             ← Terug naar home
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">WritGo Blog</h1>
@@ -79,7 +79,7 @@ export default async function BlogPage() {
                     />
                   </div>
                 ) : (
-                  <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <div className="aspect-video bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
                     <svg className="w-16 h-16 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                     </svg>
@@ -90,13 +90,13 @@ export default async function BlogPage() {
                 <div className="p-6">
                   {/* Keyword Badge */}
                   {article.focus_keyword && (
-                    <span className="inline-block px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full mb-3">
+                    <span className="inline-block px-3 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded-full mb-3">
                       {article.focus_keyword}
                     </span>
                   )}
 
                   {/* Title */}
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
                     {article.title}
                   </h2>
 
@@ -132,17 +132,17 @@ export default async function BlogPage() {
       </main>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 py-16">
+      <section className="bg-gradient-to-r from-orange-500 to-orange-600 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Klaar om jouw WordPress site te laten groeien?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-orange-100 mb-8">
             Laat WritGo AI automatisch SEO-geoptimaliseerde content creëren en publiceren
           </p>
           <Link
             href="/auth/register"
-            className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+            className="inline-block bg-white text-orange-600 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-colors"
           >
             Start Gratis →
           </Link>
