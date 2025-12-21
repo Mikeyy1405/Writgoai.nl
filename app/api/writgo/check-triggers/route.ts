@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Parser from 'rss-parser';
+import { scoreOpportunity, checkDailyLimit } from '@/lib/opportunity-scorer';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -70,6 +71,29 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
+          // Score opportunity for strategic value
+          const score = scoreOpportunity({
+            title: item.title,
+            source_url: item.link,
+            metadata: {
+              description: item.contentSnippet || item.content?.substring(0, 200),
+              published: publishedDate.toISOString(),
+              author: item.creator || item.author,
+              categories: item.categories || [],
+              feedName: trigger.name
+            }
+          });
+
+          // Skip if score too low or daily limit reached
+          if (!score.shouldGenerate) {
+            continue; // Skip low-value content
+          }
+
+          const limitReached = await checkDailyLimit(score.topic, supabase);
+          if (limitReached) {
+            continue; // Daily limit for this topic reached
+          }
+
           // Create new opportunity
           const { data: opportunity, error: oppError } = await supabase
             .from('writgo_content_opportunities')
@@ -78,13 +102,21 @@ export async function POST(request: NextRequest) {
               title: item.title,
               source_url: item.link,
               status: 'detected',
-              priority: trigger.priority || 7,
+              priority: Math.round(score.total / 100), // Convert score to 1-10 priority
               metadata: {
                 description: item.contentSnippet || item.content?.substring(0, 200),
                 published: publishedDate.toISOString(),
                 author: item.creator || item.author,
                 categories: item.categories || [],
-                feedName: trigger.name
+                feedName: trigger.name,
+                topic: score.topic,
+                score: score.total,
+                scoreBreakdown: {
+                  priority: score.priority,
+                  relevance: score.relevance,
+                  freshness: score.freshness,
+                  authorityPotential: score.authorityPotential
+                }
               }
             })
             .select()

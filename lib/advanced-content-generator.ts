@@ -53,42 +53,74 @@ VEREISTEN:
 - **SEO**: Geoptimaliseerd voor featured snippets
 - **E-E-A-T**: Expertise, autoriteit, betrouwbaarheid
 
-STRUCTUUR:
+STRUCTUUR (AI OVERVIEW OPTIMIZED):
 
-1. **Intro (200-250 woorden)**
-   - Hook: Waarom is dit belangrijk?
-   - Context: Wat is er gebeurd?
-   - Wat leert de lezer in dit artikel?
+1. **Direct Answer (100 woorden)** ⭐ KRITIEK voor AI Overview!
+   <h2>Wat is [Onderwerp]?</h2>
+   <p><strong>DIRECT ANTWOORD in 40-60 woorden - clear, concise, factual</strong></p>
+   - Beantwoord de vraag meteen
+   - Gebruik simpele taal
+   - Geen fluff, alleen facts
 
-2. **Wat is [Onderwerp]? (300 woorden)**
-   - Uitleg voor beginners
-   - Waarom is het relevant?
-   - Korte geschiedenis/context
+2. **Intro & Context (150 woorden)**
+   - Waarom is dit belangrijk?
+   - Wat is er gebeurd? (met datum!)
+   - Wat leert de lezer?
 
-3. **Belangrijkste Updates/Features (400-500 woorden)**
-   - H3 per belangrijke update/feature
-   - Concrete details en voorbeelden
-   - Wat betekent dit in de praktijk?
+3. **Belangrijkste Punten in Lijst (300 woorden)**
+   <h2>5 Belangrijkste Dingen over [Onderwerp]</h2>
+   <ol>
+     <li><strong>Punt 1:</strong> Uitleg</li>
+     <li><strong>Punt 2:</strong> Uitleg</li>
+     ...
+   </ol>
+   - Gebruik numbered lists (AI Overview loves this!)
+   - Elk punt = 1-2 zinnen
 
-4. **Impact op WordPress SEO (400 woorden)**
-   - Hoe beïnvloedt dit WordPress sites?
-   - Specifieke gevolgen voor SEO
-   - Wat moeten site-eigenaren weten?
+4. **Diepgaande Uitleg (600 woorden)**
+   - H3 per aspect
+   - Concrete voorbeelden
+   - Data en cijfers waar mogelijk
+   - Expert quotes ("Volgens Google...")
 
-5. **Praktische Tips & Actie-items (500 woorden)**
-   - H3: "5 Dingen die je NU moet doen"
-   - Concrete stappen met uitleg
-   - Voorbeelden en best practices
+5. **Impact & Praktische Gevolgen (400 woorden)**
+   <h2>Wat betekent dit voor jouw website?</h2>
+   - Specifieke impact
+   - Concrete gevolgen
+   - Actie-items
 
-6. **FAQ Sectie (400-500 woorden)**
-   - 5-7 veelgestelde vragen
-   - Korte, directe antwoorden (50-80 woorden per vraag)
-   - Gebruik <h3> voor vragen, <p> voor antwoorden
+6. **Step-by-Step Guide (500 woorden)**
+   <h2>Hoe [Actie] uitvoeren: Stap-voor-stap</h2>
+   <ol>
+     <li><strong>Stap 1:</strong> Concrete actie met uitleg</li>
+     <li><strong>Stap 2:</strong> Concrete actie met uitleg</li>
+     ...
+   </ol>
+   - Numbered steps (AI Overview format!)
+   - Actionable, specific
 
-7. **Conclusie & Volgende Stappen (200 woorden)**
-   - Samenvatting key points
-   - Call-to-action: Gebruik WritGo AutoPilot
-   - Link naar dashboard
+7. **FAQ Sectie (500 woorden)** ⭐ KRITIEK voor AI Overview!
+   <h2>Veelgestelde Vragen over [Onderwerp]</h2>
+   
+   <h3>Vraag 1 met vraagteken?</h3>
+   <p><strong>Kort antwoord in 1 zin.</strong> Uitgebreide uitleg in 2-3 zinnen.</p>
+   
+   - 7-10 vragen
+   - Gebruik vraagwoorden: Wat, Hoe, Waarom, Wanneer
+   - Eerste zin = direct antwoord
+   - FAQ schema wordt automatisch gegenereerd!
+
+8. **Comparison Table (indien relevant)**
+   <table>
+     <tr><th>Feature</th><th>Voor</th><th>Na</th></tr>
+     <tr><td>...</td><td>...</td><td>...</td></tr>
+   </table>
+   - AI Overview loves tables!
+
+9. **Conclusie (150 woorden)**
+   - Samenvatting in 3 bullets
+   - Key takeaway
+   - CTA naar WritGo
 
 8. **Bronnen & Verder Lezen**
    - Link naar origineel artikel
@@ -123,11 +155,23 @@ E-E-A-T SIGNALEN:
 - Voeg expertise toe: "Op basis van onze ervaring met WordPress SEO..."
 - Geef concrete voorbeelden
 
+AI OVERVIEW OPTIMALISATIE (KRITIEK!):
+- ⭐ Eerste 100 woorden = DIRECT ANTWOORD op de hoofdvraag
+- ⭐ Gebruik <strong> voor het directe antwoord
+- ⭐ Numbered lists voor stappen/tips (AI loves this!)
+- ⭐ FAQ sectie met H3 vragen + directe antwoorden
+- ⭐ Tables voor vergelijkingen
+- ⭐ Expert quotes: "Volgens [Bron]..."
+- ⭐ Entities: Noem Google, OpenAI, etc. bij naam
+- ⭐ Dates: Gebruik exacte datums ("Op 15 december 2024...")
+- ⭐ Numbers: Gebruik cijfers en statistieken
+- ⭐ Semantic richness: Gebruik synoniemen en gerelateerde termen
+
 SEO OPTIMALISATIE:
-- Gebruik het focus keyword natuurlijk (5-8x)
-- Gebruik variaties en synoniemen
-- Optimaliseer voor featured snippets (lijsten, tabellen, directe antwoorden)
-- Voeg semantisch gerelateerde termen toe
+- Focus keyword in eerste 100 woorden
+- H2 met vraagformaat ("Wat is...", "Hoe werkt...")
+- Gebruik LSI keywords (semantisch gerelateerd)
+- Internal links naar pillar pages
 
 BELANGRIJK:
 - Schrijf ORIGINELE content, geen vertaling!
