@@ -98,12 +98,19 @@ async function generateArticleInBackground(queueId: string) {
       } as any
     });
 
-    // 3. Generate featured image
-    const featuredImage = await generateFeaturedImage({
-      title: topic.title,
-      description: topic.description,
-      style: 'photorealistic'
-    });
+    // 3. Generate featured image (optional, with fallback)
+    let featuredImage = '';
+    try {
+      featuredImage = await generateFeaturedImage({
+        title: topic.title,
+        description: topic.description,
+        style: 'photorealistic'
+      });
+    } catch (imageError) {
+      console.warn('Featured image generation failed, using placeholder:', imageError);
+      // Use a placeholder or Unsplash image
+      featuredImage = 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=1200&h=630&fit=crop';
+    }
 
     // 4. Update queue item with generated content
     await supabase
