@@ -18,6 +18,7 @@ export async function POST() {
     // 2. Generate full article with AI
     const content = await generateAdvancedContent({
       title: topic.title,
+      source_url: 'https://writgo.nl', // AI-generated, no external source
       metadata: {
         description: topic.description,
         topic: topic.category
