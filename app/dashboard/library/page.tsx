@@ -16,6 +16,7 @@ interface Article {
 interface Project {
   id: string;
   name: string;
+  website_url: string;
 }
 
 export default function LibraryPage() {
@@ -53,9 +54,21 @@ export default function LibraryPage() {
     }
   }
 
+  function getProject(projectId: string) {
+    return projects.find(p => p.id === projectId);
+  }
+
   function getProjectName(projectId: string) {
-    const project = projects.find(p => p.id === projectId);
+    const project = getProject(projectId);
     return project?.name || 'Onbekend Project';
+  }
+
+  function isWritGoBlog(projectId: string) {
+    const project = getProject(projectId);
+    if (!project) return false;
+    
+    // Check if URL contains writgo.nl
+    return project.website_url.toLowerCase().includes('writgo.nl');
   }
 
   function openEditor(article: Article) {
@@ -80,25 +93,51 @@ export default function LibraryPage() {
     setSelectedArticle(article);
     
     try {
-      const response = await fetch('/api/wordpress/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: article.title,
-          content: article.content
-        })
-      });
+      const isWritGo = isWritGoBlog(article.project_id);
+      
+      if (isWritGo) {
+        // WritGo Blog - publish to app blog
+        const response = await fetch('/api/articles/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: article.id,
+            title: article.title,
+            content: article.content,
+            word_count: article.word_count,
+            project_id: article.project_id,
+            status: 'published',
+            slug: article.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            published_at: new Date().toISOString()
+          })
+        });
 
-      if (!response.ok) throw new Error('Failed to publish');
+        if (!response.ok) throw new Error('Failed to publish to blog');
 
-      const data = await response.json();
-      alert(`✅ Artikel gepubliceerd!\n\n${data.url || 'Bekijk op je website'}`);
+        alert(`✅ Artikel gepubliceerd op WritGo Blog!\n\nBekijk op: /blog`);
+      } else {
+        // Other projects - publish to WordPress
+        const response = await fetch('/api/wordpress/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: article.title,
+            content: article.content,
+            project_id: article.project_id
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to publish to WordPress');
+
+        const data = await response.json();
+        alert(`✅ Artikel gepubliceerd op WordPress!\n\n${data.url || 'Bekijk op je website'}`);
+      }
       
       // Reload articles
       loadData();
     } catch (error) {
       console.error('Publish error:', error);
-      alert('❌ Fout bij publiceren. Check je WordPress instellingen.');
+      alert('❌ Fout bij publiceren. Check je instellingen.');
     } finally {
       setPublishing(false);
       setSelectedArticle(null);
@@ -209,57 +248,69 @@ export default function LibraryPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {articles.map((article) => (
-              <div
-                key={article.id}
-                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-orange-500/50 transition-all"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-white">{article.title}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        article.status === 'published' 
-                          ? 'bg-green-500/20 text-green-400' 
-                          : 'bg-yellow-500/20 text-yellow-400'
-                      }`}>
-                        {article.status === 'published' ? '✓ Gepubliceerd' : '○ Concept'}
-                      </span>
+            {articles.map((article) => {
+              const isWritGo = isWritGoBlog(article.project_id);
+              return (
+                <div
+                  key={article.id}
+                  className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-orange-500/50 transition-all"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold text-white">{article.title}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          article.status === 'published' 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {article.status === 'published' ? '✓ Gepubliceerd' : '○ Concept'}
+                        </span>
+                        {isWritGo && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-500/20 text-orange-400">
+                            🟠 WritGo Blog
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-4 text-sm text-gray-400 mb-3">
+                        <span>📝 {article.word_count} woorden</span>
+                        <span>📁 {getProjectName(article.project_id)}</span>
+                        <span>📅 {new Date(article.created_at).toLocaleDateString('nl-NL')}</span>
+                      </div>
+                      <p className="text-gray-400 text-sm line-clamp-2">
+                        {article.content.substring(0, 150)}...
+                      </p>
                     </div>
-                    <div className="flex gap-4 text-sm text-gray-400 mb-3">
-                      <span>📝 {article.word_count} woorden</span>
-                      <span>📁 {getProjectName(article.project_id)}</span>
-                      <span>📅 {new Date(article.created_at).toLocaleDateString('nl-NL')}</span>
-                    </div>
-                    <p className="text-gray-400 text-sm line-clamp-2">
-                      {article.content.substring(0, 150)}...
-                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => openEditor(article)}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                    >
+                      📝 Bewerken
+                    </button>
+                    <button
+                      onClick={() => downloadArticle(article)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                    >
+                      💾 Download
+                    </button>
+                    <button
+                      onClick={() => publishArticle(article)}
+                      disabled={publishing && selectedArticle?.id === article.id}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/50 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                    >
+                      {publishing && selectedArticle?.id === article.id 
+                        ? '⏳ Publiceren...' 
+                        : isWritGo 
+                          ? '🚀 Publiceer op Blog' 
+                          : '🚀 Publiceer op WordPress'}
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => openEditor(article)}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-all"
-                  >
-                    📝 Bewerken
-                  </button>
-                  <button
-                    onClick={() => downloadArticle(article)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all"
-                  >
-                    💾 Download
-                  </button>
-                  <button
-                    onClick={() => publishArticle(article)}
-                    disabled={publishing && selectedArticle?.id === article.id}
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/50 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-                  >
-                    {publishing && selectedArticle?.id === article.id ? '⏳ Publiceren...' : '🚀 Publiceren'}
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
     </div>
