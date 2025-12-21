@@ -5,9 +5,6 @@ import { supabase } from '@/lib/supabase-client';
 import DashboardLayout from '@/components/DashboardLayout';
 import OpportunitiesSection from './opportunities-section';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
-
 interface AutoPilotConfig {
   id: string;
   enabled: boolean;
