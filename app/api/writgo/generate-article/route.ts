@@ -101,11 +101,12 @@ async function generateArticleInBackground(queueId: string) {
     // 3. Generate featured image (optional, with fallback)
     let featuredImage = '';
     try {
-      featuredImage = await generateFeaturedImage({
+      const generatedImage = await generateFeaturedImage({
         title: topic.title,
         description: topic.description,
         style: 'photorealistic'
       });
+      featuredImage = generatedImage || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=1200&h=630&fit=crop';
     } catch (imageError) {
       console.warn('Featured image generation failed, using placeholder:', imageError);
       // Use a placeholder or Unsplash image
