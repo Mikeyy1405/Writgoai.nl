@@ -36,21 +36,27 @@ export async function POST(request: Request) {
 
     // Test WordPress connection
     try {
+      // Remove extra spaces from password (Application Passwords often have spaces)
+      const cleanPassword = wp_password.replace(/\s+/g, '');
+      
       const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
         headers: {
-          'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${wp_password}`).toString('base64'),
+          'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
         },
       });
 
       if (!testResponse.ok) {
+        const errorText = await testResponse.text();
+        console.error('WordPress connection failed:', testResponse.status, errorText);
         return NextResponse.json(
-          { error: 'WordPress connection failed. Check your credentials.' },
+          { error: `WordPress connection failed (${testResponse.status}). Check your credentials.` },
           { status: 400 }
         );
       }
-    } catch (wpError) {
+    } catch (wpError: any) {
+      console.error('WordPress connection error:', wpError.message);
       return NextResponse.json(
-        { error: 'Could not connect to WordPress. Check your URL.' },
+        { error: `Could not connect to WordPress: ${wpError.message}` },
         { status: 400 }
       );
     }
