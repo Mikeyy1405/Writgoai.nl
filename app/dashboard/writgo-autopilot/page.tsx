@@ -247,7 +247,6 @@ export default function WritGoAutoPilotPage() {
 
   const generateContent = async () => {
     setSaving(true);
-    setMessage({ type: 'info', text: 'AI genereert een relevant artikel...' });
     try {
       const response = await fetch('/api/writgo/generate-article', {
         method: 'POST'
@@ -256,17 +255,14 @@ export default function WritGoAutoPilotPage() {
       const data = await response.json();
       
       if (data.success) {
-        setMessage({ 
-          type: 'success', 
-          text: `✅ Artikel gegenereerd: "${data.article.title}" (${data.article.word_count} woorden, gepland voor ${new Date(data.article.scheduled_for).toLocaleDateString('nl-NL')})`
-        });
+        alert(`✅ Artikel gegenereerd!\n\nTitel: "${data.article.title}"\nWoorden: ${data.article.word_count}\nGepland voor: ${new Date(data.article.scheduled_for).toLocaleDateString('nl-NL')}`);
         loadData();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Er ging iets mis' });
+        alert(`❌ Fout: ${data.error || 'Er ging iets mis'}`);
       }
     } catch (error) {
       console.error('Error generating content:', error);
-      setMessage({ type: 'error', text: 'Fout bij genereren van content' });
+      alert('❌ Fout bij genereren van content');
     } finally {
       setSaving(false);
     }
