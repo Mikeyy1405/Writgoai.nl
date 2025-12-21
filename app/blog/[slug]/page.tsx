@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
 import TableOfContents from '@/components/TableOfContents';
 import SocialShare from '@/components/SocialShare';
+import AuthorBox from '@/components/AuthorBox';
+import { MIKE_SCHONEWILLE, getAuthorSchema } from '@/lib/author-profile';
 
 interface ArticlePageProps {
   params: {
@@ -150,6 +152,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     }
   };
 
+  const authorSchema = getAuthorSchema(MIKE_SCHONEWILLE, articleUrl);
+
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -184,6 +188,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(authorSchema) }}
       />
 
       {/* Header */}
@@ -256,6 +264,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             prose-code:bg-gray-800 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-orange-400"
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
+
+        {/* Author Box */}
+        <div className="mt-12">
+          <AuthorBox author={MIKE_SCHONEWILLE} />
+        </div>
 
         {/* CTA Box */}
         <div className="mt-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-8 text-center">
