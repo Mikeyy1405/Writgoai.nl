@@ -62,7 +62,7 @@ Geef ALLEEN een JSON array terug, geen extra tekst:
 
   try {
     const response = await generateAICompletion({
-      task: 'topic_discovery',
+      task: 'content',
       systemPrompt: 'Je bent een SEO content strategist die trending onderwerpen identificeert.',
       userPrompt: prompt,
       maxTokens: 2000,
