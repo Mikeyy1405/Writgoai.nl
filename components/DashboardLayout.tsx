@@ -20,9 +20,11 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
 
   const menuItems = [
     { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
-    { icon: '🚀', label: 'Simple Content', href: '/dashboard/simple-content' },
     { icon: '📝', label: 'Projecten', href: '/dashboard/projects' },
-    { icon: '✍️', label: 'Artikelen', href: '/dashboard/articles' },
+    { icon: '📋', label: 'Content Plan', href: '/dashboard/content-plan' },
+    { icon: '✍️', label: 'Content Writer', href: '/dashboard/writer' },
+    { icon: '📝', label: 'Editor', href: '/dashboard/editor' },
+    { icon: '📚', label: 'Bibliotheek', href: '/dashboard/library' },
     { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
   ];
 
