@@ -1,4 +1,4 @@
-import aimlClient from './ai-client';
+import { anthropicClient } from '@/lib/ai-client';
 
 interface ContentOpportunity {
   title: string;
@@ -184,14 +184,20 @@ Genereer ALLEEN de HTML content. Geen markdown code blocks, geen extra uitleg.
 Begin direct met de eerste <p> van de intro.`;
 
   try {
-    const completion = await aimlClient.chat.completions.create({
-      model: 'claude-4-5-sonnet',
-      messages: [{ role: 'user', content: prompt }],
+    const message = await anthropicClient.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 8000,
       temperature: 0.7,
-      max_tokens: 8000 // More tokens for longer content
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
     });
 
-    let content = completion.choices[0]?.message?.content || '';
+    const textContent = message.content.find((block) => block.type === 'text');
+    let content = textContent?.type === 'text' ? textContent.text : '';
     
     // Clean up markdown code blocks if AI added them
     content = content.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();

@@ -1,18 +1,29 @@
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-// Anthropic client via AIML API
-const anthropicClient = new Anthropic({
+// Anthropic client via AIML API (for Claude models)
+export const anthropicClient = new Anthropic({
   baseURL: 'https://api.aimlapi.com/',
   apiKey: process.env.AIML_API_KEY || '',
 });
 
+// OpenAI-compatible client via AIML API (for Perplexity and other models)
+export const openaiClient = new OpenAI({
+  apiKey: process.env.AIML_API_KEY || '',
+  baseURL: 'https://api.aimlapi.com/v1',
+});
+
+// For backwards compatibility
+export const aimlClient = openaiClient;
+
 // Best models for each task
 export const BEST_MODELS = {
-  CONTENT: 'claude-sonnet-4-5',              // Best content writing
-  TECHNICAL: 'claude-sonnet-4-5',            // Best coding
-  QUICK: 'claude-sonnet-4-5',                // Fast & reliable
-  BUDGET: 'claude-sonnet-4-5',               // Same model
+  CONTENT: 'claude-sonnet-4-5',              // Best content writing (Anthropic)
+  TECHNICAL: 'claude-sonnet-4-5',            // Best coding (Anthropic)
+  QUICK: 'claude-sonnet-4-5',                // Fast & reliable (Anthropic)
+  BUDGET: 'claude-sonnet-4-5',               // Same model (Anthropic)
   IMAGE: 'flux-pro/v1.1',                    // Best quality images
+  PERPLEXITY: 'perplexity/llama-3.1-sonar-large-128k-online', // For research/discovery
 };
 
 interface GenerateOptions {
@@ -44,22 +55,38 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
   const selectedModel = model || modelMap[task];
 
   try {
-    const message = await anthropicClient.messages.create({
+    // Use Anthropic SDK for Claude models
+    if (selectedModel.includes('claude')) {
+      const message = await anthropicClient.messages.create({
+        model: selectedModel,
+        max_tokens: maxTokens,
+        temperature,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userPrompt,
+          },
+        ],
+      });
+
+      // Extract text from response
+      const textContent = message.content.find((block) => block.type === 'text');
+      return textContent?.type === 'text' ? textContent.text : '';
+    }
+    
+    // Use OpenAI-compatible client for other models (Perplexity, etc.)
+    const completion = await openaiClient.chat.completions.create({
       model: selectedModel,
-      max_tokens: maxTokens,
-      temperature,
-      system: systemPrompt,
       messages: [
-        {
-          role: 'user',
-          content: userPrompt,
-        },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
+      temperature,
+      max_tokens: maxTokens,
     });
 
-    // Extract text from response
-    const textContent = message.content.find((block) => block.type === 'text');
-    return textContent?.type === 'text' ? textContent.text : '';
+    return completion.choices[0]?.message?.content || '';
   } catch (error: any) {
     console.error('AI completion error:', error);
     throw new Error(`AI generation failed: ${error.message}`);
