@@ -20,6 +20,7 @@ interface Opportunity {
   metadata?: {
     description?: string;
     published?: string;
+    author?: string;
     feedName?: string;
     categories?: string[];
   };
@@ -135,7 +136,7 @@ function calculatePriority(opportunity: Opportunity, topic: any): number {
   return topic.priority || 7;
 }
 
-function calculateRelevance(content: string, topic: any): number {
+function calculateRelevance(content: string, topic: { keywords: string[] }): number {
   const keywordMatches = topic.keywords.filter(keyword => 
     content.includes(keyword)
   ).length;

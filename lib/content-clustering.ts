@@ -10,6 +10,7 @@ interface Article {
   content: string;
   focus_keyword?: string;
   metadata?: any;
+  published_at?: string;
 }
 
 interface Cluster {
@@ -143,13 +144,15 @@ export function generateBreadcrumbSchema(article: Article): any {
     breadcrumbs.push({
       "@type": "ListItem",
       "position": 4,
-      "name": article.title
+      "name": article.title,
+      "item": `https://writgo.nl/blog/${article.slug}`
     });
   } else {
     breadcrumbs.push({
       "@type": "ListItem",
       "position": 3,
-      "name": article.title
+      "name": article.title,
+      "item": `https://writgo.nl/blog/${article.slug}`
     });
   }
   
@@ -301,6 +304,7 @@ export async function calculateTopicalAuthority(
   ) / (articleCount || 1);
   
   const recentArticles = clusterArticles.filter((a: Article) => {
+    if (!a.published_at) return false;
     const published = new Date(a.published_at);
     const monthsAgo = (Date.now() - published.getTime()) / (1000 * 60 * 60 * 24 * 30);
     return monthsAgo <= 6; // Last 6 months
