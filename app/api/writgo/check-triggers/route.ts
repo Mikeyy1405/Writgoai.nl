@@ -94,11 +94,13 @@ export async function POST(request: NextRequest) {
 
           // Skip if score too low or daily limit reached
           if (!score.shouldGenerate) {
+            console.log(`Skipped: ${item.title} - ${score.reason}`);
             continue; // Skip low-value content
           }
 
           const limitReached = await checkDailyLimit(score.topic, supabase);
           if (limitReached) {
+            console.log(`Skipped: ${item.title} - Daily limit reached for ${score.topic}`);
             continue; // Daily limit for this topic reached
           }
 
@@ -138,6 +140,7 @@ export async function POST(request: NextRequest) {
           results.newOpportunities++;
           feedNewOpportunities++;
           results.opportunities.push(opportunity);
+          console.log(`✅ Created opportunity: ${item.title} (score: ${score.total}, topic: ${score.topic})`);
         }
 
         // Update trigger last_checked_at

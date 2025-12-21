@@ -83,12 +83,12 @@ export function scoreOpportunity(opportunity: Opportunity): OpportunityScore {
   // Total score (max 1000)
   const total = priority * relevance * freshness * authorityPotential;
   
-  // Decision threshold
-  const shouldGenerate = total >= 200 && relevance >= 5;
+  // Decision threshold (lowered from 200 to 100 to get more opportunities)
+  const shouldGenerate = total >= 100 && relevance >= 5;
   
   const reason = shouldGenerate
     ? `High-value ${topic.name} content (score: ${total})`
-    : `Low strategic value (score: ${total}, needs >= 200)`;
+    : `Low strategic value (score: ${total}, needs >= 100)`;
   
   return {
     total,
