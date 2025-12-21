@@ -118,7 +118,7 @@ export default function Footer() {
                 © {currentYear} Writgo Media. Alle rechten voorbehouden.
               </p>
               <p className="text-xs text-gray-500">
-                KVK: 96200960 | BTW: NL867510675B01 | Hofkamp 193, 7582GR Losser
+                KVK: 96200960 | BTW: NL867510675B01 | Langerakbaan 183-1287, Nederland
               </p>
             </div>
             <div className="flex gap-6 text-sm">

@@ -91,8 +91,8 @@ export default function ContactPage() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-white mb-1">Locatie</h3>
-                    <p className="text-gray-400">Hofkamp 193</p>
-                    <p className="text-gray-400">7582GR Losser, Nederland</p>
+                    <p className="text-gray-400">Langerakbaan 183-1287</p>
+                    <p className="text-gray-400">Nederland</p>
                   </div>
                 </div>
               </div>

@@ -11,7 +11,7 @@
 - **Rechtsvorm**: Vennootschap onder firma (VOF)
 
 ### Locatie
-- **Adres**: Hofkamp 193, 7582GR Losser, Nederland
+- **Adres**: Langerakbaan 183-1287, Nederland
 - **Plaats**: Losser (ook vermeld: Hollandscheveld, Utrecht)
 - **Telefoon**: 0625185681
 
