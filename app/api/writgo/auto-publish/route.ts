@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
             slug: finalSlug,
             content: article.content,
             excerpt: article.excerpt,
+            featured_image: article.featured_image,
             author_id: '00000000-0000-0000-0000-000000000000', // System user
             status: 'published',
             published_at: new Date().toISOString(),

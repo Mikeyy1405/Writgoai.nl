@@ -19,3 +19,15 @@ services:
         sync: false
       - key: NEXT_PUBLIC_SITE_URL
         value: https://writgo.nl
+
+  # Cron job for WritGo AutoPilot
+  - type: cron
+    name: writgo-autopilot
+    env: node
+    region: frankfurt
+    schedule: "0 */6 * * *"  # Every 6 hours
+    buildCommand: echo "Cron job - no build needed"
+    startCommand: curl -X POST https://writgo.nl/api/cron/autopilot
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0

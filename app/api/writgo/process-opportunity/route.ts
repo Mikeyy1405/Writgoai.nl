@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generateAdvancedContent } from '@/lib/advanced-content-generator';
+import { generateFeaturedImage } from '@/lib/image-generator';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -52,6 +53,13 @@ export async function POST(request: NextRequest) {
       relatedArticles || []
     );
 
+    // Generate featured image
+    const featuredImage = await generateFeaturedImage({
+      title: opportunity.title,
+      description: opportunity.metadata?.description,
+      style: 'photorealistic'
+    });
+
     // Schedule for tomorrow 10:00
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -67,6 +75,7 @@ export async function POST(request: NextRequest) {
         focus_keyword: generated.focusKeyword,
         meta_title: generated.metaTitle,
         meta_description: generated.metaDescription,
+        featured_image: featuredImage,
         scheduled_for: tomorrow.toISOString(),
         status: 'scheduled',
         priority: opportunity.priority || 5,
