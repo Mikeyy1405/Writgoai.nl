@@ -70,19 +70,22 @@ Schrijf nu het volledige artikel:`;
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
 
-    // Create article in database
+    // Add to content queue with scheduled date (tomorrow at 10:00)
+    const scheduledFor = new Date();
+    scheduledFor.setDate(scheduledFor.getDate() + 1);
+    scheduledFor.setHours(10, 0, 0, 0);
+
     const { data: article, error: insertError } = await supabase
-      .from('articles')
+      .from('writgo_content_queue')
       .insert({
-        slug,
         title,
         content,
         excerpt,
         focus_keyword: keyword,
         meta_title: title,
         meta_description: excerpt,
-        status: 'draft',
-        author_id: session.user.id,
+        status: 'scheduled',
+        scheduled_for: scheduledFor.toISOString(),
       })
       .select()
       .single();
@@ -94,10 +97,14 @@ Schrijf nu het volledige artikel:`;
     // Log activity
     await supabase.from('writgo_activity_logs').insert({
       action_type: 'content_generated',
-      description: `Artikel gegenereerd: ${title}`,
-      article_id: article.id,
+      description: `Artikel gegenereerd en gepland: "${title}"`,
       status: 'success',
-      metadata: { keyword, model: 'gemini-2.0-flash-exp' },
+      metadata: { 
+        article_id: article.id, 
+        keyword, 
+        scheduled_for: scheduledFor.toISOString(),
+        model: 'gemini-2.0-flash-exp' 
+      },
     });
 
     return NextResponse.json({
