@@ -3,6 +3,10 @@ import { createClient } from '@/lib/supabase-server';
 import { contentRefresher } from '@/lib/content-refresher';
 import { gscClient } from '@/lib/google-search-console';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

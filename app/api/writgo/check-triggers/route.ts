@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 import Parser from 'rss-parser';
 import { scoreOpportunity, checkDailyLimit } from '@/lib/opportunity-scorer';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 

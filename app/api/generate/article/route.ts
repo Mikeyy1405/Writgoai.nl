@@ -2,6 +2,10 @@ import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: Request) {
   try {
     const supabase = createClient();

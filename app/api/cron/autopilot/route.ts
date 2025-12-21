@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * Cron endpoint for WritGo AutoPilot
  * This should be called every 6 hours by a cron service (e.g., Render Cron Jobs, Vercel Cron, or external service)

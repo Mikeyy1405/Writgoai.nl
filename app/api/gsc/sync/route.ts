@@ -1,6 +1,10 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Note: This is a placeholder for GSC integration
 // In production, you would use Google Search Console API with OAuth
 // For now, this allows manual data import or webhook integration

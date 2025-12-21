@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { contentRefresher } from '@/lib/content-refresher';
 import { gscClient } from '@/lib/google-search-console';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Starting automatic content refresh...');

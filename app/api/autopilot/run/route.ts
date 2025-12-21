@@ -2,6 +2,10 @@ import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { generateAICompletion, generateJSONCompletion } from '@/lib/ai-client';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 
 // Helper to analyze GSC data and generate insights
 const analyzeGSCData = async (supabase: any, project_id: string, articles: any[]) => {

@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 import { generateAdvancedContent } from '@/lib/advanced-content-generator';
 import { generateFeaturedImage } from '@/lib/aiml-image-generator';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 

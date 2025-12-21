@@ -3,6 +3,10 @@ import { gscClient } from '@/lib/google-search-console';
 import { gaClient } from '@/lib/google-analytics';
 import { createClient } from '@/lib/supabase-server';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
