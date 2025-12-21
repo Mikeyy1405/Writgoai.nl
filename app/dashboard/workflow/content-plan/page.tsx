@@ -36,9 +36,9 @@ export default function ContentPlanPage() {
   }
 
   function selectIdea(idea: ArticleIdea) {
-    // Sla idee op en ga naar writer
+    // Sla idee op in localStorage en ga naar writer
     localStorage.setItem('selectedIdea', JSON.stringify(idea));
-    router.push('/dashboard/simple-content/writer');
+    router.push('/dashboard/workflow/writer');
   }
 
   const categoryColors: Record<string, string> = {
@@ -53,8 +53,8 @@ export default function ContentPlanPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">📋 Stap 1: Content Plan</h1>
-          <p className="text-gray-600">AI genereert ideeën → Klik op idee → Ga naar Writer</p>
+          <h1 className="text-4xl font-bold mb-2">📋 Content Plan</h1>
+          <p className="text-gray-600">Stap 1: AI genereert ideeën → Klik op idee om artikel te schrijven</p>
         </div>
 
         {/* Stats */}
@@ -66,7 +66,7 @@ export default function ContentPlanPage() {
         {/* Generate Button */}
         {contentPlan.length === 0 && (
           <div className="bg-white rounded-lg shadow p-8 text-center mb-8">
-            <h2 className="text-2xl font-bold mb-4">🤖 AI Content Plan</h2>
+            <h2 className="text-2xl font-bold mb-4">Start met AI Content Plan</h2>
             <p className="text-gray-600 mb-6">
               AI genereert automatisch 30 artikel ideeën
             </p>
@@ -75,7 +75,7 @@ export default function ContentPlanPage() {
               disabled={loading}
               className="px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-lg font-semibold"
             >
-              {loading ? '⏳ AI aan het werk...' : '🚀 Genereer Plan'}
+              {loading ? '⏳ AI aan het werk...' : '🤖 Genereer Content Plan'}
             </button>
           </div>
         )}
@@ -84,7 +84,7 @@ export default function ContentPlanPage() {
         {contentPlan.length > 0 && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">👇 Klik op een idee</h2>
+              <h2 className="text-2xl font-bold">Klik op een idee om te starten</h2>
               <button
                 onClick={generatePlan}
                 disabled={loading}
@@ -99,7 +99,7 @@ export default function ContentPlanPage() {
                 <div 
                   key={index} 
                   onClick={() => selectIdea(idea)}
-                  className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-xl hover:border-2 hover:border-blue-500 transition-all"
+                  className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg hover:border-2 hover:border-blue-500 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${categoryColors[idea.category] || 'bg-gray-100'}`}>
@@ -109,15 +109,15 @@ export default function ContentPlanPage() {
                   </div>
                   <h3 className="text-lg font-bold mb-2">{idea.title}</h3>
                   <p className="text-gray-600 text-sm mb-2">{idea.description}</p>
-                  <div className="flex gap-2 flex-wrap mb-3">
+                  <div className="flex gap-2 flex-wrap">
                     {idea.keywords.map((kw, i) => (
                       <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded">
                         {kw}
                       </span>
                     ))}
                   </div>
-                  <div className="mt-4 text-blue-600 font-semibold text-lg">
-                    ✍️ Klik om artikel te schrijven →
+                  <div className="mt-4 text-blue-600 font-semibold">
+                    → Klik om artikel te schrijven
                   </div>
                 </div>
               ))}
