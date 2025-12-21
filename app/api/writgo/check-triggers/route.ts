@@ -29,10 +29,18 @@ export async function POST(request: NextRequest) {
       opportunities: [] as any[]
     };
 
+    // Helper function to add delay
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     // Check each RSS feed
     for (const trigger of triggers || []) {
       try {
         results.checked++;
+
+        // Add delay to avoid rate limiting (1 second between requests)
+        if (results.checked > 1) {
+          await delay(1000);
+        }
 
         // Parse RSS feed
         const feed = await parser.parseURL(trigger.source_url);
