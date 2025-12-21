@@ -40,13 +40,27 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     };
   }
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://writgo.nl';
+  const articleUrl = `${siteUrl}/blog/${params.slug}`;
+
   return {
     title: article.meta_title || article.title,
     description: article.meta_description || article.excerpt,
+    alternates: {
+      canonical: articleUrl,
+    },
     openGraph: {
       title: article.meta_title || article.title,
       description: article.meta_description || article.excerpt,
-      images: article.featured_image ? [article.featured_image] : [],
+      url: articleUrl,
+      siteName: 'WritGo',
+      images: article.featured_image ? [{
+        url: article.featured_image,
+        width: 1200,
+        height: 630,
+        alt: article.title,
+      }] : [],
+      locale: 'nl_NL',
       type: 'article',
     },
     twitter: {
@@ -54,6 +68,19 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       title: article.meta_title || article.title,
       description: article.meta_description || article.excerpt,
       images: article.featured_image ? [article.featured_image] : [],
+      creator: '@WritGoNL',
+      site: '@WritGoNL',
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
   };
 }
@@ -90,8 +117,73 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     .order('published_at', { ascending: false })
     .limit(3);
 
+  // Generate schema markup
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://writgo.nl';
+  const articleUrl = `${siteUrl}/blog/${params.slug}`;
+  
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": article.title,
+    "description": article.excerpt,
+    "image": article.featured_image || `${siteUrl}/og-image.png`,
+    "datePublished": article.published_at,
+    "dateModified": article.published_at,
+    "author": {
+      "@type": "Organization",
+      "name": "WritGo",
+      "url": siteUrl
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "WritGo",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${siteUrl}/logo.png`
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": articleUrl
+    }
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": siteUrl
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": `${siteUrl}/blog`
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": article.title
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      {/* Schema Markup */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+
       {/* Header */}
       <header className="bg-black/50 backdrop-blur-sm border-b border-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
