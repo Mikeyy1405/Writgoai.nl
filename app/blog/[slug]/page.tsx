@@ -91,9 +91,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     .limit(3);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
       {/* Header */}
-      <header className="bg-white border-b">
+      <header className="bg-black/50 backdrop-blur-sm border-b border-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Link href="/blog" className="text-orange-600 hover:text-orange-700 inline-block">
             ← Terug naar blog
@@ -146,7 +146,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
         {/* Content */}
         <div 
-          className="prose prose-lg max-w-none prose-headings:font-bold prose-h2:text-3xl prose-h3:text-2xl prose-p:text-gray-700 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded"
+          className="prose prose-lg prose-invert max-w-none prose-headings:font-bold prose-h2:text-3xl prose-h3:text-2xl prose-p:text-gray-300 prose-a:text-orange-500 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg prose-code:bg-gray-800 prose-code:px-2 prose-code:py-1 prose-code:rounded"
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
@@ -169,14 +169,14 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
       {/* Related Articles */}
       {relatedArticles && relatedArticles.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">Gerelateerde artikelen</h2>
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-800">
+          <h2 className="text-2xl font-bold text-white mb-6">Gerelateerde artikelen</h2>
           <div className="grid gap-8 md:grid-cols-3">
             {relatedArticles.map((related) => (
               <Link
                 key={related.id}
                 href={`/blog/${related.slug}`}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group"
+                className="block bg-gray-900/50 border border-gray-800 rounded-lg hover:border-orange-500/50 transition-all overflow-hidden group"
               >
                 {related.featured_image ? (
                   <div className="aspect-video bg-gray-200 overflow-hidden">
@@ -190,11 +190,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                   <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600" />
                 )}
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">
                     {related.title}
                   </h3>
                   {related.excerpt && (
-                    <p className="text-gray-600 text-sm line-clamp-2">
+                    <p className="text-gray-300 text-sm line-clamp-2">
                       {related.excerpt}
                     </p>
                   )}
