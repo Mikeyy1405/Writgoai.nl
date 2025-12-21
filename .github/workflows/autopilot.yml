@@ -1,0 +1,33 @@
+name: WritGo AutoPilot
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-autopilot:
+    name: Run AutoPilot Tasks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger AutoPilot Endpoint
+        run: |
+          echo "🚀 Triggering WritGo AutoPilot..."
+          
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            https://writgo.nl/api/cron/autopilot)
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "Response Code: $http_code"
+          echo "Response Body: $body"
+          
+          if [ $http_code -eq 200 ]; then
+            echo "✅ AutoPilot completed successfully!"
+          else
+            echo "❌ AutoPilot failed with status $http_code"
+            exit 1
+          fi
