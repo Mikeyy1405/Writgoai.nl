@@ -267,18 +267,18 @@ Format the output as HTML with proper heading tags.`;
       maxTokens: 4000,
     });
 
-  const content = completion.choices[0].message.content || '';
+  const content = completion || '';
 
   // Generate title
   const titleCompletion = await generateAICompletion({
       task: 'content',
       systemPrompt: 'You are an expert at writing catchy, SEO-optimized blog titles in Dutch. Respond with only the title.',
-      userPrompt: `Create a catchy title for: "${topic,
+      userPrompt: `Create a catchy title for: "${topic}"`,
       temperature: 0.8,
       maxTokens: 100,
     });
 
-  const title = titleCompletion.choices[0].message.content?.trim() || topic;
+  const title = titleCompletion?.trim() || topic;
 
   // Save article
   const { data: article } = await supabase
@@ -354,7 +354,7 @@ Add a new comprehensive section (300-500 words) that covers "${insight.query}" i
       maxTokens: 2000,
     });
 
-  const expansion = completion.choices[0].message.content || '';
+  const expansion = completion || '';
   const updatedContent = article.content + '\n\n' + expansion;
 
   // Update article
@@ -433,7 +433,7 @@ Requirements:
       maxTokens: 100,
     });
 
-  const newTitle = completion.choices[0].message.content?.trim() || article.title;
+  const newTitle = completion?.trim() || article.title;
 
   // Update article
   await supabase

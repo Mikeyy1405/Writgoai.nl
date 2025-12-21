@@ -76,7 +76,7 @@ Provide the updated content:`;
       maxTokens: 4000,
     });
 
-    const updatedContent = completion.choices[0].message.content || article.content;
+    const updatedContent = completion || article.content;
 
     // Update article in database
     const { error: updateError } = await supabase

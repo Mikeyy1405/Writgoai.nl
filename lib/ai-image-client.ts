@@ -50,7 +50,7 @@ export async function generateImage(params: {
     });
 
     // Output is array of URLs
-    return Array.isArray(output) ? output : [output as string];
+    return Array.isArray(output) ? output : [(output as unknown) as string];
   } catch (error: any) {
     console.error('Image generation error:', error.message);
     
