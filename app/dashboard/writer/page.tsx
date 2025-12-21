@@ -81,15 +81,14 @@ export default function WriterPage() {
 
   if (!idea) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+      <div className="p-6 lg:p-12 flex items-center justify-center">
         <div className="text-white text-xl">⏳ Laden...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <div className="p-6 lg:p-12">
+    <div className="p-6 lg:p-12">
         {/* Header */}
         <div className="mb-8">
           <button 
@@ -187,7 +186,6 @@ export default function WriterPage() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

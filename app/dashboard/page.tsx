@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import DashboardLayout from "@/components/DashboardLayout";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -30,8 +29,7 @@ export default async function DashboardPage() {
   const totalArticles = projectsWithCounts.reduce((sum, p) => sum + p.articleCount, 0);
 
   return (
-    <DashboardLayout user={user}>
-      <div className="p-6 lg:p-12">
+    <div className="p-6 lg:p-12">
         {/* Welcome Section */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-white mb-2">
@@ -176,7 +174,6 @@ export default async function DashboardPage() {
             </p>
           </button>
         </div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

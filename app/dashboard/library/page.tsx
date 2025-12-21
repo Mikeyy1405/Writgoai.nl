@@ -152,7 +152,7 @@ export default function LibraryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+      <div className="p-6 lg:p-12 flex items-center justify-center">
         <div className="text-white text-xl">⏳ Laden...</div>
       </div>
     );
@@ -163,8 +163,7 @@ export default function LibraryPage() {
   const totalWords = articles.reduce((sum, a) => sum + a.word_count, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <div className="p-6 lg:p-12">
+    <div className="p-6 lg:p-12">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">📚 Bibliotheek</h1>
@@ -263,7 +262,6 @@ export default function LibraryPage() {
             ))}
           </div>
         )}
-      </div>
     </div>
   );
 }

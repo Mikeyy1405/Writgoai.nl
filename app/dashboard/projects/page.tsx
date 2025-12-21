@@ -35,8 +35,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <div className="p-6 lg:p-12">
+    <div className="p-6 lg:p-12">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Projecten</h1>
@@ -110,9 +109,7 @@ export default function ProjectsPage() {
               </div>
             ))}
           </div>
-        )}
-      </div>
-
+         )}
       <CreateProjectModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
