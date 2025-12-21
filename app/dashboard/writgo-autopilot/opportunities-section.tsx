@@ -35,24 +35,15 @@ export default function OpportunitiesSection() {
   const loadOpportunities = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('writgo_content_opportunities')
-        .select(`
-          *,
-          writgo_content_triggers (
-            name,
-            category
-          )
-        `)
-        .in('status', ['detected', 'generating'])
-        .order('priority', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      setOpportunities(data || []);
+      const response = await fetch('/api/writgo/opportunities');
+      if (!response.ok) {
+        throw new Error('Failed to fetch opportunities');
+      }
+      const data = await response.json();
+      setOpportunities(data.opportunities || []);
     } catch (error) {
       console.error('Error loading opportunities:', error);
+      setOpportunities([]);
     } finally {
       setLoading(false);
     }
