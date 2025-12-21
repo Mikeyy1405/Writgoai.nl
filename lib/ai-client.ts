@@ -8,7 +8,7 @@ const aimlClient = new OpenAI({
 
 // Best models for each task
 export const BEST_MODELS = {
-  CONTENT: 'gemini-2.0-flash-exp',      // 1M context, super cheap
+  CONTENT: 'claude-4-5-sonnet',          // Best content writing
   TECHNICAL: 'claude-3-5-sonnet-20241022', // Best coding
   QUICK: 'gpt-4o-mini',                  // Fast & reliable
   BUDGET: 'deepseek-chat',               // Cheapest

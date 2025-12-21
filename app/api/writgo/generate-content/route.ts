@@ -16,11 +16,18 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { keyword, title, outline } = body;
+    let { keyword, title, outline, topic, keywords } = body;
+
+    // Support both formats: {keyword, title} or {topic, keywords}
+    if (topic && keywords && keywords.length > 0) {
+      keyword = keywords[0];
+      // Auto-generate title from topic
+      title = `${topic}: Complete Gids voor ${new Date().getFullYear()}`;
+    }
 
     if (!keyword || !title) {
       return NextResponse.json(
-        { error: 'Keyword and title are required' },
+        { error: 'Keyword and title are required (or topic and keywords)' },
         { status: 400 }
       );
     }

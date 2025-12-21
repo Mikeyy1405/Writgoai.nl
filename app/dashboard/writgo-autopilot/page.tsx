@@ -257,10 +257,16 @@ export default function WritGoAutoPilotPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        alert(`✅ Artikel gegenereerd: "${data.article.title}"\n\nGepland voor: ${new Date(data.article.scheduled_for).toLocaleDateString('nl-NL')}`);
         loadData();
+      } else {
+        const error = await response.json();
+        alert(`❌ Fout: ${error.error || 'Kon artikel niet genereren'}`);
       }
     } catch (error) {
       console.error('Error generating content:', error);
+      alert('❌ Fout bij genereren van content. Check de console voor details.');
     } finally {
       setSaving(false);
     }
@@ -300,8 +306,8 @@ export default function WritGoAutoPilotPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">WritGo AutoPilot</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-white">WritGo AutoPilot</h1>
+            <p className="text-gray-300 mt-1">
               Automatische SEO content generatie voor WritGo.nl
             </p>
           </div>
@@ -328,21 +334,21 @@ export default function WritGoAutoPilotPage() {
         </div>
 
         {/* Status Card */}
-        <div className={`rounded-lg p-6 ${config?.enabled ? 'bg-green-50 border-2 border-green-200' : 'bg-gray-50 border-2 border-gray-200'}`}>
+        <div className={`rounded-lg p-6 ${config?.enabled ? 'bg-green-900/20 border-2 border-green-500/50' : 'bg-gray-800/50 border-2 border-gray-700'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-white">
                 AutoPilot Status: {config?.enabled ? '🟢 Actief' : '⚪ Inactief'}
               </h3>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-300 mt-1">
                 {config?.enabled
                   ? 'AutoPilot is actief en genereert automatisch content'
                   : 'AutoPilot is gepauzeerd'}
               </p>
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-600">Content frequentie</div>
-              <div className="text-lg font-semibold text-gray-900">
+              <div className="text-sm text-gray-400">Content frequentie</div>
+              <div className="text-lg font-semibold text-white">
                 {config?.content_frequency === 'daily' && 'Dagelijks'}
                 {config?.content_frequency === 'weekly' && 'Wekelijks'}
                 {config?.content_frequency === 'biweekly' && 'Tweewekelijks'}
@@ -353,21 +359,21 @@ export default function WritGoAutoPilotPage() {
         </div>
 
         {/* Content Planning/Queue */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">📅 Content Planning</h2>
+        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">📅 Content Planning</h2>
           <div className="space-y-4">
             {queuedArticles.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-400">
                 <p>Geen geplande artikelen. Klik op "Genereer Content" om te beginnen!</p>
               </div>
             ) : (
               queuedArticles.map((article) => (
-                <div key={article.id} className="border border-gray-200 rounded-lg p-4 hover:border-orange-500 transition-colors">
+                <div key={article.id} className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 hover:border-orange-500 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{article.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">{article.excerpt}</p>
-                      <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                      <h3 className="text-lg font-semibold text-white">{article.title}</h3>
+                      <p className="text-sm text-gray-300 mt-1 line-clamp-2">{article.excerpt}</p>
+                      <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
                         <span>📅 {new Date(article.scheduled_for).toLocaleDateString('nl-NL', { 
                           day: 'numeric', 
                           month: 'long', 
@@ -376,7 +382,7 @@ export default function WritGoAutoPilotPage() {
                           minute: '2-digit'
                         })}</span>
                         {article.focus_keyword && (
-                          <span className="px-2 py-1 bg-orange-50 text-orange-600 rounded-full text-xs">
+                          <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs">
                             🏷️ {article.focus_keyword}
                           </span>
                         )}
@@ -385,25 +391,25 @@ export default function WritGoAutoPilotPage() {
                     <div className="flex gap-2 ml-4">
                       <button
                         onClick={() => openPreview(article)}
-                        className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                        className="px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors"
                       >
                         👁️ Preview
                       </button>
                       <button
                         onClick={() => openEdit(article)}
-                        className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
+                        className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
                       >
                         ✏️ Edit
                       </button>
                       <button
                         onClick={() => publishNow(article.id)}
-                        className="px-3 py-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
+                        className="px-3 py-2 text-sm bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors"
                       >
                         🚀 Nu Publiceren
                       </button>
                       <button
                         onClick={() => deleteFromQueue(article.id)}
-                        className="px-3 py-2 text-sm bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                        className="px-3 py-2 text-sm bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
                       >
                         🗑️
                       </button>
@@ -416,42 +422,42 @@ export default function WritGoAutoPilotPage() {
         </div>
 
         {/* Published Articles Overview */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">📊 Gepubliceerde Artikelen</h2>
+        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">📊 Gepubliceerde Artikelen</h2>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-700">
               <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titel</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Weergaven</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clicks</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CTR</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Positie</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Titel</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Weergaven</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Clicks</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">CTR</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Positie</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-700">
                 {articles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                       Nog geen gepubliceerde artikelen
                     </td>
                   </tr>
                 ) : (
                   articles.map((article) => (
-                    <tr key={article.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-900">{article.title}</td>
+                    <tr key={article.id} className="hover:bg-gray-700/50">
+                      <td className="px-4 py-3 text-sm text-gray-200">{article.title}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(article.status)}`}>
                           {article.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{article.views || 0}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{article.clicks || 0}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-gray-200">{article.views || 0}</td>
+                      <td className="px-4 py-3 text-sm text-gray-200">{article.clicks || 0}</td>
+                      <td className="px-4 py-3 text-sm text-gray-200">
                         {article.ctr ? `${(article.ctr * 100).toFixed(2)}%` : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-gray-200">
                         {article.avg_position ? article.avg_position.toFixed(1) : '-'}
                       </td>
                     </tr>
@@ -463,21 +469,21 @@ export default function WritGoAutoPilotPage() {
         </div>
 
         {/* Activity Logs */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">📋 Activiteit Log</h2>
+        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">📋 Activiteit Log</h2>
           <div className="space-y-3">
             {activityLogs.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">Nog geen activiteit</p>
+              <p className="text-center text-gray-400 py-4">Nog geen activiteit</p>
             ) : (
               activityLogs.map((log) => (
-                <div key={log.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50">
+                <div key={log.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-700/50">
                   <div className={`mt-1 ${getActivityStatusColor(log.status)}`}>
                     {log.status === 'success' && '✓'}
                     {log.status === 'error' && '✗'}
                     {log.status === 'warning' && '⚠'}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-900">{log.description}</p>
+                    <p className="text-sm text-gray-200">{log.description}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {new Date(log.created_at).toLocaleString('nl-NL')}
                     </p>
