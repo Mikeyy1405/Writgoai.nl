@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase-server';
+import TableOfContents from '@/components/TableOfContents';
+import SocialShare from '@/components/SocialShare';
 
 interface ArticlePageProps {
   params: {
@@ -193,8 +195,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         </div>
       </header>
 
-      {/* Article */}
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Article with TOC */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12">
+          {/* Main Article */}
+          <article className="min-w-0">
         {/* Featured Image */}
         {article.featured_image && (
           <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden mb-8">
@@ -267,7 +272,22 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             Start Gratis →
           </Link>
         </div>
+
+        {/* Social Share */}
+        <div className="mt-8 pt-8 border-t border-gray-800">
+          <SocialShare 
+            url={articleUrl} 
+            title={article.title}
+          />
+        </div>
       </article>
+
+      {/* Table of Contents Sidebar */}
+      <aside className="hidden lg:block">
+        <TableOfContents content={article.content} />
+      </aside>
+    </div>
+  </div>
 
       {/* Related Articles */}
       {relatedArticles && relatedArticles.length > 0 && (
