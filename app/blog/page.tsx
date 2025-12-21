@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase-server';
 
 export const metadata: Metadata = {
   title: 'Blog - WritGo | WordPress SEO Automatisering',
@@ -20,7 +19,7 @@ interface Article {
 }
 
 export default async function BlogPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   // Fetch published articles
   const { data: articles, error } = await supabase

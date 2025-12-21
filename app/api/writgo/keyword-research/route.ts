@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { generateAIContent } from '@/lib/aiml-client';
+import { createClient } from '@/lib/supabase-server';
+import { generateAICompletion, BEST_MODELS } from '@/lib/ai-client';
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = createClient();
 
     // Check authentication
     const {
@@ -58,7 +57,12 @@ Format je antwoord als JSON array:
 
 Geef ALLEEN de JSON array, geen extra tekst.`;
 
-    const response = await generateAIContent(prompt, 'gemini-2.0-flash-exp');
+    const response = await generateAICompletion({
+      systemPrompt: 'Je bent een SEO keyword research expert.',
+      userPrompt: prompt,
+      model: BEST_MODELS.CONTENT,
+      maxTokens: 4000,
+    });
 
     if (!response) {
       throw new Error('Failed to generate keywords');
@@ -113,7 +117,7 @@ Geef ALLEEN de JSON array, geen extra tekst.`;
 
     // Log error
     try {
-      const supabase = createRouteHandlerClient({ cookies });
+      const supabase = createClient();
       await supabase.from('writgo_activity_logs').insert({
         action_type: 'keyword_research_failed',
         description: `Fout bij keyword research: ${error.message}`,

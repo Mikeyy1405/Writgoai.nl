@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabase-client';
 import DashboardLayout from '@/components/DashboardLayout';
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 interface AutoPilotConfig {
   id: string;
@@ -45,11 +48,18 @@ export default function WritGoAutoPilotPage() {
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const supabase = createClientComponentClient();
+  const [user, setUser] = useState<any>(null);
+  // Using supabase from lib/supabase-client
 
   useEffect(() => {
     loadData();
+    loadUser();
   }, []);
+
+  const loadUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -172,7 +182,7 @@ export default function WritGoAutoPilotPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout user={user || { email: 'Loading...' }}>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -181,7 +191,7 @@ export default function WritGoAutoPilotPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout user={user || { email: 'Loading...' }}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

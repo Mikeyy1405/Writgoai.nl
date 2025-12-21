@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = createClient();
 
     // Check authentication
     const {
@@ -71,7 +70,7 @@ export async function POST(request: Request) {
 
     // Log error
     try {
-      const supabase = createRouteHandlerClient({ cookies });
+      const supabase = createClient();
       await supabase.from('writgo_activity_logs').insert({
         action_type: 'article_publish_failed',
         description: `Fout bij publiceren: ${error.message}`,

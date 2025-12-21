@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { generateAIContent } from '@/lib/aiml-client';
+import { createClient } from '@/lib/supabase-server';
+import { generateAICompletion, BEST_MODELS } from '@/lib/ai-client';
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = createClient();
 
     // Check authentication
     const {
@@ -50,7 +49,12 @@ ${outline ? `**Outline:**\n${JSON.stringify(outline, null, 2)}` : ''}
 
 Schrijf nu het volledige artikel:`;
 
-    const content = await generateAIContent(prompt, 'gemini-2.0-flash-exp');
+    const content = await generateAICompletion({
+      systemPrompt: 'Je bent een professionele SEO content writer voor WritGo.nl.',
+      userPrompt: prompt,
+      model: BEST_MODELS.CONTENT,
+      maxTokens: 8000,
+    });
 
     if (!content) {
       throw new Error('Failed to generate content');
@@ -105,7 +109,7 @@ Schrijf nu het volledige artikel:`;
     
     // Log error
     try {
-      const supabase = createRouteHandlerClient({ cookies });
+      const supabase = createClient();
       await supabase.from('writgo_activity_logs').insert({
         action_type: 'content_generation_failed',
         description: `Fout bij content generatie: ${error.message}`,

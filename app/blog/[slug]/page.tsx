@@ -1,8 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase-server';
 
 interface ArticlePageProps {
   params: {
@@ -26,7 +25,7 @@ interface Article {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   const { data: article } = await supabase
     .from('articles')
@@ -60,7 +59,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 }
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClient();
 
   // Fetch article
   const { data: article, error } = await supabase
