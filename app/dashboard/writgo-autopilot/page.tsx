@@ -247,27 +247,26 @@ export default function WritGoAutoPilotPage() {
 
   const generateContent = async () => {
     setSaving(true);
+    setMessage({ type: 'info', text: 'AI genereert een relevant artikel...' });
     try {
-      const response = await fetch('/api/writgo/generate-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: 'WordPress SEO automatisering',
-          keywords: ['WordPress', 'SEO', 'automatisering'],
-        }),
+      const response = await fetch('/api/writgo/generate-article', {
+        method: 'POST'
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`✅ Artikel gegenereerd: "${data.article.title}"\n\nGepland voor: ${new Date(data.article.scheduled_for).toLocaleDateString('nl-NL')}`);
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setMessage({ 
+          type: 'success', 
+          text: `✅ Artikel gegenereerd: "${data.article.title}" (${data.article.word_count} woorden, gepland voor ${new Date(data.article.scheduled_for).toLocaleDateString('nl-NL')})`
+        });
         loadData();
       } else {
-        const error = await response.json();
-        alert(`❌ Fout: ${error.error || 'Kon artikel niet genereren'}`);
+        setMessage({ type: 'error', text: data.error || 'Er ging iets mis' });
       }
     } catch (error) {
       console.error('Error generating content:', error);
-      alert('❌ Fout bij genereren van content. Check de console voor details.');
+      setMessage({ type: 'error', text: 'Fout bij genereren van content' });
     } finally {
       setSaving(false);
     }
