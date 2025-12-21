@@ -48,36 +48,43 @@ export default function UpdateFeedsPage() {
         </div>
 
         <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Premium RSS Feeds</h2>
+          <h2 className="text-xl font-semibold text-white mb-4">Premium RSS Feeds (19 feeds)</h2>
           
           <div className="space-y-4 mb-6">
             <div>
-              <h3 className="font-semibold text-orange-400 mb-2">🔍 SEO & Google Updates</h3>
+              <h3 className="font-semibold text-red-400 mb-2">🔥 Breaking News (elk uur)</h3>
               <ul className="text-sm text-gray-300 space-y-1 ml-4">
-                <li>• Google Search Central Blog (Priority 10)</li>
-                <li>• Search Engine Land (Priority 9)</li>
-                <li>• Search Engine Journal (Priority 9)</li>
-                <li>• Ahrefs Blog (Priority 8)</li>
-                <li>• Moz Blog (Priority 8)</li>
+                <li>• Google Search Central Blog</li>
+                <li>• OpenAI News</li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold text-purple-400 mb-2">🤖 AI Model Updates</h3>
+              <h3 className="font-semibold text-orange-400 mb-2">📰 SEO Nieuws (dagelijks)</h3>
               <ul className="text-sm text-gray-300 space-y-1 ml-4">
-                <li>• OpenAI News (Priority 10)</li>
-                <li>• Google AI Blog (Priority 9)</li>
-                <li>• Anthropic News (Priority 9)</li>
-                <li>• TechCrunch AI (Priority 7)</li>
-                <li>• The Verge AI (Priority 7)</li>
+                <li>• Search Engine Land, Journal, Roundtable</li>
+                <li>• Google AI Blog, Anthropic News</li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold text-green-400 mb-2">📝 WordPress</h3>
+              <h3 className="font-semibold text-blue-400 mb-2">📚 SEO Tutorials</h3>
               <ul className="text-sm text-gray-300 space-y-1 ml-4">
-                <li>• Yoast SEO Blog (Priority 8)</li>
-                <li>• WordPress News (Priority 7)</li>
+                <li>• Ahrefs, Moz, Backlinko, Semrush</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-green-400 mb-2">🔧 WordPress How-To</h3>
+              <ul className="text-sm text-gray-300 space-y-1 ml-4">
+                <li>• Yoast, WPBeginner, Kinsta, WP Tavern</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-purple-400 mb-2">💡 Tips & Best Practices</h3>
+              <ul className="text-sm text-gray-300 space-y-1 ml-4">
+                <li>• Neil Patel, HubSpot, Copyblogger, CMI</li>
               </ul>
             </div>
           </div>

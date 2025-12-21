@@ -5,27 +5,34 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const premiumFeeds = [
-  // GOOGLE OFFICIAL (Highest Priority)
+  // BREAKING NEWS - Hoogste prioriteit (check elk uur)
   { name: 'Google Search Central Blog', category: 'seo', url: 'https://developers.google.com/search/blog/feeds/posts/default', priority: 10 },
-  { name: 'Google AI Blog', category: 'ai', url: 'https://blog.google/technology/ai/rss/', priority: 9 },
-  
-  // AI MODELS
   { name: 'OpenAI News', category: 'ai', url: 'https://openai.com/news/rss.xml', priority: 10 },
-  { name: 'Anthropic News', category: 'ai', url: 'https://www.anthropic.com/news/rss.xml', priority: 9 },
   
-  // SEO NEWS
+  // BREAKING NEWS - Dagelijks
   { name: 'Search Engine Land', category: 'seo', url: 'https://searchengineland.com/feed', priority: 9 },
   { name: 'Search Engine Journal', category: 'seo', url: 'https://www.searchenginejournal.com/feed/', priority: 9 },
+  { name: 'Google AI Blog', category: 'ai', url: 'https://blog.google/technology/ai/rss/', priority: 9 },
+  { name: 'Anthropic News', category: 'ai', url: 'https://www.anthropic.com/news/rss.xml', priority: 9 },
+  { name: 'Search Engine Roundtable', category: 'seo', url: 'https://www.seroundtable.com/feed', priority: 9 },
+  
+  // TUTORIALS & HOW-TO - SEO
   { name: 'Ahrefs Blog', category: 'seo', url: 'https://ahrefs.com/blog/feed/', priority: 8 },
   { name: 'Moz Blog', category: 'seo', url: 'https://moz.com/blog/feed', priority: 8 },
+  { name: 'Backlinko', category: 'seo', url: 'https://backlinko.com/blog/feed/', priority: 8 },
+  { name: 'Semrush Blog', category: 'seo', url: 'https://www.semrush.com/blog/feed/', priority: 8 },
   
-  // WORDPRESS
+  // TUTORIALS & HOW-TO - WordPress
   { name: 'Yoast SEO Blog', category: 'wordpress', url: 'https://yoast.com/feed/', priority: 8 },
-  { name: 'WordPress News', category: 'wordpress', url: 'https://wordpress.org/news/feed/', priority: 7 },
+  { name: 'WPBeginner', category: 'wordpress', url: 'https://www.wpbeginner.com/feed/', priority: 8 },
+  { name: 'Kinsta Blog', category: 'wordpress', url: 'https://kinsta.com/blog/feed/', priority: 7 },
+  { name: 'WordPress Tavern', category: 'wordpress', url: 'https://wptavern.com/feed', priority: 7 },
   
-  // TECH AI
-  { name: 'TechCrunch AI', category: 'ai', url: 'https://techcrunch.com/category/artificial-intelligence/feed/', priority: 7 },
-  { name: 'The Verge AI', category: 'ai', url: 'https://www.theverge.com/ai-artificial-intelligence/rss/index.xml', priority: 7 }
+  // TIPS & BEST PRACTICES
+  { name: 'Neil Patel Blog', category: 'seo', url: 'https://neilpatel.com/feed/', priority: 7 },
+  { name: 'HubSpot Marketing', category: 'marketing', url: 'https://blog.hubspot.com/marketing/rss.xml', priority: 7 },
+  { name: 'Copyblogger', category: 'marketing', url: 'https://copyblogger.com/feed/', priority: 7 },
+  { name: 'Content Marketing Institute', category: 'marketing', url: 'https://contentmarketinginstitute.com/feed/', priority: 7 }
 ];
 
 export async function POST(request: NextRequest) {
