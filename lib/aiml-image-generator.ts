@@ -44,11 +44,9 @@ export async function generateFeaturedImage(
       body: JSON.stringify({
         model: 'flux-pro/v1.1',
         prompt: prompt,
-        image_size: imageSize,
-        num_images: 1,
-        output_format: 'jpeg',
-        safety_tolerance: '2',
-        enable_safety_checker: true
+        n: 1,
+        size: `${imageSize.width}x${imageSize.height}`,
+        response_format: 'url'
       })
     });
 
@@ -58,11 +56,24 @@ export async function generateFeaturedImage(
 
     const data = await response.json();
     
+    console.log('AIML image response:', JSON.stringify(data).substring(0, 200));
+    
+    // Try different response structures
     if (data.images && data.images.length > 0) {
       return data.images[0].url;
     }
+    
+    if (data.data && data.data.length > 0) {
+      // OpenAI-compatible format
+      return data.data[0].url || data.data[0].b64_json;
+    }
+    
+    if (data.url) {
+      // Direct URL
+      return data.url;
+    }
 
-    throw new Error('No image generated');
+    throw new Error(`No image generated. Response: ${JSON.stringify(data).substring(0, 100)}`);
 
   } catch (error) {
     console.error('AIML image generation error:', error);
