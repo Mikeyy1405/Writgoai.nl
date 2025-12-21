@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase-server';
-import aiClient from '@/lib/ai-client';
+import { generateAICompletion } from '@/lib/ai-client';
 
 export interface RefreshOptions {
   articleId: string;
@@ -31,7 +31,10 @@ export class ContentRefresher {
     );
 
     // Generate refreshed content
-    const response = await aiClient.generateText(refreshPrompt, {
+    const response = await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'You are an expert SEO content writer. Your task is to refresh and improve existing articles while maintaining their core message.',
+      userPrompt: refreshPrompt,
       maxTokens: 4000,
       temperature: 0.7,
     });
