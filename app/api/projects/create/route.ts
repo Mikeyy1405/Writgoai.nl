@@ -39,11 +39,19 @@ export async function POST(request: Request) {
       // Remove extra spaces from password (Application Passwords often have spaces)
       const cleanPassword = wp_password.replace(/\s+/g, '');
       
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
         headers: {
           'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
+          'User-Agent': 'WritGo-SEO-Agent/1.0',
         },
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
 
       if (!testResponse.ok) {
         const errorText = await testResponse.text();
