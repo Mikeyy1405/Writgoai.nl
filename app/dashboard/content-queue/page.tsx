@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabase-client';
 
 interface QueueItem {
   id: string;
@@ -26,7 +26,7 @@ export default function ContentQueuePage() {
 
   async function loadQueue() {
     try {
-      const supabase = createClient();
+      // supabase is already imported
       const { data, error } = await supabase
         .from('writgo_content_queue')
         .select('*')
@@ -66,7 +66,7 @@ export default function ContentQueuePage() {
     if (!confirm('Weet je zeker dat je dit artikel wilt verwijderen?')) return;
 
     try {
-      const supabase = createClient();
+      // supabase is already imported
       await supabase.from('writgo_content_queue').delete().eq('id', id);
       loadQueue();
     } catch (error) {
