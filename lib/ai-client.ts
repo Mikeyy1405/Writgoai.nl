@@ -1,18 +1,18 @@
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
-// AIML API Client (OpenAI-compatible)
-const aimlClient = new OpenAI({
+// Anthropic client via AIML API
+const anthropicClient = new Anthropic({
+  baseURL: 'https://api.aimlapi.com/',
   apiKey: process.env.AIML_API_KEY || '',
-  baseURL: 'https://api.aimlapi.com/v1',
 });
 
 // Best models for each task
 export const BEST_MODELS = {
-  CONTENT: 'gpt-4o',                     // Best content writing
-  TECHNICAL: 'gpt-4o',                   // Best coding
-  QUICK: 'gpt-4o-mini',                  // Fast & reliable
-  BUDGET: 'gpt-4o-mini',                 // Cheapest
-  IMAGE: 'flux-pro/v1.1',                // Best quality images
+  CONTENT: 'claude-sonnet-4-5',              // Best content writing
+  TECHNICAL: 'claude-sonnet-4-5',            // Best coding
+  QUICK: 'claude-sonnet-4-5',                // Fast & reliable
+  BUDGET: 'claude-sonnet-4-5',               // Same model
+  IMAGE: 'flux-pro/v1.1',                    // Best quality images
 };
 
 interface GenerateOptions {
@@ -44,35 +44,25 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
   const selectedModel = model || modelMap[task];
 
   try {
-    const completion = await aimlClient.chat.completions.create({
+    const message = await anthropicClient.messages.create({
       model: selectedModel,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature,
       max_tokens: maxTokens,
+      temperature,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: userPrompt,
+        },
+      ],
     });
 
-    return completion.choices[0]?.message?.content || '';
-  } catch (error) {
+    // Extract text from response
+    const textContent = message.content.find((block) => block.type === 'text');
+    return textContent?.type === 'text' ? textContent.text : '';
+  } catch (error: any) {
     console.error('AI completion error:', error);
-    
-    // Fallback to budget model
-    if (selectedModel !== BEST_MODELS.BUDGET) {
-      const fallback = await aimlClient.chat.completions.create({
-        model: BEST_MODELS.BUDGET,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature,
-        max_tokens: maxTokens,
-      });
-      return fallback.choices[0]?.message?.content || '';
-    }
-    
-    throw error;
+    throw new Error(`AI generation failed: ${error.message}`);
   }
 }
 
@@ -89,4 +79,4 @@ export async function generateJSONCompletion<T>(options: GenerateOptions): Promi
   }
 }
 
-export default aimlClient;
+export default anthropicClient;
