@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import DashboardLayout from '@/components/DashboardLayout';
+import OpportunitiesSection from './opportunities-section';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -357,6 +358,9 @@ export default function WritGoAutoPilotPage() {
             </div>
           </div>
         </div>
+
+        {/* Content Opportunities */}
+        <OpportunitiesSection />
 
         {/* Content Planning/Queue */}
         <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6">

@@ -15,3 +15,7 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: AIML_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://writgo.nl
