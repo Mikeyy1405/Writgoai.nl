@@ -42,17 +42,50 @@ Schrijf een uitgebreid, SEO-geoptimaliseerd artikel in het Nederlands over het v
 
 ${outline ? `**Outline:**\n${JSON.stringify(outline, null, 2)}` : ''}
 
-**Vereisten:**
-- Schrijf in professionele, toegankelijke Nederlandse taal
-- Gebruik de focus keyword natuurlijk door de tekst (2-3% keyword density)
-- Maak gebruik van H2 en H3 headers voor structuur
-- Voeg praktische tips en voorbeelden toe
-- Schrijf minimaal 1500 woorden
-- Gebruik korte paragrafen (max 3-4 zinnen)
-- Voeg relevante interne links toe naar /blog, /dashboard, etc.
-- Eindig met een call-to-action om WritGo te proberen
-- Format de output als HTML (gebruik <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em> tags)
-- Voeg geen <html>, <head> of <body> tags toe, alleen de content zelf
+**KRITIEKE VEREISTEN:**
+
+1. **HTML Formatting (GEEN MARKDOWN!):**
+   - Output PURE HTML, GEEN markdown code blocks
+   - NIET: \`\`\`html ... \`\`\`
+   - WEL: Direct beginnen met <h2>...
+   - Gebruik <h2> voor hoofdsecties
+   - Gebruik <h3> voor subsecties
+   - Gebruik <p> voor paragrafen
+   - Gebruik <ul> en <li> voor lijsten
+   - Gebruik <strong> voor belangrijke termen
+   - Gebruik <em> voor nadruk
+
+2. **Interne Links (VERPLICHT!):**
+   - Link "WritGo" naar <a href="/">WritGo</a>
+   - Link "dashboard" naar <a href="/dashboard">dashboard</a>
+   - Link "AI content" naar <a href="/blog">AI content</a>
+   - Voeg 5-7 interne links toe door het artikel
+   - Gebruik descriptieve anchor tekst
+
+3. **Afbeeldingen:**
+   - Voeg 2-3 placeholder images toe:
+   - <img src="/api/placeholder/800/400" alt="Beschrijvende alt text" class="w-full rounded-lg my-6" />
+   - Plaats images na belangrijke secties
+
+4. **Content Structuur:**
+   - Intro (150 woorden)
+   - 4-6 hoofdsecties met H2
+   - Elk met 2-3 subsecties (H3)
+   - Minimaal 1500 woorden totaal
+   - Korte paragrafen (3-4 zinnen max)
+   - Bullet points waar relevant
+
+5. **SEO:**
+   - Focus keyword in eerste paragraaf
+   - Focus keyword in 2-3 H2 headings
+   - Keyword density 2-3%
+   - LSI keywords gebruiken
+
+6. **Call-to-Action:**
+   - Eindig met CTA sectie
+   - Link naar <a href="/dashboard">WritGo proberen</a>
+
+**BELANGRIJK:** Output ALLEEN de HTML content, GEEN markdown code blocks, GEEN extra tekst!
 
 Schrijf nu het volledige artikel:`;
 
@@ -67,8 +100,20 @@ Schrijf nu het volledige artikel:`;
       throw new Error('Failed to generate content');
     }
 
+    // Clean up content: remove markdown code blocks if AI added them anyway
+    let cleanedContent = content.trim();
+    
+    // Remove ```html and ``` markers
+    if (cleanedContent.startsWith('```html')) {
+      cleanedContent = cleanedContent.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedContent.startsWith('```')) {
+      cleanedContent = cleanedContent.replace(/^```\n?/, '').replace(/\n?```$/, '');
+    }
+    
+    cleanedContent = cleanedContent.trim();
+
     // Generate excerpt (first 160 characters of plain text)
-    const plainText = content.replace(/<[^>]*>/g, '');
+    const plainText = cleanedContent.replace(/<[^>]*>/g, '');
     const excerpt = plainText.substring(0, 160) + '...';
 
     // Generate slug from title
@@ -86,7 +131,7 @@ Schrijf nu het volledige artikel:`;
       .from('writgo_content_queue')
       .insert({
         title,
-        content,
+        content: cleanedContent,
         excerpt,
         focus_keyword: keyword,
         meta_title: title,
