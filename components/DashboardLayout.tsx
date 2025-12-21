@@ -20,6 +20,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
 
   const menuItems = [
     { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
+    { icon: '🚀', label: 'Simple Content', href: '/dashboard/simple-content' },
     { icon: '📝', label: 'Projecten', href: '/dashboard/projects' },
     { icon: '✍️', label: 'Artikelen', href: '/dashboard/articles' },
     { icon: '🤖', label: 'AI Generator', href: '/dashboard/generate' },
