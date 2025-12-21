@@ -20,9 +20,8 @@ export async function POST() {
       title: topic.title,
       metadata: {
         description: topic.description,
-        keywords: topic.keywords,
         topic: topic.category
-      }
+      } as any
     });
 
     // 3. Generate featured image
