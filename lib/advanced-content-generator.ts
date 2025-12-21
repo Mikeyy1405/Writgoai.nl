@@ -190,7 +190,7 @@ Begin direct met de eerste <p> van de intro.`;
   }
 }
 
-function generateSchemaMarkup(title: string, excerpt: string, content: string, opportunity: ContentOpportunity) {
+function generateSchemaMarkup(title: string, excerpt: string, content: string, opportunity: ContentOpportunity): any[] {
   const publishDate = opportunity.metadata?.published || new Date().toISOString();
   
   // Extract FAQ questions from content
@@ -208,7 +208,7 @@ function generateSchemaMarkup(title: string, excerpt: string, content: string, o
     };
   });
 
-  const schemas = [
+  const schemas: any[] = [
     // Article schema
     {
       "@context": "https://schema.org",
