@@ -36,64 +36,76 @@ export async function POST(request: NextRequest) {
         // Parse RSS feed
         const feed = await parser.parseURL(trigger.source_url);
         
-        // Get the latest item
-        const latestItem = feed.items[0];
-        if (!latestItem) continue;
-
-        // Check if we've already seen this item
-        const { data: existing } = await supabase
-          .from('writgo_content_opportunities')
-          .select('id')
-          .eq('source_url', latestItem.link)
-          .single();
-
-        if (existing) {
-          // Already processed
+        if (!feed.items || feed.items.length === 0) {
+          results.errors.push(`${trigger.name}: No items found in feed`);
           continue;
         }
 
-        // Check if published in last 7 days
-        const publishedDate = new Date(latestItem.pubDate || latestItem.isoDate || Date.now());
+        // Check last 10 items (or all if less than 10)
+        const itemsToCheck = feed.items.slice(0, 10);
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         
-        if (publishedDate < sevenDaysAgo) {
-          // Too old
-          continue;
+        let feedNewOpportunities = 0;
+
+        for (const item of itemsToCheck) {
+          if (!item.link || !item.title) continue;
+
+          // Check if published in last 7 days
+          const publishedDate = new Date(item.pubDate || item.isoDate || Date.now());
+          
+          if (publishedDate < sevenDaysAgo) {
+            // Too old, skip
+            continue;
+          }
+
+          // Check if we've already created an opportunity for this URL
+          const { data: existing } = await supabase
+            .from('writgo_content_opportunities')
+            .select('id')
+            .eq('source_url', item.link)
+            .single();
+
+          if (existing) {
+            // Already have this opportunity
+            continue;
+          }
+
+          // Create new opportunity
+          const { data: opportunity, error: oppError } = await supabase
+            .from('writgo_content_opportunities')
+            .insert({
+              trigger_id: trigger.id,
+              title: item.title,
+              source_url: item.link,
+              status: 'detected',
+              priority: trigger.priority || 7,
+              metadata: {
+                description: item.contentSnippet || item.content?.substring(0, 200),
+                published: publishedDate.toISOString(),
+                author: item.creator || item.author,
+                categories: item.categories || [],
+                feedName: trigger.name
+              }
+            })
+            .select()
+            .single();
+
+          if (oppError) {
+            results.errors.push(`${trigger.name}: ${oppError.message}`);
+            continue;
+          }
+
+          results.newOpportunities++;
+          feedNewOpportunities++;
+          results.opportunities.push(opportunity);
         }
-
-        // Create new opportunity
-        const { data: opportunity, error: oppError } = await supabase
-          .from('writgo_content_opportunities')
-          .insert({
-            trigger_id: trigger.id,
-            title: latestItem.title,
-            source_url: latestItem.link,
-            status: 'detected',
-            priority: 7, // Default priority
-            metadata: {
-              description: latestItem.contentSnippet || latestItem.content?.substring(0, 200),
-              published: publishedDate.toISOString(),
-              author: latestItem.creator || latestItem.author,
-              categories: latestItem.categories || []
-            }
-          })
-          .select()
-          .single();
-
-        if (oppError) {
-          results.errors.push(`Failed to create opportunity for ${latestItem.title}: ${oppError.message}`);
-          continue;
-        }
-
-        results.newOpportunities++;
-        results.opportunities.push(opportunity);
 
         // Update trigger last_checked_at
         await supabase
           .from('writgo_content_triggers')
           .update({
             last_checked_at: new Date().toISOString(),
-            last_success_at: new Date().toISOString()
+            last_success_at: feedNewOpportunities > 0 ? new Date().toISOString() : undefined
           })
           .eq('id', trigger.id);
 
