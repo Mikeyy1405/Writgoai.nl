@@ -113,23 +113,62 @@ async function generateArticleInBackground(queueId: string) {
       featuredImage = 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=1200&h=630&fit=crop';
     }
 
-    // 4. Update queue item with generated content
-    await supabase
-      .from('writgo_content_queue')
-      .update({
-        title: content.title,
-        content: content.content,
-        excerpt: content.excerpt,
-        featured_image: featuredImage,
-        status: 'scheduled',
-        metadata: {
-          topic: topic.category,
-          keywords: topic.keywords,
-          generated_at: new Date().toISOString(),
-          method: 'one_click_ai'
-        }
-      })
-      .eq('id', queueId);
+    // 4. Check if auto-publish is enabled
+    const autoPublish = process.env.AUTO_PUBLISH_ARTICLES === 'true';
+
+    if (autoPublish) {
+      // Publish directly to articles table
+      const slug = content.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      await supabase
+        .from('articles')
+        .insert({
+          title: content.title,
+          slug: slug,
+          content: content.content,
+          excerpt: content.excerpt,
+          featured_image: featuredImage,
+          status: 'published',
+          published_at: new Date().toISOString(),
+          meta_title: content.title,
+          meta_description: content.excerpt,
+          content_type: 'supporting',
+          metadata: {
+            topic: topic.category,
+            keywords: topic.keywords,
+            generated_at: new Date().toISOString(),
+            method: 'one_click_ai',
+            auto_published: true
+          }
+        });
+
+      // Delete queue item
+      await supabase
+        .from('writgo_content_queue')
+        .delete()
+        .eq('id', queueId);
+    } else {
+      // Update queue item with generated content
+      await supabase
+        .from('writgo_content_queue')
+        .update({
+          title: content.title,
+          content: content.content,
+          excerpt: content.excerpt,
+          featured_image: featuredImage,
+          status: 'scheduled',
+          metadata: {
+            topic: topic.category,
+            keywords: topic.keywords,
+            generated_at: new Date().toISOString(),
+            method: 'one_click_ai'
+          }
+        })
+        .eq('id', queueId);
+    }
 
     // 5. Log completion
     await supabase
