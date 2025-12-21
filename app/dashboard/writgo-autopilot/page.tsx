@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import DashboardLayout from '@/components/DashboardLayout';
 import OpportunitiesSection from './opportunities-section';
+import TopicsOverview from '@/components/TopicsOverview';
 
 interface AutoPilotConfig {
   id: string;
@@ -350,6 +351,9 @@ export default function WritGoAutoPilotPage() {
             </div>
           </div>
         </div>
+
+        {/* Topics Overview */}
+        <TopicsOverview />
 
         {/* Content Opportunities */}
         <OpportunitiesSection />
