@@ -13,10 +13,21 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, website_url, wp_url, wp_username, wp_password } = body;
+    const { name, website_url, wp_username, wp_password } = body;
+
+    // Auto-generate wp_url from website_url
+    let wp_url = website_url.trim();
+    // Remove trailing slash
+    if (wp_url.endsWith('/')) {
+      wp_url = wp_url.slice(0, -1);
+    }
+    // Add /wp-json/wp/v2 if not already present
+    if (!wp_url.includes('/wp-json')) {
+      wp_url = `${wp_url}/wp-json/wp/v2`;
+    }
 
     // Validate required fields
-    if (!name || !website_url || !wp_url || !wp_username || !wp_password) {
+    if (!name || !website_url || !wp_username || !wp_password) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }

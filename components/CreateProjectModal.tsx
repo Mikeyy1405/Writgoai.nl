@@ -14,7 +14,6 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
   const [formData, setFormData] = useState({
     name: '',
     website_url: '',
-    wp_url: '',
     wp_username: '',
     wp_password: '',
   });
@@ -42,7 +41,6 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
       setFormData({
         name: '',
         website_url: '',
-        wp_url: '',
         wp_username: '',
         wp_password: '',
       });
@@ -105,24 +103,6 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
               className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50"
               placeholder="https://mijnblog.nl"
             />
-          </div>
-
-          <div>
-            <label className="block text-gray-300 mb-2 font-medium">
-              WordPress REST API URL *
-            </label>
-            <input
-              type="url"
-              value={formData.wp_url}
-              onChange={(e) => setFormData({ ...formData, wp_url: e.target.value })}
-              required
-              disabled={loading}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50"
-              placeholder="https://mijnblog.nl/wp-json/wp/v2"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Meestal: je-website.nl/wp-json/wp/v2
-            </p>
           </div>
 
           <div>
