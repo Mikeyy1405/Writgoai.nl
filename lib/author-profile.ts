@@ -13,6 +13,8 @@ export interface AuthorProfile {
   social: {
     linkedin?: string;
     twitter?: string;
+    instagram?: string;
+    facebook?: string;
     website?: string;
   };
 }
@@ -39,8 +41,10 @@ export const MIKE_SCHONEWILLE: AuthorProfile = {
   ],
   image: '/images/mike-schonewille.jpg', // Placeholder
   social: {
-    linkedin: 'https://linkedin.com/in/mikeschonewille',
-    twitter: 'https://twitter.com/mikeschonewille',
+    linkedin: 'https://nl.linkedin.com/in/mike-schonewille',
+    twitter: 'https://x.com/writgonl',
+    instagram: 'https://www.instagram.com/writgonl/',
+    facebook: 'https://www.facebook.com/mike.schonewille.50/',
     website: 'https://writgo.nl'
   }
 };

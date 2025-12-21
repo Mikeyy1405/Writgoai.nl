@@ -75,9 +75,24 @@ export default function ContactPage() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-white mb-1">Email</h3>
-                    <a href="mailto:info@writgo.nl" className="text-orange-500 hover:text-orange-400">
-                      info@writgo.nl
-                    </a>
+                <p className="text-orange-500">info@writgo.nl</p>
+                <p className="text-gray-400 text-sm mt-1">06 25 18 56 81</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+                <div className="flex items-start">
+                  <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-semibold text-white mb-1">Locatie</h3>
+                    <p className="text-gray-400">Hofkamp 193</p>
+                    <p className="text-gray-400">7582GR Losser, Nederland</p>
                   </div>
                 </div>
               </div>
