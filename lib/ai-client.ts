@@ -8,10 +8,10 @@ const aimlClient = new OpenAI({
 
 // Best models for each task
 export const BEST_MODELS = {
-  CONTENT: 'anthropic/claude-sonnet-4.5',          // Best content writing
-  TECHNICAL: 'claude-3-5-sonnet-20241022', // Best coding
+  CONTENT: 'gpt-4o',                     // Best content writing
+  TECHNICAL: 'gpt-4o',                   // Best coding
   QUICK: 'gpt-4o-mini',                  // Fast & reliable
-  BUDGET: 'deepseek-chat',               // Cheapest
+  BUDGET: 'gpt-4o-mini',                 // Cheapest
   IMAGE: 'flux-pro/v1.1',                // Best quality images
 };
 
