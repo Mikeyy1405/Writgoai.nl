@@ -7,7 +7,6 @@ interface Project {
   id: string;
   name: string;
   website_url: string;
-  niche: string;
 }
 
 interface ContentIdea {
@@ -62,7 +61,7 @@ export default function ContentPlanPage() {
       const response = await fetch('/api/simple/generate-content-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ niche: selectedProject.niche })
+        body: JSON.stringify({ website_url: selectedProject.website_url })
       });
 
       if (!response.ok) throw new Error('Failed to generate plan');
@@ -76,7 +75,7 @@ export default function ContentPlanPage() {
       setContentPlan(plan);
       localStorage.setItem('contentPlan', JSON.stringify(plan));
       localStorage.setItem('selectedProject', JSON.stringify(selectedProject));
-      alert(`✅ ${data.count} artikel ideeën gegenereerd!`);
+      alert(`✅ ${data.count} artikel ideeën gegenereerd!\n\n🎯 Gedetecteerde niche: ${data.niche}`);
     } catch (error) {
       console.error('Plan error:', error);
       alert('❌ Fout bij genereren content plan');
@@ -124,7 +123,7 @@ export default function ContentPlanPage() {
             <option value="">Kies een project...</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
-                {project.name} - {project.niche}
+                {project.name}
               </option>
             ))}
           </select>
@@ -134,10 +133,7 @@ export default function ContentPlanPage() {
         {selectedProject && (
           <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/30 rounded-xl p-6 mb-6">
             <h3 className="text-xl font-bold text-white mb-2">{selectedProject.name}</h3>
-            <p className="text-gray-400 mb-2">🌐 {selectedProject.website_url}</p>
-            <span className="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-medium">
-              {selectedProject.niche}
-            </span>
+            <p className="text-gray-400">🌐 {selectedProject.website_url}</p>
           </div>
         )}
 

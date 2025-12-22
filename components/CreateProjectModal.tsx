@@ -16,7 +16,6 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
     website_url: '',
     wp_username: '',
     wp_password: '',
-    niche: '',
   });
 
   // Check if this is a WritGo project
@@ -47,7 +46,6 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
         website_url: '',
         wp_username: '',
         wp_password: '',
-        niche: '',
       });
     } catch (err: any) {
       setError(err.message);
@@ -119,20 +117,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
             </p>
           </div>
 
-          <div>
-            <label className="block text-gray-300 mb-2 font-medium">
-              Niche *
-            </label>
-            <input
-              type="text"
-              value={formData.niche}
-              onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
-              required
-              disabled={loading}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="WordPress SEO"
-            />
-          </div>
+
 
           {!isWritGoProject && (
             <>
