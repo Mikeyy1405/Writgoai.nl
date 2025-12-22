@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { generateAICompletion, analyzeWithPerplexityJSON } from '@/lib/ai-client';
 import { createClient as createServerClient } from '@/lib/supabase-server';
 import { createClient } from '@supabase/supabase-js';
-import { getKeywordsForKeywords, getSearchVolume } from '@/lib/dataforseo-client';
+import { getRelatedKeywords } from '@/lib/dataforseo-client';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -567,7 +567,7 @@ Output als JSON:
 
         await updateJob(jobId, { progress: 87, current_step: '📊 Keyword data ophalen...' });
 
-        const dataForSEOResults = await getKeywordsForKeywords(
+        const dataForSEOResults = await getRelatedKeywords(
           seedKeywords,
           langConfig.locationCode,
           language
@@ -605,10 +605,10 @@ Output als JSON:
             if (matchedData) {
               return {
                 ...article,
-                searchVolume: matchedData.search_volume || null,
+                searchVolume: matchedData.searchVolume || null,
                 competition: matchedData.competition || null,
                 cpc: matchedData.cpc || null,
-                keywordDifficulty: matchedData.keyword_difficulty || null,
+                competitionIndex: matchedData.competitionIndex || null,
               };
             }
 
