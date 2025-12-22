@@ -58,11 +58,10 @@ export async function POST(request: NextRequest) {
     );
 
     // Generate featured image
-    const featuredImage = await generateFeaturedImage({
-      title: opportunity.title,
-      description: opportunity.metadata?.description,
-      style: 'photorealistic'
-    });
+    const featuredImage = await generateFeaturedImage(
+      opportunity.title,
+      opportunity.metadata?.description
+    );
 
     // Schedule for tomorrow 10:00
     const tomorrow = new Date();

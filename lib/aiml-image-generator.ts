@@ -4,36 +4,38 @@
  */
 
 interface ImageGenerationOptions {
-  title: string;
-  description?: string;
-  style?: 'photorealistic' | 'illustration' | 'abstract' | 'minimalist';
-  aspectRatio?: '16:9' | '4:3' | '1:1' | '3:4';
+  prompt: string;
+  style?: 'photorealistic' | 'illustration' | 'abstract' | 'minimalist' | 'artistic';
+  aspectRatio?: '16:9' | '4:3' | '1:1' | '3:4' | '9:16';
+  model?: 'flux-pro' | 'flux-pro/v1.1' | 'flux-pro/v1.1-ultra';
 }
 
 interface ImageGenerationResult {
   url: string;
-  width: number;
-  height: number;
-  seed: number;
+  success: boolean;
+  error?: string;
 }
 
 const AIML_API_KEY = process.env.AIML_API_KEY;
-const AIML_API_URL = 'https://api.aimlapi.com/v1/images/generations';
+const AIML_API_URL = 'https://api.aimlapi.com/v2/generate/image';
 
 /**
- * Generate featured image using Flux Pro 1.1
+ * Generate image using Flux Pro via AIML API
  */
-export async function generateFeaturedImage(
-  options: ImageGenerationOptions
-): Promise<string | null> {
+export async function generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResult> {
   if (!AIML_API_KEY) {
-    console.warn('AIML_API_KEY not set, falling back to Unsplash');
-    return fallbackToUnsplash(options.title);
+    console.error('AIML_API_KEY not set');
+    return { url: '', success: false, error: 'API key niet geconfigureerd' };
   }
 
   try {
-    const prompt = buildPrompt(options);
-    const imageSize = getImageSize(options.aspectRatio || '16:9');
+    const { prompt, style = 'photorealistic', aspectRatio = '16:9', model = 'flux-pro/v1.1' } = options;
+    
+    // Build enhanced prompt based on style
+    const enhancedPrompt = buildEnhancedPrompt(prompt, style);
+    const imageSize = getImageSize(aspectRatio);
+
+    console.log('Generating image with Flux Pro:', { model, prompt: enhancedPrompt.substring(0, 100) });
 
     const response = await fetch(AIML_API_URL, {
       method: 'POST',
@@ -42,117 +44,170 @@ export async function generateFeaturedImage(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'flux-pro/v1.1',
-        prompt: prompt,
-        n: 1,
-        size: `${imageSize.width}x${imageSize.height}`,
-        response_format: 'url'
+        model: model,
+        prompt: enhancedPrompt,
+        image_size: `${imageSize.width}x${imageSize.height}`,
+        num_inference_steps: 28,
+        guidance_scale: 3.5,
+        num_images: 1,
+        safety_tolerance: 2
       })
     });
 
     if (!response.ok) {
-      throw new Error(`AIML API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('AIML API error:', response.status, errorText);
+      throw new Error(`API error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('AIML response:', JSON.stringify(data).substring(0, 300));
+
+    // Handle different response formats
+    let imageUrl = '';
     
-    console.log('AIML image response:', JSON.stringify(data).substring(0, 200));
-    
-    // Try different response structures
     if (data.images && data.images.length > 0) {
-      return data.images[0].url;
-    }
-    
-    if (data.data && data.data.length > 0) {
-      // OpenAI-compatible format
-      return data.data[0].url || data.data[0].b64_json;
-    }
-    
-    if (data.url) {
-      // Direct URL
-      return data.url;
+      imageUrl = data.images[0].url || data.images[0];
+    } else if (data.data && data.data.length > 0) {
+      imageUrl = data.data[0].url || data.data[0].b64_json;
+    } else if (data.output && data.output.length > 0) {
+      imageUrl = data.output[0];
+    } else if (data.url) {
+      imageUrl = data.url;
+    } else if (data.image_url) {
+      imageUrl = data.image_url;
     }
 
-    throw new Error(`No image generated. Response: ${JSON.stringify(data).substring(0, 100)}`);
+    if (!imageUrl) {
+      throw new Error('No image URL in response');
+    }
 
-  } catch (error) {
-    console.error('AIML image generation error:', error);
-    // Fallback to Unsplash if AIML fails
-    return fallbackToUnsplash(options.title);
+    return { url: imageUrl, success: true };
+
+  } catch (error: any) {
+    console.error('Image generation error:', error);
+    return { 
+      url: '', 
+      success: false, 
+      error: error.message || 'Fout bij genereren afbeelding' 
+    };
   }
 }
 
 /**
- * Build optimized prompt for Flux Pro
+ * Generate featured image for article
  */
-function buildPrompt(options: ImageGenerationOptions): string {
-  const { title, description, style = 'photorealistic' } = options;
-
-  // Extract main topic from title
+export async function generateFeaturedImage(
+  title: string,
+  description?: string
+): Promise<string | null> {
   const topic = extractTopic(title);
+  const prompt = description 
+    ? `${topic}, ${description}`
+    : `${topic}, professional blog header image, modern design`;
 
-  // Style presets for Flux Pro
-  const stylePresets = {
-    photorealistic: 'photorealistic, high quality, professional photography, sharp focus, detailed',
-    illustration: 'digital illustration, modern, clean, professional, vector art style',
-    abstract: 'abstract, modern, minimalist, geometric shapes, professional',
-    minimalist: 'minimalist, clean, simple, professional, modern design'
+  const result = await generateImage({
+    prompt,
+    style: 'photorealistic',
+    aspectRatio: '16:9',
+    model: 'flux-pro/v1.1'
+  });
+
+  if (result.success) {
+    return result.url;
+  }
+
+  // Fallback to Unsplash
+  return fallbackToUnsplash(title);
+}
+
+/**
+ * Generate in-article image
+ */
+export async function generateArticleImage(
+  prompt: string,
+  style: 'photorealistic' | 'illustration' | 'abstract' = 'photorealistic'
+): Promise<string | null> {
+  const result = await generateImage({
+    prompt,
+    style,
+    aspectRatio: '16:9',
+    model: 'flux-pro/v1.1'
+  });
+
+  if (result.success) {
+    return result.url;
+  }
+
+  return null;
+}
+
+/**
+ * Build enhanced prompt based on style
+ */
+function buildEnhancedPrompt(prompt: string, style: string): string {
+  const styleEnhancements: Record<string, string> = {
+    photorealistic: 'photorealistic, high quality, professional photography, sharp focus, detailed, 8k resolution',
+    illustration: 'digital illustration, modern, clean, professional, vector art style, vibrant colors',
+    abstract: 'abstract art, modern, minimalist, geometric shapes, professional, artistic',
+    minimalist: 'minimalist design, clean, simple, professional, modern, white space',
+    artistic: 'artistic, creative, unique style, professional quality, visually striking'
   };
 
-  const stylePrompt = stylePresets[style];
-
-  // Build comprehensive prompt
-  const prompt = `${topic}, ${stylePrompt}, suitable for blog header image, tech website aesthetic, modern and professional, high resolution, 4k quality`;
-
-  return prompt;
+  const enhancement = styleEnhancements[style] || styleEnhancements.photorealistic;
+  
+  return `${prompt}, ${enhancement}, suitable for professional blog, high resolution`;
 }
 
 /**
  * Extract main topic from article title
  */
 function extractTopic(title: string): string {
-  // Remove common SEO words
   const cleanTitle = title
     .toLowerCase()
-    .replace(/complete guide|ultimate guide|how to|what is|waarom|hoe|wat is/gi, '')
+    .replace(/complete guide|ultimate guide|how to|what is|waarom|hoe|wat is|beste|top \d+/gi, '')
     .trim();
 
-  // Extract key concepts
   const keywords = cleanTitle.split(/[\s:]+/).filter(word => word.length > 3);
 
-  // Build topic description
-  if (keywords.includes('google') || keywords.includes('seo')) {
-    return 'modern tech workspace with SEO analytics dashboard, Google search interface';
+  // Topic mapping for common subjects
+  if (keywords.some(k => ['google', 'seo', 'zoekmachine'].includes(k))) {
+    return 'modern SEO analytics dashboard, search engine optimization concept, digital marketing';
   }
   
-  if (keywords.includes('ai') || keywords.includes('chatgpt') || keywords.includes('openai')) {
-    return 'futuristic AI technology, neural network visualization, modern tech interface';
+  if (keywords.some(k => ['ai', 'chatgpt', 'openai', 'kunstmatige', 'intelligentie'].includes(k))) {
+    return 'futuristic AI technology, neural network visualization, artificial intelligence concept';
   }
   
-  if (keywords.includes('wordpress') || keywords.includes('website')) {
+  if (keywords.some(k => ['wordpress', 'website', 'blog'].includes(k))) {
     return 'modern website development, WordPress dashboard, web design workspace';
   }
   
-  if (keywords.includes('content') || keywords.includes('marketing')) {
-    return 'content creation workspace, digital marketing concept, modern office setup';
+  if (keywords.some(k => ['content', 'marketing', 'strategie'].includes(k))) {
+    return 'content creation workspace, digital marketing concept, creative office setup';
   }
 
-  // Default: generic tech/SEO image
-  return 'modern digital marketing workspace, SEO optimization concept, professional tech environment';
+  if (keywords.some(k => ['code', 'programmeren', 'developer', 'software'].includes(k))) {
+    return 'modern coding workspace, software development, programming concept';
+  }
+
+  // Default: use cleaned title as base
+  return `${cleanTitle}, modern professional concept, tech industry`;
 }
 
 /**
  * Get image size based on aspect ratio
  */
 function getImageSize(aspectRatio: string): { width: number; height: number } {
-  const sizes = {
-    '16:9': { width: 1280, height: 720 },   // Blog featured image
-    '4:3': { width: 1024, height: 768 },    // Standard
-    '1:1': { width: 1024, height: 1024 },   // Square
-    '3:4': { width: 768, height: 1024 }     // Portrait
+  const sizes: Record<string, { width: number; height: number }> = {
+    '16:9': { width: 1280, height: 720 },
+    '4:3': { width: 1024, height: 768 },
+    '1:1': { width: 1024, height: 1024 },
+    '3:4': { width: 768, height: 1024 },
+    '9:16': { width: 720, height: 1280 }
   };
 
-  return sizes[aspectRatio as keyof typeof sizes] || sizes['16:9'];
+  return sizes[aspectRatio] || sizes['16:9'];
 }
 
 /**
@@ -186,7 +241,6 @@ async function fallbackToUnsplash(title: string): Promise<string> {
     console.error('Unsplash fallback error:', error);
   }
 
-  // Ultimate fallback
   return 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=1280&h=720&fit=crop';
 }
 
@@ -202,24 +256,6 @@ function extractKeywords(title: string): string {
     .filter(word => word.length > 3 && !stopWords.includes(word));
   
   return words.slice(0, 3).join(' ') || 'technology';
-}
-
-/**
- * Generate article images (for in-content images)
- */
-export async function generateArticleImages(
-  content: string,
-  count: number = 2
-): Promise<string[]> {
-  // For now, use Unsplash for article images
-  // Can be upgraded to Flux Pro later
-  const placeholders = [
-    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop', // Analytics
-    'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=400&fit=crop', // Tech workspace
-    'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&h=400&fit=crop'  // Coding
-  ];
-  
-  return placeholders.slice(0, count);
 }
 
 /**

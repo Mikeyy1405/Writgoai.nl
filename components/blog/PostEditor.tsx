@@ -1,7 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for RichTextEditor to avoid SSR issues
+const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>
+});
 
 interface Category {
   id: string;
@@ -24,6 +31,8 @@ export default function PostEditor({ postId }: PostEditorProps) {
   const [showSEO, setShowSEO] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -105,6 +114,52 @@ export default function PostEditor({ postId }: PostEditorProps) {
     }
   };
 
+  // Generate AI image
+  const generateAIImage = useCallback(async (prompt: string): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/generate/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt,
+          style: 'photorealistic',
+          aspectRatio: '16:9'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate image');
+      }
+
+      return data.url;
+    } catch (err: any) {
+      console.error('Image generation error:', err);
+      alert(`Fout bij genereren afbeelding: ${err.message}`);
+      return null;
+    }
+  }, []);
+
+  // Generate featured image
+  const generateFeaturedImage = async () => {
+    if (!formData.title) {
+      alert('Voer eerst een titel in');
+      return;
+    }
+    
+    setGeneratingImage(true);
+    try {
+      const prompt = `Professional blog header image for article about: ${formData.title}, modern design, high quality`;
+      const imageUrl = await generateAIImage(prompt);
+      if (imageUrl) {
+        setFormData(prev => ({ ...prev, featured_image: imageUrl }));
+      }
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
+
   const handleSave = async (publishNow = false) => {
     if (!formData.title || !formData.content) {
       alert('Titel en content zijn verplicht');
@@ -132,6 +187,12 @@ export default function PostEditor({ postId }: PostEditorProps) {
 
       const { post } = await response.json();
       alert(publishNow ? 'Post gepubliceerd!' : 'Post opgeslagen!');
+      
+      // Open the published post in new tab
+      if (publishNow && post?.slug) {
+        window.open(`/blog/${post.slug}`, '_blank');
+      }
+      
       router.push('/dashboard/blog');
     } catch (error) {
       console.error('Error saving post:', error);
@@ -169,7 +230,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -234,21 +295,52 @@ export default function PostEditor({ postId }: PostEditorProps) {
               </div>
             </div>
 
-            {/* Content */}
+            {/* Content with Editor Mode Toggle */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Content * (HTML supported)
-              </label>
-              <textarea
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={20}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm"
-                placeholder="Schrijf je content hier... HTML tags zijn toegestaan."
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Gebruik HTML tags zoals &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;li&gt;, etc.
-              </p>
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Content *
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditorMode('visual')}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      editorMode === 'visual' 
+                        ? 'bg-orange-100 text-orange-700' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    ✨ Visueel
+                  </button>
+                  <button
+                    onClick={() => setEditorMode('html')}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      editorMode === 'html' 
+                        ? 'bg-orange-100 text-orange-700' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    &lt;/&gt; HTML
+                  </button>
+                </div>
+              </div>
+              
+              {editorMode === 'visual' ? (
+                <RichTextEditor
+                  content={formData.content}
+                  onChange={(content) => setFormData({ ...formData, content })}
+                  onGenerateImage={generateAIImage}
+                  placeholder="Begin met schrijven..."
+                />
+              ) : (
+                <textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  rows={20}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm"
+                  placeholder="Schrijf je content hier... HTML tags zijn toegestaan."
+                />
+              )}
             </div>
 
             {/* Excerpt */}
@@ -304,7 +396,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
                       value={formData.meta_description}
                       onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
                       maxLength={160}
-                      rows={3}
+                      rows={2}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="SEO description..."
                     />
@@ -318,7 +410,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
                       value={formData.focus_keyword}
                       onChange={(e) => setFormData({ ...formData, focus_keyword: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Hoofd keyword..."
+                      placeholder="Primaire keyword..."
                     />
                   </div>
                 </div>
@@ -328,6 +420,60 @@ export default function PostEditor({ postId }: PostEditorProps) {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Featured Image */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Featured Image
+              </label>
+              {formData.featured_image ? (
+                <div className="relative mb-3">
+                  <img
+                    src={formData.featured_image}
+                    alt="Featured"
+                    className="w-full h-40 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => setFormData({ ...formData, featured_image: '' })}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-3">
+                  <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-sm text-gray-500">Geen afbeelding</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <button
+                  onClick={generateFeaturedImage}
+                  disabled={generatingImage || !formData.title}
+                  className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
+                >
+                  {generatingImage ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Genereren...
+                    </>
+                  ) : (
+                    <>🤖 Genereer met AI</>
+                  )}
+                </button>
+                <input
+                  type="url"
+                  value={formData.featured_image}
+                  onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Of plak een URL..."
+                />
+              </div>
+            </div>
+
             {/* Status */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -344,44 +490,27 @@ export default function PostEditor({ postId }: PostEditorProps) {
               </select>
             </div>
 
-            {/* Featured Image */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Featured Image URL
-              </label>
-              <input
-                type="text"
-                value={formData.featured_image}
-                onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                placeholder="https://..."
-              />
-              {formData.featured_image && (
-                <img
-                  src={formData.featured_image}
-                  alt="Preview"
-                  className="mt-4 w-full rounded-lg"
-                />
-              )}
-            </div>
-
             {/* Categories */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Categorieën
               </label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {categories.map((category) => (
-                  <label key={category.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.categories.includes(category.id)}
-                      onChange={() => handleCategoryToggle(category.id)}
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <span className="text-sm">{category.name}</span>
-                  </label>
-                ))}
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {categories.length === 0 ? (
+                  <p className="text-sm text-gray-500">Geen categorieën beschikbaar</p>
+                ) : (
+                  categories.map(category => (
+                    <label key={category.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.categories.includes(category.id)}
+                        onChange={() => handleCategoryToggle(category.id)}
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <span className="text-sm text-gray-700">{category.name}</span>
+                    </label>
+                  ))
+                )}
               </div>
             </div>
 
@@ -390,18 +519,24 @@ export default function PostEditor({ postId }: PostEditorProps) {
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Tags
               </label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {tags.map((tag) => (
-                  <label key={tag.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.tags.includes(tag.id)}
-                      onChange={() => handleTagToggle(tag.id)}
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <span className="text-sm">{tag.name}</span>
-                  </label>
-                ))}
+              <div className="flex flex-wrap gap-2">
+                {tags.length === 0 ? (
+                  <p className="text-sm text-gray-500">Geen tags beschikbaar</p>
+                ) : (
+                  tags.map(tag => (
+                    <button
+                      key={tag.id}
+                      onClick={() => handleTagToggle(tag.id)}
+                      className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                        formData.tags.includes(tag.id)
+                          ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                          : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tag.name}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           </div>
