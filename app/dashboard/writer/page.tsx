@@ -12,6 +12,10 @@ interface ContentIdea {
   cluster?: string;
   project_id?: string;
   language?: string;
+  searchVolume?: number | null;
+  competition?: string | null;
+  cpc?: number | null;
+  keywordDifficulty?: number | null;
 }
 
 interface Article {
@@ -50,16 +54,66 @@ export default function WriterPage() {
   const [error, setError] = useState<string | null>(null);
   const [wordCount, setWordCount] = useState(2000);
   const [viewMode, setViewMode] = useState<'preview' | 'html'>('preview');
+  const [loading, setLoading] = useState(true);
+  const [language, setLanguage] = useState('nl');
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    const savedIdea = localStorage.getItem('selectedIdea');
-    const savedProject = localStorage.getItem('selectedProject');
+    loadArticleData();
+  }, [searchParams]);
+
+  async function loadArticleData() {
+    setLoading(true);
     
+    const projectId = searchParams.get('project');
+    const articleIndex = searchParams.get('article');
     const titleParam = searchParams.get('title');
     const keywordParam = searchParams.get('keyword');
     const typeParam = searchParams.get('type');
-    
+
+    // Load project info
+    if (projectId) {
+      try {
+        const projectResponse = await fetch(`/api/projects/list`);
+        const projectData = await projectResponse.json();
+        const foundProject = projectData.projects?.find((p: Project) => p.id === projectId);
+        if (foundProject) {
+          setProject(foundProject);
+        }
+      } catch (e) {
+        console.error('Failed to load project:', e);
+      }
+    }
+
+    // Method 1: Load from database via article index
+    if (projectId && articleIndex !== null) {
+      try {
+        const response = await fetch(`/api/content-plan/article?project_id=${projectId}&index=${articleIndex}`);
+        const data = await response.json();
+        
+        if (data.article) {
+          setIdea({
+            title: data.article.title,
+            category: data.article.category || '',
+            description: data.article.description || '',
+            keywords: data.article.keywords || [],
+            contentType: data.article.contentType || 'article',
+            cluster: data.article.cluster,
+            searchVolume: data.article.searchVolume,
+            competition: data.article.competition,
+            cpc: data.article.cpc,
+            keywordDifficulty: data.article.keywordDifficulty,
+          });
+          setLanguage(data.article.language || 'nl');
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to load article from database:', e);
+      }
+    }
+
+    // Method 2: Load from URL params (for direct links)
     if (titleParam && keywordParam) {
       setIdea({
         title: titleParam,
@@ -68,18 +122,26 @@ export default function WriterPage() {
         keywords: [keywordParam],
         contentType: typeParam || 'article',
       });
-    } else if (savedIdea) {
-      setIdea(JSON.parse(savedIdea));
-    } else {
-      alert('Geen idee geselecteerd! Ga eerst naar Content Plan.');
-      router.push('/dashboard/content-plan');
+      setLoading(false);
       return;
     }
+
+    // Method 3: Fallback to localStorage (backward compatibility)
+    const savedIdea = localStorage.getItem('selectedContentIdea') || localStorage.getItem('selectedIdea');
+    const savedLanguage = localStorage.getItem('contentLanguage');
     
-    if (savedProject) {
-      setProject(JSON.parse(savedProject));
+    if (savedIdea) {
+      setIdea(JSON.parse(savedIdea));
+      if (savedLanguage) setLanguage(savedLanguage);
+      setLoading(false);
+      return;
     }
-  }, [router, searchParams]);
+
+    // No article found - redirect to content plan
+    setLoading(false);
+    alert('Geen artikel geselecteerd! Ga eerst naar Content Plan.');
+    router.push('/dashboard/content-plan');
+  }
 
   async function generateArticle() {
     if (!idea) return;
@@ -92,9 +154,6 @@ export default function WriterPage() {
     abortControllerRef.current = new AbortController();
     
     try {
-      // Get language from localStorage or default to nl
-      const language = localStorage.getItem('contentLanguage') || 'nl';
-      
       const response = await fetch('/api/generate/article-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,13 +196,12 @@ export default function WriterPage() {
                 setProgress(data);
               } else if (data.type === 'complete') {
                 setArticle(data.article);
-                setGenerating(false);
+                setProgress(null);
               } else if (data.type === 'error') {
                 setError(data.message);
-                setGenerating(false);
               }
             } catch (e) {
-              console.warn('Failed to parse SSE:', e);
+              // Ignore parse errors
             }
           }
         }
@@ -152,6 +210,7 @@ export default function WriterPage() {
       if (err.name !== 'AbortError') {
         setError(err.message || 'Er is een fout opgetreden');
       }
+    } finally {
       setGenerating(false);
     }
   }
@@ -162,505 +221,278 @@ export default function WriterPage() {
     setProgress(null);
   }
 
-  async function saveArticle() {
-    if (!article) return;
-    
+  async function publishToWordPress() {
+    if (!article || !project) {
+      alert('Geen artikel of project beschikbaar');
+      return;
+    }
+
     try {
-      const response = await fetch('/api/articles/update', {
+      const response = await fetch('/api/wordpress/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          project_id: project.id,
           title: article.title,
           content: article.content,
-          word_count: article.word_count,
-          project_id: project?.id,
           featured_image: article.featured_image,
           slug: article.slug,
-          status: 'draft',
+          meta_description: article.metaDescription,
         }),
       });
 
-      if (response.ok) {
-        alert('Artikel opgeslagen in bibliotheek!');
-        router.push('/dashboard/library');
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Artikel gepubliceerd naar WordPress!');
       } else {
-        alert('Fout bij opslaan');
+        alert('Fout bij publiceren: ' + (data.error || 'Onbekende fout'));
       }
-    } catch (err) {
-      alert('Fout bij opslaan');
+    } catch (e) {
+      alert('Fout bij publiceren naar WordPress');
     }
   }
 
-  function openInEditor() {
-    if (!article) return;
-    localStorage.setItem('editorArticle', JSON.stringify(article));
-    router.push('/dashboard/editor');
+  function copyToClipboard() {
+    if (article) {
+      navigator.clipboard.writeText(article.content);
+      alert('Artikel gekopieerd naar klembord!');
+    }
   }
 
-  function downloadHtml() {
-    if (!article) return;
-    
-    // Create clean HTML for export (black text on white background)
-    const exportHtml = `<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="${article.metaDescription || ''}">
-  <title>${article.title}</title>
-  <style>
-    body {
-      font-family: Georgia, 'Times New Roman', serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 40px 20px;
-      line-height: 1.8;
-      color: #1a1a1a;
-      background: #fff;
+  function downloadAsHTML() {
+    if (article) {
+      const blob = new Blob([article.content], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${article.slug || 'artikel'}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
-    h1 {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 2.5rem;
-      font-weight: 800;
-      color: #111;
-      margin-bottom: 1.5rem;
-      line-height: 1.2;
-    }
-    h2 {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: #222;
-      margin-top: 2.5rem;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid #f97316;
-    }
-    h3 {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 1.375rem;
-      font-weight: 600;
-      color: #333;
-      margin-top: 2rem;
-      margin-bottom: 0.75rem;
-    }
-    p {
-      margin-bottom: 1.25rem;
-      color: #374151;
-    }
-    ul, ol {
-      margin: 1.5rem 0;
-      padding-left: 1.5rem;
-    }
-    li {
-      margin-bottom: 0.5rem;
-      color: #374151;
-    }
-    strong {
-      color: #111;
-      font-weight: 700;
-    }
-    a {
-      color: #f97316;
-    }
-    blockquote {
-      border-left: 4px solid #f97316;
-      padding-left: 1rem;
-      margin: 1.5rem 0;
-      font-style: italic;
-      color: #4b5563;
-    }
-    img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-      margin: 1.5rem 0;
-    }
-    .featured-image {
-      margin: 2rem 0;
-    }
-  </style>
-</head>
-<body>
-${article.content}
-</body>
-</html>`;
-
-    const blob = new Blob([exportHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${article.slug || 'artikel'}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
   }
 
-  if (!idea) {
+  if (loading) {
     return (
-      <div className="p-6 lg:p-12 flex items-center justify-center min-h-screen">
-        <div className="text-white text-xl">⏳ Laden...</div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Artikel laden...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6 lg:p-12">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gray-900 p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white">✍️ Artikel Schrijver</h1>
+            <p className="text-gray-400 mt-1">AI-powered content generatie</p>
+          </div>
           <button
             onClick={() => router.push('/dashboard/content-plan')}
-            className="text-gray-400 hover:text-white mb-4 flex items-center gap-2"
+            className="text-gray-400 hover:text-white transition"
           >
             ← Terug naar Content Plan
           </button>
-          <h1 className="text-3xl font-bold mb-2">✍️ Artikel Schrijven</h1>
-          <p className="text-gray-400">AI genereert een volledig SEO-geoptimaliseerd artikel</p>
         </div>
 
-        {/* Idea Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            {idea.contentType && (
-              <span className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm">
-                {idea.contentType}
-              </span>
-            )}
-            {idea.cluster && (
-              <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">
-                📁 {idea.cluster}
-              </span>
-            )}
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">{idea.title}</h2>
-          {idea.description && (
-            <p className="text-gray-400 mb-4">{idea.description}</p>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {idea.keywords.map((kw, i) => (
-              <span key={i} className="px-2 py-1 bg-gray-800 text-gray-300 rounded text-sm">
-                {kw}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Settings */}
-        {!generating && !article && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-            <h3 className="text-white font-medium mb-4">⚙️ Instellingen</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Article Info */}
+        {idea && (
+          <div className="bg-gray-800 rounded-xl p-6 mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">{idea.title}</h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div>
-                <label className="block text-gray-400 text-sm mb-2">Doellengte (woorden)</label>
-                <div className="flex gap-2">
-                  {[1500, 2000, 3000, 5000].map((count) => (
-                    <button
-                      key={count}
-                      onClick={() => setWordCount(count)}
-                      className={`flex-1 py-2 rounded-lg text-sm transition-colors ${
-                        wordCount === count
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                      }`}
-                    >
-                      {count.toLocaleString()}
-                    </button>
-                  ))}
+                <span className="text-gray-500 text-sm">Type</span>
+                <p className="text-white">{idea.contentType || 'Artikel'}</p>
+              </div>
+              <div>
+                <span className="text-gray-500 text-sm">Cluster</span>
+                <p className="text-white">{idea.cluster || '-'}</p>
+              </div>
+              {idea.searchVolume && (
+                <div>
+                  <span className="text-gray-500 text-sm">Zoekvolume</span>
+                  <p className="text-green-400 font-semibold">{idea.searchVolume.toLocaleString()}/maand</p>
                 </div>
+              )}
+              {idea.competition && (
+                <div>
+                  <span className="text-gray-500 text-sm">Concurrentie</span>
+                  <p className={`font-semibold ${
+                    idea.competition === 'LOW' ? 'text-green-400' :
+                    idea.competition === 'MEDIUM' ? 'text-yellow-400' : 'text-red-400'
+                  }`}>{idea.competition}</p>
+                </div>
+              )}
+            </div>
+
+            {idea.description && (
+              <p className="text-gray-400 mb-4">{idea.description}</p>
+            )}
+
+            {idea.keywords && idea.keywords.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {idea.keywords.map((kw, i) => (
+                  <span key={i} className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm">
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Generation Controls */}
+        {!article && !generating && (
+          <div className="bg-gray-800 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Generatie Instellingen</h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Aantal woorden</label>
+                <select
+                  value={wordCount}
+                  onChange={(e) => setWordCount(Number(e.target.value))}
+                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-orange-500 focus:outline-none"
+                >
+                  <option value={1000}>~1000 woorden</option>
+                  <option value={1500}>~1500 woorden</option>
+                  <option value={2000}>~2000 woorden</option>
+                  <option value={2500}>~2500 woorden</option>
+                  <option value={3000}>~3000 woorden</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Taal</label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-orange-500 focus:outline-none"
+                >
+                  <option value="nl">Nederlands</option>
+                  <option value="en">English</option>
+                  <option value="de">Deutsch</option>
+                </select>
               </div>
             </div>
+
+            <button
+              onClick={generateArticle}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg hover:shadow-orange-500/50 transition"
+            >
+              🚀 Genereer Artikel
+            </button>
+          </div>
+        )}
+
+        {/* Progress */}
+        {generating && progress && (
+          <div className="bg-gray-800 rounded-xl p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">{progress.message}</h3>
+              <button
+                onClick={cancelGeneration}
+                className="text-red-400 hover:text-red-300 text-sm"
+              >
+                Annuleren
+              </button>
+            </div>
+            
+            <div className="mb-2">
+              <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300"
+                  style={{ width: `${progress.progress}%` }}
+                />
+              </div>
+            </div>
+            
+            <p className="text-gray-400 text-sm">{progress.detail}</p>
           </div>
         )}
 
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
-            {error}
+          <div className="bg-red-500/20 border border-red-500 rounded-xl p-6 mb-6">
+            <p className="text-red-400">{error}</p>
             <button
               onClick={() => setError(null)}
-              className="ml-4 text-red-300 hover:text-white"
+              className="mt-4 text-sm text-red-400 hover:text-red-300"
             >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Generate Button */}
-        {!generating && !article && (
-          <button
-            onClick={generateArticle}
-            className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Genereer Artikel ({wordCount.toLocaleString()} woorden)
-          </button>
-        )}
-
-        {/* Progress Section */}
-        {generating && progress && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-lg font-medium">{progress.message}</span>
-                <span className="text-orange-400 font-bold">{progress.progress}%</span>
-              </div>
-              
-              <div className="w-full bg-gray-800 rounded-full h-4 overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-500 ease-out"
-                  style={{ width: `${progress.progress}%` }}
-                />
-              </div>
-              
-              <p className="text-gray-400 text-sm mt-2">{progress.detail}</p>
-            </div>
-
-            <div className="flex justify-between mt-6">
-              {Array.from({ length: progress.totalSteps }, (_, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                    i + 1 < progress.step ? 'bg-green-500 text-white' :
-                    i + 1 === progress.step ? 'bg-orange-500 text-white animate-pulse' :
-                    'bg-gray-700 text-gray-400'
-                  }`}>
-                    {i + 1 < progress.step ? '✓' : i + 1}
-                  </div>
-                  <span className="text-xs text-gray-500 mt-2 text-center hidden md:block">
-                    {['Onderzoek', 'Intro', 'Content', 'Conclusie', 'Afbeelding'][i]}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {progress.outline && (
-              <div className="mt-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <h4 className="text-white font-medium mb-2">📋 Outline</h4>
-                <ul className="text-gray-400 text-sm space-y-1">
-                  {progress.outline.sections?.slice(0, 4).map((section: any, i: number) => (
-                    <li key={i}>• {section.heading}</li>
-                  ))}
-                  {progress.outline.sections?.length > 4 && (
-                    <li className="text-gray-500">... en {progress.outline.sections.length - 4} meer secties</li>
-                  )}
-                </ul>
-              </div>
-            )}
-
-            <button
-              onClick={cancelGeneration}
-              className="mt-4 px-4 py-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
-            >
-              Annuleren
+              Sluiten
             </button>
           </div>
         )}
 
         {/* Generated Article */}
         {article && (
-          <div className="space-y-6">
-            {/* Article Stats */}
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-              <div className="flex flex-wrap gap-4 justify-between items-center">
-                <div className="flex gap-6">
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase">Woorden</p>
-                    <p className="text-2xl font-bold text-white">{article.word_count.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase">Leestijd</p>
-                    <p className="text-2xl font-bold text-white">{Math.ceil(article.word_count / 200)} min</p>
-                  </div>
-                  {article.slug && (
-                    <div>
-                      <p className="text-gray-400 text-xs uppercase">Slug</p>
-                      <p className="text-white font-mono text-sm">{article.slug}</p>
-                    </div>
-                  )}
+          <div className="bg-gray-800 rounded-xl overflow-hidden">
+            {/* Article Header */}
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white">{article.title}</h2>
+                  <p className="text-gray-400 text-sm mt-1">{article.word_count} woorden</p>
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2">
                   <button
-                    onClick={openInEditor}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    onClick={() => setViewMode(viewMode === 'preview' ? 'html' : 'preview')}
+                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
                   >
-                    ✏️ Bewerken
+                    {viewMode === 'preview' ? 'HTML' : 'Preview'}
                   </button>
                   <button
-                    onClick={saveArticle}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    onClick={copyToClipboard}
+                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
                   >
-                    💾 Opslaan
+                    📋 Kopiëren
                   </button>
                   <button
-                    onClick={downloadHtml}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    onClick={downloadAsHTML}
+                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
                   >
-                    📥 Download
+                    ⬇️ Download
                   </button>
-                  <button
-                    onClick={() => {
-                      setArticle(null);
-                      setProgress(null);
-                    }}
-                    className="px-4 py-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
-                  >
-                    🔄 Opnieuw
-                  </button>
+                  {project && (
+                    <button
+                      onClick={publishToWordPress}
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
+                    >
+                      🚀 Publiceren
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode('preview')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  viewMode === 'preview' 
-                    ? 'bg-orange-500 text-white' 
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }`}
-              >
-                👁️ Preview
-              </button>
-              <button
-                onClick={() => setViewMode('html')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  viewMode === 'html' 
-                    ? 'bg-orange-500 text-white' 
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }`}
-              >
-                &lt;/&gt; HTML
-              </button>
+            {/* Article Content */}
+            <div className="p-6 max-h-[600px] overflow-y-auto">
+              {viewMode === 'preview' ? (
+                <div 
+                  className="prose prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: article.content }}
+                />
+              ) : (
+                <pre className="text-gray-300 text-sm whitespace-pre-wrap font-mono bg-gray-900 p-4 rounded-lg">
+                  {article.content}
+                </pre>
+              )}
             </div>
 
             {/* Featured Image */}
             {article.featured_image && (
-              <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <div className="p-6 border-t border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4">Featured Image</h3>
                 <img 
                   src={article.featured_image} 
                   alt={article.title}
-                  className="w-full h-64 object-cover"
+                  className="max-w-md rounded-lg"
                 />
-                <div className="p-3 bg-gray-800/50">
-                  <p className="text-gray-400 text-sm">🖼️ Featured Image (Flux Pro)</p>
-                </div>
-              </div>
-            )}
-
-            {/* Article Preview - Dark mode for editing */}
-            {viewMode === 'preview' && (
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-8">
-                <div 
-                  className="article-preview-dark prose prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: article.content }}
-                  style={{
-                    color: '#fff',
-                    fontFamily: 'Georgia, "Times New Roman", serif',
-                    fontSize: '1.125rem',
-                    lineHeight: '1.8',
-                  }}
-                />
-                <style jsx global>{`
-                  .article-preview-dark {
-                    color: #fff !important;
-                  }
-                  .article-preview-dark h1 {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    font-size: 2.25rem;
-                    font-weight: 800;
-                    color: #fff !important;
-                    margin-bottom: 1.5rem;
-                    line-height: 1.2;
-                  }
-                  .article-preview-dark h2 {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    font-size: 1.5rem;
-                    font-weight: 700;
-                    color: #f97316 !important;
-                    margin-top: 2.5rem;
-                    margin-bottom: 1rem;
-                    padding-bottom: 0.5rem;
-                    border-bottom: 2px solid #f97316;
-                  }
-                  .article-preview-dark h3 {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    font-size: 1.25rem;
-                    font-weight: 600;
-                    color: #d1d5db !important;
-                    margin-top: 2rem;
-                    margin-bottom: 0.75rem;
-                  }
-                  .article-preview-dark p {
-                    margin-bottom: 1.25rem;
-                    color: #e5e7eb !important;
-                  }
-                  .article-preview-dark ul,
-                  .article-preview-dark ol {
-                    margin: 1.5rem 0;
-                    padding-left: 1.5rem;
-                    color: #e5e7eb !important;
-                  }
-                  .article-preview-dark ul {
-                    list-style-type: disc;
-                  }
-                  .article-preview-dark ol {
-                    list-style-type: decimal;
-                  }
-                  .article-preview-dark li {
-                    margin-bottom: 0.5rem;
-                    color: #e5e7eb !important;
-                    line-height: 1.7;
-                  }
-                  .article-preview-dark strong {
-                    color: #fff !important;
-                    font-weight: 700;
-                  }
-                  .article-preview-dark em {
-                    color: #d1d5db !important;
-                    font-style: italic;
-                  }
-                  .article-preview-dark a {
-                    color: #f97316 !important;
-                    text-decoration: none;
-                  }
-                  .article-preview-dark a:hover {
-                    text-decoration: underline;
-                  }
-                  .article-preview-dark blockquote {
-                    border-left: 4px solid #f97316;
-                    padding-left: 1rem;
-                    margin: 1.5rem 0;
-                    font-style: italic;
-                    color: #9ca3af !important;
-                    background: rgba(249, 115, 22, 0.1);
-                    padding: 1rem;
-                    border-radius: 0 8px 8px 0;
-                  }
-                  .article-preview-dark img {
-                    max-width: 100%;
-                    height: auto;
-                    border-radius: 8px;
-                    margin: 1.5rem 0;
-                  }
-                  .article-preview-dark figure {
-                    margin: 2rem 0;
-                  }
-                  .article-preview-dark figure img {
-                    width: 100%;
-                    border-radius: 12px;
-                  }
-                `}</style>
-              </div>
-            )}
-
-            {/* HTML View */}
-            {viewMode === 'html' && (
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                <pre className="text-gray-300 text-sm overflow-x-auto whitespace-pre-wrap font-mono">
-                  {article.content}
-                </pre>
               </div>
             )}
           </div>

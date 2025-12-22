@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { generateAICompletion, analyzeWithPerplexityJSON } from '@/lib/ai-client';
 import { createClient as createServerClient } from '@/lib/supabase-server';
 import { createClient } from '@supabase/supabase-js';
+import { getKeywordsForKeywords, getSearchVolume } from '@/lib/dataforseo-client';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -551,11 +552,86 @@ Output als JSON:
       }
     }
 
-    await updateJob(jobId, { progress: 90, current_step: '🎯 Afronden...' });
+    // Step 6: DataForSEO enrichment (85-95%)
+    await updateJob(jobId, { progress: 85, current_step: '📊 SEO data ophalen (DataForSEO)...' });
+
+    const hasDataForSEO = process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD;
+    let enrichedArticles = [...allArticles];
+
+    if (hasDataForSEO) {
+      try {
+        // Get seed keywords from pillar topics
+        const seedKeywords = nicheData.pillarTopics
+          .map((p: any) => typeof p === 'string' ? p : p.topic)
+          .slice(0, 10);
+
+        await updateJob(jobId, { progress: 87, current_step: '📊 Keyword data ophalen...' });
+
+        const dataForSEOResults = await getKeywordsForKeywords(
+          seedKeywords,
+          langConfig.locationCode,
+          language
+        );
+
+        if (dataForSEOResults && dataForSEOResults.length > 0) {
+          // Create a map of keywords to their data
+          const keywordMap = new Map<string, any>();
+          for (const kw of dataForSEOResults) {
+            if (kw.keyword) {
+              keywordMap.set(kw.keyword.toLowerCase(), kw);
+            }
+          }
+
+          await updateJob(jobId, { progress: 90, current_step: `📊 ${dataForSEOResults.length} keywords verrijkt` });
+
+          // Enrich articles with SEO data
+          enrichedArticles = allArticles.map(article => {
+            const titleLower = article.title.toLowerCase();
+            const keywordLower = (article.keywords[0] || '').toLowerCase();
+
+            // Try to find matching keyword data
+            let matchedData = keywordMap.get(keywordLower) || keywordMap.get(titleLower);
+
+            // If no direct match, try partial matching
+            if (!matchedData) {
+              for (const [key, data] of keywordMap.entries()) {
+                if (titleLower.includes(key) || key.includes(keywordLower)) {
+                  matchedData = data;
+                  break;
+                }
+              }
+            }
+
+            if (matchedData) {
+              return {
+                ...article,
+                searchVolume: matchedData.search_volume || null,
+                competition: matchedData.competition || null,
+                cpc: matchedData.cpc || null,
+                keywordDifficulty: matchedData.keyword_difficulty || null,
+              };
+            }
+
+            return article;
+          });
+
+          await updateJob(jobId, { progress: 93, current_step: '✅ SEO data toegevoegd' });
+        } else {
+          await updateJob(jobId, { progress: 93, current_step: '⚠️ Geen DataForSEO data beschikbaar' });
+        }
+      } catch (dataForSEOError) {
+        console.warn('DataForSEO enrichment failed:', dataForSEOError);
+        await updateJob(jobId, { progress: 93, current_step: '⚠️ DataForSEO overgeslagen' });
+      }
+    } else {
+      await updateJob(jobId, { progress: 93, current_step: '⏭️ DataForSEO niet geconfigureerd' });
+    }
+
+    await updateJob(jobId, { progress: 95, current_step: '🎯 Afronden...' });
 
     // Deduplicate
     const seen = new Set<string>();
-    const uniqueArticles = allArticles.filter(article => {
+    const uniqueArticles = enrichedArticles.filter(article => {
       const key = article.title.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 50);
       if (seen.has(key)) return false;
       seen.add(key);

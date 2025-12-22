@@ -422,13 +422,9 @@ export default function ContentPlanPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleWriteArticle = (idea: ContentIdea) => {
-    // Save the idea and language to localStorage
-    localStorage.setItem('selectedContentIdea', JSON.stringify(idea));
-    localStorage.setItem('contentLanguage', language);
-    
-    // Navigate to writer with project
-    router.push(`/dashboard/writer?project=${selectedProject}`);
+  const handleWriteArticle = (idea: ContentIdea, index: number) => {
+    // Navigate to writer with project and article index - no localStorage needed
+    router.push(`/dashboard/writer?project=${selectedProject}&article=${index}`);
   };
 
   const handleProjectChange = (newProjectId: string) => {
@@ -743,7 +739,11 @@ export default function ContentPlanPage() {
                     )}
                   </div>
                   <button
-                    onClick={() => handleWriteArticle(idea)}
+                    onClick={() => {
+                      // Find the actual index in the full contentPlan array
+                      const actualIndex = contentPlan.findIndex(p => p.title === idea.title);
+                      handleWriteArticle(idea, actualIndex >= 0 ? actualIndex : 0);
+                    }}
                     className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all whitespace-nowrap"
                   >
                     Schrijven

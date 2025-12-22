@@ -319,7 +319,7 @@ export default function SocialMediaPage() {
     }
   }
 
-  async function generatePost(ideaTopic?: string, ideaType?: string) {
+  async function generatePost(ideaTopic?: string, ideaType?: string, ideaIndex?: number) {
     const topicToUse = ideaTopic || topic;
     if (!selectedProject || !topicToUse.trim()) {
       alert('Vul een topic in');
@@ -339,6 +339,7 @@ export default function SocialMediaPage() {
           language: selectedProject.language || 'nl',
           niche: strategy?.niche || selectedProject.niche || '',
           website_url: selectedProject.website_url,
+          content_idea_index: ideaIndex,
           strategy: strategy ? {
             brand_voice: strategy.brand_voice,
             hashtags: strategy.hashtag_strategy,
@@ -762,7 +763,7 @@ export default function SocialMediaPage() {
                             <span className="text-orange-400">CTA:</span> {idea.cta}
                           </p>
                           <button
-                            onClick={() => generatePost(idea.title, idea.type.toLowerCase())}
+                            onClick={() => generatePost(idea.title, idea.type.toLowerCase(), index)}
                             disabled={generating}
                             className="w-full text-sm bg-orange-500 hover:bg-orange-600 disabled:opacity-50 px-4 py-2 rounded-lg transition"
                           >
