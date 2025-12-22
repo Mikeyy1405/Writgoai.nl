@@ -198,6 +198,7 @@ export default function SocialMediaPage() {
       const data = await response.json();
       if (data.strategy) {
         setStrategy(data.strategy);
+        setContentIdeas(data.strategy.content_ideas || []);
         setDetectedInfo({
           niche: data.strategy.niche,
           audience: data.strategy.target_audience,
@@ -206,6 +207,7 @@ export default function SocialMediaPage() {
         });
       } else {
         setStrategy(null);
+        setContentIdeas([]);
         setDetectedInfo(null);
       }
     } catch (error) {

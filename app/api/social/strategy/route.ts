@@ -209,6 +209,7 @@ Antwoord ALLEEN met het JSON object.`;
       hashtag_strategy: strategyData.hashtag_strategy,
       engagement_tactics: strategyData.engagement_tactics,
       goals: nicheAnalysis.unique_selling_points || [],
+      content_ideas: strategyData.content_ideas || [],
       updated_at: new Date().toISOString(),
     };
 
