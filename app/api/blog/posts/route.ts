@@ -4,11 +4,37 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// GET /api/blog/posts - List posts with filtering, pagination, sorting
+// GET /api/blog/posts - List posts or get single post by slug
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
+    // Check if requesting a single post by slug
+    const slug = searchParams.get('slug');
+    
+    const supabase = createClient();
+
+    // If slug is provided, return single post
+    if (slug) {
+      const { data: post, error } = await supabase
+        .from('articles')
+        .select(`
+          *,
+          author:author_id(id, email),
+          categories:article_category_mapping(category:article_categories(*)),
+          tags:article_tag_mapping(tag:article_tags(*))
+        `)
+        .eq('slug', slug)
+        .single();
+
+      if (error || !post) {
+        return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ post });
+    }
+    
+    // Otherwise, list posts with filtering, pagination, sorting
     // Pagination
     const page = parseInt(searchParams.get('page') || '1');
     const perPage = parseInt(searchParams.get('per_page') || '10');
@@ -24,8 +50,6 @@ export async function GET(request: NextRequest) {
     // Sorting
     const sortBy = searchParams.get('sort_by') || 'published_at';
     const sortOrder = searchParams.get('sort_order') || 'desc';
-
-    const supabase = createClient();
 
     // Build query
     let query = supabase
