@@ -24,6 +24,26 @@ interface PostEditorProps {
   postId?: string;
 }
 
+// Helper function to generate slug from keyword
+function generateSlug(keyword: string): string {
+  return keyword
+    .toLowerCase()
+    .trim()
+    // Replace Dutch characters
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    // Replace spaces and special chars with hyphens
+    .replace(/[^a-z0-9]+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-+|-+$/g, '')
+    // Limit length
+    .substring(0, 60);
+}
+
 export default function PostEditor({ postId }: PostEditorProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -57,17 +77,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
     }
   }, [postId]);
 
-  // Auto-generate slug from title
+  // Auto-generate slug from focus_keyword (not title!)
   useEffect(() => {
-    if (!postId && formData.title) {
-      const slug = formData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
+    if (!postId && formData.focus_keyword) {
+      const slug = generateSlug(formData.focus_keyword);
       setFormData(prev => ({ ...prev, slug }));
     }
-  }, [formData.title, postId]);
+  }, [formData.focus_keyword, postId]);
 
   const fetchCategoriesAndTags = async () => {
     try {
@@ -143,14 +159,14 @@ export default function PostEditor({ postId }: PostEditorProps) {
 
   // Generate featured image
   const generateFeaturedImage = async () => {
-    if (!formData.title) {
-      alert('Voer eerst een titel in');
+    if (!formData.title && !formData.focus_keyword) {
+      alert('Voer eerst een titel of focus keyword in');
       return;
     }
     
     setGeneratingImage(true);
     try {
-      const prompt = `Professional blog header image for article about: ${formData.title}, modern design, high quality`;
+      const prompt = `Professional blog header image for article about: ${formData.focus_keyword || formData.title}, modern design, high quality`;
       const imageUrl = await generateAIImage(prompt);
       if (imageUrl) {
         setFormData(prev => ({ ...prev, featured_image: imageUrl }));
@@ -166,10 +182,19 @@ export default function PostEditor({ postId }: PostEditorProps) {
       return;
     }
 
+    // Auto-generate slug from keyword if empty
+    let finalSlug = formData.slug;
+    if (!finalSlug && formData.focus_keyword) {
+      finalSlug = generateSlug(formData.focus_keyword);
+    } else if (!finalSlug) {
+      finalSlug = generateSlug(formData.title);
+    }
+
     setSaving(true);
     try {
       const dataToSave = {
         ...formData,
+        slug: finalSlug,
         status: publishNow ? 'published' : formData.status,
         published_at: publishNow ? new Date().toISOString() : formData.published_at
       };
@@ -278,7 +303,24 @@ export default function PostEditor({ postId }: PostEditorProps) {
               />
             </div>
 
-            {/* Slug */}
+            {/* Focus Keyword - IMPORTANT for slug */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Focus Keyword (wordt de URL slug)
+              </label>
+              <input
+                type="text"
+                value={formData.focus_keyword}
+                onChange={(e) => setFormData({ ...formData, focus_keyword: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                placeholder="bijv. chatgpt-nederlands"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Dit keyword wordt gebruikt als URL slug: /blog/{formData.slug || 'keyword-hier'}
+              </p>
+            </div>
+
+            {/* Slug (auto-generated from keyword) */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Slug (URL)
@@ -290,7 +332,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  placeholder="post-slug"
+                  placeholder="wordt-automatisch-gegenereerd"
                 />
               </div>
             </div>
@@ -401,18 +443,6 @@ export default function PostEditor({ postId }: PostEditorProps) {
                       placeholder="SEO description..."
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Focus Keyword
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.focus_keyword}
-                      onChange={(e) => setFormData({ ...formData, focus_keyword: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Primaire keyword..."
-                    />
-                  </div>
                 </div>
               )}
             </div>
@@ -452,7 +482,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
               <div className="space-y-2">
                 <button
                   onClick={generateFeaturedImage}
-                  disabled={generatingImage || !formData.title}
+                  disabled={generatingImage || (!formData.title && !formData.focus_keyword)}
                   className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
                 >
                   {generatingImage ? (

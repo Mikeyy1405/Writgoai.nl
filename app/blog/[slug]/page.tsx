@@ -197,8 +197,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       {/* Header */}
       <header className="bg-black/50 backdrop-blur-sm border-b border-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Link href="/blog" className="text-orange-600 hover:text-orange-700 inline-block">
-            ← Terug naar blog
+          <Link href="/blog" className="text-orange-500 hover:text-orange-400 inline-flex items-center gap-2 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Terug naar blog
           </Link>
         </div>
       </header>
@@ -208,113 +211,121 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12">
           {/* Main Article */}
           <article className="min-w-0">
-        {/* Featured Image */}
-        {article.featured_image && (
-          <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden mb-8">
-            <img
-              src={article.featured_image}
-              alt={article.title}
-              className="w-full h-full object-cover"
+            {/* Featured Image */}
+            {article.featured_image && (
+              <div className="aspect-video bg-gray-800 rounded-xl overflow-hidden mb-8 shadow-2xl">
+                <img
+                  src={article.featured_image}
+                  alt={article.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* Keyword Badge */}
+            {article.focus_keyword && (
+              <span className="inline-block px-4 py-1.5 text-sm font-medium text-orange-400 bg-orange-500/10 border border-orange-500/30 rounded-full mb-6">
+                {article.focus_keyword}
+              </span>
+            )}
+
+            {/* Title - WHITE */}
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+              {article.title}
+            </h1>
+
+            {/* Meta - WHITE/LIGHT */}
+            <div className="flex items-center text-gray-300 mb-8 pb-8 border-b border-gray-800">
+              <time dateTime={article.published_at} className="mr-6 flex items-center gap-2">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {new Date(article.published_at).toLocaleDateString('nl-NL', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </time>
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                {article.views || 0} weergaven
+              </span>
+            </div>
+
+            {/* Content - ALL WHITE TEXT */}
+            <div 
+              className="prose prose-lg prose-invert max-w-none
+                prose-headings:font-bold prose-headings:text-white
+                prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:text-white
+                prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-white
+                prose-h4:text-xl prose-h4:mt-8 prose-h4:mb-3 prose-h4:text-white
+                prose-p:text-gray-200 prose-p:leading-relaxed prose-p:mb-6 prose-p:text-lg
+                prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-3
+                prose-ol:my-6 prose-ol:list-decimal prose-ol:pl-6 prose-ol:space-y-3
+                prose-li:text-gray-200 prose-li:leading-relaxed prose-li:text-lg
+                prose-strong:text-white prose-strong:font-bold
+                prose-em:text-gray-100 prose-em:italic
+                prose-a:text-orange-400 prose-a:no-underline hover:prose-a:text-orange-300 hover:prose-a:underline prose-a:font-medium prose-a:transition-colors
+                prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-gray-800/50 prose-blockquote:rounded-r-lg prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:my-8 prose-blockquote:text-gray-200 prose-blockquote:italic prose-blockquote:not-italic
+                prose-img:rounded-xl prose-img:shadow-2xl prose-img:my-10
+                prose-code:bg-gray-800 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-orange-400 prose-code:text-base
+                prose-pre:bg-gray-800 prose-pre:rounded-xl prose-pre:p-6"
+              dangerouslySetInnerHTML={{ __html: article.content }}
             />
-          </div>
-        )}
 
-        {/* Keyword Badge */}
-        {article.focus_keyword && (
-          <span className="inline-block px-3 py-1 text-sm font-medium text-orange-600 bg-orange-50 rounded-full mb-4">
-            {article.focus_keyword}
-          </span>
-        )}
+            {/* Author Box */}
+            <div className="mt-12">
+              <AuthorBox author={MIKE_SCHONEWILLE} />
+            </div>
 
-        {/* Title */}
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-          {article.title}
-        </h1>
+            {/* CTA Box */}
+            <div className="mt-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-8 text-center shadow-2xl">
+              <h3 className="text-2xl font-bold text-white mb-3">
+                Wil jij ook automatisch SEO-content genereren?
+              </h3>
+              <p className="text-orange-100 mb-6 text-lg">
+                WritGo AI helpt je om automatisch hoogwaardige, SEO-geoptimaliseerde content te creëren en publiceren
+              </p>
+              <Link
+                href="/register"
+                className="inline-block bg-white text-orange-600 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-colors shadow-lg"
+              >
+                Start Gratis →
+              </Link>
+            </div>
 
-        {/* Meta */}
-        <div className="flex items-center text-gray-600 mb-8 pb-8 border-b">
-          <time dateTime={article.published_at} className="mr-6">
-            {new Date(article.published_at).toLocaleDateString('nl-NL', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </time>
-          <span className="flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            {article.views || 0} weergaven
-          </span>
+            {/* Social Share */}
+            <div className="mt-8 pt-8 border-t border-gray-800">
+              <SocialShare 
+                url={articleUrl} 
+                title={article.title}
+              />
+            </div>
+          </article>
+
+          {/* Table of Contents Sidebar */}
+          <aside className="hidden lg:block">
+            <TableOfContents content={article.content} />
+          </aside>
         </div>
-
-        {/* Content */}
-        <div 
-          className="prose prose-lg prose-invert max-w-none
-            prose-headings:font-bold prose-headings:text-white
-            prose-h2:text-3xl prose-h2:mt-10 prose-h2:mb-5 prose-h2:leading-tight
-            prose-h3:text-2xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:leading-snug
-            prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-5 prose-p:text-lg
-            prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2
-            prose-li:text-gray-300 prose-li:leading-relaxed
-            prose-strong:text-white prose-strong:font-semibold
-            prose-a:text-orange-500 prose-a:no-underline hover:prose-a:underline prose-a:font-medium
-            prose-img:rounded-lg prose-img:shadow-xl prose-img:my-8
-            prose-code:bg-gray-800 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-orange-400"
-          dangerouslySetInnerHTML={{ __html: article.content }}
-        />
-
-        {/* Author Box */}
-        <div className="mt-12">
-          <AuthorBox author={MIKE_SCHONEWILLE} />
-        </div>
-
-        {/* CTA Box */}
-        <div className="mt-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-8 text-center">
-          <h3 className="text-2xl font-bold text-white mb-3">
-            Wil jij ook automatisch SEO-content genereren?
-          </h3>
-          <p className="text-orange-100 mb-6">
-            WritGo AI helpt je om automatisch hoogwaardige, SEO-geoptimaliseerde content te creëren en publiceren
-          </p>
-          <Link
-            href="/auth/register"
-            className="inline-block bg-white text-orange-600 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-colors"
-          >
-            Start Gratis →
-          </Link>
-        </div>
-
-        {/* Social Share */}
-        <div className="mt-8 pt-8 border-t border-gray-800">
-          <SocialShare 
-            url={articleUrl} 
-            title={article.title}
-          />
-        </div>
-      </article>
-
-      {/* Table of Contents Sidebar */}
-      <aside className="hidden lg:block">
-        <TableOfContents content={article.content} />
-      </aside>
-    </div>
-  </div>
+      </div>
 
       {/* Related Articles */}
       {relatedArticles && relatedArticles.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-800">
-          <h2 className="text-2xl font-bold text-white mb-6">Gerelateerde artikelen</h2>
+          <h2 className="text-2xl font-bold text-white mb-8">Gerelateerde artikelen</h2>
           <div className="grid gap-8 md:grid-cols-3">
             {relatedArticles.map((related) => (
               <Link
                 key={related.id}
                 href={`/blog/${related.slug}`}
-                className="block bg-gray-900/50 border border-gray-800 rounded-lg hover:border-orange-500/50 transition-all overflow-hidden group"
+                className="block bg-gray-900/50 border border-gray-800 rounded-xl hover:border-orange-500/50 transition-all overflow-hidden group hover:shadow-xl hover:shadow-orange-500/10"
               >
                 {related.featured_image ? (
-                  <div className="aspect-video bg-gray-200 overflow-hidden">
+                  <div className="aspect-video bg-gray-800 overflow-hidden">
                     <img
                       src={related.featured_image}
                       alt={related.title}
@@ -322,14 +333,14 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                     />
                   </div>
                 ) : (
-                  <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600" />
+                  <div className="aspect-video bg-gradient-to-br from-orange-500/20 to-orange-600/20" />
                 )}
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">
+                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-orange-400 transition-colors line-clamp-2">
                     {related.title}
                   </h3>
                   {related.excerpt && (
-                    <p className="text-gray-300 text-sm line-clamp-2">
+                    <p className="text-gray-400 text-sm line-clamp-2">
                       {related.excerpt}
                     </p>
                   )}

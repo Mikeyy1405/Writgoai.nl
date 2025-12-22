@@ -41,6 +41,50 @@ function getCurrentDateInfo() {
   };
 }
 
+// Helper function to clean HTML content from AI response
+function cleanHTMLContent(content: string): string {
+  let cleaned = content;
+  
+  // Remove markdown code blocks (various formats)
+  cleaned = cleaned.replace(/```html\s*/gi, '');
+  cleaned = cleaned.replace(/```HTML\s*/gi, '');
+  cleaned = cleaned.replace(/```\s*/g, '');
+  
+  // Remove any leading/trailing whitespace
+  cleaned = cleaned.trim();
+  
+  // If content starts with a newline after removing code blocks, trim it
+  cleaned = cleaned.replace(/^\n+/, '');
+  
+  // Remove any "Here is" or similar AI preambles
+  cleaned = cleaned.replace(/^(Here is|Here's|Below is|The following|Hier is|Hieronder)[^<]*</i, '<');
+  
+  // Remove any trailing AI comments
+  cleaned = cleaned.replace(/\n*---\n*.*$/s, '');
+  
+  return cleaned;
+}
+
+// Helper function to generate slug from keyword
+function generateSlugFromKeyword(keyword: string): string {
+  return keyword
+    .toLowerCase()
+    .trim()
+    // Replace Dutch characters
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    // Replace spaces and special chars with hyphens
+    .replace(/[^a-z0-9]+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-+|-+$/g, '')
+    // Limit length
+    .substring(0, 60);
+}
+
 export async function generateAdvancedContent(
   opportunity: ContentOpportunity,
   relatedArticles: Array<{ title: string; slug: string }> = []
@@ -149,16 +193,18 @@ STRUCTUUR (AI OVERVIEW OPTIMIZED):
    - Link naar origineel artikel
    - 2-3 gerelateerde bronnen
 
-HTML OPMAAK:
-- Gebruik <h2> voor hoofdsecties
-- Gebruik <h3> voor subsecties
-- Gebruik <h4> voor sub-subsecties
-- Gebruik <p> voor paragrafen (max 3-4 zinnen)
-- Gebruik <strong> voor belangrijke termen
-- Gebruik <ul> en <li> voor lijsten
-- Gebruik <ol> en <li> voor genummerde stappen
-- Gebruik <blockquote> voor belangrijke quotes
-- Voeg 3-4 placeholder images toe: <img src="/api/placeholder/800/400" alt="beschrijvende alt text" />
+HTML OPMAAK - GEBRUIK ALLEEN DEZE TAGS:
+- <h2> voor hoofdsecties
+- <h3> voor subsecties
+- <h4> voor sub-subsecties
+- <p> voor paragrafen (max 3-4 zinnen)
+- <strong> voor belangrijke termen
+- <em> voor nadruk
+- <ul> en <li> voor lijsten
+- <ol> en <li> voor genummerde stappen
+- <blockquote> voor belangrijke quotes
+- <table>, <tr>, <th>, <td> voor tabellen
+- <a href="..."> voor links
 
 INTERNE LINKS:
 Voeg deze links natuurlijk toe in de content:
@@ -201,27 +247,30 @@ BELANGRIJK:
 - Gebruik Nederlandse SEO best practices
 - Maak het actionable en praktisch
 - Focus op waarde voor de lezer
+- GEEN markdown code blocks (\`\`\`html of \`\`\`)
+- Begin DIRECT met de eerste <h2> of <p> tag
+- GEEN uitleg of inleiding voor de HTML
 
 OUTPUT:
-Genereer ALLEEN de HTML content. Geen markdown code blocks, geen extra uitleg.
-Begin direct met de eerste <h2> of <p> van de intro.`;
+Genereer ALLEEN de HTML content. Begin direct met de eerste <h2> of <p>.`;
 
   try {
     const content = await generateAICompletion({
       task: 'content',
-      systemPrompt: 'Je bent een expert SEO content writer die uitgebreide, goed gestructureerde HTML artikelen schrijft in het Nederlands. Genereer alleen HTML content zonder markdown formatting.',
+      systemPrompt: 'Je bent een expert SEO content writer die uitgebreide, goed gestructureerde HTML artikelen schrijft in het Nederlands. Je output is ALLEEN clean HTML zonder markdown code blocks, uitleg of inleiding. Begin direct met de eerste HTML tag.',
       userPrompt: prompt,
       maxTokens: 8000,
       temperature: 0.7,
     });
 
     // Clean up markdown code blocks if AI added them
-    let cleanContent = content.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+    let cleanContent = cleanHTMLContent(content);
 
     // Generate metadata
     const titleMatch = opportunity.title.match(/^(.+?)[\:\-\|]/);
     const cleanTitle = titleMatch ? titleMatch[1].trim() : opportunity.title;
     
+    // Focus keyword = first 3 words of clean title (for slug)
     const focusKeyword = cleanTitle.split(' ').slice(0, 3).join(' ').toLowerCase();
     const articleTitle = `${cleanTitle}: Complete Gids voor ${dateInfo.nextYear}`;
     const metaDescription = `Ontdek alles over ${cleanTitle}. Praktische tips, actie-items en impact op WordPress SEO. ✓ Uitgebreide gids ✓ Expert advies ✓ ${dateInfo.year} updates`;
@@ -344,3 +393,6 @@ function extractInternalLinks(content: string): string[] {
   const linkMatches = content.match(/href="(\/[^"]+)"/g) || [];
   return linkMatches.map(match => match.replace(/href="|"/g, ''));
 }
+
+// Export the slug generator for use elsewhere
+export { generateSlugFromKeyword };

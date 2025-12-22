@@ -5,6 +5,11 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Longer timeout for slow WordPress servers (60 seconds)
+const PUBLISH_TIMEOUT = 60000;
+const TEST_TIMEOUT = 30000;
+const MEDIA_TIMEOUT = 90000;
+
 // Helper function to clean WordPress Application Password
 function cleanApplicationPassword(password: string): string {
   // WordPress Application Passwords are often displayed with spaces
@@ -33,6 +38,46 @@ function getWordPressApiUrl(wpUrl: string): string {
   
   // Otherwise, add the full REST API path
   return `${url}/wp-json/wp/v2`;
+}
+
+// Helper function to make fetch with retry
+async function fetchWithRetry(
+  url: string, 
+  options: RequestInit, 
+  timeout: number,
+  retries: number = 2
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error: any) {
+      lastError = error;
+      console.warn(`Fetch attempt ${attempt + 1} failed:`, error.message);
+      
+      // Don't retry on non-timeout errors
+      if (error.name !== 'AbortError' && !error.message?.includes('timeout')) {
+        throw error;
+      }
+      
+      // Wait before retry (exponential backoff)
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
+    }
+  }
+  
+  throw lastError || new Error('All fetch attempts failed');
 }
 
 export async function POST(request: Request) {
@@ -122,26 +167,24 @@ export async function POST(request: Request) {
 
     // Publish to WordPress
     try {
-      // Create abort controller for timeout (30 seconds)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      const wpResponse = await fetch(`${wpApiUrl}/posts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authHeader,
-          'User-Agent': 'WritGo-SEO-Agent/2.0',
+      const wpResponse = await fetchWithRetry(
+        `${wpApiUrl}/posts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader,
+            'User-Agent': 'WritGo-SEO-Agent/2.0',
+          },
+          body: JSON.stringify({
+            title: articleTitle,
+            content: articleContent,
+            status: 'publish',
+          }),
         },
-        body: JSON.stringify({
-          title: articleTitle,
-          content: articleContent,
-          status: 'publish',
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
+        PUBLISH_TIMEOUT,
+        2 // 2 retries
+      );
 
       if (!wpResponse.ok) {
         const errorText = await wpResponse.text();
@@ -180,57 +223,11 @@ export async function POST(request: Request) {
       const wpPost = await wpResponse.json();
       console.log('WordPress post created:', wpPost.id, wpPost.link);
 
-      // Upload featured image if provided
+      // Upload featured image if provided (in background, don't block)
       if (articleFeaturedImage && wpPost.id) {
-        try {
-          // Download the image
-          const imageResponse = await fetch(articleFeaturedImage);
-          if (imageResponse.ok) {
-            const imageBuffer = await imageResponse.arrayBuffer();
-            const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
-            const extension = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
-            
-            // Upload to WordPress media library
-            const mediaController = new AbortController();
-            const mediaTimeoutId = setTimeout(() => mediaController.abort(), 60000);
-
-            const mediaResponse = await fetch(`${wpApiUrl}/media`, {
-              method: 'POST',
-              headers: {
-                'Authorization': authHeader,
-                'Content-Type': contentType,
-                'Content-Disposition': `attachment; filename="featured-${wpPost.id}.${extension}"`,
-                'User-Agent': 'WritGo-SEO-Agent/2.0',
-              },
-              body: imageBuffer,
-              signal: mediaController.signal,
-            });
-
-            clearTimeout(mediaTimeoutId);
-
-            if (mediaResponse.ok) {
-              const media = await mediaResponse.json();
-              
-              // Set as featured image
-              await fetch(`${wpApiUrl}/posts/${wpPost.id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': authHeader,
-                  'User-Agent': 'WritGo-SEO-Agent/2.0',
-                },
-                body: JSON.stringify({
-                  featured_media: media.id,
-                }),
-              });
-              
-              console.log('Featured image uploaded:', media.id);
-            }
-          }
-        } catch (imageError) {
-          console.warn('Could not upload featured image:', imageError);
-          // Continue without featured image
-        }
+        uploadFeaturedImage(wpApiUrl, authHeader, wpPost.id, articleFeaturedImage).catch(err => {
+          console.warn('Featured image upload failed (non-blocking):', err.message);
+        });
       }
 
       // Update article status if we have an article_id
@@ -258,12 +255,17 @@ export async function POST(request: Request) {
       
       let errorMessage = 'Kon geen verbinding maken met WordPress';
       
-      if (wpError.name === 'AbortError') {
-        errorMessage = 'Verbinding met WordPress duurde te lang (timeout). Probeer het opnieuw.';
+      if (wpError.name === 'AbortError' || wpError.message?.includes('timeout') || wpError.code === 'UND_ERR_CONNECT_TIMEOUT') {
+        errorMessage = `De WordPress server (${project.wp_url}) reageert te langzaam. Dit kan komen door:
+• Trage hosting of server
+• Firewall die de verbinding blokkeert
+• Server is overbelast
+
+Probeer het later opnieuw of neem contact op met je hosting provider.`;
       } else if (wpError.code === 'ENOTFOUND' || wpError.code === 'ECONNREFUSED') {
-        errorMessage = 'Kon de WordPress website niet bereiken. Controleer de URL.';
+        errorMessage = 'Kon de WordPress website niet bereiken. Controleer of de URL correct is en de website online is.';
       } else if (wpError.message) {
-        errorMessage = `WordPress fout: ${wpError.message}`;
+        errorMessage = `Verbindingsfout: ${wpError.message}`;
       }
       
       return NextResponse.json(
@@ -278,6 +280,71 @@ export async function POST(request: Request) {
       { error: error.message || 'Internal server error' },
       { status: 500 }
     );
+  }
+}
+
+// Background function to upload featured image
+async function uploadFeaturedImage(
+  wpApiUrl: string, 
+  authHeader: string, 
+  postId: number, 
+  imageUrl: string
+): Promise<void> {
+  try {
+    // Download the image
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      console.warn('Could not download featured image');
+      return;
+    }
+    
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+    const extension = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+    
+    // Upload to WordPress media library
+    const mediaResponse = await fetchWithRetry(
+      `${wpApiUrl}/media`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="featured-${postId}.${extension}"`,
+          'User-Agent': 'WritGo-SEO-Agent/2.0',
+        },
+        body: imageBuffer,
+      },
+      MEDIA_TIMEOUT,
+      1 // 1 retry
+    );
+
+    if (mediaResponse.ok) {
+      const media = await mediaResponse.json();
+      
+      // Set as featured image
+      await fetchWithRetry(
+        `${wpApiUrl}/posts/${postId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader,
+            'User-Agent': 'WritGo-SEO-Agent/2.0',
+          },
+          body: JSON.stringify({
+            featured_media: media.id,
+          }),
+        },
+        30000,
+        1
+      );
+      
+      console.log('Featured image uploaded:', media.id);
+    }
+  } catch (imageError) {
+    console.warn('Could not upload featured image:', imageError);
+    // Don't throw - this is a background operation
   }
 }
 
@@ -318,18 +385,17 @@ export async function GET(request: Request) {
     const authHeader = 'Basic ' + Buffer.from(`${project.wp_username}:${cleanPassword}`).toString('base64');
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-      const testResponse = await fetch(`${wpApiUrl}/posts?per_page=1`, {
-        headers: {
-          'Authorization': authHeader,
-          'User-Agent': 'WritGo-SEO-Agent/2.0',
+      const testResponse = await fetchWithRetry(
+        `${wpApiUrl}/posts?per_page=1`,
+        {
+          headers: {
+            'Authorization': authHeader,
+            'User-Agent': 'WritGo-SEO-Agent/2.0',
+          },
         },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
+        TEST_TIMEOUT,
+        1 // 1 retry
+      );
 
       if (testResponse.ok) {
         return NextResponse.json({ 
@@ -337,15 +403,27 @@ export async function GET(request: Request) {
           message: 'WordPress verbinding succesvol' 
         });
       } else {
+        let errorMessage = `WordPress returned status ${testResponse.status}`;
+        if (testResponse.status === 401) {
+          errorMessage = 'Authenticatie mislukt. Controleer je credentials.';
+        } else if (testResponse.status === 403) {
+          errorMessage = 'Toegang geweigerd.';
+        } else if (testResponse.status === 404) {
+          errorMessage = 'REST API niet gevonden.';
+        }
         return NextResponse.json({ 
           connected: false, 
-          error: `WordPress returned ${testResponse.status}` 
+          error: errorMessage 
         });
       }
     } catch (testError: any) {
+      let errorMessage = testError.message;
+      if (testError.name === 'AbortError' || testError.code === 'UND_ERR_CONNECT_TIMEOUT') {
+        errorMessage = 'Server reageert te langzaam (timeout). De hosting is mogelijk traag.';
+      }
       return NextResponse.json({ 
         connected: false, 
-        error: testError.name === 'AbortError' ? 'Timeout' : testError.message 
+        error: errorMessage 
       });
     }
 

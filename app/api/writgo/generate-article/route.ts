@@ -8,6 +8,26 @@ export const runtime = 'nodejs';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
+// Helper function to generate slug from keyword
+function generateSlugFromKeyword(keyword: string): string {
+  return keyword
+    .toLowerCase()
+    .trim()
+    // Replace Dutch characters
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    // Replace spaces and special chars with hyphens
+    .replace(/[^a-z0-9]+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-+|-+$/g, '')
+    // Limit length
+    .substring(0, 60);
+}
+
 export async function POST() {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -112,16 +132,15 @@ async function generateArticleInBackground(queueId: string) {
       featuredImage = 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=1200&h=630&fit=crop';
     }
 
-    // 4. Check if auto-publish is enabled
+    // 4. Generate slug from focus keyword (not title!)
+    const focusKeyword = content.focusKeyword || topic.keywords?.[0] || topic.title.split(' ').slice(0, 3).join(' ');
+    const slug = generateSlugFromKeyword(focusKeyword);
+
+    // 5. Check if auto-publish is enabled
     const autoPublish = process.env.AUTO_PUBLISH_ARTICLES === 'true';
 
     if (autoPublish) {
       // Publish directly to articles table
-      const slug = content.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-
       await supabase
         .from('articles')
         .insert({
@@ -134,6 +153,7 @@ async function generateArticleInBackground(queueId: string) {
           published_at: new Date().toISOString(),
           meta_title: content.title,
           meta_description: content.excerpt,
+          focus_keyword: focusKeyword,
           content_type: 'supporting',
           metadata: {
             topic: topic.category,
@@ -162,6 +182,8 @@ async function generateArticleInBackground(queueId: string) {
           metadata: {
             topic: topic.category,
             keywords: topic.keywords,
+            focus_keyword: focusKeyword,
+            slug: slug,
             generated_at: new Date().toISOString(),
             method: 'one_click_ai'
           }
@@ -169,7 +191,7 @@ async function generateArticleInBackground(queueId: string) {
         .eq('id', queueId);
     }
 
-    // 5. Log completion
+    // 6. Log completion
     await supabase
       .from('writgo_activity_log')
       .insert({
@@ -178,11 +200,13 @@ async function generateArticleInBackground(queueId: string) {
           queue_id: queueId,
           title: content.title,
           topic: topic.category,
+          focus_keyword: focusKeyword,
+          slug: slug,
           word_count: content.content.split(' ').length
         }
       });
 
-    console.log(`✅ Article generated successfully: ${content.title}`);
+    console.log(`✅ Article generated successfully: ${content.title} (slug: ${slug})`);
 
   } catch (error: any) {
     console.error('Background generation failed:', error);

@@ -6,6 +6,46 @@ import { generateAICompletion } from '@/lib/ai-client';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Helper function to clean HTML content from AI response
+function cleanHTMLContent(content: string): string {
+  let cleaned = content;
+  
+  // Remove markdown code blocks
+  cleaned = cleaned.replace(/```html\s*/gi, '');
+  cleaned = cleaned.replace(/```\s*/g, '');
+  
+  // Remove any leading/trailing whitespace
+  cleaned = cleaned.trim();
+  
+  // If content starts with a newline after removing code blocks, trim it
+  cleaned = cleaned.replace(/^\n+/, '');
+  
+  // Remove any "Here is" or similar AI preambles
+  cleaned = cleaned.replace(/^(Here is|Here's|Below is|The following)[^<]*</i, '<');
+  
+  return cleaned;
+}
+
+// Helper function to generate slug from keyword
+function generateSlug(keyword: string): string {
+  return keyword
+    .toLowerCase()
+    .trim()
+    // Replace Dutch characters
+    .replace(/[àáâãäå]/g, 'a')
+    .replace(/[èéêë]/g, 'e')
+    .replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o')
+    .replace(/[ùúûü]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    // Replace spaces and special chars with hyphens
+    .replace(/[^a-z0-9]+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-+|-+$/g, '')
+    // Limit length
+    .substring(0, 60);
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = createClient();
@@ -56,14 +96,13 @@ export async function POST(request: Request) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const nextYear = currentYear + 1;
-    const currentMonth = now.toLocaleDateString('nl-NL', { month: 'long' });
 
     // Generate content with AI
     const prompt = `Huidige datum: ${now.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
 
 Schrijf een uitgebreid, SEO-geoptimaliseerd blog artikel over: "${topic}"
 
-${keywords ? `Focus keywords: ${keywords}` : ''}
+${keywords ? `Focus keyword: ${keywords}` : ''}
 
 VEREISTEN:
 - Toon: ${tone}
@@ -83,37 +122,34 @@ SEO OPTIMALISATIE:
 - Gebruik het focus keyword in de eerste 100 woorden
 - Verwerk keywords natuurlijk door de tekst
 - Gebruik bullet points en genummerde lijsten
-- Voeg interne links toe waar relevant
 
-HTML FORMATTING:
-- Gebruik <h2> voor hoofdsecties
-- Gebruik <h3> voor subsecties
-- Gebruik <p> voor paragrafen
-- Gebruik <ul>/<ol> en <li> voor lijsten
-- Gebruik <strong> voor belangrijke termen
-- Gebruik <blockquote> voor quotes
+HTML FORMATTING - GEBRUIK ALLEEN DEZE TAGS:
+- <h2> voor hoofdsecties
+- <h3> voor subsecties
+- <p> voor paragrafen
+- <ul> en <li> voor bullet lists
+- <ol> en <li> voor genummerde lijsten
+- <strong> voor belangrijke termen
+- <em> voor nadruk
+- <blockquote> voor quotes
 
 BELANGRIJK:
-- Schrijf originele, waardevolle content
-- Vermijd fluff en vage statements
-- Geef concrete, bruikbare informatie
-- Schrijf voor de Nederlandse markt
-
-Genereer ALLEEN de HTML content, geen markdown code blocks.`;
+- Geef ALLEEN de HTML content terug
+- GEEN markdown code blocks (\`\`\`html of \`\`\`)
+- GEEN uitleg of inleiding
+- Begin direct met de eerste <h2> of <p> tag
+- Schrijf originele, waardevolle content in het Nederlands`;
 
     const content = await generateAICompletion({
       task: 'content',
-      systemPrompt: 'Je bent een expert SEO content writer die engaging, goed gestructureerde blog artikelen schrijft in het Nederlands. Je output is altijd clean HTML zonder markdown formatting.',
+      systemPrompt: 'Je bent een expert SEO content writer. Je schrijft alleen clean HTML content zonder markdown formatting, code blocks, of uitleg. Je begint direct met de HTML tags.',
       userPrompt: prompt,
       temperature: 0.7,
       maxTokens: 4000,
     });
 
     // Clean up any markdown formatting
-    const cleanContent = content
-      .replace(/```html\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim();
+    const cleanContent = cleanHTMLContent(content);
 
     if (!cleanContent || cleanContent.length < 100) {
       throw new Error('AI generated insufficient content');
@@ -124,8 +160,8 @@ Genereer ALLEEN de HTML content, geen markdown code blocks.`;
     try {
       const titleResponse = await generateAICompletion({
         task: 'quick',
-        systemPrompt: 'Je bent een expert in het schrijven van pakkende, SEO-geoptimaliseerde blog titels in het Nederlands. Geef alleen de titel terug, geen extra tekst.',
-        userPrompt: `Maak een pakkende, SEO-geoptimaliseerde titel voor een artikel over: "${topic}"${keywords ? ` (keywords: ${keywords})` : ''}. Maximaal 60 karakters.`,
+        systemPrompt: 'Je bent een expert in het schrijven van pakkende, SEO-geoptimaliseerde blog titels in het Nederlands. Geef alleen de titel terug, geen extra tekst of aanhalingstekens.',
+        userPrompt: `Maak een pakkende, SEO-geoptimaliseerde titel voor een artikel over: "${topic}"${keywords ? ` (focus keyword: ${keywords})` : ''}. Maximaal 60 karakters. Geef alleen de titel.`,
         temperature: 0.8,
         maxTokens: 100,
       });
@@ -135,14 +171,19 @@ Genereer ALLEEN de HTML content, geen markdown code blocks.`;
       console.warn('Title generation failed, using topic as title:', titleError);
     }
 
-    // Generate slug from title
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+    // Generate slug from keyword (not title!)
+    const focusKeyword = keywords || topic;
+    const slug = generateSlug(focusKeyword);
 
     // Calculate word count
     const wordCount = cleanContent.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
+
+    // Generate excerpt (plain text, no HTML)
+    const excerpt = cleanContent
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 160);
 
     // Save to database if project_id is provided
     let articleId = null;
@@ -154,10 +195,11 @@ Genereer ALLEEN de HTML content, geen markdown code blocks.`;
           title,
           slug,
           content: cleanContent,
-          excerpt: cleanContent.replace(/<[^>]*>/g, '').substring(0, 160),
+          excerpt,
           status: 'draft',
           meta_title: title,
-          meta_description: cleanContent.replace(/<[^>]*>/g, '').substring(0, 160),
+          meta_description: excerpt,
+          focus_keyword: focusKeyword,
         })
         .select()
         .single();
@@ -174,7 +216,10 @@ Genereer ALLEEN de HTML content, geen markdown code blocks.`;
       success: true,
       article_id: articleId,
       title,
+      slug,
       content: cleanContent,
+      excerpt,
+      focus_keyword: focusKeyword,
       word_count: wordCount,
     });
   } catch (error: any) {
