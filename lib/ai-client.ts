@@ -124,69 +124,135 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
 export async function generateJSONCompletion<T>(options: GenerateOptions): Promise<T> {
   const content = await generateAICompletion(options);
   
-  try {
-    // Try to extract JSON from various formats
-    let jsonString = content;
+  // Multiple parsing strategies
+  const strategies = [
+    // Strategy 1: Direct parse
+    () => JSON.parse(content.trim()),
     
-    // First try to find JSON in code blocks
-    const codeBlockMatch = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
-    if (codeBlockMatch) {
-      jsonString = codeBlockMatch[1];
-    } else {
-      // Try to find standalone JSON object or array
-      const objectMatch = content.match(/\{[\s\S]*\}/);
-      const arrayMatch = content.match(/\[[\s\S]*\]/);
-      
-      if (objectMatch) {
-        jsonString = objectMatch[0];
-      } else if (arrayMatch) {
-        jsonString = arrayMatch[0];
-      }
-    }
+    // Strategy 2: Extract from code blocks
+    () => {
+      const match = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (match) return JSON.parse(match[1].trim());
+      throw new Error('No code block');
+    },
     
-    // Clean up common issues
-    jsonString = jsonString
-      .trim()
-      .replace(/,\s*}/g, '}')  // Remove trailing commas before }
-      .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
-      .replace(/[\x00-\x1F\x7F]/g, ' ')  // Remove control characters
-      .replace(/\\n/g, '\\n')  // Escape newlines properly
-      .replace(/\n/g, ' ');  // Replace actual newlines with spaces in strings
+    // Strategy 3: Find JSON object
+    () => {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (match) return JSON.parse(match[0]);
+      throw new Error('No object');
+    },
     
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.error('JSON parsing error:', error);
-    console.error('Raw content:', content.substring(0, 1000));
+    // Strategy 4: Find JSON array
+    () => {
+      const match = content.match(/\[[\s\S]*\]/);
+      if (match) return JSON.parse(match[0]);
+      throw new Error('No array');
+    },
     
-    // Try one more time with aggressive cleaning
-    try {
-      const cleanedContent = content
+    // Strategy 5: Clean and parse object
+    () => {
+      const cleaned = content
+        .replace(/```(?:json)?/g, '')
+        .replace(/```/g, '')
+        .replace(/^[^{\[]*/, '')  // Remove text before JSON
+        .replace(/[^}\]]*$/, '')  // Remove text after JSON
+        .trim();
+      return JSON.parse(cleaned);
+    },
+    
+    // Strategy 6: Fix common issues and parse
+    () => {
+      let cleaned = content
         .replace(/```(?:json)?/g, '')
         .replace(/```/g, '')
         .trim();
       
-      // Find the first { and last } or first [ and last ]
-      const firstBrace = cleanedContent.indexOf('{');
-      const lastBrace = cleanedContent.lastIndexOf('}');
-      const firstBracket = cleanedContent.indexOf('[');
-      const lastBracket = cleanedContent.lastIndexOf(']');
+      // Find JSON boundaries
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      const firstBracket = cleaned.indexOf('[');
+      const lastBracket = cleaned.lastIndexOf(']');
       
-      let jsonStr = '';
       if (firstBrace !== -1 && lastBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
-        jsonStr = cleanedContent.substring(firstBrace, lastBrace + 1);
+        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
       } else if (firstBracket !== -1 && lastBracket !== -1) {
-        jsonStr = cleanedContent.substring(firstBracket, lastBracket + 1);
+        cleaned = cleaned.substring(firstBracket, lastBracket + 1);
       }
       
-      if (jsonStr) {
+      // Fix common JSON issues
+      cleaned = cleaned
+        .replace(/,\s*([}\]])/g, '$1')  // Remove trailing commas
+        .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3')  // Quote unquoted keys
+        .replace(/:\s*'([^']*)'/g, ': "$1"')  // Replace single quotes with double
+        .replace(/[\x00-\x1F\x7F]/g, ' ')  // Remove control chars
+        .replace(/\\'/g, "'")  // Unescape single quotes
+        .replace(/\n/g, ' ')  // Replace newlines
+        .replace(/\t/g, ' ');  // Replace tabs
+      
+      return JSON.parse(cleaned);
+    },
+    
+    // Strategy 7: Very aggressive cleaning
+    () => {
+      let text = content;
+      
+      // Remove all non-JSON text
+      text = text.replace(/```(?:json)?/gi, '').replace(/```/g, '');
+      
+      // Find the JSON structure
+      const objStart = text.indexOf('{');
+      const arrStart = text.indexOf('[');
+      
+      let start = -1;
+      let end = -1;
+      let isObject = true;
+      
+      if (objStart !== -1 && (arrStart === -1 || objStart < arrStart)) {
+        start = objStart;
+        // Find matching closing brace
+        let depth = 0;
+        for (let i = start; i < text.length; i++) {
+          if (text[i] === '{') depth++;
+          if (text[i] === '}') depth--;
+          if (depth === 0) { end = i + 1; break; }
+        }
+      } else if (arrStart !== -1) {
+        start = arrStart;
+        isObject = false;
+        let depth = 0;
+        for (let i = start; i < text.length; i++) {
+          if (text[i] === '[') depth++;
+          if (text[i] === ']') depth--;
+          if (depth === 0) { end = i + 1; break; }
+        }
+      }
+      
+      if (start !== -1 && end !== -1) {
+        let jsonStr = text.substring(start, end);
+        // Final cleanup
+        jsonStr = jsonStr
+          .replace(/,\s*([}\]])/g, '$1')
+          .replace(/[\x00-\x1F\x7F]/g, '')
+          .replace(/\n/g, ' ')
+          .replace(/\r/g, '');
         return JSON.parse(jsonStr);
       }
-    } catch (e) {
-      // Final fallback failed
+      throw new Error('No JSON found');
     }
-    
-    throw new Error('Failed to parse AI response as JSON');
+  ];
+  
+  for (let i = 0; i < strategies.length; i++) {
+    try {
+      return strategies[i]();
+    } catch (e) {
+      // Try next strategy
+    }
   }
+  
+  console.error('All JSON parsing strategies failed');
+  console.error('Raw content (first 2000 chars):', content.substring(0, 2000));
+  throw new Error('Failed to parse AI response as JSON');
 }
 
 // Perplexity Sonar Pro for website/niche analysis with real-time web access
@@ -219,45 +285,87 @@ export async function analyzeWithPerplexity(prompt: string): Promise<string> {
   }
 }
 
-// Perplexity for JSON responses
+// Perplexity for JSON responses - uses same robust parsing as generateJSONCompletion
 export async function analyzeWithPerplexityJSON<T>(prompt: string): Promise<T> {
   const content = await analyzeWithPerplexity(prompt);
   
-  try {
-    // Extract JSON from response
-    let jsonString = content;
+  // Multiple parsing strategies (same as generateJSONCompletion)
+  const strategies = [
+    // Strategy 1: Direct parse
+    () => JSON.parse(content.trim()),
     
-    const codeBlockMatch = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
-    if (codeBlockMatch) {
-      jsonString = codeBlockMatch[1];
-    } else {
-      const objectMatch = content.match(/\{[\s\S]*\}/);
-      if (objectMatch) {
-        jsonString = objectMatch[0];
-      }
-    }
+    // Strategy 2: Extract from code blocks
+    () => {
+      const match = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (match) return JSON.parse(match[1].trim());
+      throw new Error('No code block');
+    },
     
-    jsonString = jsonString
-      .trim()
-      .replace(/,\s*}/g, '}')
-      .replace(/,\s*]/g, ']');
+    // Strategy 3: Find JSON object
+    () => {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (match) return JSON.parse(match[0]);
+      throw new Error('No object');
+    },
     
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.error('Perplexity JSON parsing error:', error);
-    console.error('Raw content:', content.substring(0, 500));
-    
-    // Fallback: try to find JSON object
-    try {
-      const firstBrace = content.indexOf('{');
-      const lastBrace = content.lastIndexOf('}');
+    // Strategy 4: Fix common issues and parse
+    () => {
+      let cleaned = content
+        .replace(/```(?:json)?/g, '')
+        .replace(/```/g, '')
+        .trim();
+      
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      
       if (firstBrace !== -1 && lastBrace !== -1) {
-        return JSON.parse(content.substring(firstBrace, lastBrace + 1));
+        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
       }
-    } catch (e) {}
+      
+      cleaned = cleaned
+        .replace(/,\s*([}\]])/g, '$1')
+        .replace(/[\x00-\x1F\x7F]/g, ' ')
+        .replace(/\n/g, ' ');
+      
+      return JSON.parse(cleaned);
+    },
     
-    throw new Error('Failed to parse Perplexity response as JSON');
+    // Strategy 5: Very aggressive - find matching braces
+    () => {
+      let text = content.replace(/```(?:json)?/gi, '').replace(/```/g, '');
+      const start = text.indexOf('{');
+      if (start === -1) throw new Error('No object start');
+      
+      let depth = 0;
+      let end = -1;
+      for (let i = start; i < text.length; i++) {
+        if (text[i] === '{') depth++;
+        if (text[i] === '}') depth--;
+        if (depth === 0) { end = i + 1; break; }
+      }
+      
+      if (end !== -1) {
+        let jsonStr = text.substring(start, end)
+          .replace(/,\s*([}\]])/g, '$1')
+          .replace(/[\x00-\x1F\x7F]/g, '')
+          .replace(/\n/g, ' ');
+        return JSON.parse(jsonStr);
+      }
+      throw new Error('No matching braces');
+    }
+  ];
+  
+  for (let i = 0; i < strategies.length; i++) {
+    try {
+      return strategies[i]();
+    } catch (e) {
+      // Try next strategy
+    }
   }
+  
+  console.error('All Perplexity JSON parsing strategies failed');
+  console.error('Raw content (first 2000 chars):', content.substring(0, 2000));
+  throw new Error('Failed to parse Perplexity response as JSON');
 }
 
 export default anthropicClient;
