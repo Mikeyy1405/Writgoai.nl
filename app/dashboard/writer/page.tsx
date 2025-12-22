@@ -43,9 +43,11 @@ export default function WriterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: idea.title,
-          keywords: idea.keywords,
-          description: idea.description
+          project_id: idea.project_id,
+          topic: idea.title,
+          keywords: idea.keywords.join(', '),
+          tone: 'professional',
+          length: 'long'
         })
       });
 
