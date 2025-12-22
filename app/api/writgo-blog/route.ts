@@ -17,39 +17,42 @@ function generateSlug(title: string): string {
     .trim();
 }
 
-// Get all blog posts
+// Get all blog posts from articles table
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
-    const category = searchParams.get('category');
     const limit = parseInt(searchParams.get('limit') || '50');
 
     let query = supabaseAdmin
-      .from('writgo_blog_posts')
-      .select('*')
+      .from('articles')
+      .select('id, slug, title, content, excerpt, featured_image, focus_keyword, status, meta_title, meta_description, published_at, created_at, updated_at, views')
       .order('created_at', { ascending: false })
       .limit(limit);
 
     if (status) {
       query = query.eq('status', status);
     }
-    if (category) {
-      query = query.eq('category', category);
-    }
 
     const { data: posts, error } = await query;
 
     if (error) throw error;
 
-    return NextResponse.json({ posts: posts || [] });
+    // Map to expected format
+    const mappedPosts = (posts || []).map(post => ({
+      ...post,
+      category: post.focus_keyword || 'Algemeen',
+      tags: [],
+    }));
+
+    return NextResponse.json({ posts: mappedPosts });
   } catch (error: any) {
     console.error('Get blog posts error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// Create new blog post
+// Create new blog post in articles table
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -59,7 +62,6 @@ export async function POST(request: Request) {
       excerpt, 
       featured_image, 
       category, 
-      tags, 
       status,
       meta_title,
       meta_description,
@@ -75,7 +77,7 @@ export async function POST(request: Request) {
     
     // Check if slug exists and make unique if needed
     const { data: existing } = await supabaseAdmin
-      .from('writgo_blog_posts')
+      .from('articles')
       .select('slug')
       .eq('slug', slug)
       .single();
@@ -85,34 +87,41 @@ export async function POST(request: Request) {
     }
 
     const { data: post, error } = await supabaseAdmin
-      .from('writgo_blog_posts')
+      .from('articles')
       .insert({
         title,
         slug,
         content: content || '',
         excerpt: excerpt || '',
         featured_image,
-        category: category || 'Algemeen',
-        tags: tags || [],
+        focus_keyword: category || 'Algemeen',
         status: status || 'draft',
         meta_title: meta_title || title,
         meta_description: meta_description || excerpt,
         author_id,
         published_at: status === 'published' ? new Date().toISOString() : null,
+        views: 0,
       })
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, post });
+    return NextResponse.json({ 
+      success: true, 
+      post: {
+        ...post,
+        category: post.focus_keyword || 'Algemeen',
+        tags: [],
+      }
+    });
   } catch (error: any) {
     console.error('Create blog post error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// Update blog post
+// Update blog post in articles table
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
@@ -123,7 +132,6 @@ export async function PATCH(request: Request) {
       excerpt, 
       featured_image, 
       category, 
-      tags, 
       status,
       meta_title,
       meta_description,
@@ -144,8 +152,7 @@ export async function PATCH(request: Request) {
     if (content !== undefined) updates.content = content;
     if (excerpt !== undefined) updates.excerpt = excerpt;
     if (featured_image !== undefined) updates.featured_image = featured_image;
-    if (category !== undefined) updates.category = category;
-    if (tags !== undefined) updates.tags = tags;
+    if (category !== undefined) updates.focus_keyword = category;
     if (meta_title !== undefined) updates.meta_title = meta_title;
     if (meta_description !== undefined) updates.meta_description = meta_description;
     
@@ -154,7 +161,7 @@ export async function PATCH(request: Request) {
       if (status === 'published') {
         // Check if already published
         const { data: existing } = await supabaseAdmin
-          .from('writgo_blog_posts')
+          .from('articles')
           .select('published_at')
           .eq('id', id)
           .single();
@@ -166,7 +173,7 @@ export async function PATCH(request: Request) {
     }
 
     const { data: post, error } = await supabaseAdmin
-      .from('writgo_blog_posts')
+      .from('articles')
       .update(updates)
       .eq('id', id)
       .select()
@@ -174,14 +181,21 @@ export async function PATCH(request: Request) {
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, post });
+    return NextResponse.json({ 
+      success: true, 
+      post: {
+        ...post,
+        category: post.focus_keyword || 'Algemeen',
+        tags: [],
+      }
+    });
   } catch (error: any) {
     console.error('Update blog post error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// Delete blog post
+// Delete blog post from articles table
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -192,7 +206,7 @@ export async function DELETE(request: Request) {
     }
 
     const { error } = await supabaseAdmin
-      .from('writgo_blog_posts')
+      .from('articles')
       .delete()
       .eq('id', id);
 

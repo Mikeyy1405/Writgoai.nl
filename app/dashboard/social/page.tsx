@@ -31,6 +31,45 @@ interface SocialPost {
   created_at: string;
 }
 
+interface ContentPillar {
+  name: string;
+  description: string;
+  percentage: number;
+  example_topics: string[];
+}
+
+interface PostTypeMix {
+  type: string;
+  percentage: number;
+  description: string;
+}
+
+interface Strategy {
+  id: string;
+  niche: string;
+  target_audience: string;
+  brand_voice: string;
+  content_pillars: ContentPillar[];
+  weekly_schedule: Record<string, { post_type: string; pillar: string; best_time: string }>;
+  post_types_mix: PostTypeMix[];
+  hashtag_strategy: {
+    branded: string[];
+    niche: string[];
+    trending: string[];
+    community: string[];
+  };
+  engagement_tactics: string[];
+  goals: string[];
+}
+
+interface ContentIdea {
+  title: string;
+  type: string;
+  pillar: string;
+  hook: string;
+  cta: string;
+}
+
 const PLATFORMS = [
   { id: 'instagram', name: 'Instagram', icon: '📸', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
   { id: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-600' },
@@ -49,6 +88,16 @@ const POST_TYPES = [
   { id: 'behind_the_scenes', name: 'Behind the Scenes', icon: '🎬', description: 'Kijkje achter de schermen' },
 ];
 
+const DAYS_NL = {
+  monday: 'Maandag',
+  tuesday: 'Dinsdag',
+  wednesday: 'Woensdag',
+  thursday: 'Donderdag',
+  friday: 'Vrijdag',
+  saturday: 'Zaterdag',
+  sunday: 'Zondag',
+};
+
 export default function SocialMediaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,6 +113,20 @@ export default function SocialMediaPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [lateConfigured, setLateConfigured] = useState<boolean | null>(null);
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'posts' | 'strategy'>('strategy');
+
+  // Strategy state
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
+  const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([]);
+  const [generatingStrategy, setGeneratingStrategy] = useState(false);
+  const [strategyForm, setStrategyForm] = useState({
+    target_audience: '',
+    brand_voice: '',
+    goals: [] as string[],
+  });
+  const [newGoal, setNewGoal] = useState('');
 
   // Post generation form
   const [topic, setTopic] = useState('');
@@ -88,10 +151,11 @@ export default function SocialMediaPage() {
     }
   }, [searchParams]);
 
-  // Load posts when project changes
+  // Load posts and strategy when project changes
   useEffect(() => {
     if (selectedProject) {
       loadPosts(selectedProject.id);
+      loadStrategy(selectedProject.id);
       syncAccounts(selectedProject.id);
     }
   }, [selectedProject]);
@@ -121,6 +185,58 @@ export default function SocialMediaPage() {
       console.error('Failed to load projects:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadStrategy(projectId: string) {
+    try {
+      const response = await fetch(`/api/social/strategy?project_id=${projectId}`);
+      const data = await response.json();
+      if (data.strategy) {
+        setStrategy(data.strategy);
+        setStrategyForm({
+          target_audience: data.strategy.target_audience || '',
+          brand_voice: data.strategy.brand_voice || '',
+          goals: data.strategy.goals || [],
+        });
+      } else {
+        setStrategy(null);
+      }
+    } catch (error) {
+      console.error('Failed to load strategy:', error);
+    }
+  }
+
+  async function generateStrategy() {
+    if (!selectedProject) return;
+
+    setGeneratingStrategy(true);
+    try {
+      const response = await fetch('/api/social/strategy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: selectedProject.id,
+          website_url: selectedProject.website_url,
+          niche: selectedProject.niche,
+          target_audience: strategyForm.target_audience,
+          brand_voice: strategyForm.brand_voice,
+          goals: strategyForm.goals,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setStrategy(data.strategy);
+        setContentIdeas(data.content_ideas || []);
+      } else {
+        alert(data.error || 'Er ging iets mis');
+      }
+    } catch (error) {
+      console.error('Failed to generate strategy:', error);
+      alert('Er ging iets mis bij het genereren');
+    } finally {
+      setGeneratingStrategy(false);
     }
   }
 
@@ -169,8 +285,9 @@ export default function SocialMediaPage() {
     }
   }
 
-  async function generatePost() {
-    if (!selectedProject || !topic.trim()) {
+  async function generatePost(ideaTopic?: string, ideaType?: string) {
+    const topicToUse = ideaTopic || topic;
+    if (!selectedProject || !topicToUse.trim()) {
       alert('Vul een topic in');
       return;
     }
@@ -182,12 +299,16 @@ export default function SocialMediaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: selectedProject.id,
-          topic: topic.trim(),
-          post_type: postType,
+          topic: topicToUse.trim(),
+          post_type: ideaType || postType,
           platforms: selectedPlatforms,
           language: selectedProject.language || 'nl',
           niche: selectedProject.niche || '',
           website_url: selectedProject.website_url,
+          strategy: strategy ? {
+            brand_voice: strategy.brand_voice,
+            hashtags: strategy.hashtag_strategy,
+          } : undefined,
         }),
       });
 
@@ -196,6 +317,7 @@ export default function SocialMediaPage() {
       if (data.success) {
         setTopic('');
         loadPosts(selectedProject.id);
+        setActiveTab('posts');
       } else {
         alert(data.error || 'Er ging iets mis');
       }
@@ -282,6 +404,23 @@ export default function SocialMediaPage() {
     );
   }
 
+  function addGoal() {
+    if (newGoal.trim() && !strategyForm.goals.includes(newGoal.trim())) {
+      setStrategyForm(prev => ({
+        ...prev,
+        goals: [...prev.goals, newGoal.trim()],
+      }));
+      setNewGoal('');
+    }
+  }
+
+  function removeGoal(goal: string) {
+    setStrategyForm(prev => ({
+      ...prev,
+      goals: prev.goals.filter(g => g !== goal),
+    }));
+  }
+
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('nl-NL', {
       day: 'numeric',
@@ -308,7 +447,7 @@ export default function SocialMediaPage() {
             <h1 className="text-3xl font-bold flex items-center gap-3">
               📱 Social Media
             </h1>
-            <p className="text-gray-400 mt-1">Genereer en plan social media posts</p>
+            <p className="text-gray-400 mt-1">Strategie, planning en post generatie</p>
           </div>
 
           {/* Project selector */}
@@ -328,225 +467,493 @@ export default function SocialMediaPage() {
           </select>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Generate post */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Connected accounts */}
-            <div className="bg-gray-800 rounded-xl p-6">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                🔗 Verbonden Accounts
-                {lateConfigured === false && (
-                  <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">
-                    Optioneel
-                  </span>
-                )}
-              </h2>
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('strategy')}
+            className={`px-6 py-3 rounded-lg font-medium transition ${
+              activeTab === 'strategy'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            📊 Strategie
+          </button>
+          <button
+            onClick={() => setActiveTab('posts')}
+            className={`px-6 py-3 rounded-lg font-medium transition ${
+              activeTab === 'posts'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            ✨ Posts ({posts.length})
+          </button>
+        </div>
 
-              {lateConfigured === false && (
-                <p className="text-sm text-gray-400 mb-4">
-                  Later.dev API niet geconfigureerd. Je kunt posts genereren en handmatig kopiëren.
+        {/* Strategy Tab */}
+        {activeTab === 'strategy' && (
+          <div className="space-y-6">
+            {/* Strategy Form */}
+            {!strategy && (
+              <div className="bg-gray-800 rounded-xl p-6">
+                <h2 className="text-xl font-semibold mb-4">🎯 Genereer Content Strategie</h2>
+                <p className="text-gray-400 mb-6">
+                  Laat AI een complete social media strategie maken op basis van jouw bedrijf en doelen.
                 </p>
-              )}
 
-              <div className="grid grid-cols-2 gap-2">
-                {PLATFORMS.slice(0, 6).map(platform => {
-                  const connected = accounts.some(a => a.platform === platform.id);
-                  return (
-                    <button
-                      key={platform.id}
-                      onClick={() => !connected && lateConfigured && connectPlatform(platform.id)}
-                      disabled={!lateConfigured}
-                      className={`flex items-center gap-2 p-3 rounded-lg transition ${
-                        connected 
-                          ? 'bg-green-500/20 border border-green-500/50' 
-                          : lateConfigured
-                            ? 'bg-gray-700 hover:bg-gray-600'
-                            : 'bg-gray-700/50 cursor-not-allowed'
-                      }`}
-                    >
-                      <span>{platform.icon}</span>
-                      <span className="text-sm">{platform.name}</span>
-                      {connected && <span className="text-green-400 ml-auto">✓</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Generate post form */}
-            <div className="bg-gray-800 rounded-xl p-6">
-              <h2 className="text-lg font-semibold mb-4">✨ Nieuwe Post</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Topic</label>
-                  <input
-                    type="text"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    placeholder="Bijv. 5 tips voor beginners"
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Post Type</label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {POST_TYPES.map(type => (
-                      <button
-                        key={type.id}
-                        onClick={() => setPostType(type.id)}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition text-left ${
-                          postType === type.id
-                            ? 'bg-orange-500/20 border border-orange-500/50'
-                            : 'bg-gray-700 hover:bg-gray-600'
-                        }`}
-                      >
-                        <span className="text-xl">{type.icon}</span>
-                        <div>
-                          <div className="font-medium">{type.name}</div>
-                          <div className="text-xs text-gray-400">{type.description}</div>
-                        </div>
-                      </button>
-                    ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Doelgroep</label>
+                    <textarea
+                      value={strategyForm.target_audience}
+                      onChange={(e) => setStrategyForm(prev => ({ ...prev, target_audience: e.target.value }))}
+                      rows={3}
+                      placeholder="Bijv. Ondernemers tussen 25-45 jaar die hun online aanwezigheid willen verbeteren"
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 resize-none"
+                    />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Platforms</label>
-                  <div className="flex flex-wrap gap-2">
-                    {PLATFORMS.map(platform => (
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Brand Voice</label>
+                    <textarea
+                      value={strategyForm.brand_voice}
+                      onChange={(e) => setStrategyForm(prev => ({ ...prev, brand_voice: e.target.value }))}
+                      rows={3}
+                      placeholder="Bijv. Professioneel maar toegankelijk, met een vleugje humor"
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 resize-none"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm text-gray-400 mb-2">Doelen</label>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={newGoal}
+                        onChange={(e) => setNewGoal(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && addGoal()}
+                        placeholder="Bijv. Meer website traffic"
+                        className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500"
+                      />
                       <button
-                        key={platform.id}
-                        onClick={() => togglePlatform(platform.id)}
-                        className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition ${
-                          selectedPlatforms.includes(platform.id)
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-gray-700 hover:bg-gray-600'
-                        }`}
+                        onClick={addGoal}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition"
                       >
-                        {platform.icon} {platform.name}
+                        Toevoegen
                       </button>
-                    ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {strategyForm.goals.map(goal => (
+                        <span
+                          key={goal}
+                          className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                        >
+                          {goal}
+                          <button onClick={() => removeGoal(goal)} className="hover:text-white">×</button>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <button
-                  onClick={generatePost}
-                  disabled={generating || !topic.trim()}
-                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                  onClick={generateStrategy}
+                  disabled={generatingStrategy}
+                  className="mt-6 w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
                 >
-                  {generating ? (
+                  {generatingStrategy ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                      Genereren...
+                      Strategie genereren...
                     </>
                   ) : (
-                    <>✨ Genereer Post</>
+                    <>🚀 Genereer Strategie</>
                   )}
                 </button>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Right column - Posts */}
-          <div className="lg:col-span-2">
-            <div className="bg-gray-800 rounded-xl p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                📝 Posts ({posts.length})
-              </h2>
-
-              {posts.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <p className="text-4xl mb-4">📱</p>
-                  <p>Nog geen posts gegenereerd</p>
-                  <p className="text-sm mt-2">Vul een topic in en klik op "Genereer Post"</p>
+            {/* Strategy Display */}
+            {strategy && (
+              <>
+                {/* Content Pillars */}
+                <div className="bg-gray-800 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">🎯 Content Pillars</h2>
+                    <button
+                      onClick={generateStrategy}
+                      disabled={generatingStrategy}
+                      className="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition"
+                    >
+                      {generatingStrategy ? 'Bezig...' : '🔄 Regenereer'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {strategy.content_pillars?.map((pillar, index) => (
+                      <div key={index} className="bg-gray-700 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold">{pillar.name}</h3>
+                          <span className="text-orange-400 font-bold">{pillar.percentage}%</span>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-3">{pillar.description}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {pillar.example_topics?.slice(0, 3).map((topic, i) => (
+                            <span key={i} className="text-xs bg-gray-600 px-2 py-1 rounded">
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {posts.map(post => (
-                    <div key={post.id} className="bg-gray-700 rounded-xl p-4">
-                      <div className="flex gap-4">
-                        {/* Image */}
-                        {post.image_url && (
-                          <div className="w-32 h-32 flex-shrink-0">
-                            <img
-                              src={post.image_url}
-                              alt="Post image"
-                              className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
-                              onClick={() => window.open(post.image_url!, '_blank')}
+
+                {/* Weekly Schedule */}
+                <div className="bg-gray-800 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-4">📅 Weekschema</h2>
+                  <div className="grid grid-cols-7 gap-2">
+                    {Object.entries(DAYS_NL).map(([day, dayNl]) => {
+                      const schedule = strategy.weekly_schedule?.[day];
+                      return (
+                        <div key={day} className="bg-gray-700 rounded-lg p-3 text-center">
+                          <div className="text-sm font-medium text-orange-400 mb-2">{dayNl}</div>
+                          {schedule ? (
+                            <>
+                              <div className="text-xs text-gray-400">{schedule.best_time}</div>
+                              <div className="text-sm mt-1">{schedule.post_type}</div>
+                              <div className="text-xs text-gray-500 mt-1">{schedule.pillar}</div>
+                            </>
+                          ) : (
+                            <div className="text-xs text-gray-500">Geen post</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Post Types Mix */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-gray-800 rounded-xl p-6">
+                    <h2 className="text-xl font-semibold mb-4">📊 Post Types Mix</h2>
+                    <div className="space-y-3">
+                      {strategy.post_types_mix?.map((type, index) => (
+                        <div key={index}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>{type.type}</span>
+                            <span className="text-orange-400">{type.percentage}%</span>
+                          </div>
+                          <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-orange-500 to-red-500"
+                              style={{ width: `${type.percentage}%` }}
                             />
                           </div>
-                        )}
+                          <p className="text-xs text-gray-500 mt-1">{type.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="text-xs bg-gray-600 px-2 py-1 rounded">
-                              {POST_TYPES.find(t => t.id === post.post_type)?.name || post.post_type}
-                            </span>
-                            {post.platforms?.map((p: any) => (
-                              <span key={p.platform} className="text-xs bg-gray-600 px-2 py-1 rounded">
-                                {PLATFORMS.find(pl => pl.id === p.platform)?.icon} {p.platform}
+                  {/* Hashtag Strategy */}
+                  <div className="bg-gray-800 rounded-xl p-6">
+                    <h2 className="text-xl font-semibold mb-4">#️⃣ Hashtag Strategie</h2>
+                    <div className="space-y-4">
+                      {strategy.hashtag_strategy && Object.entries(strategy.hashtag_strategy).map(([category, tags]) => (
+                        <div key={category}>
+                          <h3 className="text-sm font-medium text-gray-400 mb-2 capitalize">{category}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {(tags as string[])?.map((tag, i) => (
+                              <span
+                                key={i}
+                                onClick={() => copyToClipboard(tag)}
+                                className="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-full cursor-pointer transition"
+                              >
+                                {tag}
                               </span>
                             ))}
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              post.status === 'published' ? 'bg-green-500/20 text-green-400' :
-                              post.status === 'scheduled' ? 'bg-blue-500/20 text-blue-400' :
-                              'bg-gray-600 text-gray-300'
-                            }`}>
-                              {post.status === 'published' ? 'Gepubliceerd' :
-                               post.status === 'scheduled' ? 'Gepland' : 'Concept'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Engagement Tactics */}
+                <div className="bg-gray-800 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-4">💡 Engagement Tactieken</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {strategy.engagement_tactics?.map((tactic, index) => (
+                      <div key={index} className="bg-gray-700 rounded-lg p-3 flex items-start gap-3">
+                        <span className="text-orange-400">✓</span>
+                        <span className="text-sm">{tactic}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Content Ideas */}
+                {contentIdeas.length > 0 && (
+                  <div className="bg-gray-800 rounded-xl p-6">
+                    <h2 className="text-xl font-semibold mb-4">💡 Content Ideeën</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {contentIdeas.map((idea, index) => (
+                        <div key={index} className="bg-gray-700 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded">
+                              {idea.type}
                             </span>
-                            <span className="text-xs text-gray-500 ml-auto">
-                              {formatDate(post.created_at)}
+                            <span className="text-xs bg-gray-600 px-2 py-1 rounded">
+                              {idea.pillar}
                             </span>
                           </div>
-
-                          <p className="text-sm text-gray-200 whitespace-pre-wrap line-clamp-4">
-                            {post.content}
+                          <h3 className="font-medium mb-2">{idea.title}</h3>
+                          <p className="text-sm text-gray-400 mb-2">
+                            <span className="text-orange-400">Hook:</span> {idea.hook}
                           </p>
+                          <p className="text-sm text-gray-400 mb-3">
+                            <span className="text-orange-400">CTA:</span> {idea.cta}
+                          </p>
+                          <button
+                            onClick={() => generatePost(idea.title, idea.type.toLowerCase())}
+                            disabled={generating}
+                            className="text-sm bg-orange-500 hover:bg-orange-600 disabled:opacity-50 px-4 py-2 rounded-lg transition"
+                          >
+                            {generating ? 'Bezig...' : '✨ Maak Post'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
-                          <div className="flex items-center gap-2 mt-3 flex-wrap">
-                            <button
-                              onClick={() => copyToClipboard(post.content)}
-                              className="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1.5 rounded transition"
-                            >
-                              📋 Kopiëren
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingPost(post);
-                                setEditContent(post.content);
-                              }}
-                              className="text-xs bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded transition"
-                            >
-                              ✏️ Bewerken
-                            </button>
-                            {post.image_url && (
+        {/* Posts Tab */}
+        {activeTab === 'posts' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left column - Generate post */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Connected accounts */}
+              <div className="bg-gray-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  🔗 Verbonden Accounts
+                  {lateConfigured === false && (
+                    <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">
+                      Optioneel
+                    </span>
+                  )}
+                </h2>
+
+                {lateConfigured === false && (
+                  <p className="text-sm text-gray-400 mb-4">
+                    Later.dev API niet geconfigureerd. Je kunt posts genereren en handmatig kopiëren.
+                  </p>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  {PLATFORMS.slice(0, 6).map(platform => {
+                    const connected = accounts.some(a => a.platform === platform.id);
+                    return (
+                      <button
+                        key={platform.id}
+                        onClick={() => !connected && lateConfigured && connectPlatform(platform.id)}
+                        disabled={!lateConfigured}
+                        className={`flex items-center gap-2 p-3 rounded-lg transition ${
+                          connected 
+                            ? 'bg-green-500/20 border border-green-500/50' 
+                            : lateConfigured
+                              ? 'bg-gray-700 hover:bg-gray-600'
+                              : 'bg-gray-700/50 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>{platform.icon}</span>
+                        <span className="text-sm">{platform.name}</span>
+                        {connected && <span className="text-green-400 ml-auto">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Generate post form */}
+              <div className="bg-gray-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4">✨ Nieuwe Post</h2>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Topic</label>
+                    <input
+                      type="text"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      placeholder="Bijv. 5 tips voor beginners"
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Post Type</label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {POST_TYPES.map(type => (
+                        <button
+                          key={type.id}
+                          onClick={() => setPostType(type.id)}
+                          className={`flex items-center gap-3 p-3 rounded-lg transition text-left ${
+                            postType === type.id
+                              ? 'bg-orange-500/20 border border-orange-500/50'
+                              : 'bg-gray-700 hover:bg-gray-600'
+                          }`}
+                        >
+                          <span className="text-xl">{type.icon}</span>
+                          <div>
+                            <div className="font-medium">{type.name}</div>
+                            <div className="text-xs text-gray-400">{type.description}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Platforms</label>
+                    <div className="flex flex-wrap gap-2">
+                      {PLATFORMS.map(platform => (
+                        <button
+                          key={platform.id}
+                          onClick={() => togglePlatform(platform.id)}
+                          className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition ${
+                            selectedPlatforms.includes(platform.id)
+                              ? 'bg-orange-500 text-white'
+                              : 'bg-gray-700 hover:bg-gray-600'
+                          }`}
+                        >
+                          {platform.icon} {platform.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => generatePost()}
+                    disabled={generating || !topic.trim()}
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                  >
+                    {generating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                        Genereren...
+                      </>
+                    ) : (
+                      <>✨ Genereer Post</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right column - Posts */}
+            <div className="lg:col-span-2">
+              <div className="bg-gray-800 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4">
+                  📝 Posts ({posts.length})
+                </h2>
+
+                {posts.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <p className="text-4xl mb-4">📱</p>
+                    <p>Nog geen posts gegenereerd</p>
+                    <p className="text-sm mt-2">Vul een topic in en klik op "Genereer Post"</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {posts.map(post => (
+                      <div key={post.id} className="bg-gray-700 rounded-xl p-4">
+                        <div className="flex gap-4">
+                          {/* Image */}
+                          {post.image_url && (
+                            <div className="w-32 h-32 flex-shrink-0">
+                              <img
+                                src={post.image_url}
+                                alt="Post image"
+                                className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                                onClick={() => window.open(post.image_url!, '_blank')}
+                              />
+                            </div>
+                          )}
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <span className="text-xs bg-gray-600 px-2 py-1 rounded">
+                                {POST_TYPES.find(t => t.id === post.post_type)?.name || post.post_type}
+                              </span>
+                              {post.platforms?.map((p: any) => (
+                                <span key={p.platform} className="text-xs bg-gray-600 px-2 py-1 rounded">
+                                  {PLATFORMS.find(pl => pl.id === p.platform)?.icon} {p.platform}
+                                </span>
+                              ))}
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                post.status === 'published' ? 'bg-green-500/20 text-green-400' :
+                                post.status === 'scheduled' ? 'bg-blue-500/20 text-blue-400' :
+                                'bg-gray-600 text-gray-300'
+                              }`}>
+                                {post.status === 'published' ? 'Gepubliceerd' :
+                                 post.status === 'scheduled' ? 'Gepland' : 'Concept'}
+                              </span>
+                              <span className="text-xs text-gray-500 ml-auto">
+                                {formatDate(post.created_at)}
+                              </span>
+                            </div>
+
+                            <p className="text-sm text-gray-200 whitespace-pre-wrap line-clamp-4">
+                              {post.content}
+                            </p>
+
+                            <div className="flex items-center gap-2 mt-3 flex-wrap">
                               <button
-                                onClick={() => downloadImage(post.image_url!, `social-post-${post.id}.png`)}
-                                className="text-xs bg-purple-600 hover:bg-purple-500 px-3 py-1.5 rounded transition"
+                                onClick={() => copyToClipboard(post.content)}
+                                className="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1.5 rounded transition"
                               >
-                                ⬇️ Download Afbeelding
+                                📋 Kopiëren
                               </button>
-                            )}
-                            <button
-                              onClick={() => deletePost(post.id)}
-                              className="text-xs bg-red-600 hover:bg-red-500 px-3 py-1.5 rounded transition ml-auto"
-                            >
-                              🗑️
-                            </button>
+                              <button
+                                onClick={() => {
+                                  setEditingPost(post);
+                                  setEditContent(post.content);
+                                }}
+                                className="text-xs bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded transition"
+                              >
+                                ✏️ Bewerken
+                              </button>
+                              {post.image_url && (
+                                <button
+                                  onClick={() => downloadImage(post.image_url!, `social-post-${post.id}.png`)}
+                                  className="text-xs bg-purple-600 hover:bg-purple-500 px-3 py-1.5 rounded transition"
+                                >
+                                  ⬇️ Download Afbeelding
+                                </button>
+                              )}
+                              <button
+                                onClick={() => deletePost(post.id)}
+                                className="text-xs bg-red-600 hover:bg-red-500 px-3 py-1.5 rounded transition ml-auto"
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Edit Modal */}

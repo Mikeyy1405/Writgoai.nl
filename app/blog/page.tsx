@@ -21,29 +21,12 @@ interface Article {
 export default async function BlogPage() {
   const supabase = createClient();
 
-  // Fetch published articles from both tables
-  const { data: articles, error } = await supabase
+  // Fetch published articles
+  const { data: allPosts, error } = await supabase
     .from('articles')
     .select('id, slug, title, excerpt, featured_image, published_at, views, focus_keyword')
     .eq('status', 'published')
     .order('published_at', { ascending: false });
-
-  // Fetch WritGo blog posts
-  const { data: writgoPosts, error: writgoError } = await supabase
-    .from('writgo_blog_posts')
-    .select('id, slug, title, excerpt, featured_image, published_at, category')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false });
-
-  // Combine and sort all posts
-  const allPosts = [
-    ...(articles || []).map(a => ({ ...a, source: 'articles' })),
-    ...(writgoPosts || []).map(p => ({ ...p, source: 'writgo', focus_keyword: p.category, views: 0 })),
-  ].sort((a, b) => {
-    const dateA = new Date(a.published_at || 0).getTime();
-    const dateB = new Date(b.published_at || 0).getTime();
-    return dateB - dateA;
-  });
 
   if (error) {
     console.error('Error fetching articles:', error);
