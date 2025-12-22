@@ -124,8 +124,37 @@ function generateSlugFromKeyword(keyword: string): string {
     .substring(0, 60);
 }
 
+// Language-specific writing instructions
+const LANGUAGE_INSTRUCTIONS: Record<string, { systemPrompt: string; conclusionHeading: string; writingStyle: string }> = {
+  nl: {
+    systemPrompt: 'Je bent een expert content writer. Schrijf in het Nederlands met "je/jij" (informeel). Output alleen HTML content.',
+    conclusionHeading: 'Tot slot',
+    writingStyle: 'Schrijf in het Nederlands. Gebruik "je" en "jij" (informeel). Alle content moet in het Nederlands zijn.',
+  },
+  en: {
+    systemPrompt: 'You are an expert content writer. Write in English. Output only HTML content.',
+    conclusionHeading: 'Final thoughts',
+    writingStyle: 'Write in English. All content must be in English.',
+  },
+  de: {
+    systemPrompt: 'Du bist ein Experte für Content-Erstellung. Schreibe auf Deutsch mit "du" (informell). Gib nur HTML-Inhalte aus.',
+    conclusionHeading: 'Fazit',
+    writingStyle: 'Schreibe auf Deutsch. Verwende "du" (informell). Alle Inhalte müssen auf Deutsch sein.',
+  },
+  fr: {
+    systemPrompt: 'Tu es un expert en création de contenu. Écris en français avec "tu" (informel). Ne produis que du contenu HTML.',
+    conclusionHeading: 'Pour conclure',
+    writingStyle: 'Écris en français. Utilise "tu" (informel). Tout le contenu doit être en français.',
+  },
+  es: {
+    systemPrompt: 'Eres un experto en creación de contenido. Escribe en español con "tú" (informal). Solo produce contenido HTML.',
+    conclusionHeading: 'Para terminar',
+    writingStyle: 'Escribe en español. Usa "tú" (informal). Todo el contenido debe estar en español.',
+  },
+};
+
 export async function POST(request: Request) {
-  const { title, keyword, description, contentType, wordCount = 2000 } = await request.json();
+  const { title, keyword, description, contentType, wordCount = 2000, language = 'nl' } = await request.json();
 
   if (!title || !keyword) {
     return NextResponse.json({ error: 'Title and keyword are required' }, { status: 400 });
@@ -135,7 +164,9 @@ export async function POST(request: Request) {
     async start(controller) {
       try {
         const now = new Date();
-        const currentMonth = now.toLocaleString('nl-NL', { month: 'long' });
+        const langConfig = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS['nl'];
+        const localeMap: Record<string, string> = { nl: 'nl-NL', en: 'en-US', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+        const currentMonth = now.toLocaleString(localeMap[language] || 'nl-NL', { month: 'long' });
         const currentYear = now.getFullYear();
 
         // ============================================
@@ -157,6 +188,8 @@ ${description ? `Context: ${description}` : ''}
 Doellengte: ${wordCount} woorden
 Datum: ${currentMonth} ${currentYear}
 
+${langConfig.writingStyle}
+
 Geef een JSON outline:
 {
   "mainHeading": "H1 titel met keyword (alleen eerste letter hoofdletter)",
@@ -171,13 +204,13 @@ Geef een JSON outline:
   "estimatedWordCount": ${wordCount}
 }
 
-BELANGRIJK: Alle headings met alleen eerste letter hoofdletter (bijv. "Hoe werkt het" niet "Hoe Werkt Het")`;
+BELANGRIJK: Alle headings met alleen eerste letter hoofdletter. ${langConfig.writingStyle}`;
 
         let outline: any = null;
         try {
           const outlineResponse = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een SEO content strategist. Maak gedetailleerde outlines voor artikelen. Output alleen JSON.',
+            systemPrompt: `${langConfig.systemPrompt} Maak gedetailleerde outlines voor artikelen. Output alleen JSON.`,
             userPrompt: outlinePrompt,
             maxTokens: 2000,
             temperature: 0.6,
@@ -217,6 +250,8 @@ BELANGRIJK: Alle headings met alleen eerste letter hoofdletter (bijv. "Hoe werkt
 Focus keyword: ${keyword}
 ${outline ? `Outline: ${JSON.stringify(outline.sections?.slice(0, 2))}` : ''}
 
+${langConfig.writingStyle}
+
 ${CONTENT_PROMPT_RULES}
 
 Specifieke vereisten voor intro:
@@ -240,7 +275,7 @@ Voorbeeld output formaat:
         try {
           introContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een expert content writer. Schrijf in het Nederlands met "je/jij". Output alleen HTML content met <p> tags. Gebruik NOOIT verboden woorden. Elke alinea in eigen <p> tag.',
+            systemPrompt: `${langConfig.systemPrompt} Output alleen HTML content met <p> tags. Gebruik NOOIT verboden woorden. Elke alinea in eigen <p> tag.`,
             userPrompt: introPrompt,
             maxTokens: 1000,
             temperature: 0.7,
@@ -275,6 +310,8 @@ Voorbeeld output formaat:
 Focus keyword: ${keyword}
 Doellengte: ${wordCount - 400} woorden (excl. intro en conclusie)
 ${outline ? `Volg deze outline:\n${JSON.stringify(outline.sections, null, 2)}` : ''}
+
+${langConfig.writingStyle}
 
 ${CONTENT_PROMPT_RULES}
 
@@ -314,7 +351,7 @@ BELANGRIJK: Output ALLEEN de HTML content, geen markdown code blocks. Zorg voor 
         try {
           mainContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: `Je bent een expert SEO content writer. Schrijf uitgebreide, informatieve content in het Nederlands met "je/jij". 
+            systemPrompt: `${langConfig.systemPrompt}
 
 OUTPUT REGELS:
 - Output alleen HTML, geen markdown
@@ -356,6 +393,8 @@ OUTPUT REGELS:
         const conclusionPrompt = `Schrijf een krachtige afsluiting voor een artikel over: "${title}"
 Focus keyword: ${keyword}
 
+${langConfig.writingStyle}
+
 ${CONTENT_PROMPT_RULES}
 
 Specifieke vereisten:
@@ -364,7 +403,7 @@ Specifieke vereisten:
 - Ongeveer 150-200 woorden
 - Output als HTML met <p> tags
 - Elke alinea in eigen <p> tag
-- NIET het woord "conclusie" gebruiken - de heading is al "Tot slot"
+- NIET het woord "conclusie" gebruiken - de heading is al "${langConfig.conclusionHeading}"
 
 Voorbeeld output:
 <p>Samenvattende alinea over het onderwerp.</p>
@@ -377,7 +416,7 @@ Voorbeeld output:
         try {
           conclusionContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een expert content writer. Schrijf krachtige afsluitingen. Output alleen HTML met <p> tags. Gebruik NOOIT het woord "conclusie".',
+            systemPrompt: `${langConfig.systemPrompt} Schrijf krachtige afsluitingen. Output alleen HTML met <p> tags. Gebruik NOOIT het woord "conclusie".`,
             userPrompt: conclusionPrompt,
             maxTokens: 800,
             temperature: 0.7,
@@ -424,7 +463,7 @@ ${introContent}
 
 ${mainContent}
 
-<h2>Tot slot</h2>
+<h2>${langConfig.conclusionHeading}</h2>
 
 ${conclusionContent}`.trim();
 

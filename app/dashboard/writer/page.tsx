@@ -11,6 +11,7 @@ interface ContentIdea {
   contentType?: string;
   cluster?: string;
   project_id?: string;
+  language?: string;
 }
 
 interface Article {
@@ -100,6 +101,7 @@ export default function WriterPage() {
           description: idea.description,
           contentType: idea.contentType,
           wordCount,
+          language: idea.language || localStorage.getItem('contentLanguage') || 'nl',
         }),
         signal: abortControllerRef.current.signal,
       });

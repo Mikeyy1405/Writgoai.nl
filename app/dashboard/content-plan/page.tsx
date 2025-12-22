@@ -61,6 +61,7 @@ export default function ContentPlanPage() {
   
   // Results state
   const [niche, setNiche] = useState('');
+  const [language, setLanguage] = useState('nl');
   const [targetCount, setTargetCount] = useState(0);
   const [competitionLevel, setCompetitionLevel] = useState('');
   const [reasoning, setReasoning] = useState('');
@@ -236,6 +237,7 @@ export default function ContentPlanPage() {
                 setClusters(data.clusters || []);
                 setStats(data.stats || null);
                 setNiche(data.niche || '');
+                setLanguage(data.language || 'nl');
                 setTargetCount(data.targetCount || data.count || 0);
                 setCompetitionLevel(data.competitionLevel || '');
                 setReasoning(data.reasoning || '');
@@ -247,6 +249,7 @@ export default function ContentPlanPage() {
                 localStorage.setItem('contentClusters', JSON.stringify(data.clusters || []));
                 localStorage.setItem('contentStats', JSON.stringify(data.stats || null));
                 localStorage.setItem('contentNiche', data.niche || '');
+                localStorage.setItem('contentLanguage', data.language || 'nl');
               } else if (data.type === 'error') {
                 setError(data.message);
                 setIsGenerating(false);
@@ -316,7 +319,8 @@ export default function ContentPlanPage() {
   };
 
   const handleWriteArticle = (idea: ContentIdea) => {
-    localStorage.setItem('selectedIdea', JSON.stringify(idea));
+    localStorage.setItem('selectedIdea', JSON.stringify({ ...idea, language }));
+    localStorage.setItem('contentLanguage', language);
     router.push(`/dashboard/writer?project=${selectedProject}`);
   };
 

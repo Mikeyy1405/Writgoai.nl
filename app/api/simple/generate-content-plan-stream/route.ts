@@ -10,6 +10,125 @@ function sendSSE(controller: ReadableStreamDefaultController, data: any) {
   controller.enqueue(new TextEncoder().encode(message));
 }
 
+// Language configuration
+const LANGUAGE_CONFIG: Record<string, {
+  name: string;
+  locationCode: number;
+  modifiers: string[];
+  templates: string[];
+}> = {
+  nl: {
+    name: 'Nederlands',
+    locationCode: 2528,
+    modifiers: [
+      'hoe', 'wat is', 'waarom', 'wanneer', 'welke', 'hoeveel',
+      'vs', 'versus', 'of', 'beste', 'top 10', 'top 5', 'vergelijking',
+      'kopen', 'gratis', 'goedkoop', 'premium', 'review', 'ervaringen', 'kosten', 'prijzen',
+      'beginners', 'gevorderden', 'professionals', 'bedrijven', 'mkb', 'starters',
+      'tips', 'handleiding', 'checklist', 'template', 'voorbeeld', 'stappenplan',
+      'problemen', 'oplossingen', 'fouten', 'vermijden', 'verbeteren', 'optimaliseren',
+    ],
+    templates: [
+      '{modifier} {topic}?',
+      '{topic}: {modifier} handleiding',
+      '{modifier} {topic} in {year}',
+      'De {modifier} van {topic}',
+      '{topic} {modifier}: complete gids',
+      'Alles over {topic} {modifier}',
+      '{topic} voor {modifier}',
+      '{modifier}: {topic} uitgelegd',
+    ],
+  },
+  en: {
+    name: 'English',
+    locationCode: 2840,
+    modifiers: [
+      'how to', 'what is', 'why', 'when', 'which', 'how much',
+      'vs', 'versus', 'or', 'best', 'top 10', 'top 5', 'comparison',
+      'buy', 'free', 'cheap', 'premium', 'review', 'reviews', 'cost', 'pricing',
+      'beginners', 'advanced', 'professionals', 'business', 'enterprise', 'startups',
+      'tips', 'guide', 'checklist', 'template', 'example', 'step by step',
+      'problems', 'solutions', 'mistakes', 'avoid', 'improve', 'optimize',
+    ],
+    templates: [
+      '{modifier} {topic}?',
+      '{topic}: {modifier} guide',
+      '{modifier} {topic} in {year}',
+      'The {modifier} of {topic}',
+      '{topic} {modifier}: complete guide',
+      'Everything about {topic} {modifier}',
+      '{topic} for {modifier}',
+      '{modifier}: {topic} explained',
+    ],
+  },
+  de: {
+    name: 'Deutsch',
+    locationCode: 2276,
+    modifiers: [
+      'wie', 'was ist', 'warum', 'wann', 'welche', 'wie viel',
+      'vs', 'versus', 'oder', 'beste', 'top 10', 'top 5', 'vergleich',
+      'kaufen', 'kostenlos', 'günstig', 'premium', 'bewertung', 'erfahrungen', 'kosten', 'preise',
+      'anfänger', 'fortgeschrittene', 'profis', 'unternehmen', 'kmu', 'gründer',
+      'tipps', 'anleitung', 'checkliste', 'vorlage', 'beispiel', 'schritt für schritt',
+      'probleme', 'lösungen', 'fehler', 'vermeiden', 'verbessern', 'optimieren',
+    ],
+    templates: [
+      '{modifier} {topic}?',
+      '{topic}: {modifier} Anleitung',
+      '{modifier} {topic} in {year}',
+      'Die {modifier} von {topic}',
+      '{topic} {modifier}: Kompletter Leitfaden',
+      'Alles über {topic} {modifier}',
+      '{topic} für {modifier}',
+      '{modifier}: {topic} erklärt',
+    ],
+  },
+  fr: {
+    name: 'Français',
+    locationCode: 2250,
+    modifiers: [
+      'comment', 'qu\'est-ce que', 'pourquoi', 'quand', 'quel', 'combien',
+      'vs', 'versus', 'ou', 'meilleur', 'top 10', 'top 5', 'comparaison',
+      'acheter', 'gratuit', 'pas cher', 'premium', 'avis', 'expériences', 'coût', 'prix',
+      'débutants', 'avancés', 'professionnels', 'entreprises', 'pme', 'startups',
+      'conseils', 'guide', 'checklist', 'modèle', 'exemple', 'étape par étape',
+      'problèmes', 'solutions', 'erreurs', 'éviter', 'améliorer', 'optimiser',
+    ],
+    templates: [
+      '{modifier} {topic}?',
+      '{topic}: guide {modifier}',
+      '{modifier} {topic} en {year}',
+      'Le {modifier} de {topic}',
+      '{topic} {modifier}: guide complet',
+      'Tout sur {topic} {modifier}',
+      '{topic} pour {modifier}',
+      '{modifier}: {topic} expliqué',
+    ],
+  },
+  es: {
+    name: 'Español',
+    locationCode: 2724,
+    modifiers: [
+      'cómo', 'qué es', 'por qué', 'cuándo', 'cuál', 'cuánto',
+      'vs', 'versus', 'o', 'mejor', 'top 10', 'top 5', 'comparación',
+      'comprar', 'gratis', 'barato', 'premium', 'reseña', 'opiniones', 'costo', 'precios',
+      'principiantes', 'avanzados', 'profesionales', 'empresas', 'pymes', 'startups',
+      'consejos', 'guía', 'checklist', 'plantilla', 'ejemplo', 'paso a paso',
+      'problemas', 'soluciones', 'errores', 'evitar', 'mejorar', 'optimizar',
+    ],
+    templates: [
+      '¿{modifier} {topic}?',
+      '{topic}: guía {modifier}',
+      '{modifier} {topic} en {year}',
+      'El {modifier} de {topic}',
+      '{topic} {modifier}: guía completa',
+      'Todo sobre {topic} {modifier}',
+      '{topic} para {modifier}',
+      '{modifier}: {topic} explicado',
+    ],
+  },
+};
+
 // DataForSEO API integration
 async function getDataForSEOKeywords(
   seedKeywords: string[],
@@ -49,6 +168,80 @@ async function getDataForSEOKeywords(
   }
 }
 
+// Detect website language
+async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: string; languageName: string }> {
+  try {
+    // Try to fetch the website and detect language from HTML
+    const response = await fetch(websiteUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
+      signal: AbortSignal.timeout(10000),
+    });
+    
+    if (response.ok) {
+      const html = await response.text();
+      
+      // Check HTML lang attribute
+      const langMatch = html.match(/<html[^>]*lang=["']([a-z]{2})/i);
+      if (langMatch) {
+        const lang = langMatch[1].toLowerCase();
+        if (LANGUAGE_CONFIG[lang]) {
+          return { language: lang, languageName: LANGUAGE_CONFIG[lang].name };
+        }
+      }
+      
+      // Check meta content-language
+      const metaLangMatch = html.match(/<meta[^>]*content=["']([a-z]{2})/i);
+      if (metaLangMatch) {
+        const lang = metaLangMatch[1].toLowerCase();
+        if (LANGUAGE_CONFIG[lang]) {
+          return { language: lang, languageName: LANGUAGE_CONFIG[lang].name };
+        }
+      }
+      
+      // Check for common Dutch words
+      const dutchWords = ['de', 'het', 'een', 'van', 'voor', 'met', 'zijn', 'worden', 'naar', 'ook'];
+      const germanWords = ['der', 'die', 'das', 'und', 'für', 'mit', 'sind', 'werden', 'nach', 'auch'];
+      const frenchWords = ['le', 'la', 'les', 'de', 'pour', 'avec', 'sont', 'être', 'vers', 'aussi'];
+      const spanishWords = ['el', 'la', 'los', 'de', 'para', 'con', 'son', 'ser', 'hacia', 'también'];
+      
+      const lowerHtml = html.toLowerCase();
+      const dutchCount = dutchWords.filter(w => lowerHtml.includes(` ${w} `)).length;
+      const germanCount = germanWords.filter(w => lowerHtml.includes(` ${w} `)).length;
+      const frenchCount = frenchWords.filter(w => lowerHtml.includes(` ${w} `)).length;
+      const spanishCount = spanishWords.filter(w => lowerHtml.includes(` ${w} `)).length;
+      
+      const maxCount = Math.max(dutchCount, germanCount, frenchCount, spanishCount);
+      
+      if (maxCount >= 3) {
+        if (dutchCount === maxCount) return { language: 'nl', languageName: 'Nederlands' };
+        if (germanCount === maxCount) return { language: 'de', languageName: 'Deutsch' };
+        if (frenchCount === maxCount) return { language: 'fr', languageName: 'Français' };
+        if (spanishCount === maxCount) return { language: 'es', languageName: 'Español' };
+      }
+      
+      // Check TLD
+      const url = new URL(websiteUrl);
+      const tld = url.hostname.split('.').pop()?.toLowerCase();
+      if (tld === 'nl') return { language: 'nl', languageName: 'Nederlands' };
+      if (tld === 'de' || tld === 'at' || tld === 'ch') return { language: 'de', languageName: 'Deutsch' };
+      if (tld === 'fr') return { language: 'fr', languageName: 'Français' };
+      if (tld === 'es') return { language: 'es', languageName: 'Español' };
+    }
+  } catch (e) {
+    console.warn('Language detection failed:', e);
+  }
+  
+  // Default to Dutch for .nl domains, English otherwise
+  try {
+    const url = new URL(websiteUrl);
+    if (url.hostname.endsWith('.nl')) {
+      return { language: 'nl', languageName: 'Nederlands' };
+    }
+  } catch {}
+  
+  return { language: 'en', languageName: 'English' };
+}
+
 export async function POST(request: Request) {
   const { website_url } = await request.json();
 
@@ -60,62 +253,84 @@ export async function POST(request: Request) {
     async start(controller) {
       try {
         const now = new Date();
-        const currentMonth = now.toLocaleString('nl-NL', { month: 'long' });
         const currentYear = now.getFullYear();
         const nextYear = currentYear + 1;
 
         // ============================================
-        // STEP 1: Analyze website and detect niche (0-15%)
+        // STEP 1: Detect language and analyze website (0-15%)
         // ============================================
         sendSSE(controller, {
           type: 'progress',
           step: 1,
           totalSteps: 6,
-          progress: 5,
-          message: '🔍 Website analyseren...',
+          progress: 2,
+          message: '🌍 Taal detecteren...',
           detail: `Analyseren van ${website_url}`,
           estimatedTime: '~2-3 minuten totaal',
         });
+
+        // Detect website language
+        const { language, languageName } = await detectWebsiteLanguage(website_url);
+        const langConfig = LANGUAGE_CONFIG[language] || LANGUAGE_CONFIG['en'];
+        
+        sendSSE(controller, {
+          type: 'progress',
+          step: 1,
+          totalSteps: 6,
+          progress: 5,
+          message: `🌍 Taal gedetecteerd: ${languageName}`,
+          detail: `Content plan wordt in het ${languageName} gegenereerd`,
+        });
+
+        const currentMonth = now.toLocaleString(language === 'nl' ? 'nl-NL' : language === 'de' ? 'de-DE' : language === 'fr' ? 'fr-FR' : language === 'es' ? 'es-ES' : 'en-US', { month: 'long' });
+
+        // Language-specific prompts
+        const languageInstructions: Record<string, string> = {
+          nl: 'Schrijf ALLES in het Nederlands. Gebruik "je" en "jij" (informeel). Alle titels, beschrijvingen en keywords moeten in het Nederlands zijn.',
+          en: 'Write EVERYTHING in English. All titles, descriptions and keywords must be in English.',
+          de: 'Schreibe ALLES auf Deutsch. Verwende "du" (informell). Alle Titel, Beschreibungen und Keywords müssen auf Deutsch sein.',
+          fr: 'Écrivez TOUT en français. Utilisez "tu" (informel). Tous les titres, descriptions et mots-clés doivent être en français.',
+          es: 'Escribe TODO en español. Usa "tú" (informal). Todos los títulos, descripciones y palabras clave deben estar en español.',
+        };
 
         const nichePrompt = `Analyseer deze website en bepaal de content strategie:
 
 Website: ${website_url}
 Datum: ${currentMonth} ${currentYear}
 
+BELANGRIJK: ${languageInstructions[language]}
+
 Analyseer en geef terug:
 1. De exacte niche (specifiek, niet te breed)
-2. De primaire taal
-3. Alle mogelijke pillar topics (hoofdonderwerpen) - wees UITGEBREID
-4. Het geschatte aantal artikelen nodig voor VOLLEDIGE topical authority
-5. De concurrentie niveau inschatting
+2. Alle mogelijke pillar topics (hoofdonderwerpen) - wees UITGEBREID
+3. Het geschatte aantal artikelen nodig voor VOLLEDIGE topical authority
+4. De concurrentie niveau inschatting
 
 BELANGRIJK voor topical authority:
 - Een niche heeft meestal 10-30 pillar topics nodig
 - Elke pillar topic heeft 20-50 supporting artikelen nodig
 - Totaal voor volledige coverage: meestal 300-1500 artikelen
-- Brede niches (zoals "SEO") kunnen 2000+ artikelen nodig hebben
-- Smalle niches (zoals "WordPress SEO plugins") hebben ~200-400 nodig
+- Brede niches kunnen 2000+ artikelen nodig hebben
+- Smalle niches hebben ~200-400 nodig
 
-Output als JSON:
+Output als JSON (alle tekst in ${languageName}):
 {
-  "niche": "Specifieke niche naam",
-  "language": "nl",
+  "niche": "Specifieke niche naam in ${languageName}",
   "competitionLevel": "low|medium|high|very_high",
   "nicheComplexity": "simple|moderate|complex|very_complex",
   "pillarTopics": [
     {
-      "topic": "Pillar topic naam",
+      "topic": "Pillar topic naam in ${languageName}",
       "estimatedArticles": 30,
       "subtopics": ["subtopic1", "subtopic2", "subtopic3"]
     }
   ],
   "totalArticlesNeeded": 500,
-  "reasoning": "Korte uitleg waarom dit aantal nodig is"
+  "reasoning": "Korte uitleg in ${languageName} waarom dit aantal nodig is"
 }`;
 
         let nicheData: any = {
-          niche: 'SEO & Content Marketing',
-          language: 'nl',
+          niche: 'Content Marketing',
           competitionLevel: 'medium',
           nicheComplexity: 'moderate',
           pillarTopics: [],
@@ -126,7 +341,7 @@ Output als JSON:
         try {
           const nicheResponse = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een SEO expert die topical authority strategieën ontwikkelt. Analyseer grondig en geef een realistische inschatting van het benodigde aantal artikelen voor volledige niche dominantie. Geef alleen valide JSON terug.',
+            systemPrompt: `Je bent een SEO expert die topical authority strategieën ontwikkelt. ${languageInstructions[language]} Geef alleen valide JSON terug.`,
             userPrompt: nichePrompt,
             maxTokens: 2000,
             temperature: 0.6,
@@ -153,6 +368,8 @@ Output als JSON:
           detail: `${pillarTopics.length} pillar topics • ${targetCount} artikelen nodig • Concurrentie: ${nicheData.competitionLevel}`,
           nicheInfo: {
             niche: nicheData.niche,
+            language,
+            languageName,
             targetCount,
             competitionLevel: nicheData.competitionLevel,
             reasoning: nicheData.reasoning,
@@ -175,15 +392,17 @@ Output als JSON:
           try {
             const topicsPrompt = `Genereer 15-20 pillar topics voor de niche: "${nicheData.niche}"
 
+${languageInstructions[language]}
+
 Elke pillar topic moet:
 - Breed genoeg zijn voor 20-50 supporting artikelen
 - Specifiek genoeg om een duidelijk thema te hebben
 - Relevant zijn voor ${currentYear}-${nextYear}
 
-Output als JSON array:
+Output als JSON array (alle tekst in ${languageName}):
 [
   {
-    "topic": "Pillar topic naam",
+    "topic": "Pillar topic naam in ${languageName}",
     "estimatedArticles": 30,
     "subtopics": ["subtopic1", "subtopic2", "subtopic3", "subtopic4", "subtopic5"]
   }
@@ -191,7 +410,7 @@ Output als JSON array:
 
             const topicsResponse = await generateAICompletion({
               task: 'content',
-              systemPrompt: 'Genereer uitgebreide pillar topics voor topical authority. Output alleen JSON.',
+              systemPrompt: `Genereer uitgebreide pillar topics voor topical authority. ${languageInstructions[language]} Output alleen JSON.`,
               userPrompt: topicsPrompt,
               maxTokens: 3000,
               temperature: 0.7,
@@ -251,6 +470,8 @@ Subtopics om te behandelen: ${subtopics.join(', ')}
 Aantal artikelen nodig: ${estimatedArticles}
 Jaar: ${currentYear}-${nextYear}
 
+${languageInstructions[language]}
+
 Genereer:
 1. Een pillar page (uitgebreide 5000+ woorden gids)
 2. ${Math.floor(estimatedArticles * 0.3)} How-to guides
@@ -265,16 +486,17 @@ BELANGRIJK:
 - Include long-tail keyword variaties
 - Denk aan alle zoekintents (informational, commercial, transactional)
 - Varieer in moeilijkheidsgraad (beginner tot expert)
+- ALLE titels, beschrijvingen en keywords in ${languageName}
 
-Output als JSON:
+Output als JSON (alle tekst in ${languageName}):
 {
   "pillarTitle": "Complete Gids: ${pillarTopic}",
-  "pillarDescription": "Beschrijving",
+  "pillarDescription": "Beschrijving in ${languageName}",
   "pillarKeywords": ["kw1", "kw2", "kw3"],
   "supportingContent": [
     {
-      "title": "Artikel titel met keyword",
-      "description": "Korte beschrijving",
+      "title": "Artikel titel met keyword in ${languageName}",
+      "description": "Korte beschrijving in ${languageName}",
       "keywords": ["keyword1", "keyword2"],
       "contentType": "how-to|guide|comparison|list|faq|case-study|news",
       "difficulty": "beginner|intermediate|advanced",
@@ -285,7 +507,7 @@ Output als JSON:
 
             const clusterResponse = await generateAICompletion({
               task: 'content',
-              systemPrompt: 'Je bent een SEO content strategist. Genereer uitgebreide content clusters met veel variatie in artikel types en zoekintents. Output alleen valide JSON.',
+              systemPrompt: `Je bent een SEO content strategist. ${languageInstructions[language]} Genereer uitgebreide content clusters met veel variatie. Output alleen valide JSON.`,
               userPrompt: clusterPrompt,
               maxTokens: 8000,
               temperature: 0.8,
@@ -361,26 +583,10 @@ Output als JSON:
         });
 
         if (allArticles.length < targetCount) {
-          const modifiers = [
-            // Question modifiers
-            'hoe', 'wat is', 'waarom', 'wanneer', 'welke', 'hoeveel',
-            // Comparison modifiers
-            'vs', 'versus', 'of', 'beste', 'top 10', 'top 5', 'vergelijking',
-            // Intent modifiers
-            'kopen', 'gratis', 'goedkoop', 'premium', 'review', 'ervaringen', 'kosten', 'prijzen',
-            // Time modifiers
-            `${currentYear}`, `${nextYear}`, 'nieuw', 'update', 'trends', 'toekomst',
-            // Audience modifiers
-            'beginners', 'gevorderden', 'professionals', 'bedrijven', 'mkb', 'starters',
-            // Action modifiers
-            'tips', 'gids', 'handleiding', 'checklist', 'template', 'voorbeeld', 'stappenplan',
-            // Problem modifiers
-            'problemen', 'oplossingen', 'fouten', 'vermijden', 'verbeteren', 'optimaliseren',
-          ];
-
+          const modifiers = langConfig.modifiers;
+          const templates = langConfig.templates;
           const contentTypes = ['how-to', 'guide', 'comparison', 'list', 'faq'];
           const difficulties = ['beginner', 'intermediate', 'advanced'];
-          const intents = ['informational', 'commercial', 'transactional'];
 
           for (const pillarData of nicheData.pillarTopics) {
             const topic = typeof pillarData === 'string' ? pillarData : pillarData.topic;
@@ -388,7 +594,7 @@ Output als JSON:
             for (const modifier of modifiers) {
               if (allArticles.length >= targetCount) break;
 
-              const title = generateVariationTitle(topic, modifier, currentYear, nextYear);
+              const title = generateVariationTitle(topic, modifier, currentYear, nextYear, templates);
               
               allArticles.push({
                 title,
@@ -399,7 +605,7 @@ Output als JSON:
                 cluster: topic,
                 priority: 'low',
                 difficulty: difficulties[Math.floor(Math.random() * difficulties.length)],
-                searchIntent: getSearchIntent(modifier),
+                searchIntent: getSearchIntent(modifier, language),
                 generated: 'long-tail',
               });
             }
@@ -436,7 +642,7 @@ Output als JSON:
               .map((p: any) => typeof p === 'string' ? p : p.topic)
               .slice(0, 20);
             
-            const dataForSEOResults = await getDataForSEOKeywords(seedKeywords);
+            const dataForSEOResults = await getDataForSEOKeywords(seedKeywords, langConfig.locationCode, language);
 
             if (dataForSEOResults.length > 0) {
               const keywordDataMap = new Map();
@@ -563,7 +769,8 @@ Output als JSON:
           type: 'complete',
           success: true,
           niche: nicheData.niche,
-          language: nicheData.language,
+          language,
+          languageName,
           competitionLevel: nicheData.competitionLevel,
           reasoning: nicheData.reasoning,
           clusters,
@@ -595,25 +802,35 @@ Output als JSON:
 }
 
 // Helper functions
-function generateVariationTitle(topic: string, modifier: string, currentYear: number, nextYear: number): string {
-  const templates = [
-    `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}?`,
-    `${topic}: ${modifier.charAt(0).toUpperCase() + modifier.slice(1)} Gids`,
-    `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic} in ${nextYear}`,
-    `De ${modifier} van ${topic}`,
-    `${topic} ${modifier}: Complete Handleiding`,
-    `Alles over ${topic} ${modifier}`,
-    `${topic} voor ${modifier}`,
-    `${modifier.charAt(0).toUpperCase() + modifier.slice(1)}: ${topic} Uitgelegd`,
-  ];
-  return templates[Math.floor(Math.random() * templates.length)];
+function generateVariationTitle(topic: string, modifier: string, currentYear: number, nextYear: number, templates: string[]): string {
+  const template = templates[Math.floor(Math.random() * templates.length)];
+  return template
+    .replace('{modifier}', modifier.charAt(0).toUpperCase() + modifier.slice(1))
+    .replace('{topic}', topic)
+    .replace('{year}', String(nextYear));
 }
 
-function getSearchIntent(modifier: string): string {
-  const commercialModifiers = ['kopen', 'prijs', 'kosten', 'goedkoop', 'beste', 'top', 'review', 'vergelijking', 'vs'];
-  const transactionalModifiers = ['download', 'gratis', 'template', 'tool', 'software'];
+function getSearchIntent(modifier: string, language: string): string {
+  const commercialModifiers: Record<string, string[]> = {
+    nl: ['kopen', 'prijs', 'kosten', 'goedkoop', 'beste', 'top', 'review', 'vergelijking', 'vs'],
+    en: ['buy', 'price', 'cost', 'cheap', 'best', 'top', 'review', 'comparison', 'vs'],
+    de: ['kaufen', 'preis', 'kosten', 'günstig', 'beste', 'top', 'bewertung', 'vergleich', 'vs'],
+    fr: ['acheter', 'prix', 'coût', 'pas cher', 'meilleur', 'top', 'avis', 'comparaison', 'vs'],
+    es: ['comprar', 'precio', 'costo', 'barato', 'mejor', 'top', 'reseña', 'comparación', 'vs'],
+  };
   
-  if (commercialModifiers.some(m => modifier.toLowerCase().includes(m))) return 'commercial';
-  if (transactionalModifiers.some(m => modifier.toLowerCase().includes(m))) return 'transactional';
+  const transactionalModifiers: Record<string, string[]> = {
+    nl: ['download', 'gratis', 'template', 'tool', 'software'],
+    en: ['download', 'free', 'template', 'tool', 'software'],
+    de: ['download', 'kostenlos', 'vorlage', 'tool', 'software'],
+    fr: ['télécharger', 'gratuit', 'modèle', 'outil', 'logiciel'],
+    es: ['descargar', 'gratis', 'plantilla', 'herramienta', 'software'],
+  };
+  
+  const commercial = commercialModifiers[language] || commercialModifiers['en'];
+  const transactional = transactionalModifiers[language] || transactionalModifiers['en'];
+  
+  if (commercial.some(m => modifier.toLowerCase().includes(m))) return 'commercial';
+  if (transactional.some(m => modifier.toLowerCase().includes(m))) return 'transactional';
   return 'informational';
 }
