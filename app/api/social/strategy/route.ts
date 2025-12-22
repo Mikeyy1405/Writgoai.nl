@@ -105,9 +105,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    // Get project details
+    // Get project details from projects table (lowercase)
     const { data: project } = await supabaseAdmin
-      .from('Project')
+      .from('projects')
       .select('*')
       .eq('id', project_id)
       .single();
@@ -118,17 +118,17 @@ export async function POST(request: Request) {
 
     // Scrape website for automatic analysis
     let websiteContent = { content: '', title: '', description: '' };
-    if (project.websiteUrl) {
-      websiteContent = await scrapeWebsiteContent(project.websiteUrl);
+    if (project.website_url) {
+      websiteContent = await scrapeWebsiteContent(project.website_url);
     }
 
     // Generate strategy with Claude via AIML - FULLY AUTOMATIC
     const prompt = `Je bent een social media strategie expert. Analyseer deze website en genereer een COMPLETE social media contentstrategie.
 
 WEBSITE INFORMATIE:
-- URL: ${project.websiteUrl || 'Niet beschikbaar'}
+- URL: ${project.website_url || 'Niet beschikbaar'}
 - Naam: ${project.name || websiteContent.title || 'Onbekend'}
-- Beschrijving: ${project.description || websiteContent.description || 'Niet beschikbaar'}
+- Beschrijving: ${websiteContent.description || 'Niet beschikbaar'}
 - Website content: ${websiteContent.content.slice(0, 2000)}
 
 ANALYSEER AUTOMATISCH:
