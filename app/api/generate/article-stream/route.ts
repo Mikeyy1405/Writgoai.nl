@@ -541,11 +541,45 @@ Output ALLEEN HTML, geen markdown.`;
         finalContent += `<h2>${langConfig.conclusionHeading}</h2>\n\n`;
         finalContent += conclusionContent;
         
-        // Add internal links if websiteUrl is provided
+        // Add internal links naturally in the content if websiteUrl is provided
         if (websiteUrl) {
           const baseUrl = websiteUrl.replace(/\/$/, '');
-          // Add a CTA box at the end with internal link
-          finalContent += `\n\n<div class="cta-box" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 1.5rem; border-radius: 12px; margin-top: 2rem;">\n<p style="color: white; font-weight: 600; margin: 0;">\n🚀 Ontdek meer op <a href="${baseUrl}" style="color: white; text-decoration: underline;">${baseUrl.replace(/https?:\/\//, '')}</a>\n</p>\n</div>`;\n        }
+          const siteName = baseUrl.replace(/https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+          
+          // Find good anchor phrases to link
+          const linkPhrases: Record<string, string[]> = {
+            nl: ['meer informatie', 'lees meer', 'ontdek meer', 'bekijk onze', 'op onze website', 'neem contact op', 'vraag vrijblijvend'],
+            en: ['more information', 'learn more', 'discover more', 'check out our', 'on our website', 'contact us', 'get in touch'],
+            de: ['mehr erfahren', 'weitere Informationen', 'entdecken Sie', 'auf unserer Website', 'kontaktieren Sie uns'],
+            fr: ['en savoir plus', 'découvrez', 'sur notre site', 'contactez-nous'],
+            es: ['más información', 'descubre más', 'en nuestro sitio', 'contáctenos'],
+          };
+          
+          const phrases = linkPhrases[language] || linkPhrases['nl'];
+          
+          // Try to find and link one of these phrases in the conclusion
+          let linkedConclusion = false;
+          for (const phrase of phrases) {
+            const regex = new RegExp(`(${phrase})`, 'gi');
+            if (conclusionContent.match(regex)) {
+              conclusionContent = conclusionContent.replace(regex, `<a href="${baseUrl}">$1</a>`);
+              linkedConclusion = true;
+              break;
+            }
+          }
+          
+          // If no phrase found, add a natural sentence at the end of conclusion
+          if (!linkedConclusion) {
+            const naturalLinks: Record<string, string> = {
+              nl: `<p>Wil je meer weten? Bekijk dan <a href="${baseUrl}">${siteName}</a> voor uitgebreide informatie en persoonlijk advies.</p>`,
+              en: `<p>Want to learn more? Visit <a href="${baseUrl}">${siteName}</a> for detailed information and personalized advice.</p>`,
+              de: `<p>Möchten Sie mehr erfahren? Besuchen Sie <a href="${baseUrl}">${siteName}</a> für ausführliche Informationen.</p>`,
+              fr: `<p>Vous voulez en savoir plus? Visitez <a href="${baseUrl}">${siteName}</a> pour plus d'informations.</p>`,
+              es: `<p>¿Quieres saber más? Visita <a href="${baseUrl}">${siteName}</a> para más información.</p>`,
+            };
+            finalContent += '\n\n' + (naturalLinks[language] || naturalLinks['nl']);
+          }
+        }
 
         // Final cleanup - ensure no markdown artifacts remain
         finalContent = finalContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
