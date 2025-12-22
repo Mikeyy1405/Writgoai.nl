@@ -295,11 +295,13 @@ Specifieke vereisten:
           detail: 'AI afbeelding maken met Flux Pro',
         });
 
-        let featuredImage = '';
+        let featuredImage: string = '';
         try {
-          featuredImage = await generateFeaturedImage(title, keyword);
+          const generatedImage = await generateFeaturedImage(title, keyword);
+          featuredImage = generatedImage || '';
         } catch (e) {
           console.warn('Image generation failed:', e);
+          featuredImage = '';
         }
 
         // Combine all content
