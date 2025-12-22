@@ -1,11 +1,21 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { generateAICompletion, generateJSONCompletion } from '@/lib/ai-client';
+import { analyzeWithPerplexityJSON } from '@/lib/ai-client';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+interface NicheAnalysis {
+  niche: string;
+  sub_niches: string[];
+  target_audience: string;
+  content_style: string;
+  strengths: string[];
+  opportunities: string[];
+  language: string;
+  keywords: string[];
+}
 
 export async function POST(request: Request) {
   try {
@@ -35,66 +45,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Fetch WordPress posts to analyze
-    const wpResponse = await fetch(`${project.wp_url}/posts?per_page=10`, {
-      headers: {
-        'Authorization': 'Basic ' + Buffer.from(`${project.wp_username}:${project.wp_password}`).toString('base64'),
-      },
-    });
+    // Use Perplexity Sonar Pro to analyze the website with real-time web access
+    const analysisPrompt = `Analyseer de website ${project.website_url} grondig.
 
-    if (!wpResponse.ok) {
-      return NextResponse.json({ error: 'Failed to fetch WordPress posts' }, { status: 500 });
-    }
+Bezoek de website en analyseer:
+1. Wat is de EXACTE primaire niche? (bijv. "Yoga", "Fitness", "E-commerce", "Tandheelkunde")
+2. Wat zijn de sub-niches of specialisaties?
+3. Wie is de doelgroep?
+4. Wat is de content stijl?
+5. Wat zijn de sterke punten van de website?
+6. Welke kansen zijn er voor verbetering?
+7. In welke taal is de website?
+8. Welke keywords zijn relevant voor deze website?
 
-    const posts = await wpResponse.json();
+BELANGRIJK: Baseer je analyse op de DAADWERKELIJKE inhoud van de website, niet op aannames.
+De niche moet SPECIFIEK zijn voor wat de website daadwerkelijk aanbiedt.
 
-    // Analyze site with AI
-    const analysisPrompt = `Analyze this WordPress website and determine:
-
-Website: ${project.website_url}
-Name: ${project.name}
-
-Recent Posts:
-${posts.map((p: any) => `- ${p.title.rendered}`).join('\n')}
-
-Post Content Samples:
-${posts.slice(0, 3).map((p: any) => {
-  const content = p.content.rendered.replace(/<[^>]*>/g, '').substring(0, 300);
-  return `"${p.title.rendered}": ${content}...`;
-}).join('\n\n')}
-
-Based on this information, provide:
-
-1. **Primary Niche** (one clear category, e.g., "Technology", "Fitness", "Food & Recipes")
-2. **Sub-Niches** (2-3 specific topics within the niche)
-3. **Target Audience** (who reads this site?)
-4. **Content Style** (professional, casual, technical, etc.)
-5. **Current Strengths** (what's working well?)
-6. **Opportunities** (what's missing or could be improved?)
-
-Respond in JSON format:
+Antwoord in JSON formaat:
 {
-  "niche": "Primary Niche",
-  "sub_niches": ["sub1", "sub2", "sub3"],
-  "target_audience": "description",
-  "content_style": "style",
-  "strengths": ["strength1", "strength2"],
-  "opportunities": ["opp1", "opp2", "opp3"]
+  "niche": "De exacte primaire niche (bijv. Yoga, Fitness, Software, Tandarts)",
+  "sub_niches": ["sub-niche 1", "sub-niche 2", "sub-niche 3"],
+  "target_audience": "Beschrijving van de doelgroep",
+  "content_style": "Stijl van de content (professioneel, casual, technisch, etc.)",
+  "strengths": ["sterkte 1", "sterkte 2"],
+  "opportunities": ["kans 1", "kans 2", "kans 3"],
+  "language": "nl of en",
+  "keywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5"]
 }`;
 
-    const analysis = await generateJSONCompletion<{
-      niche: string;
-      sub_niches: string[];
-      target_audience: string;
-      content_style: string;
-      strengths: string[];
-      opportunities: string[];
-    }>({
-      task: 'content',
-      systemPrompt: 'You are an expert SEO analyst who understands website niches and content strategies. Always respond with valid JSON.',
-      userPrompt: analysisPrompt,
-      temperature: 0.3,
-    });
+    console.log('Analyzing website with Perplexity:', project.website_url);
+    
+    const analysis = await analyzeWithPerplexityJSON<NicheAnalysis>(analysisPrompt);
+    
+    console.log('Niche analysis result:', analysis);
 
     // Save analysis to project
     await supabase

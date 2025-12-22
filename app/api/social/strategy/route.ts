@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { generateAICompletion, generateJSONCompletion } from '@/lib/ai-client';
+import { generateJSONCompletion, analyzeWithPerplexityJSON } from '@/lib/ai-client';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -10,60 +10,16 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Scrape website content for automatic analysis
-async function scrapeWebsiteContent(url: string): Promise<{ content: string; title: string; description: string }> {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.status}`);
-    }
-
-    const html = await response.text();
-    
-    // Extract title
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const title = titleMatch ? titleMatch[1].trim() : '';
-    
-    // Extract meta description
-    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) ||
-                      html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i);
-    const description = descMatch ? descMatch[1].trim() : '';
-    
-    // Extract text content (remove scripts, styles, etc.)
-    const cleanHtml = html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '');
-    
-    // Extract headings
-    const headings = [...cleanHtml.matchAll(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/gi)]
-      .map(m => m[1].trim())
-      .filter(h => h.length > 0)
-      .slice(0, 10);
-    
-    // Extract main text
-    const textContent = cleanHtml
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 3000);
-
-    return {
-      content: `${headings.join('. ')}. ${textContent}`,
-      title,
-      description,
-    };
-  } catch (error) {
-    console.error('Scrape error:', error);
-    return { content: '', title: '', description: '' };
-  }
+interface NicheAnalysis {
+  niche: string;
+  sub_niche: string;
+  target_audience: string;
+  audience_demographics: string;
+  brand_voice: string;
+  unique_selling_points: string[];
+  competitors: string[];
+  content_themes: string[];
+  language: string;
 }
 
 // Get strategy for a project
@@ -95,7 +51,7 @@ export async function GET(request: Request) {
   }
 }
 
-// Generate new strategy - FULLY AUTOMATIC
+// Generate new strategy - FULLY AUTOMATIC with Perplexity
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -105,7 +61,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    // Get project details from projects table (lowercase)
+    // Get project details
     const { data: project } = await supabaseAdmin
       .from('projects')
       .select('*')
@@ -116,36 +72,61 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Scrape website for automatic analysis
-    let websiteContent = { content: '', title: '', description: '' };
-    if (project.website_url) {
-      websiteContent = await scrapeWebsiteContent(project.website_url);
-    }
+    // STEP 1: Use Perplexity Sonar Pro to analyze the website
+    const nicheAnalysisPrompt = `Analyseer de website ${project.website_url} en geef een gedetailleerde analyse.
 
-    // Generate strategy with Claude via AIML - FULLY AUTOMATIC
-    const prompt = `Je bent een social media strategie expert. Analyseer deze website en genereer een COMPLETE social media contentstrategie.
+Bezoek de website en analyseer:
+1. Wat is de EXACTE niche/branche? (bijv. "Yoga voor beginners", "E-commerce software", "Tandarts praktijk")
+2. Wat is de sub-niche of specialisatie?
+3. Wie is de doelgroep? (leeftijd, interesses, pijnpunten)
+4. Wat zijn de demografische kenmerken van de doelgroep?
+5. Wat is de brand voice/tone of voice van de website?
+6. Wat zijn de unique selling points?
+7. Wie zijn de concurrenten in deze markt?
+8. Welke content thema's zijn relevant?
+9. In welke taal is de website?
 
-WEBSITE INFORMATIE:
-- URL: ${project.website_url || 'Niet beschikbaar'}
-- Naam: ${project.name || websiteContent.title || 'Onbekend'}
-- Beschrijving: ${websiteContent.description || 'Niet beschikbaar'}
-- Website content: ${websiteContent.content.slice(0, 2000)}
+BELANGRIJK: Baseer je analyse op de DAADWERKELIJKE inhoud van de website, niet op aannames.
 
-ANALYSEER AUTOMATISCH:
-1. Wat is de niche/branche van dit bedrijf?
-2. Wie is de doelgroep (leeftijd, interesses, pijnpunten)?
-3. Wat is de ideale brand voice (formeel/informeel, humor, expertise)?
-4. Wat zijn logische business doelen voor social media?
+Antwoord in JSON formaat:
+{
+  "niche": "De exacte niche (bijv. Yoga, Fitness, Software, etc.)",
+  "sub_niche": "Specifieke focus binnen de niche",
+  "target_audience": "Beschrijving van de doelgroep",
+  "audience_demographics": "Demografische kenmerken",
+  "brand_voice": "Tone of voice beschrijving",
+  "unique_selling_points": ["USP 1", "USP 2", "USP 3"],
+  "competitors": ["Concurrent 1", "Concurrent 2"],
+  "content_themes": ["Thema 1", "Thema 2", "Thema 3", "Thema 4"],
+  "language": "nl of en"
+}`;
+
+    console.log('Analyzing website with Perplexity:', project.website_url);
+    
+    const nicheAnalysis = await analyzeWithPerplexityJSON<NicheAnalysis>(nicheAnalysisPrompt);
+    
+    console.log('Niche analysis result:', nicheAnalysis);
+
+    // STEP 2: Generate strategy with Claude based on Perplexity analysis
+    const strategyPrompt = `Je bent een social media strategie expert. Genereer een COMPLETE social media contentstrategie gebaseerd op deze website analyse:
+
+WEBSITE ANALYSE (door Perplexity):
+- Website: ${project.website_url}
+- Naam: ${project.name}
+- Niche: ${nicheAnalysis.niche}
+- Sub-niche: ${nicheAnalysis.sub_niche}
+- Doelgroep: ${nicheAnalysis.target_audience}
+- Demographics: ${nicheAnalysis.audience_demographics}
+- Brand Voice: ${nicheAnalysis.brand_voice}
+- USPs: ${nicheAnalysis.unique_selling_points?.join(', ')}
+- Content Thema's: ${nicheAnalysis.content_themes?.join(', ')}
+- Taal: ${nicheAnalysis.language}
 
 Genereer een JSON object met PRECIES deze structuur:
 {
-  "detected_niche": "De gedetecteerde niche/branche",
-  "detected_audience": "Beschrijving van de doelgroep",
-  "detected_voice": "Beschrijving van de ideale brand voice",
-  "detected_goals": ["Doel 1", "Doel 2", "Doel 3"],
   "content_pillars": [
     {
-      "name": "Pillar naam",
+      "name": "Pillar naam relevant voor ${nicheAnalysis.niche}",
       "description": "Korte beschrijving",
       "percentage": 25,
       "example_topics": ["topic1", "topic2", "topic3"]
@@ -161,51 +142,49 @@ Genereer een JSON object met PRECIES deze structuur:
     "sunday": { "post_type": "Engagement", "pillar": "pillar naam", "best_time": "11:00" }
   },
   "post_types_mix": [
-    { "type": "Storytelling", "percentage": 20, "description": "Persoonlijke verhalen en behind-the-scenes" },
-    { "type": "Educatief", "percentage": 30, "description": "Tips, how-to's en waardevolle informatie" },
-    { "type": "Engagement", "percentage": 20, "description": "Vragen, polls en interactieve content" },
-    { "type": "Promotioneel", "percentage": 15, "description": "Product/dienst highlights" },
-    { "type": "Behind the Scenes", "percentage": 15, "description": "Kijkje achter de schermen" }
+    { "type": "Storytelling", "percentage": 20, "description": "Persoonlijke verhalen" },
+    { "type": "Educatief", "percentage": 30, "description": "Tips en how-to's" },
+    { "type": "Engagement", "percentage": 20, "description": "Vragen en polls" },
+    { "type": "Promotioneel", "percentage": 15, "description": "Product highlights" },
+    { "type": "Behind the Scenes", "percentage": 15, "description": "Achter de schermen" }
   ],
   "hashtag_strategy": {
-    "branded": ["#merknaam", "#merkslogan"],
-    "niche": ["#relevante", "#niche", "#hashtags"],
-    "trending": ["#trending", "#actueel"],
-    "community": ["#community", "#hashtags"]
+    "branded": ["#merknaam"],
+    "niche": ["#relevante", "#niche", "#hashtags voor ${nicheAnalysis.niche}"],
+    "trending": ["#trending"],
+    "community": ["#community"]
   },
   "engagement_tactics": [
-    "Specifieke tactiek 1 voor deze niche",
-    "Specifieke tactiek 2 voor deze niche",
-    "Specifieke tactiek 3 voor deze niche",
-    "Specifieke tactiek 4 voor deze niche",
-    "Specifieke tactiek 5 voor deze niche"
+    "Tactiek 1 specifiek voor ${nicheAnalysis.niche}",
+    "Tactiek 2 specifiek voor ${nicheAnalysis.target_audience}",
+    "Tactiek 3",
+    "Tactiek 4",
+    "Tactiek 5"
   ],
   "content_ideas": [
     {
-      "title": "Concrete post titel",
+      "title": "Post titel relevant voor ${nicheAnalysis.niche}",
       "type": "Post type",
       "pillar": "Content pillar",
-      "hook": "Aandachttrekkende opening zin",
-      "cta": "Specifieke call to action"
+      "hook": "Aandachttrekkende opening",
+      "cta": "Call to action"
     }
   ]
 }
 
 BELANGRIJK:
-- Genereer 4 relevante content pillars voor deze specifieke niche
-- Hashtags moeten Nederlands en relevant zijn voor de branche
-- Genereer minimaal 15 concrete, uitvoerbare content ideas
-- Engagement tactics moeten specifiek zijn voor deze doelgroep
-- Alles in het Nederlands
-- GEEN markdown formatting, GEEN code blocks, ALLEEN pure JSON
-- Begin direct met { en eindig met }
+- Content pillars MOETEN relevant zijn voor ${nicheAnalysis.niche}, NIET voor "content marketing"
+- Genereer 4 content pillars specifiek voor deze niche
+- Hashtags moeten ${nicheAnalysis.language === 'nl' ? 'Nederlands' : 'Engels'} zijn en relevant voor ${nicheAnalysis.niche}
+- Genereer minimaal 15 content ideas specifiek voor ${nicheAnalysis.niche}
+- Alles in het ${nicheAnalysis.language === 'nl' ? 'Nederlands' : 'Engels'}
 
-Antwoord ALLEEN met het JSON object, geen andere tekst, geen uitleg, geen code blocks.`;
+Antwoord ALLEEN met het JSON object.`;
 
     const strategyData = await generateJSONCompletion<any>({
       task: 'content',
-      systemPrompt: 'Je bent een social media strategie expert. Je antwoordt ALTIJD met pure, valid JSON zonder markdown code blocks of andere formatting. Begin direct met { en eindig met }.',
-      userPrompt: prompt,
+      systemPrompt: 'Je bent een social media strategie expert. Je antwoordt ALTIJD met pure, valid JSON zonder markdown code blocks.',
+      userPrompt: strategyPrompt,
       maxTokens: 4000,
       temperature: 0.6,
     });
@@ -221,15 +200,15 @@ Antwoord ALLEEN met het JSON object, geen andere tekst, geen uitleg, geen code b
     let result;
     const strategyRecord = {
       project_id,
-      niche: strategyData.detected_niche,
-      target_audience: strategyData.detected_audience,
-      brand_voice: strategyData.detected_voice,
+      niche: nicheAnalysis.niche,
+      target_audience: nicheAnalysis.target_audience,
+      brand_voice: nicheAnalysis.brand_voice,
       content_pillars: strategyData.content_pillars,
       weekly_schedule: strategyData.weekly_schedule,
       post_types_mix: strategyData.post_types_mix,
       hashtag_strategy: strategyData.hashtag_strategy,
       engagement_tactics: strategyData.engagement_tactics,
-      goals: strategyData.detected_goals || [],
+      goals: nicheAnalysis.unique_selling_points || [],
       updated_at: new Date().toISOString(),
     };
 
@@ -259,10 +238,10 @@ Antwoord ALLEEN met het JSON object, geen andere tekst, geen uitleg, geen code b
       strategy: result,
       content_ideas: strategyData.content_ideas || [],
       detected: {
-        niche: strategyData.detected_niche,
-        audience: strategyData.detected_audience,
-        voice: strategyData.detected_voice,
-        goals: strategyData.detected_goals,
+        niche: nicheAnalysis.niche,
+        audience: nicheAnalysis.target_audience,
+        voice: nicheAnalysis.brand_voice,
+        goals: nicheAnalysis.unique_selling_points,
       }
     });
   } catch (error: any) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateAICompletion } from '@/lib/ai-client';
+import { generateAICompletion, analyzeWithPerplexityJSON } from '@/lib/ai-client';
 import { createClient as createServerClient } from '@/lib/supabase-server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -301,21 +301,22 @@ Content: ${textContent.slice(0, 3000)}
 
     const currentMonth = now.toLocaleString(language === 'nl' ? 'nl-NL' : 'en-US', { month: 'long' });
 
-    const nichePrompt = `Analyseer deze website en bepaal de EXACTE niche op basis van de content:
+    // Use Perplexity Sonar Pro for accurate niche detection with real-time web access
+    const nichePrompt = `Analyseer de website ${websiteUrl} en bepaal de EXACTE niche.
 
-Website URL: ${websiteUrl}
-${websiteContent ? `\n--- WEBSITE CONTENT ---\n${websiteContent}\n--- EINDE CONTENT ---\n` : ''}
-Datum: ${currentMonth} ${currentYear}
+Bezoek de website en analyseer de daadwerkelijke content.
 
 ${languageInstructions[language]}
 
-BELANGRIJK: Bepaal de niche op basis van de DAADWERKELIJKE content van de website, NIET op basis van de URL alleen.
-Als de website over yoga gaat, is de niche "Yoga" of "Yoga en mindfulness", NIET "Content marketing".
-Als de website over koken gaat, is de niche "Koken" of "Recepten", etc.
+BELANGRIJK: 
+- Bepaal de niche op basis van de DAADWERKELIJKE content van de website
+- Als de website over yoga gaat, is de niche "Yoga" of "Yoga voor beginners"
+- Als de website over koken gaat, is de niche "Koken" of "Recepten"
+- NOOIT "Content Marketing" als niche tenzij de website echt over content marketing gaat
 
 Output als JSON:
 {
-  "niche": "Specifieke niche naam in ${languageName} (bijv. Yoga, Fitness, Koken, etc.)",
+  "niche": "Specifieke niche naam (bijv. Yoga, Fitness, Koken, Software)",
   "competitionLevel": "low|medium|high|very_high",
   "pillarTopics": [
     {
@@ -325,11 +326,11 @@ Output als JSON:
     }
   ],
   "totalArticlesNeeded": 500,
-  "reasoning": "Uitleg waarom deze niche is gekozen in ${languageName}"
+  "reasoning": "Uitleg waarom deze niche is gekozen"
 }`;
 
     let nicheData: any = {
-      niche: 'Content Marketing',
+      niche: 'Algemeen',
       competitionLevel: 'medium',
       pillarTopics: [],
       totalArticlesNeeded: 500,
@@ -337,20 +338,46 @@ Output als JSON:
     };
 
     try {
-      const nicheResponse = await generateAICompletion({
-        task: 'content',
-        systemPrompt: `SEO expert. ${languageInstructions[language]} Output JSON.`,
-        userPrompt: nichePrompt,
-        maxTokens: 2000,
-        temperature: 0.6,
-      });
-
-      const jsonMatch = nicheResponse.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        nicheData = { ...nicheData, ...JSON.parse(jsonMatch[0]) };
-      }
+      // Use Perplexity Sonar Pro for real-time website analysis
+      console.log('Analyzing website with Perplexity:', websiteUrl);
+      nicheData = await analyzeWithPerplexityJSON<any>(nichePrompt);
+      console.log('Perplexity niche result:', nicheData.niche);
     } catch (e) {
-      console.warn('Niche detection failed:', e);
+      console.warn('Perplexity niche detection failed, using fallback:', e);
+      
+      // Fallback to Claude if Perplexity fails
+      try {
+        const fallbackPrompt = `Analyseer deze website en bepaal de EXACTE niche:
+
+Website URL: ${websiteUrl}
+${websiteContent ? `\n--- WEBSITE CONTENT ---\n${websiteContent}\n--- EINDE CONTENT ---\n` : ''}
+
+${languageInstructions[language]}
+
+Output als JSON:
+{
+  "niche": "Specifieke niche naam",
+  "competitionLevel": "medium",
+  "pillarTopics": [],
+  "totalArticlesNeeded": 500,
+  "reasoning": "Uitleg"
+}`;
+
+        const nicheResponse = await generateAICompletion({
+          task: 'content',
+          systemPrompt: `SEO expert. ${languageInstructions[language]} Output JSON.`,
+          userPrompt: fallbackPrompt,
+          maxTokens: 2000,
+          temperature: 0.5,
+        });
+
+        const jsonMatch = nicheResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          nicheData = { ...nicheData, ...JSON.parse(jsonMatch[0]) };
+        }
+      } catch (fallbackError) {
+        console.warn('Fallback niche detection also failed:', fallbackError);
+      }
     }
 
     const targetCount = Math.min(Math.max(nicheData.totalArticlesNeeded || 500, 100), 2000);

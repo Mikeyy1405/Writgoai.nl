@@ -33,7 +33,7 @@ export const BEST_MODELS = {
   QUICK: 'claude-sonnet-4-5',                // Fast & reliable (Anthropic)
   BUDGET: 'claude-sonnet-4-5',               // Same model (Anthropic)
   IMAGE: 'flux-pro/v1.1',                    // Best quality images
-  PERPLEXITY: 'perplexity/llama-3.1-sonar-large-128k-online', // For research/discovery
+  PERPLEXITY: 'perplexity/sonar-pro',        // For research/discovery with web access
 };
 
 interface GenerateOptions {
@@ -186,6 +186,77 @@ export async function generateJSONCompletion<T>(options: GenerateOptions): Promi
     }
     
     throw new Error('Failed to parse AI response as JSON');
+  }
+}
+
+// Perplexity Sonar Pro for website/niche analysis with real-time web access
+export async function analyzeWithPerplexity(prompt: string): Promise<string> {
+  if (!apiKey) {
+    throw new Error('AI API key not configured');
+  }
+
+  try {
+    const completion = await openaiClient.chat.completions.create({
+      model: BEST_MODELS.PERPLEXITY,
+      messages: [
+        {
+          role: 'system',
+          content: 'Je bent een expert in het analyseren van websites en het bepalen van hun niche, doelgroep en branche. Je hebt toegang tot het internet en kunt websites live bekijken en analyseren. Geef altijd accurate, specifieke informatie gebaseerd op wat je daadwerkelijk op de website ziet.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 2000,
+    });
+
+    return completion.choices[0]?.message?.content || '';
+  } catch (error: any) {
+    console.error('Perplexity analysis error:', error);
+    throw new Error(`Perplexity analysis failed: ${error.message}`);
+  }
+}
+
+// Perplexity for JSON responses
+export async function analyzeWithPerplexityJSON<T>(prompt: string): Promise<T> {
+  const content = await analyzeWithPerplexity(prompt);
+  
+  try {
+    // Extract JSON from response
+    let jsonString = content;
+    
+    const codeBlockMatch = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+    if (codeBlockMatch) {
+      jsonString = codeBlockMatch[1];
+    } else {
+      const objectMatch = content.match(/\{[\s\S]*\}/);
+      if (objectMatch) {
+        jsonString = objectMatch[0];
+      }
+    }
+    
+    jsonString = jsonString
+      .trim()
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*]/g, ']');
+    
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error('Perplexity JSON parsing error:', error);
+    console.error('Raw content:', content.substring(0, 500));
+    
+    // Fallback: try to find JSON object
+    try {
+      const firstBrace = content.indexOf('{');
+      const lastBrace = content.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        return JSON.parse(content.substring(firstBrace, lastBrace + 1));
+      }
+    } catch (e) {}
+    
+    throw new Error('Failed to parse Perplexity response as JSON');
   }
 }
 
