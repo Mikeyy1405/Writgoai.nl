@@ -70,6 +70,13 @@ interface ContentIdea {
   cta: string;
 }
 
+interface DetectedInfo {
+  niche: string;
+  audience: string;
+  voice: string;
+  goals: string[];
+}
+
 const PLATFORMS = [
   { id: 'instagram', name: 'Instagram', icon: '📸', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
   { id: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-600' },
@@ -89,13 +96,13 @@ const POST_TYPES = [
 ];
 
 const DAYS_NL = {
-  monday: 'Maandag',
-  tuesday: 'Dinsdag',
-  wednesday: 'Woensdag',
-  thursday: 'Donderdag',
-  friday: 'Vrijdag',
-  saturday: 'Zaterdag',
-  sunday: 'Zondag',
+  monday: 'Ma',
+  tuesday: 'Di',
+  wednesday: 'Wo',
+  thursday: 'Do',
+  friday: 'Vr',
+  saturday: 'Za',
+  sunday: 'Zo',
 };
 
 export default function SocialMediaPage() {
@@ -120,13 +127,8 @@ export default function SocialMediaPage() {
   // Strategy state
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([]);
+  const [detectedInfo, setDetectedInfo] = useState<DetectedInfo | null>(null);
   const [generatingStrategy, setGeneratingStrategy] = useState(false);
-  const [strategyForm, setStrategyForm] = useState({
-    target_audience: '',
-    brand_voice: '',
-    goals: [] as string[],
-  });
-  const [newGoal, setNewGoal] = useState('');
 
   // Post generation form
   const [topic, setTopic] = useState('');
@@ -194,13 +196,15 @@ export default function SocialMediaPage() {
       const data = await response.json();
       if (data.strategy) {
         setStrategy(data.strategy);
-        setStrategyForm({
-          target_audience: data.strategy.target_audience || '',
-          brand_voice: data.strategy.brand_voice || '',
+        setDetectedInfo({
+          niche: data.strategy.niche,
+          audience: data.strategy.target_audience,
+          voice: data.strategy.brand_voice,
           goals: data.strategy.goals || [],
         });
       } else {
         setStrategy(null);
+        setDetectedInfo(null);
       }
     } catch (error) {
       console.error('Failed to load strategy:', error);
@@ -217,11 +221,6 @@ export default function SocialMediaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: selectedProject.id,
-          website_url: selectedProject.website_url,
-          niche: selectedProject.niche,
-          target_audience: strategyForm.target_audience,
-          brand_voice: strategyForm.brand_voice,
-          goals: strategyForm.goals,
         }),
       });
 
@@ -229,6 +228,7 @@ export default function SocialMediaPage() {
       if (data.success) {
         setStrategy(data.strategy);
         setContentIdeas(data.content_ideas || []);
+        setDetectedInfo(data.detected || null);
       } else {
         alert(data.error || 'Er ging iets mis');
       }
@@ -303,7 +303,7 @@ export default function SocialMediaPage() {
           post_type: ideaType || postType,
           platforms: selectedPlatforms,
           language: selectedProject.language || 'nl',
-          niche: selectedProject.niche || '',
+          niche: strategy?.niche || selectedProject.niche || '',
           website_url: selectedProject.website_url,
           strategy: strategy ? {
             brand_voice: strategy.brand_voice,
@@ -404,23 +404,6 @@ export default function SocialMediaPage() {
     );
   }
 
-  function addGoal() {
-    if (newGoal.trim() && !strategyForm.goals.includes(newGoal.trim())) {
-      setStrategyForm(prev => ({
-        ...prev,
-        goals: [...prev.goals, newGoal.trim()],
-      }));
-      setNewGoal('');
-    }
-  }
-
-  function removeGoal(goal: string) {
-    setStrategyForm(prev => ({
-      ...prev,
-      goals: prev.goals.filter(g => g !== goal),
-    }));
-  }
-
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('nl-NL', {
       day: 'numeric',
@@ -447,7 +430,7 @@ export default function SocialMediaPage() {
             <h1 className="text-3xl font-bold flex items-center gap-3">
               📱 Social Media
             </h1>
-            <p className="text-gray-400 mt-1">Strategie, planning en post generatie</p>
+            <p className="text-gray-400 mt-1">AI-powered strategie en content</p>
           </div>
 
           {/* Project selector */}
@@ -494,81 +477,27 @@ export default function SocialMediaPage() {
         {/* Strategy Tab */}
         {activeTab === 'strategy' && (
           <div className="space-y-6">
-            {/* Strategy Form */}
+            {/* Generate Strategy Button */}
             {!strategy && (
-              <div className="bg-gray-800 rounded-xl p-6">
-                <h2 className="text-xl font-semibold mb-4">🎯 Genereer Content Strategie</h2>
-                <p className="text-gray-400 mb-6">
-                  Laat AI een complete social media strategie maken op basis van jouw bedrijf en doelen.
+              <div className="bg-gray-800 rounded-xl p-8 text-center">
+                <div className="text-6xl mb-4">🚀</div>
+                <h2 className="text-2xl font-bold mb-2">Genereer je Social Media Strategie</h2>
+                <p className="text-gray-400 mb-6 max-w-lg mx-auto">
+                  AI analyseert automatisch je website en genereert een complete contentstrategie 
+                  met content pillars, weekschema, hashtags en 15+ content ideeën.
                 </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Doelgroep</label>
-                    <textarea
-                      value={strategyForm.target_audience}
-                      onChange={(e) => setStrategyForm(prev => ({ ...prev, target_audience: e.target.value }))}
-                      rows={3}
-                      placeholder="Bijv. Ondernemers tussen 25-45 jaar die hun online aanwezigheid willen verbeteren"
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 resize-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Brand Voice</label>
-                    <textarea
-                      value={strategyForm.brand_voice}
-                      onChange={(e) => setStrategyForm(prev => ({ ...prev, brand_voice: e.target.value }))}
-                      rows={3}
-                      placeholder="Bijv. Professioneel maar toegankelijk, met een vleugje humor"
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 resize-none"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm text-gray-400 mb-2">Doelen</label>
-                    <div className="flex gap-2 mb-3">
-                      <input
-                        type="text"
-                        value={newGoal}
-                        onChange={(e) => setNewGoal(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && addGoal()}
-                        placeholder="Bijv. Meer website traffic"
-                        className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500"
-                      />
-                      <button
-                        onClick={addGoal}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition"
-                      >
-                        Toevoegen
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {strategyForm.goals.map(goal => (
-                        <span
-                          key={goal}
-                          className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                        >
-                          {goal}
-                          <button onClick={() => removeGoal(goal)} className="hover:text-white">×</button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
                 <button
                   onClick={generateStrategy}
                   disabled={generatingStrategy}
-                  className="mt-6 w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 text-white font-semibold px-8 py-4 rounded-xl transition flex items-center justify-center gap-2 mx-auto text-lg"
                 >
                   {generatingStrategy ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                      Strategie genereren...
+                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>
+                      AI analyseert je website...
                     </>
                   ) : (
-                    <>🚀 Genereer Strategie</>
+                    <>🤖 Genereer Strategie met AI</>
                   )}
                 </button>
               </div>
@@ -577,18 +506,56 @@ export default function SocialMediaPage() {
             {/* Strategy Display */}
             {strategy && (
               <>
+                {/* Detected Info */}
+                {detectedInfo && (
+                  <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-semibold flex items-center gap-2">
+                        🤖 AI Analyse
+                      </h2>
+                      <button
+                        onClick={generateStrategy}
+                        disabled={generatingStrategy}
+                        className="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition flex items-center gap-2"
+                      >
+                        {generatingStrategy ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                            Bezig...
+                          </>
+                        ) : (
+                          <>🔄 Opnieuw analyseren</>
+                        )}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <div className="text-sm text-orange-400 mb-1">Niche</div>
+                        <div className="font-medium">{detectedInfo.niche}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-orange-400 mb-1">Doelgroep</div>
+                        <div className="font-medium text-sm">{detectedInfo.audience}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-orange-400 mb-1">Brand Voice</div>
+                        <div className="font-medium text-sm">{detectedInfo.voice}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-orange-400 mb-1">Doelen</div>
+                        <div className="flex flex-wrap gap-1">
+                          {detectedInfo.goals?.slice(0, 3).map((goal, i) => (
+                            <span key={i} className="text-xs bg-gray-700 px-2 py-1 rounded">{goal}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Content Pillars */}
                 <div className="bg-gray-800 rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">🎯 Content Pillars</h2>
-                    <button
-                      onClick={generateStrategy}
-                      disabled={generatingStrategy}
-                      className="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition"
-                    >
-                      {generatingStrategy ? 'Bezig...' : '🔄 Regenereer'}
-                    </button>
-                  </div>
+                  <h2 className="text-xl font-semibold mb-4">🎯 Content Pillars</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {strategy.content_pillars?.map((pillar, index) => (
                       <div key={index} className="bg-gray-700 rounded-lg p-4">
@@ -621,8 +588,8 @@ export default function SocialMediaPage() {
                           {schedule ? (
                             <>
                               <div className="text-xs text-gray-400">{schedule.best_time}</div>
-                              <div className="text-sm mt-1">{schedule.post_type}</div>
-                              <div className="text-xs text-gray-500 mt-1">{schedule.pillar}</div>
+                              <div className="text-sm mt-1 font-medium">{schedule.post_type}</div>
+                              <div className="text-xs text-gray-500 mt-1 truncate">{schedule.pillar}</div>
                             </>
                           ) : (
                             <div className="text-xs text-gray-500">Geen post</div>
@@ -633,7 +600,7 @@ export default function SocialMediaPage() {
                   </div>
                 </div>
 
-                {/* Post Types Mix */}
+                {/* Post Types Mix & Hashtags */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-gray-800 rounded-xl p-6">
                     <h2 className="text-xl font-semibold mb-4">📊 Post Types Mix</h2>
@@ -696,8 +663,8 @@ export default function SocialMediaPage() {
                 {/* Content Ideas */}
                 {contentIdeas.length > 0 && (
                   <div className="bg-gray-800 rounded-xl p-6">
-                    <h2 className="text-xl font-semibold mb-4">💡 Content Ideeën</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h2 className="text-xl font-semibold mb-4">💡 Content Ideeën ({contentIdeas.length})</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {contentIdeas.map((idea, index) => (
                         <div key={index} className="bg-gray-700 rounded-lg p-4">
                           <div className="flex items-center gap-2 mb-2">
@@ -718,7 +685,7 @@ export default function SocialMediaPage() {
                           <button
                             onClick={() => generatePost(idea.title, idea.type.toLowerCase())}
                             disabled={generating}
-                            className="text-sm bg-orange-500 hover:bg-orange-600 disabled:opacity-50 px-4 py-2 rounded-lg transition"
+                            className="w-full text-sm bg-orange-500 hover:bg-orange-600 disabled:opacity-50 px-4 py-2 rounded-lg transition"
                           >
                             {generating ? 'Bezig...' : '✨ Maak Post'}
                           </button>
@@ -867,6 +834,11 @@ export default function SocialMediaPage() {
                     <p className="text-4xl mb-4">📱</p>
                     <p>Nog geen posts gegenereerd</p>
                     <p className="text-sm mt-2">Vul een topic in en klik op "Genereer Post"</p>
+                    {strategy && contentIdeas.length > 0 && (
+                      <p className="text-sm mt-2 text-orange-400">
+                        Of gebruik een content idee uit je strategie!
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
