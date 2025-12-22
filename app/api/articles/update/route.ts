@@ -1,11 +1,9 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { generateAICompletion, generateJSONCompletion } from '@/lib/ai-client';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
 
 export async function POST(request: Request) {
   try {
@@ -19,126 +17,160 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { article_id } = body;
+    const { 
+      id,           // Optional - if provided, update existing article
+      article_id,   // Alternative name for id (backwards compatibility)
+      title, 
+      content, 
+      project_id, 
+      status = 'draft',
+      slug,
+      published_at,
+      excerpt,
+      featured_image,
+      meta_title,
+      meta_description,
+      focus_keyword
+    } = body;
 
-    if (!article_id) {
+    // Use id or article_id
+    const articleId = id || article_id;
+
+    // If we have an article ID, update existing article
+    if (articleId) {
+      // Get article with project to verify ownership
+      const { data: article, error: articleError } = await supabase
+        .from('articles')
+        .select(`
+          *,
+          project:projects(*)
+        `)
+        .eq('id', articleId)
+        .single();
+
+      if (articleError || !article) {
+        return NextResponse.json(
+          { error: 'Article not found' },
+          { status: 404 }
+        );
+      }
+
+      // Verify project belongs to user
+      if (article.project?.user_id !== user.id) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+
+      // Build update object with only provided fields
+      const updateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (title !== undefined) updateData.title = title;
+      if (content !== undefined) updateData.content = content;
+      if (status !== undefined) updateData.status = status;
+      if (slug !== undefined) updateData.slug = slug;
+      if (published_at !== undefined) updateData.published_at = published_at;
+      if (excerpt !== undefined) updateData.excerpt = excerpt;
+      if (featured_image !== undefined) updateData.featured_image = featured_image;
+      if (meta_title !== undefined) updateData.meta_title = meta_title;
+      if (meta_description !== undefined) updateData.meta_description = meta_description;
+      if (focus_keyword !== undefined) updateData.focus_keyword = focus_keyword;
+
+      // Update article in database
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update(updateData)
+        .eq('id', articleId);
+
+      if (updateError) {
+        console.error('Database error:', updateError);
+        return NextResponse.json(
+          { error: 'Failed to update article' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Article updated successfully',
+        article_id: articleId
+      });
+    }
+
+    // No article ID - create new article
+    if (!title || !content || !project_id) {
       return NextResponse.json(
-        { error: 'Article ID is required' },
+        { error: 'Title, content, and project_id are required for new articles' },
         { status: 400 }
       );
     }
 
-    // Get article with project
-    const { data: article, error: articleError } = await supabase
-      .from('articles')
-      .select(`
-        *,
-        project:projects(*)
-      `)
-      .eq('id', article_id)
+    // Verify project belongs to user
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', project_id)
+      .eq('user_id', user.id)
       .single();
 
-    if (articleError || !article) {
+    if (projectError || !project) {
       return NextResponse.json(
-        { error: 'Article not found' },
+        { error: 'Project not found or unauthorized' },
         { status: 404 }
       );
     }
 
-    // Verify project belongs to user
-    if (article.project.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
-    }
+    // Generate slug if not provided
+    const articleSlug = slug || title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
 
-    // Generate updated content with AI
-    const prompt = `Update and improve the following blog article while keeping the same topic and main message. Make it more engaging, add fresh insights, and improve SEO optimization.
+    // Calculate word count
+    const wordCount = content.split(/\s+/).filter((w: string) => w.length > 0).length;
 
-Original Title: ${article.title}
-
-Original Content:
-${article.content}
-
-Requirements:
-- Keep the same topic and core message
-- Add new information or perspectives
-- Improve readability and engagement
-- Enhance SEO optimization
-- Keep approximately the same length
-- Write in Dutch language
-- Format as HTML with proper heading tags
-
-Provide the updated content:`;
-
-    const completion = await generateAICompletion({
-      task: 'content',
-      systemPrompt: 'You are an expert SEO content writer who updates and improves blog articles in Dutch. You always format your output as clean HTML.',
-      userPrompt: prompt,
-      temperature: 0.7,
-      maxTokens: 4000,
-    });
-
-    const updatedContent = completion || article.content;
-
-    // Update article in database
-    const { error: updateError } = await supabase
+    // Create new article
+    const { data: newArticle, error: insertError } = await supabase
       .from('articles')
-      .update({
-        content: updatedContent,
+      .insert({
+        title,
+        content,
+        project_id,
+        status,
+        slug: articleSlug,
+        excerpt: excerpt || content.substring(0, 160).replace(/<[^>]*>/g, ''),
+        featured_image: featured_image || null,
+        meta_title: meta_title || title,
+        meta_description: meta_description || content.substring(0, 160).replace(/<[^>]*>/g, ''),
+        focus_keyword: focus_keyword || null,
+        published_at: status === 'published' ? (published_at || new Date().toISOString()) : null,
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', article_id);
+      .select()
+      .single();
 
-    if (updateError) {
-      console.error('Database error:', updateError);
+    if (insertError) {
+      console.error('Database error:', insertError);
       return NextResponse.json(
-        { error: 'Failed to update article' },
+        { error: `Failed to create article: ${insertError.message}` },
         { status: 500 }
       );
     }
 
-    // If article is published, update on WordPress
-    if (article.status === 'published' && article.project.wp_url) {
-      try {
-        // First, get WordPress posts to find the matching one
-        const wpListResponse = await fetch(`${article.project.wp_url}/posts?search=${encodeURIComponent(article.title)}&per_page=1`, {
-          headers: {
-            'Authorization': 'Basic ' + Buffer.from(`${article.project.wp_username}:${article.project.wp_password}`).toString('base64'),
-          },
-        });
-
-        if (wpListResponse.ok) {
-          const wpPosts = await wpListResponse.json();
-          if (wpPosts.length > 0) {
-            const wpPostId = wpPosts[0].id;
-
-            // Update the WordPress post
-            await fetch(`${article.project.wp_url}/posts/${wpPostId}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + Buffer.from(`${article.project.wp_username}:${article.project.wp_password}`).toString('base64'),
-              },
-              body: JSON.stringify({
-                content: updatedContent,
-              }),
-            });
-          }
-        }
-      } catch (wpError) {
-        console.error('WordPress update error:', wpError);
-        // Continue even if WordPress update fails
-      }
-    }
-
     return NextResponse.json({
       success: true,
-      message: 'Article updated successfully',
+      message: 'Article created successfully',
+      article: newArticle,
+      article_id: newArticle.id,
+      word_count: wordCount
     });
+
   } catch (error: any) {
-    console.error('Error updating article:', error);
+    console.error('Error in articles/update:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }

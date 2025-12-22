@@ -23,6 +23,7 @@ export default function WriterPage() {
   const [idea, setIdea] = useState<ContentIdea | null>(null);
   const [article, setArticle] = useState<Article | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const savedIdea = localStorage.getItem('selectedIdea');
@@ -38,6 +39,8 @@ export default function WriterPage() {
     if (!idea) return;
     
     setGenerating(true);
+    setError(null);
+    
     try {
       const response = await fetch('/api/generate/article', {
         method: 'POST',
@@ -51,22 +54,30 @@ export default function WriterPage() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to generate article');
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate article');
+      }
+
+      // Handle different response formats
       const generatedArticle = {
-        title: idea.title,
+        title: data.title || idea.title,
         content: data.content || data.article || '',
-        word_count: data.word_count || 1500,
+        word_count: data.word_count || (data.content || data.article || '').split(/\s+/).length,
         project_id: idea.project_id
       };
       
+      if (!generatedArticle.content) {
+        throw new Error('Geen content ontvangen van AI');
+      }
+      
       setArticle(generatedArticle);
       localStorage.setItem('generatedArticle', JSON.stringify(generatedArticle));
-      alert('✅ Artikel geschreven!');
-    } catch (error) {
-      console.error('Generate error:', error);
-      alert('❌ Fout bij genereren artikel');
+      
+    } catch (err: any) {
+      console.error('Generate error:', err);
+      setError(err.message || 'Fout bij genereren artikel');
     } finally {
       setGenerating(false);
     }
@@ -79,6 +90,12 @@ export default function WriterPage() {
 
   function goBack() {
     router.push('/dashboard/content-plan');
+  }
+
+  function retryGeneration() {
+    setError(null);
+    setArticle(null);
+    generateArticle();
   }
 
   if (!idea) {
@@ -119,26 +136,45 @@ export default function WriterPage() {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">❌</div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-red-400 mb-2">Fout bij genereren</h3>
+                <p className="text-gray-400 mb-4">{error}</p>
+                <button
+                  onClick={retryGeneration}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                >
+                  🔄 Opnieuw proberen
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
             <div className="text-4xl font-bold text-orange-500 mb-2">
-              {article ? article.word_count : '~1500'}
+              {article ? article.word_count.toLocaleString() : '~1500'}
             </div>
             <div className="text-gray-400">Verwacht Aantal Woorden</div>
           </div>
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
             <div className="text-4xl font-bold text-white mb-2">
-              {article ? '✓' : '○'}
+              {article ? '✓' : generating ? '⏳' : '○'}
             </div>
             <div className="text-gray-400">
-              {article ? 'Artikel Klaar' : 'Nog Niet Geschreven'}
+              {article ? 'Artikel Klaar' : generating ? 'Bezig met schrijven...' : 'Nog Niet Geschreven'}
             </div>
           </div>
         </div>
 
         {/* Generate Button */}
-        {!article && (
+        {!article && !error && (
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 text-center mb-8">
             <div className="text-6xl mb-4">🤖</div>
             <h2 className="text-2xl font-bold text-white mb-4">AI Schrijft Artikel</h2>
@@ -152,6 +188,11 @@ export default function WriterPage() {
             >
               {generating ? '⏳ AI aan het schrijven...' : '🚀 Schrijf Artikel'}
             </button>
+            {generating && (
+              <p className="text-gray-500 mt-4 text-sm">
+                Dit kan 30-60 seconden duren...
+              </p>
+            )}
           </div>
         )}
 
@@ -162,15 +203,18 @@ export default function WriterPage() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-white">✅ Artikel Geschreven</h2>
                 <div className="text-orange-400 font-medium">
-                  📝 {article.word_count} woorden
+                  📝 {article.word_count.toLocaleString()} woorden
                 </div>
               </div>
               
               <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-6 mb-6 max-h-96 overflow-y-auto">
                 <h3 className="text-xl font-bold text-white mb-4">{article.title}</h3>
-                <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                  {article.content.substring(0, 800)}...
-                </div>
+                <div 
+                  className="text-gray-300 leading-relaxed prose prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ 
+                    __html: article.content.substring(0, 1500) + (article.content.length > 1500 ? '...' : '')
+                  }}
+                />
               </div>
 
               <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-6">
@@ -179,12 +223,20 @@ export default function WriterPage() {
                 </p>
               </div>
 
-              <button
-                onClick={goToEditor}
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
-              >
-                Volgende: Editor →
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={goToEditor}
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                >
+                  Volgende: Editor →
+                </button>
+                <button
+                  onClick={retryGeneration}
+                  className="px-6 py-4 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-all"
+                >
+                  🔄 Opnieuw
+                </button>
+              </div>
             </div>
           </div>
         )}

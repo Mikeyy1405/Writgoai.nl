@@ -18,28 +18,30 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { project_id, topic, keywords, tone, length } = body;
+    const { project_id, topic, keywords, tone = 'professional', length = 'medium' } = body;
 
-    if (!project_id || !topic) {
+    if (!topic) {
       return NextResponse.json(
-        { error: 'Project ID and topic are required' },
+        { error: 'Topic is required' },
         { status: 400 }
       );
     }
 
-    // Verify project belongs to user
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', project_id)
-      .eq('user_id', user.id)
-      .single();
+    // If project_id is provided, verify it belongs to user
+    if (project_id) {
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', project_id)
+        .eq('user_id', user.id)
+        .single();
 
-    if (projectError || !project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+      if (projectError || !project) {
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        );
+      }
     }
 
     // Determine word count based on length
@@ -53,44 +55,85 @@ export async function POST(request: Request) {
     // Get current date dynamically
     const now = new Date();
     const currentYear = now.getFullYear();
+    const nextYear = currentYear + 1;
+    const currentMonth = now.toLocaleDateString('nl-NL', { month: 'long' });
 
-    // Generate content with OpenAI
-    const prompt = `Current date: ${now.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })}
+    // Generate content with AI
+    const prompt = `Huidige datum: ${now.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
 
-Write a comprehensive, SEO-optimized blog article about: "${topic}"
+Schrijf een uitgebreid, SEO-geoptimaliseerd blog artikel over: "${topic}"
 
-${keywords ? `Focus on these keywords: ${keywords}` : ''}
+${keywords ? `Focus keywords: ${keywords}` : ''}
 
-Requirements:
-- Tone: ${tone}
-- Length: approximately ${targetWords} words
-- Include an engaging introduction
-- Use headers (H2, H3) to structure the content
-- Include practical tips and actionable advice
-- Write in Dutch language
-- Make it SEO-friendly with natural keyword usage
-- End with a strong conclusion
-- Use CURRENT information and trends from ${currentYear}
-- Avoid outdated information from previous years
+VEREISTEN:
+- Toon: ${tone}
+- Lengte: minimaal ${targetWords} woorden
+- Taal: Nederlands
+- Actualiteit: Focus op ${currentYear}-${nextYear} informatie
 
-Format the output as HTML with proper heading tags (<h2>, <h3>, <p>, <ul>, <li>, etc.).`;
+STRUCTUUR:
+1. Pakkende introductie die de lezer direct aanspreekt
+2. Duidelijke H2 en H3 headers voor structuur
+3. Praktische tips en actionable advies
+4. Voorbeelden en concrete use cases
+5. FAQ sectie met 3-5 veelgestelde vragen
+6. Sterke conclusie met call-to-action
+
+SEO OPTIMALISATIE:
+- Gebruik het focus keyword in de eerste 100 woorden
+- Verwerk keywords natuurlijk door de tekst
+- Gebruik bullet points en genummerde lijsten
+- Voeg interne links toe waar relevant
+
+HTML FORMATTING:
+- Gebruik <h2> voor hoofdsecties
+- Gebruik <h3> voor subsecties
+- Gebruik <p> voor paragrafen
+- Gebruik <ul>/<ol> en <li> voor lijsten
+- Gebruik <strong> voor belangrijke termen
+- Gebruik <blockquote> voor quotes
+
+BELANGRIJK:
+- Schrijf originele, waardevolle content
+- Vermijd fluff en vage statements
+- Geef concrete, bruikbare informatie
+- Schrijf voor de Nederlandse markt
+
+Genereer ALLEEN de HTML content, geen markdown code blocks.`;
 
     const content = await generateAICompletion({
       task: 'content',
-      systemPrompt: 'You are an expert SEO content writer who creates engaging, well-structured blog articles in Dutch. You always format your output as clean HTML.',
+      systemPrompt: 'Je bent een expert SEO content writer die engaging, goed gestructureerde blog artikelen schrijft in het Nederlands. Je output is altijd clean HTML zonder markdown formatting.',
       userPrompt: prompt,
       temperature: 0.7,
       maxTokens: 4000,
     });
+
+    // Clean up any markdown formatting
+    const cleanContent = content
+      .replace(/```html\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim();
+
+    if (!cleanContent || cleanContent.length < 100) {
+      throw new Error('AI generated insufficient content');
+    }
     
     // Generate title with AI
-    const title = (await generateAICompletion({
-      task: 'content',
-      systemPrompt: 'You are an expert at writing catchy, SEO-optimized blog titles in Dutch. Respond with only the title, nothing else.',
-      userPrompt: `Create a catchy, SEO-optimized title for an article about: "${topic}"${keywords ? ` (keywords: ${keywords})` : ''}`,
-      temperature: 0.8,
-      maxTokens: 100,
-    })).trim() || topic;
+    let title = topic;
+    try {
+      const titleResponse = await generateAICompletion({
+        task: 'quick',
+        systemPrompt: 'Je bent een expert in het schrijven van pakkende, SEO-geoptimaliseerde blog titels in het Nederlands. Geef alleen de titel terug, geen extra tekst.',
+        userPrompt: `Maak een pakkende, SEO-geoptimaliseerde titel voor een artikel over: "${topic}"${keywords ? ` (keywords: ${keywords})` : ''}. Maximaal 60 karakters.`,
+        temperature: 0.8,
+        maxTokens: 100,
+      });
+      
+      title = titleResponse.trim().replace(/^["']|["']$/g, '') || topic;
+    } catch (titleError) {
+      console.warn('Title generation failed, using topic as title:', titleError);
+    }
 
     // Generate slug from title
     const slug = title
@@ -98,40 +141,46 @@ Format the output as HTML with proper heading tags (<h2>, <h3>, <p>, <ul>, <li>,
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    // Save to database
-    const { data: article, error: dbError } = await supabase
-      .from('articles')
-      .insert({
-        project_id,
-        title,
-        slug,
-        content,
-        status: 'draft',
-      })
-      .select()
-      .single();
+    // Calculate word count
+    const wordCount = cleanContent.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
 
-    if (dbError) {
-      console.error('Database error:', dbError);
-      return NextResponse.json(
-        { error: 'Failed to save article' },
-        { status: 500 }
-      );
+    // Save to database if project_id is provided
+    let articleId = null;
+    if (project_id) {
+      const { data: article, error: dbError } = await supabase
+        .from('articles')
+        .insert({
+          project_id,
+          title,
+          slug,
+          content: cleanContent,
+          excerpt: cleanContent.replace(/<[^>]*>/g, '').substring(0, 160),
+          status: 'draft',
+          meta_title: title,
+          meta_description: cleanContent.replace(/<[^>]*>/g, '').substring(0, 160),
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        // Don't fail the request, just log the error
+      } else {
+        articleId = article?.id;
+      }
     }
 
-    // Count words
-    const wordCount = content.split(/\s+/).length;
-
     return NextResponse.json({
-      article_id: article.id,
+      success: true,
+      article_id: articleId,
       title,
-      content,
+      content: cleanContent,
       word_count: wordCount,
     });
   } catch (error: any) {
     console.error('Error generating article:', error);
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: error.message || 'Failed to generate article' },
       { status: 500 }
     );
   }

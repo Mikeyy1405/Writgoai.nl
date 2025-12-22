@@ -7,16 +7,19 @@ interface Article {
   id: string;
   title: string;
   content: string;
-  word_count: number;
   project_id: string;
   status: 'draft' | 'published';
   created_at: string;
+  slug?: string;
+  excerpt?: string;
 }
 
 interface Project {
   id: string;
   name: string;
   website_url: string;
+  wp_url?: string;
+  wp_username?: string;
 }
 
 export default function LibraryPage() {
@@ -26,6 +29,8 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -33,6 +38,7 @@ export default function LibraryPage() {
 
   async function loadData() {
     setLoading(true);
+    setError(null);
     try {
       // Load articles
       const articlesRes = await fetch('/api/articles/list');
@@ -47,8 +53,9 @@ export default function LibraryPage() {
         const projectsData = await projectsRes.json();
         setProjects(projectsData.projects || []);
       }
-    } catch (error) {
-      console.error('Failed to load data:', error);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setError('Fout bij laden data');
     } finally {
       setLoading(false);
     }
@@ -63,20 +70,22 @@ export default function LibraryPage() {
     return project?.name || 'Onbekend Project';
   }
 
+  function isWordPressConfigured(projectId: string) {
+    const project = getProject(projectId);
+    return project?.wp_url && project?.wp_username;
+  }
+
   function isWritGoBlog(projectId: string) {
     const project = getProject(projectId);
     if (!project) return false;
-    
-    // Check if URL contains writgo.nl
     return project.website_url.toLowerCase().includes('writgo.nl');
   }
 
   function openEditor(article: Article) {
-    // Set article in localStorage and navigate to editor
     localStorage.setItem('generatedArticle', JSON.stringify({
       title: article.title,
       content: article.content,
-      word_count: article.word_count,
+      word_count: article.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length,
       project_id: article.project_id
     }));
     
@@ -91,53 +100,63 @@ export default function LibraryPage() {
   async function publishArticle(article: Article) {
     setPublishing(true);
     setSelectedArticle(article);
+    setError(null);
     
     try {
       const isWritGo = isWritGoBlog(article.project_id);
+      const hasWordPress = isWordPressConfigured(article.project_id);
       
       if (isWritGo) {
-        // WritGo Blog - publish to app blog
+        // WritGo Blog - update status to published
         const response = await fetch('/api/articles/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: article.id,
-            title: article.title,
-            content: article.content,
-            word_count: article.word_count,
-            project_id: article.project_id,
             status: 'published',
-            slug: article.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-            published_at: new Date().toISOString()
+            published_at: new Date().toISOString(),
+            slug: article.slug || article.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
           })
         });
 
-        if (!response.ok) throw new Error('Failed to publish to blog');
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to publish');
+        }
 
-        alert(`✅ Artikel gepubliceerd op WritGo Blog!\n\nBekijk op: /blog`);
-      } else {
-        // Other projects - publish to WordPress
+        alert(`✅ Artikel gepubliceerd op WritGo Blog!`);
+      } else if (hasWordPress) {
+        // WordPress - publish via API
         const response = await fetch('/api/wordpress/publish', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: article.title,
-            content: article.content,
-            project_id: article.project_id
+            project_id: article.project_id,
+            article_id: article.id
           })
         });
 
-        if (!response.ok) throw new Error('Failed to publish to WordPress');
-
         const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to publish to WordPress');
+        }
+
         alert(`✅ Artikel gepubliceerd op WordPress!\n\n${data.url || 'Bekijk op je website'}`);
+      } else {
+        // No WordPress configured
+        alert('⚠️ WordPress is niet geconfigureerd voor dit project.\n\nGa naar Projecten om WordPress credentials toe te voegen, of download het artikel als HTML.');
+        setPublishing(false);
+        setSelectedArticle(null);
+        return;
       }
       
       // Reload articles
       loadData();
-    } catch (error) {
-      console.error('Publish error:', error);
-      alert('❌ Fout bij publiceren. Check je instellingen.');
+    } catch (err: any) {
+      console.error('Publish error:', err);
+      setError(err.message || 'Fout bij publiceren');
+      alert(`❌ ${err.message || 'Fout bij publiceren'}`);
     } finally {
       setPublishing(false);
       setSelectedArticle(null);
@@ -145,6 +164,8 @@ export default function LibraryPage() {
   }
 
   function downloadArticle(article: Article) {
+    const wordCount = article.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
+    
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="nl">
@@ -154,24 +175,44 @@ export default function LibraryPage() {
     <title>${article.title}</title>
     <style>
         body { 
-            font-family: Arial, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 800px; 
             margin: 50px auto; 
             padding: 20px; 
-            line-height: 1.6; 
+            line-height: 1.8;
+            color: #333;
         }
-        h1 { color: #333; margin-bottom: 20px; }
-        .meta { color: #666; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #eee; }
-        .content { color: #444; }
+        h1 { color: #1a1a1a; margin-bottom: 20px; font-size: 2.5em; }
+        h2 { color: #333; margin-top: 40px; font-size: 1.8em; }
+        h3 { color: #444; margin-top: 30px; font-size: 1.4em; }
+        p { margin-bottom: 1.2em; }
+        ul, ol { margin-bottom: 1.2em; padding-left: 2em; }
+        li { margin-bottom: 0.5em; }
+        blockquote { 
+            border-left: 4px solid #f97316; 
+            padding-left: 20px; 
+            margin: 20px 0;
+            color: #666;
+            font-style: italic;
+        }
+        strong { color: #1a1a1a; }
+        .meta { 
+            color: #666; 
+            margin-bottom: 30px; 
+            padding-bottom: 20px; 
+            border-bottom: 2px solid #eee;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
     <h1>${article.title}</h1>
     <div class="meta">
-        <strong>Woorden:</strong> ${article.word_count}<br>
-        <strong>Project:</strong> ${getProjectName(article.project_id)}
+        <strong>Woorden:</strong> ${wordCount.toLocaleString()}<br>
+        <strong>Project:</strong> ${getProjectName(article.project_id)}<br>
+        <strong>Datum:</strong> ${new Date(article.created_at).toLocaleDateString('nl-NL')}
     </div>
-    <div class="content">${article.content.replace(/\n/g, '<br><br>')}</div>
+    <div class="content">${article.content}</div>
 </body>
 </html>
     `;
@@ -185,8 +226,18 @@ export default function LibraryPage() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  }
 
-    alert('✅ Artikel gedownload!');
+  function copyToClipboard(article: Article) {
+    // Strip HTML tags for plain text
+    const plainText = article.content.replace(/<[^>]*>/g, '\n').replace(/\n\s*\n/g, '\n\n').trim();
+    const fullText = `${article.title}\n\n${plainText}`;
+    
+    navigator.clipboard.writeText(fullText).then(() => {
+      alert('✅ Artikel gekopieerd naar klembord!');
+    }).catch(() => {
+      alert('❌ Kon niet kopiëren. Probeer handmatig te kopiëren.');
+    });
   }
 
   if (loading) {
@@ -199,7 +250,10 @@ export default function LibraryPage() {
 
   const draftCount = articles.filter(a => a.status === 'draft').length;
   const publishedCount = articles.filter(a => a.status === 'published').length;
-  const totalWords = articles.reduce((sum, a) => sum + a.word_count, 0);
+  const totalWords = articles.reduce((sum, a) => {
+    const count = a.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
+    return sum + count;
+  }, 0);
 
   return (
     <div className="p-6 lg:p-12">
@@ -210,6 +264,16 @@ export default function LibraryPage() {
             Beheer al je opgeslagen content
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <p className="text-red-400">{error}</p>
+              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">✕</button>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -250,6 +314,9 @@ export default function LibraryPage() {
           <div className="space-y-4">
             {articles.map((article) => {
               const isWritGo = isWritGoBlog(article.project_id);
+              const hasWordPress = isWordPressConfigured(article.project_id);
+              const wordCount = article.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
+              
               return (
                 <div
                   key={article.id}
@@ -257,7 +324,7 @@ export default function LibraryPage() {
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <h3 className="text-xl font-bold text-white">{article.title}</h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           article.status === 'published' 
@@ -271,41 +338,59 @@ export default function LibraryPage() {
                             🟠 WritGo Blog
                           </span>
                         )}
+                        {!isWritGo && hasWordPress && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+                            🔗 WordPress
+                          </span>
+                        )}
+                        {!isWritGo && !hasWordPress && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
+                            ○ Geen WP
+                          </span>
+                        )}
                       </div>
                       <div className="flex gap-4 text-sm text-gray-400 mb-3">
-                        <span>📝 {article.word_count} woorden</span>
+                        <span>📝 {wordCount.toLocaleString()} woorden</span>
                         <span>📁 {getProjectName(article.project_id)}</span>
                         <span>📅 {new Date(article.created_at).toLocaleDateString('nl-NL')}</span>
                       </div>
                       <p className="text-gray-400 text-sm line-clamp-2">
-                        {article.content.substring(0, 150)}...
+                        {article.content.replace(/<[^>]*>/g, '').substring(0, 200)}...
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
                     <button
                       onClick={() => openEditor(article)}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                      className="flex-1 min-w-[120px] bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-all"
                     >
                       📝 Bewerken
                     </button>
                     <button
+                      onClick={() => copyToClipboard(article)}
+                      className="flex-1 min-w-[120px] bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                    >
+                      📋 Kopiëren
+                    </button>
+                    <button
                       onClick={() => downloadArticle(article)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                      className="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all"
                     >
                       💾 Download
                     </button>
                     <button
                       onClick={() => publishArticle(article)}
                       disabled={publishing && selectedArticle?.id === article.id}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/50 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                      className="flex-1 min-w-[120px] bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/50 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                     >
                       {publishing && selectedArticle?.id === article.id 
                         ? '⏳ Publiceren...' 
                         : isWritGo 
-                          ? '🚀 Publiceer op Blog' 
-                          : '🚀 Publiceer op WordPress'}
+                          ? '🚀 Publiceer Blog' 
+                          : hasWordPress
+                            ? '🚀 Publiceer WP'
+                            : '🚀 Publiceer'}
                     </button>
                   </div>
                 </div>

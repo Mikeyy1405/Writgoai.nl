@@ -4,10 +4,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CreateProjectModal from '@/components/CreateProjectModal';
 
+interface Project {
+  id: string;
+  name: string;
+  website_url: string;
+  wp_url: string | null;
+  wp_username: string | null;
+  created_at: string;
+}
+
 export default function ProjectsPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadProjects = async () => {
@@ -32,6 +41,10 @@ export default function ProjectsPage() {
   const handleSuccess = () => {
     loadProjects();
     router.refresh();
+  };
+
+  const isWordPressConnected = (project: Project) => {
+    return project.wp_url && project.wp_username;
   };
 
   return (
@@ -91,7 +104,11 @@ export default function ProjectsPage() {
                     </h3>
                     <p className="text-gray-400 mb-4">{project.website_url}</p>
                     <div className="flex items-center space-x-4 text-sm">
-                      <span className="text-green-500">✓ WordPress verbonden</span>
+                      {isWordPressConnected(project) ? (
+                        <span className="text-green-500">✓ WordPress verbonden</span>
+                      ) : (
+                        <span className="text-gray-500">○ Geen WordPress koppeling</span>
+                      )}
                       <span className="text-gray-500">
                         Toegevoegd: {new Date(project.created_at).toLocaleDateString('nl-NL')}
                       </span>
@@ -99,7 +116,11 @@ export default function ProjectsPage() {
                   </div>
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => router.push(`/dashboard/generate?project=${project.id}`)}
+                      onClick={() => {
+                        // Store project in localStorage and go to content plan
+                        localStorage.setItem('selectedProject', JSON.stringify(project));
+                        router.push('/dashboard/content-plan');
+                      }}
                       className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
                     >
                       Genereer Content

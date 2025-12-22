@@ -1,16 +1,26 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
+// Get API key - support multiple env var names for flexibility
+const getApiKey = () => {
+  return process.env.AIML_API_KEY || 
+         process.env.ANTHROPIC_API_KEY || 
+         process.env.OPENAI_API_KEY || 
+         '';
+};
+
+const apiKey = getApiKey();
+
 // Anthropic client via AIML API (for Claude models)
 export const anthropicClient = new Anthropic({
-  baseURL: 'https://api.aimlapi.com/',
-  apiKey: process.env.AIML_API_KEY || '',
+  baseURL: process.env.AIML_BASE_URL || 'https://api.aimlapi.com/',
+  apiKey: apiKey,
 });
 
 // OpenAI-compatible client via AIML API (for Perplexity and other models)
 export const openaiClient = new OpenAI({
-  apiKey: process.env.AIML_API_KEY || '',
-  baseURL: 'https://api.aimlapi.com/v1',
+  apiKey: apiKey,
+  baseURL: process.env.OPENAI_BASE_URL || 'https://api.aimlapi.com/v1',
 });
 
 // For backwards compatibility
@@ -54,6 +64,12 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
 
   const selectedModel = model || modelMap[task];
 
+  // Check if API key is configured
+  if (!apiKey) {
+    console.error('No AI API key configured. Please set AIML_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY');
+    throw new Error('AI API key not configured. Please check environment variables.');
+  }
+
   try {
     // Use Anthropic SDK for Claude models
     if (selectedModel.includes('claude')) {
@@ -89,6 +105,18 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
     return completion.choices[0]?.message?.content || '';
   } catch (error: any) {
     console.error('AI completion error:', error);
+    
+    // Provide more helpful error messages
+    if (error.status === 401) {
+      throw new Error('AI API authentication failed. Please check your API key.');
+    }
+    if (error.status === 429) {
+      throw new Error('AI API rate limit exceeded. Please try again later.');
+    }
+    if (error.status === 500) {
+      throw new Error('AI API server error. Please try again later.');
+    }
+    
     throw new Error(`AI generation failed: ${error.message}`);
   }
 }
@@ -97,11 +125,17 @@ export async function generateJSONCompletion<T>(options: GenerateOptions): Promi
   const content = await generateAICompletion(options);
   
   try {
-    const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/```\n?([\s\S]*?)\n?```/);
-    const jsonString = jsonMatch ? jsonMatch[1] : content;
+    // Try to extract JSON from various formats
+    const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || 
+                      content.match(/```\n?([\s\S]*?)\n?```/) ||
+                      content.match(/\[[\s\S]*\]/) ||
+                      content.match(/\{[\s\S]*\}/);
+    
+    const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
     return JSON.parse(jsonString.trim());
   } catch (error) {
     console.error('JSON parsing error:', error);
+    console.error('Raw content:', content.substring(0, 500));
     throw new Error('Failed to parse AI response as JSON');
   }
 }

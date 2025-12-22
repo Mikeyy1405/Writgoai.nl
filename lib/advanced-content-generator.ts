@@ -1,4 +1,4 @@
-import { anthropicClient } from '@/lib/ai-client';
+import { generateAICompletion } from '@/lib/ai-client';
 
 interface ContentOpportunity {
   title: string;
@@ -7,6 +7,7 @@ interface ContentOpportunity {
     description?: string;
     published?: string;
     author?: string;
+    topic?: string;
   };
 }
 
@@ -22,10 +23,29 @@ interface GeneratedContent {
   wordCount: number;
 }
 
+// Get current date info for dynamic content
+function getCurrentDateInfo() {
+  const now = new Date();
+  const months = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 
+                  'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+  return {
+    day: now.getDate(),
+    month: months[now.getMonth()],
+    year: now.getFullYear(),
+    nextYear: now.getFullYear() + 1,
+    fullDate: now.toLocaleDateString('nl-NL', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    })
+  };
+}
+
 export async function generateAdvancedContent(
   opportunity: ContentOpportunity,
   relatedArticles: Array<{ title: string; slug: string }> = []
 ): Promise<GeneratedContent> {
+  const dateInfo = getCurrentDateInfo();
   
   // Build internal links section
   const internalLinksHtml = relatedArticles.length > 0
@@ -35,6 +55,8 @@ export async function generateAdvancedContent(
     : '';
 
   const prompt = `Je bent een expert SEO content writer voor WritGo.nl, een WordPress SEO automatisering platform.
+
+HUIDIGE DATUM: ${dateInfo.fullDate}
 
 BRON ARTIKEL:
 Titel: ${opportunity.title}
@@ -52,6 +74,7 @@ VEREISTEN:
 - **Taal**: Nederlands (geen vertaling, originele content!)
 - **SEO**: Geoptimaliseerd voor featured snippets
 - **E-E-A-T**: Expertise, autoriteit, betrouwbaarheid
+- **Actualiteit**: Gebruik ${dateInfo.year}-${dateInfo.nextYear} informatie
 
 STRUCTUUR (AI OVERVIEW OPTIMIZED):
 
@@ -122,7 +145,7 @@ STRUCTUUR (AI OVERVIEW OPTIMIZED):
    - Key takeaway
    - CTA naar WritGo
 
-8. **Bronnen & Verder Lezen**
+10. **Bronnen & Verder Lezen**
    - Link naar origineel artikel
    - 2-3 gerelateerde bronnen
 
@@ -163,7 +186,7 @@ AI OVERVIEW OPTIMALISATIE (KRITIEK!):
 - ⭐ Tables voor vergelijkingen
 - ⭐ Expert quotes: "Volgens [Bron]..."
 - ⭐ Entities: Noem Google, OpenAI, etc. bij naam
-- ⭐ Dates: Gebruik exacte datums ("Op 15 december 2024...")
+- ⭐ Dates: Gebruik exacte datums ("Op ${dateInfo.day || 15} ${dateInfo.month} ${dateInfo.year}...")
 - ⭐ Numbers: Gebruik cijfers en statistieken
 - ⭐ Semantic richness: Gebruik synoniemen en gerelateerde termen
 
@@ -181,50 +204,43 @@ BELANGRIJK:
 
 OUTPUT:
 Genereer ALLEEN de HTML content. Geen markdown code blocks, geen extra uitleg.
-Begin direct met de eerste <p> van de intro.`;
+Begin direct met de eerste <h2> of <p> van de intro.`;
 
   try {
-    const message = await anthropicClient.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 8000,
+    const content = await generateAICompletion({
+      task: 'content',
+      systemPrompt: 'Je bent een expert SEO content writer die uitgebreide, goed gestructureerde HTML artikelen schrijft in het Nederlands. Genereer alleen HTML content zonder markdown formatting.',
+      userPrompt: prompt,
+      maxTokens: 8000,
       temperature: 0.7,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
     });
 
-    const textContent = message.content.find((block) => block.type === 'text');
-    let content = textContent?.type === 'text' ? textContent.text : '';
-    
     // Clean up markdown code blocks if AI added them
-    content = content.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+    let cleanContent = content.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
 
     // Generate metadata
     const titleMatch = opportunity.title.match(/^(.+?)[\:\-\|]/);
     const cleanTitle = titleMatch ? titleMatch[1].trim() : opportunity.title;
     
     const focusKeyword = cleanTitle.split(' ').slice(0, 3).join(' ').toLowerCase();
-    const articleTitle = `${cleanTitle}: Complete Gids voor 2025`;
-    const metaDescription = `Ontdek alles over ${cleanTitle}. Praktische tips, actie-items en impact op WordPress SEO. ✓ Uitgebreide gids ✓ Expert advies ✓ 2025 updates`;
+    const articleTitle = `${cleanTitle}: Complete Gids voor ${dateInfo.nextYear}`;
+    const metaDescription = `Ontdek alles over ${cleanTitle}. Praktische tips, actie-items en impact op WordPress SEO. ✓ Uitgebreide gids ✓ Expert advies ✓ ${dateInfo.year} updates`;
     
     const excerpt = opportunity.metadata?.description?.substring(0, 160) || 
-                   `Uitgebreide gids over ${cleanTitle} en de impact op WordPress SEO. Inclusief praktische tips en actie-items voor 2025.`;
+                   `Uitgebreide gids over ${cleanTitle} en de impact op WordPress SEO. Inclusief praktische tips en actie-items voor ${dateInfo.nextYear}.`;
 
     // Generate schema markup
-    const schema = generateSchemaMarkup(articleTitle, excerpt, content, opportunity);
+    const schema = generateSchemaMarkup(articleTitle, excerpt, cleanContent, opportunity);
 
     // Extract internal links
-    const internalLinks = extractInternalLinks(content);
+    const internalLinks = extractInternalLinks(cleanContent);
 
     // Count words (rough estimate)
-    const wordCount = content.split(/\s+/).length;
+    const wordCount = cleanContent.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
 
     return {
       title: articleTitle,
-      content,
+      content: cleanContent,
       excerpt,
       focusKeyword,
       metaTitle: articleTitle,

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -67,9 +68,9 @@ export default async function DashboardPage() {
               <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">⚡</span>
               </div>
-              <span className="text-3xl font-bold text-white">0</span>
+              <span className="text-3xl font-bold text-green-500">Actief</span>
             </div>
-            <h3 className="text-gray-400 text-sm font-medium">AutoPilot Actief</h3>
+            <h3 className="text-gray-400 text-sm font-medium">AI Status</h3>
           </div>
         </div>
 
@@ -77,9 +78,12 @@ export default async function DashboardPage() {
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white">Mijn Projecten</h2>
-            <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all">
+            <Link 
+              href="/dashboard/projects"
+              className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+            >
               + Nieuw Project
-            </button>
+            </Link>
           </div>
 
           {projectsWithCounts.length === 0 ? (
@@ -93,9 +97,12 @@ export default async function DashboardPage() {
               <p className="text-gray-400 mb-6">
                 Maak je eerste WordPress project aan om te beginnen met content generatie
               </p>
-              <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all">
+              <Link 
+                href="/dashboard/projects"
+                className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+              >
                 Maak je eerste project
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="space-y-4">
@@ -104,8 +111,8 @@ export default async function DashboardPage() {
                   key={project.id}
                   className="bg-black/50 border border-gray-800 rounded-lg p-6 hover:border-orange-500/50 transition-all"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex-1 min-w-[200px]">
                       <h3 className="text-lg font-semibold text-white mb-1">
                         {project.name}
                       </h3>
@@ -116,18 +123,26 @@ export default async function DashboardPage() {
                         <span className="text-gray-500">
                           📄 {project.articleCount} artikelen
                         </span>
-                        {project.wp_url && (
+                        {project.wp_url && project.wp_username ? (
                           <span className="text-green-500">✓ WordPress verbonden</span>
+                        ) : (
+                          <span className="text-gray-500">○ Geen WordPress</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all">
-                        Beheer
-                      </button>
-                      <button className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all">
-                        Genereer Content
-                      </button>
+                      <Link 
+                        href="/dashboard/library"
+                        className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all"
+                      >
+                        📚 Bibliotheek
+                      </Link>
+                      <Link 
+                        href="/dashboard/content-plan"
+                        className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                      >
+                        ✍️ Genereer Content
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -138,7 +153,10 @@ export default async function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="mt-12 grid md:grid-cols-3 gap-6">
-          <button className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-orange-500/50 transition-all text-left">
+          <Link 
+            href="/dashboard/content-plan"
+            className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-orange-500/50 transition-all text-left block"
+          >
             <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center mb-4">
               <span className="text-2xl">🤖</span>
             </div>
@@ -148,31 +166,64 @@ export default async function DashboardPage() {
             <p className="text-gray-400 text-sm">
               Genereer direct een nieuw artikel met AI
             </p>
-          </button>
+          </Link>
 
-          <button className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-orange-500/50 transition-all text-left">
+          <Link 
+            href="/dashboard/library"
+            className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-orange-500/50 transition-all text-left block"
+          >
             <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center mb-4">
-              <span className="text-2xl">⚡</span>
+              <span className="text-2xl">📚</span>
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">
-              AutoPilot Instellen
+              Bibliotheek
             </h3>
             <p className="text-gray-400 text-sm">
-              Automatisch content genereren op schema
+              Bekijk en beheer al je opgeslagen artikelen
             </p>
-          </button>
+          </Link>
 
-          <button className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-orange-500/50 transition-all text-left">
+          <Link 
+            href="/dashboard/projects"
+            className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-orange-500/50 transition-all text-left block"
+          >
             <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center mb-4">
               <span className="text-2xl">🎯</span>
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">
-              Keyword Research
+              Projecten Beheren
             </h3>
             <p className="text-gray-400 text-sm">
-              Vind de beste keywords voor je niche
+              Voeg nieuwe projecten toe of bewerk bestaande
             </p>
-          </button>
+          </Link>
+        </div>
+
+        {/* Getting Started Guide */}
+        <div className="mt-12 bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/30 rounded-xl p-8">
+          <h2 className="text-2xl font-bold text-white mb-4">🚀 Aan de slag</h2>
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 text-white font-bold">1</div>
+              <h4 className="text-white font-medium mb-1">Project Aanmaken</h4>
+              <p className="text-gray-400 text-sm">Voeg je website toe als project</p>
+            </div>
+            <div className="text-center">
+              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 text-white font-bold">2</div>
+              <h4 className="text-white font-medium mb-1">Content Plan</h4>
+              <p className="text-gray-400 text-sm">Genereer 30 artikel ideeën</p>
+            </div>
+            <div className="text-center">
+              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 text-white font-bold">3</div>
+              <h4 className="text-white font-medium mb-1">Artikel Schrijven</h4>
+              <p className="text-gray-400 text-sm">AI schrijft je artikel</p>
+            </div>
+            <div className="text-center">
+              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 text-white font-bold">4</div>
+              <h4 className="text-white font-medium mb-1">Publiceren</h4>
+              <p className="text-gray-400 text-sm">Publiceer naar WordPress</p>
+            </div>
+          </div>
         </div>
     </div>
   );

@@ -23,8 +23,9 @@ export default function ContentPlanPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [contentPlan, setContentPlan] = useState<ContentIdea[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadProjects();
@@ -32,31 +33,43 @@ export default function ContentPlanPage() {
   }, []);
 
   async function loadProjects() {
+    setLoading(true);
     try {
       const response = await fetch('/api/projects/list');
       const data = await response.json();
       if (response.ok) {
         setProjects(data.projects || []);
+      } else {
+        setError('Kon projecten niet laden');
       }
-    } catch (error) {
-      console.error('Failed to load projects:', error);
+    } catch (err) {
+      console.error('Failed to load projects:', err);
+      setError('Fout bij laden projecten');
+    } finally {
+      setLoading(false);
     }
   }
 
   function loadSavedPlan() {
-    const saved = localStorage.getItem('contentPlan');
-    const savedProject = localStorage.getItem('selectedProject');
-    if (saved) setContentPlan(JSON.parse(saved));
-    if (savedProject) setSelectedProject(JSON.parse(savedProject));
+    try {
+      const saved = localStorage.getItem('contentPlan');
+      const savedProject = localStorage.getItem('selectedProject');
+      if (saved) setContentPlan(JSON.parse(saved));
+      if (savedProject) setSelectedProject(JSON.parse(savedProject));
+    } catch (err) {
+      console.error('Error loading saved plan:', err);
+    }
   }
 
   async function generatePlan() {
     if (!selectedProject) {
-      alert('Selecteer eerst een project!');
+      setError('Selecteer eerst een project!');
       return;
     }
 
     setGenerating(true);
+    setError(null);
+    
     try {
       const response = await fetch('/api/simple/generate-content-plan', {
         method: 'POST',
@@ -64,9 +77,16 @@ export default function ContentPlanPage() {
         body: JSON.stringify({ website_url: selectedProject.website_url })
       });
 
-      if (!response.ok) throw new Error('Failed to generate plan');
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate plan');
+      }
+
+      if (!data.plan || data.plan.length === 0) {
+        throw new Error('Geen content ideeën ontvangen');
+      }
+
       const plan = data.plan.map((idea: ContentIdea) => ({
         ...idea,
         project_id: selectedProject.id
@@ -75,10 +95,10 @@ export default function ContentPlanPage() {
       setContentPlan(plan);
       localStorage.setItem('contentPlan', JSON.stringify(plan));
       localStorage.setItem('selectedProject', JSON.stringify(selectedProject));
-      alert(`✅ ${data.count} artikel ideeën gegenereerd!\n\n🎯 Gedetecteerde niche: ${data.niche}`);
-    } catch (error) {
-      console.error('Plan error:', error);
-      alert('❌ Fout bij genereren content plan');
+      
+    } catch (err: any) {
+      console.error('Plan error:', err);
+      setError(err.message || 'Fout bij genereren content plan');
     } finally {
       setGenerating(false);
     }
@@ -89,12 +109,37 @@ export default function ContentPlanPage() {
     router.push('/dashboard/writer');
   }
 
+  function clearPlan() {
+    setContentPlan([]);
+    localStorage.removeItem('contentPlan');
+  }
+
   const categoryColors: Record<string, string> = {
     'Google SEO': 'from-blue-500 to-blue-600',
     'AI & SEO': 'from-purple-500 to-purple-600',
     'WordPress': 'from-green-500 to-green-600',
+    'WordPress SEO': 'from-green-500 to-green-600',
     'Content Marketing': 'from-orange-500 to-orange-600',
+    'Technical SEO': 'from-red-500 to-red-600',
+    'Guides': 'from-cyan-500 to-cyan-600',
+    'Best Practices': 'from-indigo-500 to-indigo-600',
+    'Tips': 'from-yellow-500 to-yellow-600',
+    'Beginners': 'from-pink-500 to-pink-600',
+    'Advanced': 'from-violet-500 to-violet-600',
+    'Tools': 'from-teal-500 to-teal-600',
+    'Case Studies': 'from-amber-500 to-amber-600',
+    'Trends': 'from-rose-500 to-rose-600',
+    'Checklists': 'from-lime-500 to-lime-600',
+    'Mistakes': 'from-red-500 to-red-600',
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-12 flex items-center justify-center">
+        <div className="text-white text-xl">⏳ Laden...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-12">
@@ -106,28 +151,62 @@ export default function ContentPlanPage() {
           </p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <p className="text-red-400">{error}</p>
+              <button 
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-300"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* No Projects Warning */}
+        {projects.length === 0 && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-bold text-yellow-400 mb-2">Geen projecten gevonden</h3>
+            <p className="text-gray-400 mb-4">
+              Je hebt nog geen projecten aangemaakt. Maak eerst een project aan om content te kunnen genereren.
+            </p>
+            <button
+              onClick={() => router.push('/dashboard/projects')}
+              className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-medium transition-all"
+            >
+              + Maak Project
+            </button>
+          </div>
+        )}
+
         {/* Project Selection */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-6">
-          <label className="block text-white font-medium mb-3">Selecteer Project</label>
-          <select
-            value={selectedProject?.id || ''}
-            onChange={(e) => {
-              const project = projects.find(p => p.id === e.target.value);
-              setSelectedProject(project || null);
-              if (project) {
-                localStorage.setItem('selectedProject', JSON.stringify(project));
-              }
-            }}
-            className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          >
-            <option value="">Kies een project...</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {projects.length > 0 && (
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-6">
+            <label className="block text-white font-medium mb-3">Selecteer Project</label>
+            <select
+              value={selectedProject?.id || ''}
+              onChange={(e) => {
+                const project = projects.find(p => p.id === e.target.value);
+                setSelectedProject(project || null);
+                if (project) {
+                  localStorage.setItem('selectedProject', JSON.stringify(project));
+                }
+                setError(null);
+              }}
+              className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="">Kies een project...</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name} - {project.website_url}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Selected Project Info */}
         {selectedProject && (
@@ -156,19 +235,30 @@ export default function ContentPlanPage() {
         </div>
 
         {/* Generate Button */}
-        <button
-          onClick={generatePlan}
-          disabled={!selectedProject || generating}
-          className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-8"
-        >
-          {generating ? '⏳ AI aan het werk...' : '🤖 Genereer Content Plan (30 ideeën)'}
-        </button>
+        <div className="flex gap-4 mb-8">
+          <button
+            onClick={generatePlan}
+            disabled={!selectedProject || generating}
+            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {generating ? '⏳ AI aan het werk... (dit kan 30-60 sec duren)' : '🤖 Genereer Content Plan (30 ideeën)'}
+          </button>
+          
+          {contentPlan.length > 0 && (
+            <button
+              onClick={clearPlan}
+              className="px-6 py-4 bg-gray-800 border border-gray-700 text-gray-400 rounded-xl font-medium hover:bg-gray-700 hover:text-white transition-all"
+            >
+              🗑️ Wissen
+            </button>
+          )}
+        </div>
 
         {/* Content Plan List */}
         {contentPlan.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">
-              👇 Klik op een idee om te schrijven
+              👇 Klik op een idee om te schrijven ({contentPlan.length} ideeën)
             </h2>
             <div className="space-y-4">
               {contentPlan.map((idea, index) => (
@@ -188,7 +278,7 @@ export default function ContentPlanPage() {
                   </h3>
                   <p className="text-gray-400 text-sm mb-3">{idea.description}</p>
                   <div className="flex gap-2 flex-wrap mb-3">
-                    {idea.keywords.map((kw, i) => (
+                    {idea.keywords.slice(0, 5).map((kw, i) => (
                       <span key={i} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
                         {kw}
                       </span>
@@ -209,7 +299,10 @@ export default function ContentPlanPage() {
             <div className="text-6xl mb-4">📋</div>
             <h3 className="text-2xl font-bold text-white mb-2">Geen Content Plan</h3>
             <p className="text-gray-400">
-              Selecteer een project en genereer een content plan om te beginnen
+              {projects.length === 0 
+                ? 'Maak eerst een project aan om te beginnen'
+                : 'Selecteer een project en genereer een content plan om te beginnen'
+              }
             </p>
           </div>
         )}
