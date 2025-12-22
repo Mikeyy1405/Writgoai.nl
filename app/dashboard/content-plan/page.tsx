@@ -191,41 +191,60 @@ export default function ContentPlanPage() {
     return `contentPlan_${projectId}_${key}`;
   };
 
-  const loadSavedPlan = (projectId: string) => {
+  const loadSavedPlan = async (projectId: string) => {
     // Clear current state first
     clearPlanState();
     
-    const savedPlan = localStorage.getItem(getStorageKey(projectId, 'plan'));
-    const savedClusters = localStorage.getItem(getStorageKey(projectId, 'clusters'));
-    const savedStats = localStorage.getItem(getStorageKey(projectId, 'stats'));
-    const savedNiche = localStorage.getItem(getStorageKey(projectId, 'niche'));
-    const savedLanguage = localStorage.getItem(getStorageKey(projectId, 'language'));
-    
-    if (savedPlan) {
-      try {
-        setContentPlan(JSON.parse(savedPlan));
-      } catch {}
+    try {
+      // Load from database
+      const response = await fetch(`/api/content-plan?project_id=${projectId}`);
+      const data = await response.json();
+      
+      if (data.plan) {
+        if (data.plan.plan) setContentPlan(data.plan.plan);
+        if (data.plan.clusters) setClusters(data.plan.clusters);
+        if (data.plan.stats) setStats(data.plan.stats);
+        if (data.plan.niche) setNiche(data.plan.niche);
+        if (data.plan.language) setLanguage(data.plan.language);
+        if (data.plan.target_count) setTargetCount(data.plan.target_count);
+        if (data.plan.competition_level) setCompetitionLevel(data.plan.competition_level);
+        if (data.plan.reasoning) setReasoning(data.plan.reasoning);
+      }
+    } catch (err) {
+      console.error('Failed to load content plan from database:', err);
     }
-    if (savedClusters) {
-      try {
-        setClusters(JSON.parse(savedClusters));
-      } catch {}
-    }
-    if (savedStats) {
-      try {
-        setStats(JSON.parse(savedStats));
-      } catch {}
-    }
-    if (savedNiche) setNiche(savedNiche);
-    if (savedLanguage) setLanguage(savedLanguage);
   };
 
-  const savePlanToStorage = (projectId: string, plan: ContentIdea[], clusters: any[], stats: Stats | null, niche: string, language: string) => {
-    localStorage.setItem(getStorageKey(projectId, 'plan'), JSON.stringify(plan));
-    localStorage.setItem(getStorageKey(projectId, 'clusters'), JSON.stringify(clusters));
-    if (stats) localStorage.setItem(getStorageKey(projectId, 'stats'), JSON.stringify(stats));
-    localStorage.setItem(getStorageKey(projectId, 'niche'), niche);
-    localStorage.setItem(getStorageKey(projectId, 'language'), language);
+  const savePlanToDatabase = async (
+    projectId: string, 
+    plan: ContentIdea[], 
+    clusters: any[], 
+    stats: Stats | null, 
+    nicheValue: string, 
+    languageValue: string,
+    targetCountValue?: number,
+    competitionLevelValue?: string,
+    reasoningValue?: string
+  ) => {
+    try {
+      await fetch('/api/content-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          niche: nicheValue,
+          language: languageValue,
+          target_count: targetCountValue,
+          competition_level: competitionLevelValue,
+          reasoning: reasoningValue,
+          plan,
+          clusters,
+          stats,
+        }),
+      });
+    } catch (err) {
+      console.error('Failed to save content plan to database:', err);
+    }
   };
 
   const checkForActiveJob = async (projectId: string) => {
@@ -301,14 +320,17 @@ export default function ContentPlanPage() {
           setStats(job.stats);
         }
         
-        // Save to localStorage with project ID
-        savePlanToStorage(
+        // Save to database
+        savePlanToDatabase(
           projectId,
           job.plan || [],
           job.clusters || [],
           job.stats || null,
           job.niche || '',
-          job.language || 'nl'
+          job.language || 'nl',
+          job.target_count,
+          job.competition_level,
+          job.reasoning
         );
         
         setCurrentJobId(null);
