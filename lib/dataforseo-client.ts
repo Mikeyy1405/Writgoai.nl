@@ -119,7 +119,11 @@ export async function getRelatedKeywords(
       cpc: item.cpc,
       lowTopOfPageBid: item.low_top_of_page_bid,
       highTopOfPageBid: item.high_top_of_page_bid,
-      monthlySearches: item.monthly_searches,
+      monthlySearches: item.monthly_searches?.map(ms => ({
+        year: ms.year,
+        month: ms.month,
+        searchVolume: ms.search_volume,
+      })) || null,
     }));
   } catch (error) {
     console.error('DataForSEO API error:', error);
@@ -180,7 +184,11 @@ export async function getSearchVolume(
       cpc: item.cpc,
       lowTopOfPageBid: item.low_top_of_page_bid,
       highTopOfPageBid: item.high_top_of_page_bid,
-      monthlySearches: item.monthly_searches,
+      monthlySearches: item.monthly_searches?.map(ms => ({
+        year: ms.year,
+        month: ms.month,
+        searchVolume: ms.search_volume,
+      })) || null,
     }));
   } catch (error) {
     console.error('DataForSEO API error:', error);
@@ -238,7 +246,11 @@ export async function getKeywordsForSite(
       cpc: item.cpc,
       lowTopOfPageBid: item.low_top_of_page_bid,
       highTopOfPageBid: item.high_top_of_page_bid,
-      monthlySearches: item.monthly_searches,
+      monthlySearches: item.monthly_searches?.map(ms => ({
+        year: ms.year,
+        month: ms.month,
+        searchVolume: ms.search_volume,
+      })) || null,
     }));
   } catch (error) {
     console.error('DataForSEO API error:', error);
