@@ -49,13 +49,13 @@ export default function WriterPage() {
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [wordCount, setWordCount] = useState(2000);
+  const [viewMode, setViewMode] = useState<'preview' | 'html'>('preview');
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const savedIdea = localStorage.getItem('selectedIdea');
     const savedProject = localStorage.getItem('selectedProject');
     
-    // Check URL params for direct access
     const titleParam = searchParams.get('title');
     const keywordParam = searchParams.get('keyword');
     const typeParam = searchParams.get('type');
@@ -92,6 +92,9 @@ export default function WriterPage() {
     abortControllerRef.current = new AbortController();
     
     try {
+      // Get language from localStorage or default to nl
+      const language = localStorage.getItem('contentLanguage') || 'nl';
+      
       const response = await fetch('/api/generate/article-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,7 +104,8 @@ export default function WriterPage() {
           description: idea.description,
           contentType: idea.contentType,
           wordCount,
-          language: idea.language || localStorage.getItem('contentLanguage') || 'nl',
+          language,
+          websiteUrl: project?.website_url,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -111,7 +115,7 @@ export default function WriterPage() {
       }
 
       const reader = response.body?.getReader();
-      if (!reader) throw new Error('No reader available');
+      if (!reader) throw new Error('No response body');
 
       const decoder = new TextDecoder();
       let buffer = '';
@@ -131,23 +135,15 @@ export default function WriterPage() {
               
               if (data.type === 'progress') {
                 setProgress(data);
-              } else if (data.type === 'complete' && data.success) {
-                setArticle({
-                  title: data.article.title,
-                  content: data.article.content,
-                  word_count: data.article.wordCount,
-                  project_id: project?.id,
-                  featured_image: data.article.featuredImage,
-                  slug: data.article.slug,
-                  metaDescription: data.article.metaDescription,
-                });
+              } else if (data.type === 'complete') {
+                setArticle(data.article);
                 setGenerating(false);
               } else if (data.type === 'error') {
                 setError(data.message);
                 setGenerating(false);
               }
             } catch (e) {
-              // Ignore parse errors
+              console.warn('Failed to parse SSE:', e);
             }
           }
         }
@@ -156,7 +152,6 @@ export default function WriterPage() {
       if (err.name !== 'AbortError') {
         setError(err.message || 'Er is een fout opgetreden');
       }
-    } finally {
       setGenerating(false);
     }
   }
@@ -169,7 +164,7 @@ export default function WriterPage() {
 
   async function saveArticle() {
     if (!article) return;
-
+    
     try {
       const response = await fetch('/api/articles/update', {
         method: 'POST',
@@ -177,22 +172,22 @@ export default function WriterPage() {
         body: JSON.stringify({
           title: article.title,
           content: article.content,
-          project_id: project?.id || idea?.project_id,
-          status: 'draft',
+          word_count: article.word_count,
+          project_id: project?.id,
+          featured_image: article.featured_image,
           slug: article.slug,
-          excerpt: article.metaDescription,
+          status: 'draft',
         }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to save article');
+      if (response.ok) {
+        alert('Artikel opgeslagen in bibliotheek!');
+        router.push('/dashboard/library');
+      } else {
+        alert('Fout bij opslaan');
       }
-
-      alert('Artikel opgeslagen in bibliotheek!');
-      router.push('/dashboard/library');
-    } catch (err: any) {
-      setError(err.message || 'Fout bij opslaan');
+    } catch (err) {
+      alert('Fout bij opslaan');
     }
   }
 
@@ -200,6 +195,104 @@ export default function WriterPage() {
     if (!article) return;
     localStorage.setItem('editorArticle', JSON.stringify(article));
     router.push('/dashboard/editor');
+  }
+
+  function downloadHtml() {
+    if (!article) return;
+    
+    // Create clean HTML for export (black text on white background)
+    const exportHtml = `<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="${article.metaDescription || ''}">
+  <title>${article.title}</title>
+  <style>
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      line-height: 1.8;
+      color: #1a1a1a;
+      background: #fff;
+    }
+    h1 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #111;
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+    }
+    h2 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #222;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #f97316;
+    }
+    h3 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 1.375rem;
+      font-weight: 600;
+      color: #333;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+    }
+    p {
+      margin-bottom: 1.25rem;
+      color: #374151;
+    }
+    ul, ol {
+      margin: 1.5rem 0;
+      padding-left: 1.5rem;
+    }
+    li {
+      margin-bottom: 0.5rem;
+      color: #374151;
+    }
+    strong {
+      color: #111;
+      font-weight: 700;
+    }
+    a {
+      color: #f97316;
+    }
+    blockquote {
+      border-left: 4px solid #f97316;
+      padding-left: 1rem;
+      margin: 1.5rem 0;
+      font-style: italic;
+      color: #4b5563;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+    }
+    .featured-image {
+      margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+${article.content}
+</body>
+</html>`;
+
+    const blob = new Blob([exportHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${article.slug || 'artikel'}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   if (!idea) {
@@ -314,7 +407,6 @@ export default function WriterPage() {
                 <span className="text-orange-400 font-bold">{progress.progress}%</span>
               </div>
               
-              {/* Progress Bar */}
               <div className="w-full bg-gray-800 rounded-full h-4 overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-500 ease-out"
@@ -325,7 +417,6 @@ export default function WriterPage() {
               <p className="text-gray-400 text-sm mt-2">{progress.detail}</p>
             </div>
 
-            {/* Step Indicators */}
             <div className="flex justify-between mt-6">
               {Array.from({ length: progress.totalSteps }, (_, i) => (
                 <div key={i} className="flex flex-col items-center">
@@ -343,7 +434,6 @@ export default function WriterPage() {
               ))}
             </div>
 
-            {/* Outline Preview */}
             {progress.outline && (
               <div className="mt-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
                 <h4 className="text-white font-medium mb-2">📋 Outline</h4>
@@ -358,7 +448,6 @@ export default function WriterPage() {
               </div>
             )}
 
-            {/* Cancel Button */}
             <button
               onClick={cancelGeneration}
               className="mt-4 px-4 py-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
@@ -390,7 +479,7 @@ export default function WriterPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={openInEditor}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -402,6 +491,12 @@ export default function WriterPage() {
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
                     💾 Opslaan
+                  </button>
+                  <button
+                    onClick={downloadHtml}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    📥 Download
                   </button>
                   <button
                     onClick={() => {
@@ -416,6 +511,30 @@ export default function WriterPage() {
               </div>
             </div>
 
+            {/* View Mode Toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('preview')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  viewMode === 'preview' 
+                    ? 'bg-orange-500 text-white' 
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                👁️ Preview
+              </button>
+              <button
+                onClick={() => setViewMode('html')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  viewMode === 'html' 
+                    ? 'bg-orange-500 text-white' 
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                &lt;/&gt; HTML
+              </button>
+            </div>
+
             {/* Featured Image */}
             {article.featured_image && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
@@ -424,125 +543,126 @@ export default function WriterPage() {
                   alt={article.title}
                   className="w-full h-64 object-cover"
                 />
+                <div className="p-3 bg-gray-800/50">
+                  <p className="text-gray-400 text-sm">🖼️ Featured Image (Flux Pro)</p>
+                </div>
               </div>
             )}
 
-            {/* Article Preview - Improved styling */}
-            <div className="bg-white rounded-xl p-8 shadow-xl">
-              <div 
-                className="article-preview"
-                dangerouslySetInnerHTML={{ __html: article.content }}
-              />
-              <style jsx global>{`
-                .article-preview {
-                  color: #1a1a1a;
-                  font-family: Georgia, 'Times New Roman', serif;
-                  font-size: 1.125rem;
-                  line-height: 1.8;
-                }
-                .article-preview h1 {
-                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                  font-size: 2.5rem;
-                  font-weight: 800;
-                  color: #111;
-                  margin-bottom: 1.5rem;
-                  line-height: 1.2;
-                }
-                .article-preview h2 {
-                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                  font-size: 1.75rem;
-                  font-weight: 700;
-                  color: #222;
-                  margin-top: 2.5rem;
-                  margin-bottom: 1rem;
-                  padding-bottom: 0.5rem;
-                  border-bottom: 2px solid #f97316;
-                }
-                .article-preview h3 {
-                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                  font-size: 1.375rem;
-                  font-weight: 600;
-                  color: #333;
-                  margin-top: 2rem;
-                  margin-bottom: 0.75rem;
-                }
-                .article-preview p {
-                  margin-bottom: 1.25rem;
-                  color: #374151;
-                }
-                .article-preview ul,
-                .article-preview ol {
-                  margin: 1.5rem 0;
-                  padding-left: 1.5rem;
-                }
-                .article-preview ul {
-                  list-style-type: disc;
-                }
-                .article-preview ol {
-                  list-style-type: decimal;
-                }
-                .article-preview li {
-                  margin-bottom: 0.5rem;
-                  color: #374151;
-                  line-height: 1.7;
-                }
-                .article-preview strong {
-                  color: #111;
-                  font-weight: 700;
-                }
-                .article-preview a {
-                  color: #f97316;
-                  text-decoration: none;
-                }
-                .article-preview a:hover {
-                  text-decoration: underline;
-                }
-                .article-preview blockquote {
-                  border-left: 4px solid #f97316;
-                  background: #fff7ed;
-                  padding: 1rem 1.5rem;
-                  margin: 1.5rem 0;
-                  font-style: italic;
-                  color: #92400e;
-                }
-                .article-preview code {
-                  background: #f3f4f6;
-                  padding: 0.2rem 0.4rem;
-                  border-radius: 0.25rem;
-                  font-size: 0.9em;
-                  color: #dc2626;
-                }
-                .article-preview pre {
-                  background: #1f2937;
-                  color: #e5e7eb;
-                  padding: 1rem;
-                  border-radius: 0.5rem;
-                  overflow-x: auto;
-                  margin: 1.5rem 0;
-                }
-                .article-preview img {
-                  max-width: 100%;
-                  height: auto;
-                  border-radius: 0.5rem;
-                  margin: 1.5rem 0;
-                }
-                .article-preview table {
-                  width: 100%;
-                  border-collapse: collapse;
-                  margin: 1.5rem 0;
-                }
-                .article-preview th,
-                .article-preview td {
-                  border: 1px solid #e5e7eb;
-                  padding: 0.75rem;
-                  text-align: left;
-                }
-                .article-preview th {
-                  background: #f9fafb;
-                  font-weight: 600;
-                }
-              `}</style>
-            </div>
+            {/* Article Preview - Dark mode for editing */}
+            {viewMode === 'preview' && (
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-8">
+                <div 
+                  className="article-preview-dark prose prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: article.content }}
+                  style={{
+                    color: '#fff',
+                    fontFamily: 'Georgia, "Times New Roman", serif',
+                    fontSize: '1.125rem',
+                    lineHeight: '1.8',
+                  }}
+                />
+                <style jsx global>{`
+                  .article-preview-dark {
+                    color: #fff !important;
+                  }
+                  .article-preview-dark h1 {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-size: 2.25rem;
+                    font-weight: 800;
+                    color: #fff !important;
+                    margin-bottom: 1.5rem;
+                    line-height: 1.2;
+                  }
+                  .article-preview-dark h2 {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    color: #f97316 !important;
+                    margin-top: 2.5rem;
+                    margin-bottom: 1rem;
+                    padding-bottom: 0.5rem;
+                    border-bottom: 2px solid #f97316;
+                  }
+                  .article-preview-dark h3 {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    color: #d1d5db !important;
+                    margin-top: 2rem;
+                    margin-bottom: 0.75rem;
+                  }
+                  .article-preview-dark p {
+                    margin-bottom: 1.25rem;
+                    color: #e5e7eb !important;
+                  }
+                  .article-preview-dark ul,
+                  .article-preview-dark ol {
+                    margin: 1.5rem 0;
+                    padding-left: 1.5rem;
+                    color: #e5e7eb !important;
+                  }
+                  .article-preview-dark ul {
+                    list-style-type: disc;
+                  }
+                  .article-preview-dark ol {
+                    list-style-type: decimal;
+                  }
+                  .article-preview-dark li {
+                    margin-bottom: 0.5rem;
+                    color: #e5e7eb !important;
+                    line-height: 1.7;
+                  }
+                  .article-preview-dark strong {
+                    color: #fff !important;
+                    font-weight: 700;
+                  }
+                  .article-preview-dark em {
+                    color: #d1d5db !important;
+                    font-style: italic;
+                  }
+                  .article-preview-dark a {
+                    color: #f97316 !important;
+                    text-decoration: none;
+                  }
+                  .article-preview-dark a:hover {
+                    text-decoration: underline;
+                  }
+                  .article-preview-dark blockquote {
+                    border-left: 4px solid #f97316;
+                    padding-left: 1rem;
+                    margin: 1.5rem 0;
+                    font-style: italic;
+                    color: #9ca3af !important;
+                    background: rgba(249, 115, 22, 0.1);
+                    padding: 1rem;
+                    border-radius: 0 8px 8px 0;
+                  }
+                  .article-preview-dark img {
+                    max-width: 100%;
+                    height: auto;
+                    border-radius: 8px;
+                    margin: 1.5rem 0;
+                  }
+                  .article-preview-dark figure {
+                    margin: 2rem 0;
+                  }
+                  .article-preview-dark figure img {
+                    width: 100%;
+                    border-radius: 12px;
+                  }
+                `}</style>
+              </div>
+            )}
+
+            {/* HTML View */}
+            {viewMode === 'html' && (
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                <pre className="text-gray-300 text-sm overflow-x-auto whitespace-pre-wrap font-mono">
+                  {article.content}
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </div>

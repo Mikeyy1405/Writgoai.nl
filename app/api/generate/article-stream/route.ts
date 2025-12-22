@@ -12,30 +12,45 @@ function sendSSE(controller: ReadableStreamDefaultController, data: any) {
   controller.enqueue(new TextEncoder().encode(message));
 }
 
-// Helper to ensure proper HTML structure with headings
-function ensureHtmlStructure(content: string): string {
+// Convert markdown to HTML
+function markdownToHtml(content: string): string {
   let html = content;
   
-  // Remove markdown code blocks
+  // Remove code blocks
   html = html.replace(/```html\s*/gi, '');
   html = html.replace(/```\s*/g, '');
   
+  // Convert markdown bold **text** to <strong>text</strong>
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  
+  // Convert markdown italic *text* to <em>text</em>
+  html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+  
+  // Convert markdown headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  
+  // Convert markdown links [text](url) to <a href="url">text</a>
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  
+  return html;
+}
+
+// Ensure proper HTML structure with headings
+function ensureHtmlStructure(content: string): string {
+  let html = markdownToHtml(content);
+  
   // If content doesn't have HTML tags, convert from plain text
   if (!html.includes('<h') && !html.includes('<p>')) {
-    // Split by double newlines for paragraphs
     const paragraphs = html.split(/\n\n+/);
     html = paragraphs.map(p => {
       p = p.trim();
       if (!p) return '';
       
-      // Check if it looks like a heading (short, no period at end)
+      // Check if it looks like a heading
       if (p.length < 100 && !p.endsWith('.') && !p.startsWith('-') && !p.startsWith('•')) {
-        // Determine heading level
-        if (p.match(/^#{1,2}\s/)) {
-          return `<h2>${p.replace(/^#+\s*/, '')}</h2>`;
-        } else if (p.match(/^#{3}\s/)) {
-          return `<h3>${p.replace(/^#+\s*/, '')}</h3>`;
-        } else if (p.length < 60) {
+        if (p.length < 60 && !p.includes('<')) {
           return `<h2>${p}</h2>`;
         }
       }
@@ -54,13 +69,14 @@ function ensureHtmlStructure(content: string): string {
         return `<ol>\n${listItems}\n</ol>`;
       }
       
-      return `<p>${p}</p>`;
+      // Wrap in paragraph if not already wrapped
+      if (!p.startsWith('<')) {
+        return `<p>${p}</p>`;
+      }
+      
+      return p;
     }).join('\n\n');
   }
-  
-  // Ensure paragraphs are wrapped
-  html = html.replace(/(<\/h[1-6]>)\s*([^<])/g, '$1\n\n<p>$2');
-  html = html.replace(/([^>])\s*(<h[1-6])/g, '$1</p>\n\n$2');
   
   // Clean up empty paragraphs
   html = html.replace(/<p>\s*<\/p>/g, '');
@@ -76,9 +92,12 @@ function ensureHtmlStructure(content: string): string {
   return html.trim();
 }
 
-// Helper to clean HTML content
+// Clean HTML content
 function cleanHtmlContent(content: string): string {
   let cleaned = content;
+  
+  // Convert markdown to HTML first
+  cleaned = markdownToHtml(cleaned);
   
   // Remove markdown code blocks
   cleaned = cleaned.replace(/```html\s*/gi, '');
@@ -99,62 +118,47 @@ function cleanHtmlContent(content: string): string {
   // Clean forbidden words
   cleaned = cleanForbiddenWords(cleaned);
   
-  // Ensure proper HTML structure
+  // Ensure structure
   cleaned = ensureHtmlStructure(cleaned);
   
-  return cleaned.trim();
+  return cleaned;
 }
 
-// Helper to generate slug from keyword
-function generateSlugFromKeyword(keyword: string): string {
-  return keyword
-    .toLowerCase()
-    .trim()
-    .replace(/[àáâãäå]/g, 'a')
-    .replace(/[èéêë]/g, 'e')
-    .replace(/[ìíîï]/g, 'i')
-    .replace(/[òóôõö]/g, 'o')
-    .replace(/[ùúûü]/g, 'u')
-    .replace(/[ñ]/g, 'n')
-    .replace(/[ç]/g, 'c')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 60);
-}
-
-// Language-specific writing instructions
-const LANGUAGE_INSTRUCTIONS: Record<string, { systemPrompt: string; conclusionHeading: string; writingStyle: string }> = {
+// Language-specific instructions
+const LANGUAGE_INSTRUCTIONS: Record<string, {
+  systemPrompt: string;
+  conclusionHeading: string;
+  writingStyle: string;
+}> = {
   nl: {
-    systemPrompt: 'Je bent een expert content writer. Schrijf in het Nederlands met "je/jij" (informeel). Output alleen HTML content.',
+    systemPrompt: 'Je bent een Nederlandse SEO content schrijver. Schrijf in het Nederlands met "je" en "jij" (informeel).',
     conclusionHeading: 'Tot slot',
     writingStyle: 'Schrijf in het Nederlands. Gebruik "je" en "jij" (informeel). Alle content moet in het Nederlands zijn.',
   },
   en: {
-    systemPrompt: 'You are an expert content writer. Write in English. Output only HTML content.',
+    systemPrompt: 'You are an English SEO content writer. Write in English.',
     conclusionHeading: 'Final thoughts',
     writingStyle: 'Write in English. All content must be in English.',
   },
   de: {
-    systemPrompt: 'Du bist ein Experte für Content-Erstellung. Schreibe auf Deutsch mit "du" (informell). Gib nur HTML-Inhalte aus.',
+    systemPrompt: 'Du bist ein deutscher SEO Content Writer. Schreibe auf Deutsch mit "du" (informell).',
     conclusionHeading: 'Fazit',
     writingStyle: 'Schreibe auf Deutsch. Verwende "du" (informell). Alle Inhalte müssen auf Deutsch sein.',
   },
   fr: {
-    systemPrompt: 'Tu es un expert en création de contenu. Écris en français avec "tu" (informel). Ne produis que du contenu HTML.',
+    systemPrompt: 'Tu es un rédacteur SEO français. Écris en français avec "tu" (informel).',
     conclusionHeading: 'Pour conclure',
     writingStyle: 'Écris en français. Utilise "tu" (informel). Tout le contenu doit être en français.',
   },
   es: {
-    systemPrompt: 'Eres un experto en creación de contenido. Escribe en español con "tú" (informal). Solo produce contenido HTML.',
+    systemPrompt: 'Eres un redactor SEO español. Escribe en español con "tú" (informal).',
     conclusionHeading: 'Para terminar',
     writingStyle: 'Escribe en español. Usa "tú" (informal). Todo el contenido debe estar en español.',
   },
 };
 
 export async function POST(request: Request) {
-  const { title, keyword, description, contentType, wordCount = 2000, language = 'nl' } = await request.json();
+  const { title, keyword, description, contentType, wordCount = 2000, language = 'nl', websiteUrl } = await request.json();
 
   if (!title || !keyword) {
     return NextResponse.json({ error: 'Title and keyword are required' }, { status: 400 });
@@ -198,7 +202,8 @@ Geef een JSON outline:
     {
       "heading": "H2 heading (alleen eerste letter hoofdletter)",
       "subheadings": ["H3 subheading 1", "H3 subheading 2"],
-      "keyPoints": ["punt 1", "punt 2", "punt 3"]
+      "keyPoints": ["punt 1", "punt 2", "punt 3"],
+      "imagePrompt": "Beschrijving voor AI afbeelding bij deze sectie"
     }
   ],
   "estimatedWordCount": ${wordCount}
@@ -263,19 +268,15 @@ Specifieke vereisten voor intro:
 - Elke alinea max 3-4 zinnen
 - GEEN "In deze blog..." of "In dit artikel..." zinnen
 - GEEN H1 of H2 tags in de intro
+- Gebruik <strong> voor belangrijke woorden (NIET ** sterretjes)
 
-Voorbeeld output formaat:
-<p>Eerste alinea met hook en keyword.</p>
-
-<p>Tweede alinea met context.</p>
-
-<p>Derde alinea met preview van wat komt.</p>`;
+Output ALLEEN HTML, geen markdown.`;
 
         let introContent = '';
         try {
           introContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: `${langConfig.systemPrompt} Output alleen HTML content met <p> tags. Gebruik NOOIT verboden woorden. Elke alinea in eigen <p> tag.`,
+            systemPrompt: `${langConfig.systemPrompt} Output alleen HTML content. Gebruik <strong> voor bold, NIET ** markdown. Elke alinea in eigen <p> tag.`,
             userPrompt: introPrompt,
             maxTokens: 1000,
             temperature: 0.7,
@@ -322,12 +323,18 @@ BELANGRIJKE OPMAAK REGELS:
 4. Korte alinea's van max 3-4 zinnen
 5. Lege regel tussen elk element
 6. Gebruik <ul> of <ol> voor lijsten met <li> items
-7. Gebruik <strong> voor belangrijke woorden
+7. Gebruik <strong> voor belangrijke woorden (NIET ** sterretjes!)
+8. Gebruik <em> voor nadruk (NIET * sterretjes!)
+
+VERBODEN:
+- Geen markdown ** of * voor bold/italic
+- Geen code blocks met \`\`\`
+- Geen "conclusie" als heading
 
 Voorbeeld structuur:
 <h2>Eerste sectie heading</h2>
 
-<p>Eerste alinea van deze sectie. Kort en bondig.</p>
+<p>Eerste alinea met <strong>belangrijke woorden</strong> gemarkeerd.</p>
 
 <p>Tweede alinea met meer details.</p>
 
@@ -338,14 +345,9 @@ Voorbeeld structuur:
 <ul>
 <li>Eerste punt</li>
 <li>Tweede punt</li>
-<li>Derde punt</li>
 </ul>
 
-<h2>Tweede sectie heading</h2>
-
-<p>Enzovoort...</p>
-
-BELANGRIJK: Output ALLEEN de HTML content, geen markdown code blocks. Zorg voor goede witruimte tussen elementen.`;
+Output ALLEEN HTML, geen markdown.`;
 
         let mainContent = '';
         try {
@@ -356,10 +358,11 @@ BELANGRIJK: Output ALLEEN de HTML content, geen markdown code blocks. Zorg voor 
 OUTPUT REGELS:
 - Output alleen HTML, geen markdown
 - Gebruik <h2> en <h3> voor headings
+- Gebruik <strong> voor bold, NIET **
+- Gebruik <em> voor italic, NIET *
 - Elke alinea in eigen <p> tag
 - Korte alinea's (max 3-4 zinnen)
-- Lege regels tussen elementen voor leesbaarheid
-- Gebruik NOOIT verboden woorden zoals: cruciaal, essentieel, kortom, conclusie, duiken, jungle, de sleutel, superheld, veilige haven, gids, voordelen, digitaal tijdperk, gedoe.`,
+- NOOIT markdown syntax gebruiken`,
             userPrompt: mainPrompt,
             maxTokens: 8000,
             temperature: 0.7,
@@ -402,21 +405,16 @@ Specifieke vereisten:
 - Eindig met een call-to-action
 - Ongeveer 150-200 woorden
 - Output als HTML met <p> tags
-- Elke alinea in eigen <p> tag
+- Gebruik <strong> voor belangrijke woorden (NIET ** sterretjes!)
 - NIET het woord "conclusie" gebruiken - de heading is al "${langConfig.conclusionHeading}"
 
-Voorbeeld output:
-<p>Samenvattende alinea over het onderwerp.</p>
-
-<p>Tweede alinea met key takeaways.</p>
-
-<p>Afsluitende alinea met call-to-action.</p>`;
+Output ALLEEN HTML, geen markdown.`;
 
         let conclusionContent = '';
         try {
           conclusionContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: `${langConfig.systemPrompt} Schrijf krachtige afsluitingen. Output alleen HTML met <p> tags. Gebruik NOOIT het woord "conclusie".`,
+            systemPrompt: `${langConfig.systemPrompt} Schrijf krachtige afsluitingen. Output alleen HTML. Gebruik <strong> voor bold, NIET **. Gebruik NOOIT het woord "conclusie".`,
             userPrompt: conclusionPrompt,
             maxTokens: 800,
             temperature: 0.7,
@@ -453,55 +451,131 @@ Voorbeeld output:
           featuredImage = generatedImage || '';
         } catch (e) {
           console.warn('Image generation failed:', e);
-          featuredImage = '';
         }
-
-        // Combine all content with proper spacing
-        const fullContent = `<h1>${outline?.mainHeading || title}</h1>
-
-${introContent}
-
-${mainContent}
-
-<h2>${langConfig.conclusionHeading}</h2>
-
-${conclusionContent}`.trim();
-
-        const slug = generateSlugFromKeyword(keyword);
-        const wordCountActual = fullContent.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
 
         sendSSE(controller, {
           type: 'progress',
           step: 5,
           totalSteps: 5,
-          progress: 100,
-          message: '✅ Artikel voltooid!',
-          detail: `${wordCountActual} woorden • Klaar om te publiceren`,
+          progress: 95,
+          message: featuredImage ? '✅ Afbeelding gegenereerd' : '⚠️ Geen afbeelding (doorgaan)',
+          detail: 'Artikel afronden...',
         });
 
-        // Send final result
+        // Generate inline images for sections
+        let inlineImages: string[] = [];
+        if (outline?.sections && outline.sections.length > 0) {
+          sendSSE(controller, {
+            type: 'progress',
+            step: 5,
+            totalSteps: 5,
+            progress: 92,
+            message: '🖼️ Sectie afbeeldingen genereren...',
+            detail: 'Extra afbeeldingen voor de content',
+          });
+
+          // Generate 1-2 inline images for longer articles
+          const sectionsWithImages = outline.sections.filter((s: any) => s.imagePrompt).slice(0, 2);
+          for (const section of sectionsWithImages) {
+            try {
+              const inlineImage = await generateFeaturedImage(section.heading, section.imagePrompt || keyword);
+              if (inlineImage) {
+                inlineImages.push(inlineImage);
+              }
+            } catch (e) {
+              console.warn('Inline image generation failed:', e);
+            }
+          }
+        }
+
+        // Combine all content
+        const h1Title = outline?.mainHeading || title;
+        const metaDescription = outline?.metaDescription || `${title} - Lees alles over ${keyword}`;
+        
+        // Create slug from keyword
+        const slug = keyword
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .substring(0, 60);
+
+        // Build final content
+        let finalContent = `<h1>${h1Title}</h1>\n\n`;
+        
+        // Add featured image after H1 if available
+        if (featuredImage) {
+          finalContent += `<figure class="featured-image">\n<img src="${featuredImage}" alt="${h1Title}" />\n</figure>\n\n`;
+        }
+        
+        finalContent += introContent + '\n\n';
+        
+        // Insert inline images into main content
+        if (inlineImages.length > 0 && mainContent) {
+          const h2Matches = mainContent.match(/<h2>/g) || [];
+          if (h2Matches.length >= 2 && inlineImages[0]) {
+            // Insert first image after second H2
+            let h2Count = 0;
+            mainContent = mainContent.replace(/<\/h2>/g, (match) => {
+              h2Count++;
+              if (h2Count === 2) {
+                return `${match}\n\n<figure class="content-image">\n<img src="${inlineImages[0]}" alt="${keyword}" />\n</figure>\n`;
+              }
+              return match;
+            });
+          }
+          if (h2Matches.length >= 4 && inlineImages[1]) {
+            // Insert second image after fourth H2
+            let h2Count = 0;
+            mainContent = mainContent.replace(/<\/h2>/g, (match) => {
+              h2Count++;
+              if (h2Count === 4) {
+                return `${match}\n\n<figure class="content-image">\n<img src="${inlineImages[1]}" alt="${keyword}" />\n</figure>\n`;
+              }
+              return match;
+            });
+          }
+        }
+        
+        finalContent += mainContent + '\n\n';
+        finalContent += `<h2>${langConfig.conclusionHeading}</h2>\n\n`;
+        finalContent += conclusionContent;
+        
+        // Add internal links if websiteUrl is provided
+        if (websiteUrl) {
+          const baseUrl = websiteUrl.replace(/\/$/, '');
+          // Add a CTA box at the end with internal link
+          finalContent += `\n\n<div class="cta-box" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 1.5rem; border-radius: 12px; margin-top: 2rem;">\n<p style="color: white; font-weight: 600; margin: 0;">\n🚀 Ontdek meer op <a href="${baseUrl}" style="color: white; text-decoration: underline;">${baseUrl.replace(/https?:\/\//, '')}</a>\n</p>\n</div>`;\n        }
+
+        // Final cleanup - ensure no markdown artifacts remain
+        finalContent = finalContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        finalContent = finalContent.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+        finalContent = finalContent.replace(/```[a-z]*\s*/gi, '');
+        finalContent = finalContent.replace(/```\s*/g, '');
+
+        // Count words
+        const wordCountFinal = finalContent.replace(/<[^>]*>/g, '').split(/\s+/).filter(w => w.length > 0).length;
+
+        // Send complete
         sendSSE(controller, {
           type: 'complete',
-          success: true,
           article: {
-            title: outline?.mainHeading || title,
-            content: fullContent,
-            metaDescription: outline?.metaDescription || `${title} - Uitgebreide handleiding over ${keyword}`,
+            title: h1Title,
+            content: finalContent,
+            word_count: wordCountFinal,
+            featured_image: featuredImage,
             slug,
-            keyword,
-            wordCount: wordCountActual,
-            featuredImage,
-            outline,
+            metaDescription,
           },
         });
 
+        controller.close();
       } catch (error: any) {
         console.error('Article generation error:', error);
         sendSSE(controller, {
           type: 'error',
           message: error.message || 'Er is een fout opgetreden',
         });
-      } finally {
         controller.close();
       }
     },

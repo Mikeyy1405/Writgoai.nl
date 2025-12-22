@@ -42,7 +42,7 @@ export default function RichTextEditor({
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-orange-500 hover:text-orange-600 underline',
+          class: 'text-orange-400 hover:text-orange-300 underline',
         },
       }),
       Placeholder.configure({
@@ -62,7 +62,7 @@ export default function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-lg max-w-none focus:outline-none min-h-[400px] text-gray-800',
+        class: 'prose prose-invert prose-lg max-w-none focus:outline-none min-h-[400px] text-white',
       },
     },
   });
@@ -107,18 +107,18 @@ export default function RichTextEditor({
   }, [editor]);
 
   if (!editor) {
-    return <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>;
+    return <div className="animate-pulse bg-gray-800 h-96 rounded-lg"></div>;
   }
 
   return (
     <div className="rich-text-editor">
-      {/* Toolbar */}
-      <div className="bg-gray-100 border border-gray-300 rounded-t-lg p-2 flex flex-wrap gap-1 sticky top-0 z-10">
+      {/* Toolbar - Dark theme */}
+      <div className="bg-gray-800 border border-gray-700 rounded-t-lg p-2 flex flex-wrap gap-1 sticky top-0 z-10">
         {/* Text formatting */}
-        <div className="flex gap-1 border-r border-gray-300 pr-2 mr-2">
+        <div className="flex gap-1 border-r border-gray-600 pr-2 mr-2">
           <button
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('bold') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('bold') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Vet"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +128,7 @@ export default function RichTextEditor({
           </button>
           <button
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('italic') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('italic') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Cursief"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +137,7 @@ export default function RichTextEditor({
           </button>
           <button
             onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('underline') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('underline') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Onderstrepen"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,7 +146,7 @@ export default function RichTextEditor({
           </button>
           <button
             onClick={() => editor.chain().focus().toggleHighlight().run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('highlight') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('highlight') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Markeren"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -156,24 +156,24 @@ export default function RichTextEditor({
         </div>
 
         {/* Headings */}
-        <div className="flex gap-1 border-r border-gray-300 pr-2 mr-2">
+        <div className="flex gap-1 border-r border-gray-600 pr-2 mr-2">
           <button
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            className={`p-2 rounded hover:bg-gray-200 font-bold text-sm ${editor.isActive('heading', { level: 1 }) ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 font-bold text-sm ${editor.isActive('heading', { level: 1 }) ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Heading 1"
           >
             H1
           </button>
           <button
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            className={`p-2 rounded hover:bg-gray-200 font-bold text-sm ${editor.isActive('heading', { level: 2 }) ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 font-bold text-sm ${editor.isActive('heading', { level: 2 }) ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Heading 2"
           >
             H2
           </button>
           <button
             onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            className={`p-2 rounded hover:bg-gray-200 font-bold text-sm ${editor.isActive('heading', { level: 3 }) ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 font-bold text-sm ${editor.isActive('heading', { level: 3 }) ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Heading 3"
           >
             H3
@@ -181,10 +181,10 @@ export default function RichTextEditor({
         </div>
 
         {/* Lists */}
-        <div className="flex gap-1 border-r border-gray-300 pr-2 mr-2">
+        <div className="flex gap-1 border-r border-gray-600 pr-2 mr-2">
           <button
             onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('bulletList') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('bulletList') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Opsomming"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,7 +193,7 @@ export default function RichTextEditor({
           </button>
           <button
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('orderedList') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('orderedList') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Genummerde lijst"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,10 +203,10 @@ export default function RichTextEditor({
         </div>
 
         {/* Alignment */}
-        <div className="flex gap-1 border-r border-gray-300 pr-2 mr-2">
+        <div className="flex gap-1 border-r border-gray-600 pr-2 mr-2">
           <button
             onClick={() => editor.chain().focus().setTextAlign('left').run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive({ textAlign: 'left' }) ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive({ textAlign: 'left' }) ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Links uitlijnen"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,7 +215,7 @@ export default function RichTextEditor({
           </button>
           <button
             onClick={() => editor.chain().focus().setTextAlign('center').run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive({ textAlign: 'center' }) ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive({ textAlign: 'center' }) ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Centreren"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -225,10 +225,10 @@ export default function RichTextEditor({
         </div>
 
         {/* Quote & Code */}
-        <div className="flex gap-1 border-r border-gray-300 pr-2 mr-2">
+        <div className="flex gap-1 border-r border-gray-600 pr-2 mr-2">
           <button
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('blockquote') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('blockquote') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Citaat"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,7 +237,7 @@ export default function RichTextEditor({
           </button>
           <button
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('codeBlock') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('codeBlock') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Code blok"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,7 +250,7 @@ export default function RichTextEditor({
         <div className="flex gap-1">
           <button
             onClick={setLink}
-            className={`p-2 rounded hover:bg-gray-200 ${editor.isActive('link') ? 'bg-orange-100 text-orange-600' : 'text-gray-700'}`}
+            className={`p-2 rounded hover:bg-gray-700 ${editor.isActive('link') ? 'bg-orange-500/20 text-orange-400' : 'text-gray-300'}`}
             title="Link toevoegen"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,9 +258,12 @@ export default function RichTextEditor({
             </svg>
           </button>
           <button
-            onClick={() => setShowImageModal(true)}
-            className="p-2 rounded hover:bg-gray-200 text-gray-700"
-            title="Afbeelding toevoegen"
+            onClick={() => {
+              const url = prompt('Afbeelding URL:');
+              if (url) addImage(url);
+            }}
+            className="p-2 rounded hover:bg-gray-700 text-gray-300"
+            title="Afbeelding URL"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -269,13 +272,10 @@ export default function RichTextEditor({
           {onGenerateImage && (
             <button
               onClick={() => setShowImageModal(true)}
-              className="p-2 rounded hover:bg-gray-200 text-orange-600 font-medium text-sm flex items-center gap-1"
+              className="p-2 rounded hover:bg-gray-700 text-orange-400"
               title="AI Afbeelding genereren"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              AI
+              🤖
             </button>
           )}
         </div>
@@ -285,7 +285,7 @@ export default function RichTextEditor({
           <button
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
-            className="p-2 rounded hover:bg-gray-200 text-gray-700 disabled:opacity-30"
+            className="p-2 rounded hover:bg-gray-700 text-gray-300 disabled:opacity-30"
             title="Ongedaan maken"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,7 +295,7 @@ export default function RichTextEditor({
           <button
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
-            className="p-2 rounded hover:bg-gray-200 text-gray-700 disabled:opacity-30"
+            className="p-2 rounded hover:bg-gray-700 text-gray-300 disabled:opacity-30"
             title="Opnieuw"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -305,168 +305,151 @@ export default function RichTextEditor({
         </div>
       </div>
 
-      {/* Editor Content */}
-      <div className="bg-white border border-t-0 border-gray-300 rounded-b-lg p-6 min-h-[500px]">
+      {/* Editor Content - Dark theme */}
+      <div className="bg-gray-900 border border-t-0 border-gray-700 rounded-b-lg p-6 min-h-[500px]">
         <EditorContent editor={editor} />
       </div>
 
-
-      {/* Image Modal */}
+      {/* AI Image Modal */}
       {showImageModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Afbeelding Toevoegen</h3>
-            
-            {/* URL Tab */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Afbeelding URL
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const url = (e.target as HTMLInputElement).value;
-                      if (url) {
-                        addImage(url);
-                        setShowImageModal(false);
-                      }
-                    }
-                  }}
-                />
-                <button
-                  onClick={(e) => {
-                    const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                    if (input.value) {
-                      addImage(input.value);
-                      setShowImageModal(false);
-                    }
-                  }}
-                  className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
-                >
-                  Toevoegen
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full border border-gray-700">
+            <h3 className="text-xl font-bold text-white mb-4">🤖 AI Afbeelding Genereren</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              Beschrijf de afbeelding die je wilt genereren met Flux Pro
+            </p>
+            <textarea
+              value={imagePrompt}
+              onChange={(e) => setImagePrompt(e.target.value)}
+              placeholder="Bijv: Een professionele foto van een yoga mat op een houten vloer met ochtendlicht"
+              className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              rows={3}
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowImageModal(false);
+                  setImagePrompt('');
+                }}
+                className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleGenerateImage}
+                disabled={isGeneratingImage || !imagePrompt.trim()}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isGeneratingImage ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Genereren...
+                  </>
+                ) : (
+                  'Genereer'
+                )}
+              </button>
             </div>
-
-            {/* AI Generation Tab */}
-            {onGenerateImage && (
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  🤖 AI Afbeelding Genereren (Flux Pro)
-                </label>
-                <textarea
-                  value={imagePrompt}
-                  onChange={(e) => setImagePrompt(e.target.value)}
-                  placeholder="Beschrijf de afbeelding die je wilt genereren..."
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
-                />
-                <button
-                  onClick={handleGenerateImage}
-                  disabled={isGeneratingImage || !imagePrompt.trim()}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 rounded-lg font-medium hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isGeneratingImage ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Genereren...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                      Genereer met AI
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
-            <button
-              onClick={() => setShowImageModal(false)}
-              className="mt-4 w-full px-4 py-2 text-gray-600 hover:text-gray-900"
-            >
-              Annuleren
-            </button>
           </div>
         </div>
       )}
 
+      {/* Dark theme styles for editor content */}
       <style jsx global>{`
         .ProseMirror {
-          outline: none;
-        }
-        .ProseMirror p.is-editor-empty:first-child::before {
-          color: #adb5bd;
-          content: attr(data-placeholder);
-          float: left;
-          height: 0;
-          pointer-events: none;
+          color: #fff !important;
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 1.125rem;
+          line-height: 1.8;
         }
         .ProseMirror h1 {
-          font-size: 2em;
-          font-weight: bold;
-          margin-top: 1em;
-          margin-bottom: 0.5em;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-size: 2rem;
+          font-weight: 800;
+          color: #fff !important;
+          margin-bottom: 1rem;
         }
         .ProseMirror h2 {
-          font-size: 1.5em;
-          font-weight: bold;
-          margin-top: 1em;
-          margin-bottom: 0.5em;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #f97316 !important;
+          margin-top: 2rem;
+          margin-bottom: 0.75rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 2px solid #f97316;
         }
         .ProseMirror h3 {
-          font-size: 1.25em;
-          font-weight: bold;
-          margin-top: 1em;
-          margin-bottom: 0.5em;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #d1d5db !important;
+          margin-top: 1.5rem;
+          margin-bottom: 0.5rem;
+        }
+        .ProseMirror p {
+          color: #e5e7eb !important;
+          margin-bottom: 1rem;
+        }
+        .ProseMirror ul,
+        .ProseMirror ol {
+          color: #e5e7eb !important;
+          padding-left: 1.5rem;
+          margin: 1rem 0;
+        }
+        .ProseMirror li {
+          color: #e5e7eb !important;
+          margin-bottom: 0.5rem;
+        }
+        .ProseMirror strong {
+          color: #fff !important;
+          font-weight: 700;
+        }
+        .ProseMirror em {
+          color: #d1d5db !important;
+        }
+        .ProseMirror a {
+          color: #f97316 !important;
         }
         .ProseMirror blockquote {
           border-left: 4px solid #f97316;
           padding-left: 1rem;
           margin: 1rem 0;
-          color: #666;
-          font-style: italic;
-        }
-        .ProseMirror ul, .ProseMirror ol {
-          padding-left: 1.5rem;
-          margin: 1rem 0;
-        }
-        .ProseMirror li {
-          margin: 0.25rem 0;
+          color: #9ca3af !important;
+          background: rgba(249, 115, 22, 0.1);
+          padding: 1rem;
+          border-radius: 0 8px 8px 0;
         }
         .ProseMirror code {
-          background: #f3f4f6;
+          background: #374151;
+          color: #f97316 !important;
           padding: 0.2rem 0.4rem;
-          border-radius: 0.25rem;
+          border-radius: 4px;
           font-family: monospace;
         }
         .ProseMirror pre {
           background: #1f2937;
-          color: #f3f4f6;
+          color: #e5e7eb !important;
           padding: 1rem;
-          border-radius: 0.5rem;
+          border-radius: 8px;
           overflow-x: auto;
-        }
-        .ProseMirror pre code {
-          background: none;
-          padding: 0;
         }
         .ProseMirror img {
           max-width: 100%;
           height: auto;
-          border-radius: 0.5rem;
+          border-radius: 8px;
           margin: 1rem 0;
         }
+        .ProseMirror p.is-editor-empty:first-child::before {
+          color: #6b7280;
+          content: attr(data-placeholder);
+          float: left;
+          height: 0;
+          pointer-events: none;
+        }
         .ProseMirror mark {
-          background-color: #fef08a;
-          padding: 0.1rem 0.2rem;
-          border-radius: 0.125rem;
+          background-color: rgba(249, 115, 22, 0.3);
+          color: #fff;
         }
       `}</style>
     </div>
