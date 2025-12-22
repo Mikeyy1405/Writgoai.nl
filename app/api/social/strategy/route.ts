@@ -197,15 +197,17 @@ BELANGRIJK:
 - Genereer minimaal 15 concrete, uitvoerbare content ideas
 - Engagement tactics moeten specifiek zijn voor deze doelgroep
 - Alles in het Nederlands
+- GEEN markdown formatting, GEEN code blocks, ALLEEN pure JSON
+- Begin direct met { en eindig met }
 
-Antwoord ALLEEN met het JSON object, geen andere tekst.`;
+Antwoord ALLEEN met het JSON object, geen andere tekst, geen uitleg, geen code blocks.`;
 
     const strategyData = await generateJSONCompletion<any>({
       task: 'content',
-      systemPrompt: 'Je bent een social media strategie expert. Genereer altijd valid JSON.',
+      systemPrompt: 'Je bent een social media strategie expert. Je antwoordt ALTIJD met pure, valid JSON zonder markdown code blocks of andere formatting. Begin direct met { en eindig met }.',
       userPrompt: prompt,
       maxTokens: 4000,
-      temperature: 0.7,
+      temperature: 0.6,
     });
 
     // Check if strategy exists for this project
