@@ -11,15 +11,13 @@ interface CreateProjectModalProps {
 export default function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showWordPress, setShowWordPress] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     website_url: '',
     wp_username: '',
     wp_password: '',
   });
-
-  // Check if this is a WritGo project
-  const isWritGoProject = formData.website_url.toLowerCase().includes('writgo.nl');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +45,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
         wp_username: '',
         wp_password: '',
       });
+      setShowWordPress(false);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -77,12 +76,6 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
           </div>
         )}
 
-        {isWritGoProject && (
-          <div className="mb-4 p-3 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 text-sm">
-            🟠 <strong>WritGo Blog project gedetecteerd!</strong> WordPress credentials zijn niet nodig.
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-gray-300 mb-2 font-medium">
@@ -95,7 +88,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
               required
               disabled={loading}
               className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="WritGo Blog"
+              placeholder="Mijn Blog"
             />
           </div>
 
@@ -110,33 +103,34 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
               required
               disabled={loading}
               className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="https://writgo.nl"
+              placeholder="https://mijnblog.nl"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              💡 Tip: Gebruik writgo.nl voor je eigen marketing blog
+          </div>
+
+          <div className="border-t border-gray-800 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowWordPress(!showWordPress)}
+              className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors mb-3"
+            >
+              <span>{showWordPress ? '▼' : '▶'}</span>
+              <span>WordPress Credentials (Optioneel)</span>
+            </button>
+            <p className="text-sm text-gray-400 mb-4">
+              Alleen nodig als je wilt publiceren naar externe WordPress site
             </p>
           </div>
 
-
-
-          {!isWritGoProject && (
+          {showWordPress && (
             <>
-              <div className="border-t border-gray-800 pt-4">
-                <h3 className="text-white font-medium mb-3">WordPress Credentials</h3>
-                <p className="text-sm text-gray-400 mb-4">
-                  Vereist voor publiceren naar externe WordPress sites
-                </p>
-              </div>
-
               <div>
                 <label className="block text-gray-300 mb-2 font-medium">
-                  WordPress Username *
+                  WordPress Username
                 </label>
                 <input
                   type="text"
                   value={formData.wp_username}
                   onChange={(e) => setFormData({ ...formData, wp_username: e.target.value })}
-                  required
                   disabled={loading}
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="admin"
@@ -145,13 +139,12 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
 
               <div>
                 <label className="block text-gray-300 mb-2 font-medium">
-                  WordPress Application Password *
+                  WordPress Application Password
                 </label>
                 <input
                   type="password"
                   value={formData.wp_password}
                   onChange={(e) => setFormData({ ...formData, wp_password: e.target.value })}
-                  required
                   disabled={loading}
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"

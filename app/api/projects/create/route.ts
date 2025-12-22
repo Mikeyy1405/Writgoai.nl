@@ -19,10 +19,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, website_url, wp_username, wp_password } = body;
 
-    // Check if this is a WritGo project
-    const isWritGoProject = website_url?.toLowerCase().includes('writgo.nl');
-
-    // Validate required fields
+    // Validate required fields (only name and URL)
     if (!name || !website_url) {
       return NextResponse.json(
         { error: 'Project name and website URL are required' },
@@ -30,20 +27,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // For non-WritGo projects, WordPress credentials are required
-    if (!isWritGoProject && (!wp_username || !wp_password)) {
-      return NextResponse.json(
-        { error: 'WordPress credentials are required for external websites' },
-        { status: 400 }
-      );
-    }
+    // Check if WordPress credentials are provided
+    const hasWordPressCredentials = wp_username && wp_password;
 
     let wp_url = null;
     let finalWpUsername = wp_username || null;
     let finalWpPassword = wp_password || null;
 
-    // Only process WordPress connection for non-WritGo projects
-    if (!isWritGoProject) {
+    // Only process WordPress connection if credentials are provided
+    if (hasWordPressCredentials) {
       // Auto-generate wp_url from website_url
       wp_url = website_url.trim();
       // Remove trailing slash
