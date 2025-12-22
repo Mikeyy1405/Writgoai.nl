@@ -82,12 +82,19 @@ Format the output as HTML with proper heading tags (<h2>, <h3>, <p>, <ul>, <li>,
 
     const generationTime = Date.now() - startTime;
 
+    // Generate slug from title
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
     // Save article
     const { data: article, error: dbError } = await supabase
       .from('articles')
       .insert({
         project_id,
         title,
+        slug,
         content,
         status: 'draft',
         model_used: 'gemini-3-pro',

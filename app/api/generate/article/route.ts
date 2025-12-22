@@ -92,12 +92,19 @@ Format the output as HTML with proper heading tags (<h2>, <h3>, <p>, <ul>, <li>,
       maxTokens: 100,
     })).trim() || topic;
 
+    // Generate slug from title
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
     // Save to database
     const { data: article, error: dbError } = await supabase
       .from('articles')
       .insert({
         project_id,
         title,
+        slug,
         content,
         status: 'draft',
       })
