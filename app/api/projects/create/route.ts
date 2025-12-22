@@ -42,6 +42,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, website_url, wp_username, wp_password, skip_wp_test } = body;
 
+    // Log incoming request for debugging
+    console.log('Creating project:', { name, website_url, hasWpCredentials: !!(wp_username && wp_password), skip_wp_test });
+
     // Validate required fields (only name and URL)
     if (!name || !website_url) {
       return NextResponse.json(
@@ -69,14 +72,19 @@ export async function POST(request: Request) {
 
       console.log('WordPress credentials provided for:', wp_url);
       console.log('Username:', wp_username);
-      console.log('Skip test:', skip_wp_test);
+      console.log('Skip test:', skip_wp_test, 'Type:', typeof skip_wp_test);
+
+      // ALWAYS skip test if skip_wp_test is truthy (string "true", boolean true, or any truthy value)
+      const shouldSkipTest = skip_wp_test === true || skip_wp_test === 'true' || skip_wp_test === 1 || skip_wp_test === '1';
+      
+      console.log('Should skip test:', shouldSkipTest);
 
       // Test WordPress connection (unless skipped)
-      if (!skip_wp_test) {
+      if (!shouldSkipTest) {
         try {
-          // Create abort controller for timeout (20 seconds - increased for slow servers)
+          // Create abort controller for timeout (15 seconds)
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
           
           const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
             headers: {
@@ -114,7 +122,7 @@ export async function POST(request: Request) {
           
           // Don't block project creation on timeout or connection errors
           if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT') {
-            wordpressWarning = 'WordPress test timeout - de server reageert traag. Credentials zijn opgeslagen, publiceren kan later werken.';
+            wordpressWarning = 'WordPress test timeout - de server reageert traag. Credentials zijn opgeslagen.';
           } else if (wpError.code === 'ENOTFOUND') {
             wordpressWarning = 'Website niet gevonden. Controleer de URL.';
           } else if (wpError.code === 'ECONNREFUSED') {
@@ -125,6 +133,7 @@ export async function POST(request: Request) {
         }
       } else {
         // Test was skipped, assume credentials are correct
+        console.log('WordPress test skipped by user request');
         wordpressWarning = 'WordPress test overgeslagen. Credentials opgeslagen.';
       }
     }
@@ -150,6 +159,8 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    console.log('Project created successfully:', project.id);
 
     return NextResponse.json({ 
       success: true, 

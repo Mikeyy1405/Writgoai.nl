@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
 import { generateFeaturedImage } from '@/lib/aiml-image-generator';
+import { CONTENT_PROMPT_RULES, cleanForbiddenWords } from '@/lib/writing-rules';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,6 +31,9 @@ function cleanHtmlContent(content: string): string {
   if (dashIndex > cleaned.length * 0.8) {
     cleaned = cleaned.substring(0, dashIndex);
   }
+  
+  // Clean forbidden words
+  cleaned = cleanForbiddenWords(cleaned);
   
   return cleaned.trim();
 }
@@ -88,17 +92,19 @@ Datum: ${currentMonth} ${currentYear}
 
 Geef een JSON outline:
 {
-  "mainHeading": "H1 titel met keyword",
+  "mainHeading": "H1 titel met keyword (alleen eerste letter hoofdletter)",
   "metaDescription": "SEO meta description (max 160 tekens)",
   "sections": [
     {
-      "heading": "H2 heading",
+      "heading": "H2 heading (alleen eerste letter hoofdletter)",
       "subheadings": ["H3 subheading 1", "H3 subheading 2"],
       "keyPoints": ["punt 1", "punt 2", "punt 3"]
     }
   ],
   "estimatedWordCount": ${wordCount}
-}`;
+}
+
+BELANGRIJK: Alle headings met alleen eerste letter hoofdletter (bijv. "Hoe werkt het" niet "Hoe Werkt Het")`;
 
         let outline: any = null;
         try {
@@ -144,19 +150,21 @@ Geef een JSON outline:
 Focus keyword: ${keyword}
 ${outline ? `Outline: ${JSON.stringify(outline.sections?.slice(0, 2))}` : ''}
 
-Vereisten:
+${CONTENT_PROMPT_RULES}
+
+Specifieke vereisten voor intro:
 - Start direct met een hook die de lezer pakt
 - Vermeld het keyword in de eerste 100 woorden
 - Geef een preview van wat de lezer gaat leren
-- Gebruik "je" en "jij" (informeel)
 - Ongeveer 150-200 woorden
-- Output als HTML (alleen de content, geen wrapper tags)`;
+- Output als HTML (alleen de content, geen wrapper tags)
+- GEEN "In deze blog..." of "In dit artikel..." zinnen`;
 
         let introContent = '';
         try {
           introContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een expert content writer. Schrijf in het Nederlands met "je/jij". Output alleen HTML content.',
+            systemPrompt: 'Je bent een expert content writer. Schrijf in het Nederlands met "je/jij". Output alleen HTML content. Gebruik NOOIT verboden woorden.',
             userPrompt: introPrompt,
             maxTokens: 1000,
             temperature: 0.7,
@@ -192,12 +200,14 @@ Focus keyword: ${keyword}
 Doellengte: ${wordCount - 400} woorden (excl. intro en conclusie)
 ${outline ? `Volg deze outline:\n${JSON.stringify(outline.sections, null, 2)}` : ''}
 
-Vereisten:
-- Gebruik H2 en H3 headings
+${CONTENT_PROMPT_RULES}
+
+Specifieke vereisten:
+- Gebruik H2 en H3 headings (alleen eerste letter hoofdletter)
 - Vermeld het keyword natuurlijk door de tekst
-- Voeg praktische tips en voorbeelden toe
+- Voeg praktische tips en concrete voorbeelden toe
 - Gebruik bullet points en genummerde lijsten waar relevant
-- Schrijf in het Nederlands met "je/jij"
+- Korte alinea's van max 3-4 zinnen
 - Maak het informatief en actionable
 - Output als HTML (alleen content, geen wrapper)
 
@@ -207,7 +217,7 @@ BELANGRIJK: Output ALLEEN de HTML content, geen markdown code blocks.`;
         try {
           mainContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een expert SEO content writer. Schrijf uitgebreide, informatieve content in het Nederlands. Output alleen HTML, geen markdown.',
+            systemPrompt: 'Je bent een expert SEO content writer. Schrijf uitgebreide, informatieve content in het Nederlands met "je/jij". Output alleen HTML, geen markdown. Gebruik NOOIT verboden woorden zoals: cruciaal, essentieel, kortom, conclusie, duiken, jungle, de sleutel, superheld, veilige haven, gids, voordelen, digitaal tijdperk, gedoe.',
             userPrompt: mainPrompt,
             maxTokens: 8000,
             temperature: 0.7,
@@ -234,25 +244,27 @@ BELANGRIJK: Output ALLEEN de HTML content, geen markdown code blocks.`;
           step: 4,
           totalSteps: 5,
           progress: 75,
-          message: '🎯 Conclusie schrijven...',
+          message: '🎯 Afsluiting schrijven...',
           detail: 'Krachtige afsluiting maken',
         });
 
-        const conclusionPrompt = `Schrijf een krachtige conclusie voor een artikel over: "${title}"
+        const conclusionPrompt = `Schrijf een krachtige afsluiting voor een artikel over: "${title}"
 Focus keyword: ${keyword}
 
-Vereisten:
+${CONTENT_PROMPT_RULES}
+
+Specifieke vereisten:
 - Vat de belangrijkste punten samen
 - Eindig met een call-to-action
-- Gebruik "je/jij"
 - Ongeveer 150-200 woorden
-- Output als HTML`;
+- Output als HTML
+- NIET het woord "conclusie" gebruiken als heading - gebruik iets als "Tot slot" of "Aan de slag"`;
 
         let conclusionContent = '';
         try {
           conclusionContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een expert content writer. Schrijf krachtige conclusies. Output alleen HTML.',
+            systemPrompt: 'Je bent een expert content writer. Schrijf krachtige afsluitingen. Output alleen HTML. Gebruik NOOIT het woord "conclusie".',
             userPrompt: conclusionPrompt,
             maxTokens: 800,
             temperature: 0.7,
@@ -267,7 +279,7 @@ Vereisten:
           step: 4,
           totalSteps: 5,
           progress: 85,
-          message: '✅ Conclusie klaar',
+          message: '✅ Afsluiting klaar',
           detail: 'Artikel bijna compleet',
         });
 
@@ -298,7 +310,7 @@ ${introContent}
 
 ${mainContent}
 
-<h2>Conclusie</h2>
+<h2>Tot slot</h2>
 ${conclusionContent}
 `.trim();
 
@@ -321,7 +333,7 @@ ${conclusionContent}
           article: {
             title: outline?.mainHeading || title,
             content: fullContent,
-            metaDescription: outline?.metaDescription || `${title} - Uitgebreide gids over ${keyword}`,
+            metaDescription: outline?.metaDescription || `${title} - Uitgebreide handleiding over ${keyword}`,
             slug,
             keyword,
             wordCount: wordCountActual,

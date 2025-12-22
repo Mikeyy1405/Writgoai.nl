@@ -27,6 +27,24 @@ interface Article {
   views: number;
 }
 
+// Helper function to clean content from HTML artifacts
+function cleanArticleContent(content: string): string {
+  let cleaned = content;
+  
+  // Remove markdown code blocks that might have been left in
+  cleaned = cleaned.replace(/```html\s*/gi, '');
+  cleaned = cleaned.replace(/```\s*/g, '');
+  
+  // Remove "```html" text that appears as visible text
+  cleaned = cleaned.replace(/`{3}html/gi, '');
+  cleaned = cleaned.replace(/`{3}/g, '');
+  
+  // Clean up any double spaces or excessive newlines
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  
+  return cleaned.trim();
+}
+
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const supabase = createClient();
@@ -103,6 +121,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   if (error || !article) {
     notFound();
   }
+
+  // Clean the article content
+  const cleanedContent = cleanArticleContent(article.content);
 
   // Increment view count (fire and forget)
   supabase
@@ -235,9 +256,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             </h1>
 
             {/* Meta - WHITE/LIGHT */}
-            <div className="flex items-center text-gray-300 mb-8 pb-8 border-b border-gray-800">
+            <div className="flex items-center text-white mb-8 pb-8 border-b border-gray-800">
               <time dateTime={article.published_at} className="mr-6 flex items-center gap-2">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 {new Date(article.published_at).toLocaleDateString('nl-NL', {
@@ -247,7 +268,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 })}
               </time>
               <span className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
@@ -255,26 +276,125 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               </span>
             </div>
 
-            {/* Content - ALL WHITE TEXT */}
+            {/* Content - ALL WHITE TEXT - IMPORTANT STYLING */}
             <div 
-              className="prose prose-lg prose-invert max-w-none
-                prose-headings:font-bold prose-headings:text-white
-                prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:text-white
-                prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-white
-                prose-h4:text-xl prose-h4:mt-8 prose-h4:mb-3 prose-h4:text-white
-                prose-p:text-gray-200 prose-p:leading-relaxed prose-p:mb-6 prose-p:text-lg
-                prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-3
-                prose-ol:my-6 prose-ol:list-decimal prose-ol:pl-6 prose-ol:space-y-3
-                prose-li:text-gray-200 prose-li:leading-relaxed prose-li:text-lg
-                prose-strong:text-white prose-strong:font-bold
-                prose-em:text-gray-100 prose-em:italic
-                prose-a:text-orange-400 prose-a:no-underline hover:prose-a:text-orange-300 hover:prose-a:underline prose-a:font-medium prose-a:transition-colors
-                prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-gray-800/50 prose-blockquote:rounded-r-lg prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:my-8 prose-blockquote:text-gray-200 prose-blockquote:italic prose-blockquote:not-italic
-                prose-img:rounded-xl prose-img:shadow-2xl prose-img:my-10
-                prose-code:bg-gray-800 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-orange-400 prose-code:text-base
-                prose-pre:bg-gray-800 prose-pre:rounded-xl prose-pre:p-6"
-              dangerouslySetInnerHTML={{ __html: article.content }}
+              className="article-content"
+              style={{
+                color: 'white',
+                fontSize: '1.125rem',
+                lineHeight: '1.8',
+              }}
+              dangerouslySetInnerHTML={{ __html: cleanedContent }}
             />
+
+            {/* Custom styles for article content */}
+            <style jsx global>{`
+              .article-content {
+                color: white !important;
+              }
+              .article-content * {
+                color: white !important;
+              }
+              .article-content h1,
+              .article-content h2,
+              .article-content h3,
+              .article-content h4,
+              .article-content h5,
+              .article-content h6 {
+                color: white !important;
+                font-weight: 700;
+                margin-top: 2rem;
+                margin-bottom: 1rem;
+              }
+              .article-content h1 {
+                font-size: 2.5rem;
+              }
+              .article-content h2 {
+                font-size: 1.875rem;
+                margin-top: 2.5rem;
+              }
+              .article-content h3 {
+                font-size: 1.5rem;
+                margin-top: 2rem;
+              }
+              .article-content p {
+                color: white !important;
+                margin-bottom: 1.25rem;
+                line-height: 1.8;
+              }
+              .article-content ul,
+              .article-content ol {
+                color: white !important;
+                margin: 1.5rem 0;
+                padding-left: 1.5rem;
+              }
+              .article-content li {
+                color: white !important;
+                margin-bottom: 0.5rem;
+                line-height: 1.7;
+              }
+              .article-content strong,
+              .article-content b {
+                color: white !important;
+                font-weight: 700;
+              }
+              .article-content em,
+              .article-content i {
+                color: white !important;
+              }
+              .article-content a {
+                color: #fb923c !important;
+                text-decoration: none;
+                transition: color 0.2s;
+              }
+              .article-content a:hover {
+                color: #fdba74 !important;
+                text-decoration: underline;
+              }
+              .article-content blockquote {
+                border-left: 4px solid #f97316;
+                background: rgba(249, 115, 22, 0.1);
+                padding: 1rem 1.5rem;
+                margin: 1.5rem 0;
+                border-radius: 0 0.5rem 0.5rem 0;
+                color: white !important;
+              }
+              .article-content code {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.25rem;
+                color: #fb923c !important;
+                font-size: 0.9em;
+              }
+              .article-content pre {
+                background: rgba(0, 0, 0, 0.5);
+                padding: 1.5rem;
+                border-radius: 0.5rem;
+                overflow-x: auto;
+                margin: 1.5rem 0;
+              }
+              .article-content img {
+                border-radius: 0.75rem;
+                margin: 2rem 0;
+                max-width: 100%;
+                height: auto;
+              }
+              .article-content table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 1.5rem 0;
+              }
+              .article-content th,
+              .article-content td {
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                padding: 0.75rem;
+                color: white !important;
+              }
+              .article-content th {
+                background: rgba(255, 255, 255, 0.1);
+                font-weight: 700;
+              }
+            `}</style>
 
             {/* Author Box */}
             <div className="mt-12">
@@ -308,7 +428,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
           {/* Table of Contents Sidebar */}
           <aside className="hidden lg:block">
-            <TableOfContents content={article.content} />
+            <TableOfContents content={cleanedContent} />
           </aside>
         </div>
       </div>
@@ -340,7 +460,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                     {related.title}
                   </h3>
                   {related.excerpt && (
-                    <p className="text-gray-400 text-sm line-clamp-2">
+                    <p className="text-gray-300 text-sm line-clamp-2">
                       {related.excerpt}
                     </p>
                   )}
