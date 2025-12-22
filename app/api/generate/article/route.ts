@@ -50,8 +50,14 @@ export async function POST(request: Request) {
     };
     const targetWords = wordCounts[length] || 1000;
 
+    // Get current date dynamically
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
     // Generate content with OpenAI
-    const prompt = `Write a comprehensive, SEO-optimized blog article about: "${topic}"
+    const prompt = `Current date: ${now.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })}
+
+Write a comprehensive, SEO-optimized blog article about: "${topic}"
 
 ${keywords ? `Focus on these keywords: ${keywords}` : ''}
 
@@ -64,6 +70,8 @@ Requirements:
 - Write in Dutch language
 - Make it SEO-friendly with natural keyword usage
 - End with a strong conclusion
+- Use CURRENT information and trends from ${currentYear}
+- Avoid outdated information from previous years
 
 Format the output as HTML with proper heading tags (<h2>, <h3>, <p>, <ul>, <li>, etc.).`;
 

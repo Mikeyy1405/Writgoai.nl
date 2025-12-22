@@ -39,12 +39,26 @@ Antwoord ALLEEN met de niche, geen extra tekst.`;
     const nicheContent = nicheMessage.content.find((block) => block.type === 'text');
     const niche = nicheContent?.type === 'text' ? nicheContent.text.trim() : 'SEO & Content Marketing';
 
+    // Get current date dynamically
+    const now = new Date();
+    const currentMonth = now.toLocaleString('nl-NL', { month: 'long' });
+    const currentYear = now.getFullYear();
+    const nextYear = currentYear + 1;
+
     // Step 2: Generate content plan based on detected niche
-    const contentPrompt = `Genereer een content plan voor een SEO blog over: ${niche}
+    const contentPrompt = `Huidige datum: ${currentMonth} ${currentYear}
+
+Genereer een ACTUEEL content plan voor een SEO blog over: ${niche}
 
 Website: ${website_url}
 
 Maak een lijst van 30 artikel ideeën die zorgen voor topical authority in deze niche.
+
+BELANGRIJK:
+- Focus op ${currentYear}-${nextYear} trends en ontwikkelingen
+- Gebruik actuele voorbeelden en updates uit ${currentYear}
+- Vermijd verouderde informatie uit vorige jaren
+- Denk aan toekomstige ontwikkelingen voor ${nextYear}
 
 Verdeling:
 - 40% Core niche topics (hoofdonderwerp)
