@@ -129,6 +129,8 @@ export default function SocialMediaPage() {
   const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([]);
   const [detectedInfo, setDetectedInfo] = useState<DetectedInfo | null>(null);
   const [generatingStrategy, setGeneratingStrategy] = useState(false);
+  const [strategyProgress, setStrategyProgress] = useState(0);
+  const [strategyStatus, setStrategyStatus] = useState('');
 
   // Post generation form
   const [topic, setTopic] = useState('');
@@ -215,6 +217,29 @@ export default function SocialMediaPage() {
     if (!selectedProject) return;
 
     setGeneratingStrategy(true);
+    setStrategyProgress(0);
+    setStrategyStatus('Website analyseren...');
+
+    // Simulate progress steps
+    const progressSteps = [
+      { progress: 10, status: 'Website content ophalen...' },
+      { progress: 25, status: 'Niche en doelgroep detecteren...' },
+      { progress: 40, status: 'Brand voice analyseren...' },
+      { progress: 55, status: 'Content pillars genereren...' },
+      { progress: 70, status: 'Weekschema opstellen...' },
+      { progress: 85, status: 'Hashtags en tactieken bepalen...' },
+      { progress: 95, status: 'Content ideeën genereren...' },
+    ];
+
+    let stepIndex = 0;
+    const progressInterval = setInterval(() => {
+      if (stepIndex < progressSteps.length) {
+        setStrategyProgress(progressSteps[stepIndex].progress);
+        setStrategyStatus(progressSteps[stepIndex].status);
+        stepIndex++;
+      }
+    }, 3000);
+
     try {
       const response = await fetch('/api/social/strategy', {
         method: 'POST',
@@ -224,16 +249,23 @@ export default function SocialMediaPage() {
         }),
       });
 
+      clearInterval(progressInterval);
+
       const data = await response.json();
       if (data.success) {
+        setStrategyProgress(100);
+        setStrategyStatus('Strategie compleet!');
         setStrategy(data.strategy);
         setContentIdeas(data.content_ideas || []);
         setDetectedInfo(data.detected || null);
       } else {
+        setStrategyStatus('Fout: ' + (data.error || 'Er ging iets mis'));
         alert(data.error || 'Er ging iets mis');
       }
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Failed to generate strategy:', error);
+      setStrategyStatus('Er ging iets mis bij het genereren');
       alert('Er ging iets mis bij het genereren');
     } finally {
       setGeneratingStrategy(false);
@@ -478,7 +510,7 @@ export default function SocialMediaPage() {
         {activeTab === 'strategy' && (
           <div className="space-y-6">
             {/* Generate Strategy Button */}
-            {!strategy && (
+            {!strategy && !generatingStrategy && (
               <div className="bg-gray-800 rounded-xl p-8 text-center">
                 <div className="text-6xl mb-4">🚀</div>
                 <h2 className="text-2xl font-bold mb-2">Genereer je Social Media Strategie</h2>
@@ -488,18 +520,63 @@ export default function SocialMediaPage() {
                 </p>
                 <button
                   onClick={generateStrategy}
-                  disabled={generatingStrategy}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 text-white font-semibold px-8 py-4 rounded-xl transition flex items-center justify-center gap-2 mx-auto text-lg"
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold px-8 py-4 rounded-xl transition flex items-center justify-center gap-2 mx-auto text-lg"
                 >
-                  {generatingStrategy ? (
-                    <>
-                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>
-                      AI analyseert je website...
-                    </>
-                  ) : (
-                    <>🤖 Genereer Strategie met AI</>
-                  )}
+                  🤖 Genereer Strategie met AI
                 </button>
+              </div>
+            )}
+
+            {/* Progress Bar during generation */}
+            {generatingStrategy && (
+              <div className="bg-gray-800 rounded-xl p-8">
+                <div className="max-w-2xl mx-auto">
+                  <div className="flex items-center justify-center gap-4 mb-6">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                    <h2 className="text-xl font-semibold">Social Media Strategie Genereren</h2>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-400">{strategyStatus}</span>
+                      <span className="text-orange-400 font-medium">{strategyProgress}%</span>
+                    </div>
+                    <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500 ease-out"
+                        style={{ width: `${strategyProgress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Steps indicator */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+                    {[
+                      { icon: '🌐', label: 'Website', done: strategyProgress >= 10 },
+                      { icon: '🎯', label: 'Doelgroep', done: strategyProgress >= 25 },
+                      { icon: '📊', label: 'Pillars', done: strategyProgress >= 55 },
+                      { icon: '💡', label: 'Ideeën', done: strategyProgress >= 95 },
+                    ].map((step, i) => (
+                      <div 
+                        key={i}
+                        className={`flex items-center gap-2 p-3 rounded-lg transition ${
+                          step.done 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-gray-700 text-gray-400'
+                        }`}
+                      >
+                        <span>{step.icon}</span>
+                        <span className="text-sm">{step.label}</span>
+                        {step.done && <span className="ml-auto">✓</span>}
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-center text-gray-500 text-sm mt-6">
+                    Dit kan 20-30 seconden duren...
+                  </p>
+                </div>
               </div>
             )}
 
