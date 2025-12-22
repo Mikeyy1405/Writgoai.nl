@@ -1,11 +1,28 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://writgo.nl';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  // Return minimal sitemap if Supabase is not configured
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return [
+      {
+        url: baseUrl,
+        lastModified: new Date().toISOString(),
+        changeFrequency: 'daily',
+        priority: 1,
+      },
+      {
+        url: `${baseUrl}/blog`,
+        lastModified: new Date().toISOString(),
+        changeFrequency: 'daily',
+        priority: 0.9,
+      },
+    ];
+  }
   
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
