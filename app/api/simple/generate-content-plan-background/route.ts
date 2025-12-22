@@ -295,9 +295,13 @@ Koppen: ${headings.join(', ')}
 Content: ${textContent.slice(0, 3000)}
 `.trim();
       }
+      await updateJob(jobId, { progress: 18, current_step: '🔍 Website content verzameld' });
     } catch (e) {
       console.warn('Website scraping failed:', e);
+      await updateJob(jobId, { progress: 18, current_step: '🔍 Website analyse (fallback)' });
     }
+
+    await updateJob(jobId, { progress: 20, current_step: '🎯 Niche detecteren met AI...' });
 
     const currentMonth = now.toLocaleString(language === 'nl' ? 'nl-NL' : 'en-US', { month: 'long' });
 
@@ -422,6 +426,8 @@ Output als JSON array:
     await updateJob(jobId, { progress: 35, current_step: `✅ ${nicheData.pillarTopics.length} pillar topics` });
 
     // Step 4: Generate content clusters
+    await updateJob(jobId, { progress: 38, current_step: '📝 Content clusters voorbereiden...' });
+    
     const clusters: any[] = [];
     const allArticles: any[] = [];
     const pillarCount = nicheData.pillarTopics.length;
@@ -432,8 +438,12 @@ Output als JSON array:
       const subtopics = typeof pillarData === 'object' ? pillarData.subtopics : [];
       const estimatedArticles = typeof pillarData === 'object' ? pillarData.estimatedArticles : Math.ceil(targetCount / pillarCount);
       
-      const progress = 35 + Math.round((i / pillarCount) * 40);
-      await updateJob(jobId, { progress, current_step: `📝 Cluster ${i + 1}/${pillarCount}: ${pillarTopic}` });
+      // More granular progress: 40-75% for clusters
+      const progress = 40 + Math.round((i / pillarCount) * 35);
+      await updateJob(jobId, { 
+        progress, 
+        current_step: `📝 Cluster ${i + 1}/${pillarCount}: ${pillarTopic.substring(0, 30)}${pillarTopic.length > 30 ? '...' : ''}` 
+      });
 
       try {
         const clusterPrompt = `Genereer content cluster voor: "${pillarTopic}"
@@ -498,13 +508,20 @@ Output als JSON:
         console.error('Cluster generation error:', e);
       }
 
+      // Update progress after each cluster
+      const clusterProgress = 40 + Math.round(((i + 1) / pillarCount) * 35);
+      await updateJob(jobId, { 
+        progress: clusterProgress, 
+        current_step: `✅ Cluster ${i + 1}/${pillarCount} voltooid (${allArticles.length} artikelen)` 
+      });
+
       // Small delay between clusters
       if (i < pillarCount - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
 
-    await updateJob(jobId, { progress: 75, current_step: `✅ ${clusters.length} clusters gegenereerd` });
+    await updateJob(jobId, { progress: 76, current_step: `✅ ${clusters.length} clusters met ${allArticles.length} artikelen` });
 
     // Step 5: Generate long-tail variations
     await updateJob(jobId, { progress: 80, current_step: '🔄 Long-tail variaties genereren...' });

@@ -449,18 +449,20 @@ export default function ContentPlanPage() {
 
   const getProgressMessage = () => {
     if (!jobData) return 'Starten...';
-    
-    const step = jobData.current_step || '';
-    const progress = jobData.progress || 0;
-    
-    if (step.includes('Analyseren')) return `🔍 ${step}`;
-    if (step.includes('topics')) return `📊 ${step}`;
-    if (step.includes('clusters')) return `🎯 ${step}`;
-    if (step.includes('artikelen')) return `✍️ ${step}`;
-    if (step.includes('SEO')) return `📈 ${step}`;
-    if (step.includes('Afronden')) return `✅ ${step}`;
-    
-    return step || `Bezig... ${progress}%`;
+    return jobData.current_step || `Bezig... ${jobData.progress || 0}%`;
+  };
+
+  const getProgressSteps = () => {
+    const progress = jobData?.progress || 0;
+    return [
+      { id: 1, name: 'Taal', icon: '🌍', done: progress >= 10 },
+      { id: 2, name: 'Website', icon: '🔍', done: progress >= 20 },
+      { id: 3, name: 'Niche', icon: '🎯', done: progress >= 25 },
+      { id: 4, name: 'Topics', icon: '📊', done: progress >= 35 },
+      { id: 5, name: 'Clusters', icon: '📝', done: progress >= 75 },
+      { id: 6, name: 'Long-tail', icon: '🔄', done: progress >= 90 },
+      { id: 7, name: 'Klaar', icon: '✅', done: progress >= 100 },
+    ];
   };
 
   return (
@@ -524,7 +526,7 @@ export default function ContentPlanPage() {
       {loading && (
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-white">Genereren...</h3>
+            <h3 className="text-xl font-bold text-white">Content Plan Genereren</h3>
             <button
               onClick={cancelGeneration}
               className="text-red-400 hover:text-red-300 text-sm"
@@ -532,16 +534,42 @@ export default function ContentPlanPage() {
               Annuleren
             </button>
           </div>
-          
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-700 rounded-full h-3 mb-4">
-            <div 
-              className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full transition-all duration-500"
-              style={{ width: `${jobData?.progress || 0}%` }}
-            />
+
+          {/* Visual Steps */}
+          <div className="flex flex-wrap justify-between gap-2 mb-6">
+            {getProgressSteps().map((step, index) => (
+              <div key={step.id} className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-300 ${
+                  step.done 
+                    ? 'bg-green-500/20 border-2 border-green-500' 
+                    : 'bg-gray-700/50 border-2 border-gray-600'
+                }`}>
+                  {step.done ? '✓' : step.icon}
+                </div>
+                <span className={`text-xs mt-1 ${step.done ? 'text-green-400' : 'text-gray-500'}`}>
+                  {step.name}
+                </span>
+              </div>
+            ))}
           </div>
           
-          <p className="text-gray-400">{getProgressMessage()}</p>
+          {/* Progress Bar */}
+          <div className="w-full bg-gray-700 rounded-full h-4 mb-4 overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-orange-500 to-orange-600 h-4 rounded-full transition-all duration-500 relative"
+              style={{ width: `${jobData?.progress || 0}%` }}
+            >
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                {jobData?.progress || 0}%
+              </span>
+            </div>
+          </div>
+          
+          {/* Current Step */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="animate-spin w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full"></div>
+            <p className="text-gray-300 font-medium">{getProgressMessage()}</p>
+          </div>
           
           {/* Show detected info */}
           {niche && (

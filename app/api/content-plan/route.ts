@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    // Get the latest content plan for this project
+    // First, try to get from content_plans table
     const { data: plan, error } = await supabaseAdmin
       .from('content_plans')
       .select('*')
@@ -31,7 +31,66 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    return NextResponse.json({ plan: plan || null });
+    // If we found a plan, return it
+    if (plan) {
+      return NextResponse.json({ plan });
+    }
+
+    // If no plan in content_plans, check for completed jobs
+    const { data: completedJob, error: jobError } = await supabaseAdmin
+      .from('content_plan_jobs')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (jobError && jobError.code !== 'PGRST116') {
+      console.error('Job lookup error:', jobError);
+    }
+
+    // If we found a completed job, save it to content_plans and return it
+    if (completedJob && completedJob.plan) {
+      // Save to content_plans for future use
+      const { data: savedPlan, error: saveError } = await supabaseAdmin
+        .from('content_plans')
+        .insert({
+          project_id: projectId,
+          niche: completedJob.niche,
+          language: completedJob.language,
+          target_count: completedJob.target_count,
+          competition_level: completedJob.competition_level,
+          reasoning: completedJob.reasoning,
+          plan: completedJob.plan,
+          clusters: completedJob.clusters,
+          stats: completedJob.stats,
+        })
+        .select()
+        .single();
+
+      if (saveError) {
+        console.error('Failed to save completed job to content_plans:', saveError);
+        // Still return the job data even if save failed
+        return NextResponse.json({ 
+          plan: {
+            project_id: projectId,
+            niche: completedJob.niche,
+            language: completedJob.language,
+            target_count: completedJob.target_count,
+            competition_level: completedJob.competition_level,
+            reasoning: completedJob.reasoning,
+            plan: completedJob.plan,
+            clusters: completedJob.clusters,
+            stats: completedJob.stats,
+          }
+        });
+      }
+
+      return NextResponse.json({ plan: savedPlan });
+    }
+
+    return NextResponse.json({ plan: null });
   } catch (error: any) {
     console.error('Get content plan error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
