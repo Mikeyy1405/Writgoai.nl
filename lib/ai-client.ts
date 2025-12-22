@@ -126,16 +126,65 @@ export async function generateJSONCompletion<T>(options: GenerateOptions): Promi
   
   try {
     // Try to extract JSON from various formats
-    const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || 
-                      content.match(/```\n?([\s\S]*?)\n?```/) ||
-                      content.match(/\[[\s\S]*\]/) ||
-                      content.match(/\{[\s\S]*\}/);
+    let jsonString = content;
     
-    const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
-    return JSON.parse(jsonString.trim());
+    // First try to find JSON in code blocks
+    const codeBlockMatch = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+    if (codeBlockMatch) {
+      jsonString = codeBlockMatch[1];
+    } else {
+      // Try to find standalone JSON object or array
+      const objectMatch = content.match(/\{[\s\S]*\}/);
+      const arrayMatch = content.match(/\[[\s\S]*\]/);
+      
+      if (objectMatch) {
+        jsonString = objectMatch[0];
+      } else if (arrayMatch) {
+        jsonString = arrayMatch[0];
+      }
+    }
+    
+    // Clean up common issues
+    jsonString = jsonString
+      .trim()
+      .replace(/,\s*}/g, '}')  // Remove trailing commas before }
+      .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
+      .replace(/[\x00-\x1F\x7F]/g, ' ')  // Remove control characters
+      .replace(/\\n/g, '\\n')  // Escape newlines properly
+      .replace(/\n/g, ' ');  // Replace actual newlines with spaces in strings
+    
+    return JSON.parse(jsonString);
   } catch (error) {
     console.error('JSON parsing error:', error);
-    console.error('Raw content:', content.substring(0, 500));
+    console.error('Raw content:', content.substring(0, 1000));
+    
+    // Try one more time with aggressive cleaning
+    try {
+      const cleanedContent = content
+        .replace(/```(?:json)?/g, '')
+        .replace(/```/g, '')
+        .trim();
+      
+      // Find the first { and last } or first [ and last ]
+      const firstBrace = cleanedContent.indexOf('{');
+      const lastBrace = cleanedContent.lastIndexOf('}');
+      const firstBracket = cleanedContent.indexOf('[');
+      const lastBracket = cleanedContent.lastIndexOf(']');
+      
+      let jsonStr = '';
+      if (firstBrace !== -1 && lastBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+        jsonStr = cleanedContent.substring(firstBrace, lastBrace + 1);
+      } else if (firstBracket !== -1 && lastBracket !== -1) {
+        jsonStr = cleanedContent.substring(firstBracket, lastBracket + 1);
+      }
+      
+      if (jsonStr) {
+        return JSON.parse(jsonStr);
+      }
+    } catch (e) {
+      // Final fallback failed
+    }
+    
     throw new Error('Failed to parse AI response as JSON');
   }
 }
