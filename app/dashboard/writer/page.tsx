@@ -98,8 +98,8 @@ export default function WriterPage() {
           title: idea.title,
           keyword: idea.keywords[0] || idea.title,
           description: idea.description,
-          contentType: idea.contentType || 'article',
-          wordCount: wordCount,
+          contentType: idea.contentType,
+          wordCount,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -109,7 +109,7 @@ export default function WriterPage() {
       }
 
       const reader = response.body?.getReader();
-      if (!reader) throw new Error('No response body');
+      if (!reader) throw new Error('No reader available');
 
       const decoder = new TextDecoder();
       let buffer = '';
@@ -119,7 +119,7 @@ export default function WriterPage() {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
+        const lines = buffer.split('\n');
         buffer = lines.pop() || '';
 
         for (const line of lines) {
@@ -129,48 +129,45 @@ export default function WriterPage() {
               
               if (data.type === 'progress') {
                 setProgress(data);
-              } else if (data.type === 'complete') {
-                if (data.success && data.article) {
-                  setArticle({
-                    title: data.article.title,
-                    content: data.article.content,
-                    word_count: data.article.wordCount,
-                    project_id: idea.project_id,
-                    featured_image: data.article.featuredImage,
-                    slug: data.article.slug,
-                    metaDescription: data.article.metaDescription,
-                  });
-                }
+              } else if (data.type === 'complete' && data.success) {
+                setArticle({
+                  title: data.article.title,
+                  content: data.article.content,
+                  word_count: data.article.wordCount,
+                  project_id: project?.id,
+                  featured_image: data.article.featuredImage,
+                  slug: data.article.slug,
+                  metaDescription: data.article.metaDescription,
+                });
                 setGenerating(false);
               } else if (data.type === 'error') {
                 setError(data.message);
                 setGenerating(false);
               }
             } catch (e) {
-              console.warn('Failed to parse SSE message:', e);
+              // Ignore parse errors
             }
           }
         }
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        setError('Generatie geannuleerd');
-      } else {
+      if (err.name !== 'AbortError') {
         setError(err.message || 'Er is een fout opgetreden');
       }
+    } finally {
       setGenerating(false);
     }
   }
 
-  const cancelGeneration = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-  };
+  function cancelGeneration() {
+    abortControllerRef.current?.abort();
+    setGenerating(false);
+    setProgress(null);
+  }
 
   async function saveArticle() {
     if (!article) return;
-    
+
     try {
       const response = await fetch('/api/articles/update', {
         method: 'POST',
@@ -178,25 +175,22 @@ export default function WriterPage() {
         body: JSON.stringify({
           title: article.title,
           content: article.content,
-          word_count: article.word_count,
           project_id: project?.id || idea?.project_id,
-          featured_image: article.featured_image,
+          status: 'draft',
           slug: article.slug,
-          meta_description: article.metaDescription,
-          status: 'draft'
-        })
+          excerpt: article.metaDescription,
+        }),
       });
 
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.error || 'Opslaan mislukt');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to save article');
       }
 
-      alert('✅ Artikel opgeslagen!');
+      alert('Artikel opgeslagen in bibliotheek!');
       router.push('/dashboard/library');
     } catch (err: any) {
-      alert('❌ Fout bij opslaan: ' + err.message);
+      setError(err.message || 'Fout bij opslaan');
     }
   }
 
@@ -431,20 +425,121 @@ export default function WriterPage() {
               </div>
             )}
 
-            {/* Article Preview */}
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-8">
+            {/* Article Preview - Improved styling */}
+            <div className="bg-white rounded-xl p-8 shadow-xl">
               <div 
-                className="prose prose-invert prose-lg max-w-none
-                  prose-headings:text-white prose-headings:font-bold
-                  prose-h1:text-3xl prose-h1:mb-6
-                  prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
-                  prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3
-                  prose-p:text-gray-300 prose-p:leading-relaxed
-                  prose-li:text-gray-300
-                  prose-strong:text-white
-                  prose-a:text-orange-400 prose-a:no-underline hover:prose-a:underline"
+                className="article-preview"
                 dangerouslySetInnerHTML={{ __html: article.content }}
               />
+              <style jsx global>{`
+                .article-preview {
+                  color: #1a1a1a;
+                  font-family: Georgia, 'Times New Roman', serif;
+                  font-size: 1.125rem;
+                  line-height: 1.8;
+                }
+                .article-preview h1 {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                  font-size: 2.5rem;
+                  font-weight: 800;
+                  color: #111;
+                  margin-bottom: 1.5rem;
+                  line-height: 1.2;
+                }
+                .article-preview h2 {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                  font-size: 1.75rem;
+                  font-weight: 700;
+                  color: #222;
+                  margin-top: 2.5rem;
+                  margin-bottom: 1rem;
+                  padding-bottom: 0.5rem;
+                  border-bottom: 2px solid #f97316;
+                }
+                .article-preview h3 {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                  font-size: 1.375rem;
+                  font-weight: 600;
+                  color: #333;
+                  margin-top: 2rem;
+                  margin-bottom: 0.75rem;
+                }
+                .article-preview p {
+                  margin-bottom: 1.25rem;
+                  color: #374151;
+                }
+                .article-preview ul,
+                .article-preview ol {
+                  margin: 1.5rem 0;
+                  padding-left: 1.5rem;
+                }
+                .article-preview ul {
+                  list-style-type: disc;
+                }
+                .article-preview ol {
+                  list-style-type: decimal;
+                }
+                .article-preview li {
+                  margin-bottom: 0.5rem;
+                  color: #374151;
+                  line-height: 1.7;
+                }
+                .article-preview strong {
+                  color: #111;
+                  font-weight: 700;
+                }
+                .article-preview a {
+                  color: #f97316;
+                  text-decoration: none;
+                }
+                .article-preview a:hover {
+                  text-decoration: underline;
+                }
+                .article-preview blockquote {
+                  border-left: 4px solid #f97316;
+                  background: #fff7ed;
+                  padding: 1rem 1.5rem;
+                  margin: 1.5rem 0;
+                  font-style: italic;
+                  color: #92400e;
+                }
+                .article-preview code {
+                  background: #f3f4f6;
+                  padding: 0.2rem 0.4rem;
+                  border-radius: 0.25rem;
+                  font-size: 0.9em;
+                  color: #dc2626;
+                }
+                .article-preview pre {
+                  background: #1f2937;
+                  color: #e5e7eb;
+                  padding: 1rem;
+                  border-radius: 0.5rem;
+                  overflow-x: auto;
+                  margin: 1.5rem 0;
+                }
+                .article-preview img {
+                  max-width: 100%;
+                  height: auto;
+                  border-radius: 0.5rem;
+                  margin: 1.5rem 0;
+                }
+                .article-preview table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin: 1.5rem 0;
+                }
+                .article-preview th,
+                .article-preview td {
+                  border: 1px solid #e5e7eb;
+                  padding: 0.75rem;
+                  text-align: left;
+                }
+                .article-preview th {
+                  background: #f9fafb;
+                  font-weight: 600;
+                }
+              `}</style>
             </div>
           </div>
         )}

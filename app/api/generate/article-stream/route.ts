@@ -12,6 +12,70 @@ function sendSSE(controller: ReadableStreamDefaultController, data: any) {
   controller.enqueue(new TextEncoder().encode(message));
 }
 
+// Helper to ensure proper HTML structure with headings
+function ensureHtmlStructure(content: string): string {
+  let html = content;
+  
+  // Remove markdown code blocks
+  html = html.replace(/```html\s*/gi, '');
+  html = html.replace(/```\s*/g, '');
+  
+  // If content doesn't have HTML tags, convert from plain text
+  if (!html.includes('<h') && !html.includes('<p>')) {
+    // Split by double newlines for paragraphs
+    const paragraphs = html.split(/\n\n+/);
+    html = paragraphs.map(p => {
+      p = p.trim();
+      if (!p) return '';
+      
+      // Check if it looks like a heading (short, no period at end)
+      if (p.length < 100 && !p.endsWith('.') && !p.startsWith('-') && !p.startsWith('•')) {
+        // Determine heading level
+        if (p.match(/^#{1,2}\s/)) {
+          return `<h2>${p.replace(/^#+\s*/, '')}</h2>`;
+        } else if (p.match(/^#{3}\s/)) {
+          return `<h3>${p.replace(/^#+\s*/, '')}</h3>`;
+        } else if (p.length < 60) {
+          return `<h2>${p}</h2>`;
+        }
+      }
+      
+      // Check for list items
+      if (p.match(/^[-•*]\s/m)) {
+        const items = p.split(/\n/).filter(line => line.trim());
+        const listItems = items.map(item => `<li>${item.replace(/^[-•*]\s*/, '')}</li>`).join('\n');
+        return `<ul>\n${listItems}\n</ul>`;
+      }
+      
+      // Check for numbered list
+      if (p.match(/^\d+\.\s/m)) {
+        const items = p.split(/\n/).filter(line => line.trim());
+        const listItems = items.map(item => `<li>${item.replace(/^\d+\.\s*/, '')}</li>`).join('\n');
+        return `<ol>\n${listItems}\n</ol>`;
+      }
+      
+      return `<p>${p}</p>`;
+    }).join('\n\n');
+  }
+  
+  // Ensure paragraphs are wrapped
+  html = html.replace(/(<\/h[1-6]>)\s*([^<])/g, '$1\n\n<p>$2');
+  html = html.replace(/([^>])\s*(<h[1-6])/g, '$1</p>\n\n$2');
+  
+  // Clean up empty paragraphs
+  html = html.replace(/<p>\s*<\/p>/g, '');
+  
+  // Add spacing between elements
+  html = html.replace(/<\/h2>\s*<h3>/g, '</h2>\n\n<h3>');
+  html = html.replace(/<\/h3>\s*<p>/g, '</h3>\n\n<p>');
+  html = html.replace(/<\/p>\s*<h2>/g, '</p>\n\n<h2>');
+  html = html.replace(/<\/p>\s*<h3>/g, '</p>\n\n<h3>');
+  html = html.replace(/<\/ul>\s*<h/g, '</ul>\n\n<h');
+  html = html.replace(/<\/ol>\s*<h/g, '</ol>\n\n<h');
+  
+  return html.trim();
+}
+
 // Helper to clean HTML content
 function cleanHtmlContent(content: string): string {
   let cleaned = content;
@@ -34,6 +98,9 @@ function cleanHtmlContent(content: string): string {
   
   // Clean forbidden words
   cleaned = cleanForbiddenWords(cleaned);
+  
+  // Ensure proper HTML structure
+  cleaned = ensureHtmlStructure(cleaned);
   
   return cleaned.trim();
 }
@@ -157,14 +224,23 @@ Specifieke vereisten voor intro:
 - Vermeld het keyword in de eerste 100 woorden
 - Geef een preview van wat de lezer gaat leren
 - Ongeveer 150-200 woorden
-- Output als HTML (alleen de content, geen wrapper tags)
-- GEEN "In deze blog..." of "In dit artikel..." zinnen`;
+- Output als HTML met <p> tags voor elke alinea
+- Elke alinea max 3-4 zinnen
+- GEEN "In deze blog..." of "In dit artikel..." zinnen
+- GEEN H1 of H2 tags in de intro
+
+Voorbeeld output formaat:
+<p>Eerste alinea met hook en keyword.</p>
+
+<p>Tweede alinea met context.</p>
+
+<p>Derde alinea met preview van wat komt.</p>`;
 
         let introContent = '';
         try {
           introContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een expert content writer. Schrijf in het Nederlands met "je/jij". Output alleen HTML content. Gebruik NOOIT verboden woorden.',
+            systemPrompt: 'Je bent een expert content writer. Schrijf in het Nederlands met "je/jij". Output alleen HTML content met <p> tags. Gebruik NOOIT verboden woorden. Elke alinea in eigen <p> tag.',
             userPrompt: introPrompt,
             maxTokens: 1000,
             temperature: 0.7,
@@ -202,22 +278,51 @@ ${outline ? `Volg deze outline:\n${JSON.stringify(outline.sections, null, 2)}` :
 
 ${CONTENT_PROMPT_RULES}
 
-Specifieke vereisten:
-- Gebruik H2 en H3 headings (alleen eerste letter hoofdletter)
-- Vermeld het keyword natuurlijk door de tekst
-- Voeg praktische tips en concrete voorbeelden toe
-- Gebruik bullet points en genummerde lijsten waar relevant
-- Korte alinea's van max 3-4 zinnen
-- Maak het informatief en actionable
-- Output als HTML (alleen content, geen wrapper)
+BELANGRIJKE OPMAAK REGELS:
+1. Gebruik <h2> voor hoofdsecties (alleen eerste letter hoofdletter)
+2. Gebruik <h3> voor subsecties (alleen eerste letter hoofdletter)
+3. Elke alinea in eigen <p> tag
+4. Korte alinea's van max 3-4 zinnen
+5. Lege regel tussen elk element
+6. Gebruik <ul> of <ol> voor lijsten met <li> items
+7. Gebruik <strong> voor belangrijke woorden
 
-BELANGRIJK: Output ALLEEN de HTML content, geen markdown code blocks.`;
+Voorbeeld structuur:
+<h2>Eerste sectie heading</h2>
+
+<p>Eerste alinea van deze sectie. Kort en bondig.</p>
+
+<p>Tweede alinea met meer details.</p>
+
+<h3>Subsectie heading</h3>
+
+<p>Content voor de subsectie.</p>
+
+<ul>
+<li>Eerste punt</li>
+<li>Tweede punt</li>
+<li>Derde punt</li>
+</ul>
+
+<h2>Tweede sectie heading</h2>
+
+<p>Enzovoort...</p>
+
+BELANGRIJK: Output ALLEEN de HTML content, geen markdown code blocks. Zorg voor goede witruimte tussen elementen.`;
 
         let mainContent = '';
         try {
           mainContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een expert SEO content writer. Schrijf uitgebreide, informatieve content in het Nederlands met "je/jij". Output alleen HTML, geen markdown. Gebruik NOOIT verboden woorden zoals: cruciaal, essentieel, kortom, conclusie, duiken, jungle, de sleutel, superheld, veilige haven, gids, voordelen, digitaal tijdperk, gedoe.',
+            systemPrompt: `Je bent een expert SEO content writer. Schrijf uitgebreide, informatieve content in het Nederlands met "je/jij". 
+
+OUTPUT REGELS:
+- Output alleen HTML, geen markdown
+- Gebruik <h2> en <h3> voor headings
+- Elke alinea in eigen <p> tag
+- Korte alinea's (max 3-4 zinnen)
+- Lege regels tussen elementen voor leesbaarheid
+- Gebruik NOOIT verboden woorden zoals: cruciaal, essentieel, kortom, conclusie, duiken, jungle, de sleutel, superheld, veilige haven, gids, voordelen, digitaal tijdperk, gedoe.`,
             userPrompt: mainPrompt,
             maxTokens: 8000,
             temperature: 0.7,
@@ -257,14 +362,22 @@ Specifieke vereisten:
 - Vat de belangrijkste punten samen
 - Eindig met een call-to-action
 - Ongeveer 150-200 woorden
-- Output als HTML
-- NIET het woord "conclusie" gebruiken als heading - gebruik iets als "Tot slot" of "Aan de slag"`;
+- Output als HTML met <p> tags
+- Elke alinea in eigen <p> tag
+- NIET het woord "conclusie" gebruiken - de heading is al "Tot slot"
+
+Voorbeeld output:
+<p>Samenvattende alinea over het onderwerp.</p>
+
+<p>Tweede alinea met key takeaways.</p>
+
+<p>Afsluitende alinea met call-to-action.</p>`;
 
         let conclusionContent = '';
         try {
           conclusionContent = await generateAICompletion({
             task: 'content',
-            systemPrompt: 'Je bent een expert content writer. Schrijf krachtige afsluitingen. Output alleen HTML. Gebruik NOOIT het woord "conclusie".',
+            systemPrompt: 'Je bent een expert content writer. Schrijf krachtige afsluitingen. Output alleen HTML met <p> tags. Gebruik NOOIT het woord "conclusie".',
             userPrompt: conclusionPrompt,
             maxTokens: 800,
             temperature: 0.7,
@@ -304,20 +417,19 @@ Specifieke vereisten:
           featuredImage = '';
         }
 
-        // Combine all content
-        const fullContent = `
-<h1>${outline?.mainHeading || title}</h1>
+        // Combine all content with proper spacing
+        const fullContent = `<h1>${outline?.mainHeading || title}</h1>
 
 ${introContent}
 
 ${mainContent}
 
 <h2>Tot slot</h2>
-${conclusionContent}
-`.trim();
+
+${conclusionContent}`.trim();
 
         const slug = generateSlugFromKeyword(keyword);
-        const wordCountActual = fullContent.split(/\s+/).length;
+        const wordCountActual = fullContent.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
 
         sendSSE(controller, {
           type: 'progress',
@@ -348,7 +460,7 @@ ${conclusionContent}
         console.error('Article generation error:', error);
         sendSSE(controller, {
           type: 'error',
-          message: error.message || 'Er is een fout opgetreden bij het genereren',
+          message: error.message || 'Er is een fout opgetreden',
         });
       } finally {
         controller.close();
