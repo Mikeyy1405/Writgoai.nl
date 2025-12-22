@@ -116,7 +116,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 <div className="p-6">
                   {/* Keyword Badge */}
                   {article.focus_keyword && (
-                    <span className="inline-block px-3 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded-full mb-3">
+                    <span className="inline-block px-3 py-1 text-xs font-medium text-orange-400 bg-orange-900/30 rounded-full mb-3">
                       {article.focus_keyword}
                     </span>
                   )}

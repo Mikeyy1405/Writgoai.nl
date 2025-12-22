@@ -71,7 +71,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,excerpt.ilike.%${search}%`);
+      // Sanitize search input to prevent SQL injection
+      const sanitizedSearch = search.replace(/[%_]/g, '\\$&');
+      query = query.or(`title.ilike.%${sanitizedSearch}%,content.ilike.%${sanitizedSearch}%,excerpt.ilike.%${sanitizedSearch}%`);
     }
 
     // Category and tag filtering would need joins, simplified here
