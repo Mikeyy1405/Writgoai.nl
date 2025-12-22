@@ -229,31 +229,31 @@ export default function WritGoBlogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
+    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        {/* Header - Responsive */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
               📝 WritGo Blog Beheer
             </h1>
-            <p className="text-gray-400 mt-1">Beheer de artikelen op writgo.nl/blog</p>
+            <p className="text-gray-400 mt-1 text-sm md:text-base">Beheer de artikelen op writgo.nl/blog</p>
           </div>
 
           <button
             onClick={openNewPost}
-            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold px-6 py-3 rounded-lg transition flex items-center gap-2"
+            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold px-4 md:px-6 py-2 md:py-3 rounded-lg transition flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             ➕ Nieuw Artikel
           </button>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-4 mb-6">
+        {/* Filters - Responsive */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white flex-1 sm:flex-none"
           >
             <option value="all">Alle statussen</option>
             <option value="draft">Concept</option>
@@ -263,7 +263,7 @@ export default function WritGoBlogPage() {
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white flex-1 sm:flex-none"
           >
             <option value="all">Alle categorieën</option>
             {CATEGORIES.map(cat => (
@@ -271,229 +271,237 @@ export default function WritGoBlogPage() {
             ))}
           </select>
 
-          <div className="ml-auto text-gray-400">
+          <div className="text-gray-400 text-sm sm:ml-auto self-center">
             {filteredPosts.length} artikel{filteredPosts.length !== 1 ? 'en' : ''}
           </div>
         </div>
 
-        {/* Posts list */}
-        <div className="bg-gray-800 rounded-xl overflow-hidden">
+        {/* Posts list - Card layout for mobile */}
+        <div className="space-y-4">
           {filteredPosts.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
+            <div className="bg-gray-800 rounded-xl text-center py-12 text-gray-400">
               <p className="text-4xl mb-4">📝</p>
               <p>Nog geen artikelen</p>
               <p className="text-sm mt-2">Klik op "Nieuw Artikel" om te beginnen</p>
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="text-left px-6 py-4 font-medium">Titel</th>
-                  <th className="text-left px-6 py-4 font-medium">Categorie</th>
-                  <th className="text-left px-6 py-4 font-medium">Status</th>
-                  <th className="text-left px-6 py-4 font-medium">Datum</th>
-                  <th className="text-right px-6 py-4 font-medium">Acties</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {filteredPosts.map(post => (
-                  <tr key={post.id} className="hover:bg-gray-700/50 transition">
-                    <td className="px-6 py-4">
-                      <div className="font-medium">{post.title}</div>
-                      <div className="text-sm text-gray-400">/blog/{post.slug}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="bg-gray-600 px-2 py-1 rounded text-sm">
+            filteredPosts.map(post => (
+              <div key={post.id} className="bg-gray-800 rounded-xl p-4 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-start gap-4">
+                  {/* Post info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-lg mb-1 break-words">{post.title}</h3>
+                    <p className="text-sm text-gray-400 mb-3 break-all">/blog/{post.slug}</p>
+                    
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="bg-gray-700 px-2 py-1 rounded text-xs">
                         {post.category}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded text-sm ${
+                      <span className={`px-2 py-1 rounded text-xs ${
                         post.status === 'published' 
                           ? 'bg-green-500/20 text-green-400' 
                           : 'bg-yellow-500/20 text-yellow-400'
                       }`}>
                         {post.status === 'published' ? 'Gepubliceerd' : 'Concept'}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-400">
-                      {formatDate(post.created_at)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => togglePublish(post)}
-                          className={`text-xs px-3 py-1.5 rounded transition ${
-                            post.status === 'published'
-                              ? 'bg-yellow-600 hover:bg-yellow-500'
-                              : 'bg-green-600 hover:bg-green-500'
-                          }`}
-                        >
-                          {post.status === 'published' ? '📤 Unpublish' : '📢 Publiceer'}
-                        </button>
-                        <button
-                          onClick={() => openEditPost(post)}
-                          className="text-xs bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded transition"
-                        >
-                          ✏️ Bewerk
-                        </button>
-                        <button
-                          onClick={() => deletePost(post.id)}
-                          className="text-xs bg-red-600 hover:bg-red-500 px-3 py-1.5 rounded transition"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <span className="text-xs text-gray-500">
+                        {formatDate(post.created_at)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => openEditPost(post)}
+                      className="bg-blue-600 hover:bg-blue-500 px-3 py-2 rounded-lg text-sm transition flex-1 sm:flex-none"
+                    >
+                      ✏️ Bewerken
+                    </button>
+                    <button
+                      onClick={() => togglePublish(post)}
+                      className={`px-3 py-2 rounded-lg text-sm transition flex-1 sm:flex-none ${
+                        post.status === 'published'
+                          ? 'bg-yellow-600 hover:bg-yellow-500'
+                          : 'bg-green-600 hover:bg-green-500'
+                      }`}
+                    >
+                      {post.status === 'published' ? '📝 Unpublish' : '🚀 Publiceer'}
+                    </button>
+                    <button
+                      onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                      className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition"
+                    >
+                      👁️
+                    </button>
+                    <button
+                      onClick={() => deletePost(post.id)}
+                      className="bg-red-600 hover:bg-red-500 px-3 py-2 rounded-lg text-sm transition"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
 
-      {/* Edit/Create Modal */}
+      {/* Edit/New Modal */}
       {(editingPost || isNewPost) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-semibold mb-6">
-              {isNewPost ? '➕ Nieuw Artikel' : '✏️ Artikel Bewerken'}
-            </h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left column */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Titel *</label>
-                  <input
-                    type="text"
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                    placeholder="Artikel titel"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Excerpt</label>
-                  <textarea
-                    value={formExcerpt}
-                    onChange={(e) => setFormExcerpt(e.target.value)}
-                    rows={3}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white resize-none"
-                    placeholder="Korte samenvatting"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Categorie</label>
-                    <select
-                      value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                    >
-                      {CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Status</label>
-                    <select
-                      value={formStatus}
-                      onChange={(e) => setFormStatus(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                    >
-                      <option value="draft">Concept</option>
-                      <option value="published">Gepubliceerd</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Tags (komma-gescheiden)</label>
-                  <input
-                    type="text"
-                    value={formTags}
-                    onChange={(e) => setFormTags(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                    placeholder="seo, content, tips"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Featured Image URL</label>
-                  <input
-                    type="text"
-                    value={formFeaturedImage}
-                    onChange={(e) => setFormFeaturedImage(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-
-              {/* Right column */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Content (HTML)</label>
-                  <textarea
-                    value={formContent}
-                    onChange={(e) => setFormContent(e.target.value)}
-                    rows={12}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white font-mono text-sm resize-none"
-                    placeholder="<p>Artikel content...</p>"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Meta Title</label>
-                  <input
-                    type="text"
-                    value={formMetaTitle}
-                    onChange={(e) => setFormMetaTitle(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                    placeholder="SEO titel"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Meta Description</label>
-                  <textarea
-                    value={formMetaDescription}
-                    onChange={(e) => setFormMetaDescription(e.target.value)}
-                    rows={2}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white resize-none"
-                    placeholder="SEO beschrijving"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-700">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-gray-800 rounded-xl p-4 md:p-6 w-full max-w-4xl my-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">
+                {isNewPost ? '➕ Nieuw Artikel' : '✏️ Artikel Bewerken'}
+              </h2>
               <button
                 onClick={closeModal}
-                className="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition"
+                className="text-gray-400 hover:text-white text-2xl"
               >
-                Annuleren
+                ×
               </button>
-              <button
-                onClick={savePost}
-                disabled={saving}
-                className="px-6 py-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 rounded-lg transition flex items-center gap-2"
-              >
-                {saving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                    Opslaan...
-                  </>
-                ) : (
-                  <>💾 Opslaan</>
-                )}
-              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Title */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Titel *</label>
+                <input
+                  type="text"
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  placeholder="Artikel titel"
+                />
+              </div>
+
+              {/* Category & Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Categorie</label>
+                  <select
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  >
+                    {CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Status</label>
+                  <select
+                    value={formStatus}
+                    onChange={(e) => setFormStatus(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  >
+                    <option value="draft">Concept</option>
+                    <option value="published">Gepubliceerd</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Excerpt */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Excerpt / Samenvatting</label>
+                <textarea
+                  value={formExcerpt}
+                  onChange={(e) => setFormExcerpt(e.target.value)}
+                  rows={2}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white resize-none"
+                  placeholder="Korte samenvatting van het artikel"
+                />
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Content (HTML)</label>
+                <textarea
+                  value={formContent}
+                  onChange={(e) => setFormContent(e.target.value)}
+                  rows={10}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white font-mono text-sm resize-y"
+                  placeholder="<h2>Heading</h2><p>Content...</p>"
+                />
+              </div>
+
+              {/* Featured Image */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Featured Image URL</label>
+                <input
+                  type="url"
+                  value={formFeaturedImage}
+                  onChange={(e) => setFormFeaturedImage(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  placeholder="https://..."
+                />
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Tags (komma gescheiden)</label>
+                <input
+                  type="text"
+                  value={formTags}
+                  onChange={(e) => setFormTags(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  placeholder="seo, content, tips"
+                />
+              </div>
+
+              {/* SEO */}
+              <div className="border-t border-gray-700 pt-4 mt-4">
+                <h3 className="font-medium mb-4">🔍 SEO</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Meta Title</label>
+                    <input
+                      type="text"
+                      value={formMetaTitle}
+                      onChange={(e) => setFormMetaTitle(e.target.value)}
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      placeholder="SEO titel (max 60 karakters)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Meta Description</label>
+                    <textarea
+                      value={formMetaDescription}
+                      onChange={(e) => setFormMetaDescription(e.target.value)}
+                      rows={2}
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white resize-none"
+                      placeholder="SEO beschrijving (max 160 karakters)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <button
+                  onClick={closeModal}
+                  className="px-6 py-3 bg-gray-600 hover:bg-gray-500 rounded-lg transition order-2 sm:order-1"
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={savePost}
+                  disabled={saving}
+                  className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 rounded-lg transition flex items-center justify-center gap-2 order-1 sm:order-2"
+                >
+                  {saving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                      Opslaan...
+                    </>
+                  ) : (
+                    <>💾 Opslaan</>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
