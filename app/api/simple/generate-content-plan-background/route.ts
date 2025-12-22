@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createClient as createServerClient } from '@/lib/supabase-server';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     // Get user from session if not provided
     let userId = user_id;
     if (!userId) {
-      const supabase = await createServerSupabaseClient();
+      const supabase = createServerClient();
       const { data: { user } } = await supabase.auth.getUser();
       userId = user?.id;
     }
