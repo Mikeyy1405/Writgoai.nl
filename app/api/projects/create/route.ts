@@ -19,58 +19,76 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, website_url, wp_username, wp_password } = body;
 
-    // Auto-generate wp_url from website_url
-    let wp_url = website_url.trim();
-    // Remove trailing slash
-    if (wp_url.endsWith('/')) {
-      wp_url = wp_url.slice(0, -1);
-    }
-    // Add /wp-json/wp/v2 if not already present
-    if (!wp_url.includes('/wp-json')) {
-      wp_url = `${wp_url}/wp-json/wp/v2`;
-    }
+    // Check if this is a WritGo project
+    const isWritGoProject = website_url?.toLowerCase().includes('writgo.nl');
 
     // Validate required fields
-    if (!name || !website_url || !wp_username || !wp_password) {
+    if (!name || !website_url) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'Project name and website URL are required' },
         { status: 400 }
       );
     }
 
-    // Test WordPress connection
-    try {
-      // Remove extra spaces from password (Application Passwords often have spaces)
-      const cleanPassword = wp_password.replace(/\s+/g, '');
-      
-      // Create abort controller for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
-        headers: {
-          'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
-          'User-Agent': 'WritGo-SEO-Agent/1.0',
-        },
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
+    // For non-WritGo projects, WordPress credentials are required
+    if (!isWritGoProject && (!wp_username || !wp_password)) {
+      return NextResponse.json(
+        { error: 'WordPress credentials are required for external websites' },
+        { status: 400 }
+      );
+    }
 
-      if (!testResponse.ok) {
-        const errorText = await testResponse.text();
-        console.error('WordPress connection failed:', testResponse.status, errorText);
+    let wp_url = null;
+    let finalWpUsername = wp_username || null;
+    let finalWpPassword = wp_password || null;
+
+    // Only process WordPress connection for non-WritGo projects
+    if (!isWritGoProject) {
+      // Auto-generate wp_url from website_url
+      wp_url = website_url.trim();
+      // Remove trailing slash
+      if (wp_url.endsWith('/')) {
+        wp_url = wp_url.slice(0, -1);
+      }
+      // Add /wp-json/wp/v2 if not already present
+      if (!wp_url.includes('/wp-json')) {
+        wp_url = `${wp_url}/wp-json/wp/v2`;
+      }
+
+      // Test WordPress connection
+      try {
+        // Remove extra spaces from password (Application Passwords often have spaces)
+        const cleanPassword = wp_password.replace(/\s+/g, '');
+        
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
+          headers: {
+            'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
+            'User-Agent': 'WritGo-SEO-Agent/1.0',
+          },
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!testResponse.ok) {
+          const errorText = await testResponse.text();
+          console.error('WordPress connection failed:', testResponse.status, errorText);
+          return NextResponse.json(
+            { error: `WordPress connection failed (${testResponse.status}). Check your credentials.` },
+            { status: 400 }
+          );
+        }
+      } catch (wpError: any) {
+        console.error('WordPress connection error:', wpError.message);
         return NextResponse.json(
-          { error: `WordPress connection failed (${testResponse.status}). Check your credentials.` },
+          { error: `Could not connect to WordPress: ${wpError.message}` },
           { status: 400 }
         );
       }
-    } catch (wpError: any) {
-      console.error('WordPress connection error:', wpError.message);
-      return NextResponse.json(
-        { error: `Could not connect to WordPress: ${wpError.message}` },
-        { status: 400 }
-      );
     }
 
     // Create project in database
@@ -81,8 +99,8 @@ export async function POST(request: Request) {
         name,
         website_url,
         wp_url,
-        wp_username,
-        wp_password,
+        wp_username: finalWpUsername,
+        wp_password: finalWpPassword,
       })
       .select()
       .single();
