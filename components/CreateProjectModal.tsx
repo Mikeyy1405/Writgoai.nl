@@ -13,7 +13,9 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [warning, setWarning] = useState('');
   const [showWordPress, setShowWordPress] = useState(false);
+  const [skipWpTest, setSkipWpTest] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     website_url: '',
@@ -30,6 +32,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
     setTesting(true);
     setError('');
     setSuccess('');
+    setWarning('');
 
     try {
       // Build the WordPress API URL
@@ -61,7 +64,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
       }
     } catch (err: any) {
       if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        setError('Kon geen verbinding maken. Dit kan komen door CORS restricties. Probeer het project aan te maken - de server test de verbinding opnieuw.');
+        setWarning('Kon geen verbinding maken vanuit de browser (CORS). De server zal de verbinding testen bij het aanmaken.');
       } else {
         setError(`Verbindingsfout: ${err.message}`);
       }
@@ -74,13 +77,17 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
     e.preventDefault();
     setError('');
     setSuccess('');
+    setWarning('');
     setLoading(true);
 
     try {
       const response = await fetch('/api/projects/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          skip_wp_test: skipWpTest,
+        }),
       });
 
       const data = await response.json();
@@ -89,15 +96,35 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
         throw new Error(data.error || 'Failed to create project');
       }
 
-      onSuccess();
-      onClose();
-      setFormData({
-        name: '',
-        website_url: '',
-        wp_username: '',
-        wp_password: '',
-      });
-      setShowWordPress(false);
+      // Show warning if there was a WordPress issue but project was created
+      if (data.wordpress_warning) {
+        setWarning(data.wordpress_warning);
+        // Still close and refresh after a short delay
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+          setFormData({
+            name: '',
+            website_url: '',
+            wp_username: '',
+            wp_password: '',
+          });
+          setShowWordPress(false);
+          setSkipWpTest(false);
+          setWarning('');
+        }, 2000);
+      } else {
+        onSuccess();
+        onClose();
+        setFormData({
+          name: '',
+          website_url: '',
+          wp_username: '',
+          wp_password: '',
+        });
+        setShowWordPress(false);
+        setSkipWpTest(false);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -125,6 +152,12 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
         {error && (
           <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded text-red-400 text-sm">
             {error}
+          </div>
+        )}
+
+        {warning && (
+          <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500 rounded text-yellow-400 text-sm">
+            ⚠️ {warning}
           </div>
         )}
 
@@ -185,8 +218,8 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
                 <strong>💡 Hoe maak je een Application Password?</strong>
                 <ol className="mt-2 ml-4 list-decimal space-y-1 text-blue-200">
                   <li>Ga naar je WordPress admin → Gebruikers → Profiel</li>
-                  <li>Scroll naar "Application Passwords"</li>
-                  <li>Voer een naam in (bijv. "WritGo") en klik "Nieuw wachtwoord toevoegen"</li>
+                  <li>Scroll naar &quot;Application Passwords&quot;</li>
+                  <li>Voer een naam in (bijv. &quot;WritGo&quot;) en klik &quot;Nieuw wachtwoord toevoegen&quot;</li>
                   <li>Kopieer het wachtwoord (met of zonder spaties)</li>
                 </ol>
               </div>
@@ -225,23 +258,42 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={testWordPressConnection}
-                disabled={testing || loading}
-                className="w-full px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-              >
-                {testing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Testen...
-                  </>
-                ) : (
-                  <>
-                    🔌 Test WordPress Verbinding
-                  </>
-                )}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={testWordPressConnection}
+                  disabled={testing || loading}
+                  className="flex-1 px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  {testing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Testen...
+                    </>
+                  ) : (
+                    <>
+                      🔌 Test Verbinding
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Skip test option for slow servers */}
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-700">
+                <input
+                  type="checkbox"
+                  id="skipWpTest"
+                  checked={skipWpTest}
+                  onChange={(e) => setSkipWpTest(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-orange-500 focus:ring-orange-500"
+                />
+                <label htmlFor="skipWpTest" className="text-sm text-gray-400">
+                  Server test overslaan (voor trage servers)
+                </label>
+              </div>
+              <p className="text-xs text-gray-500">
+                Als je server traag is en de test steeds faalt, vink dit aan. De credentials worden opgeslagen en je kunt later publiceren.
+              </p>
             </div>
           )}
 

@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, website_url, wp_username, wp_password } = body;
+    const { name, website_url, wp_username, wp_password, skip_wp_test } = body;
 
     // Validate required fields (only name and URL)
     if (!name || !website_url) {
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     let finalWpUsername = wp_username || null;
     let finalWpPassword = wp_password || null;
     let wordpressConnected = false;
+    let wordpressWarning = null;
 
     // Only process WordPress connection if credentials are provided
     if (hasWordPressCredentials) {
@@ -66,73 +67,69 @@ export async function POST(request: Request) {
       // Clean the password (remove spaces from Application Password)
       const cleanPassword = cleanApplicationPassword(wp_password);
 
-      console.log('Testing WordPress connection to:', wp_url);
+      console.log('WordPress credentials provided for:', wp_url);
       console.log('Username:', wp_username);
+      console.log('Skip test:', skip_wp_test);
 
-      // Test WordPress connection
-      try {
-        // Create abort controller for timeout (15 seconds)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
-          headers: {
-            'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
-            'User-Agent': 'WritGo-SEO-Agent/2.0',
-            'Accept': 'application/json',
-          },
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-
-        console.log('WordPress test response status:', testResponse.status);
-
-        if (testResponse.ok) {
-          wordpressConnected = true;
-          console.log('WordPress connection successful');
-        } else {
-          const errorText = await testResponse.text();
-          console.error('WordPress connection failed:', testResponse.status, errorText);
+      // Test WordPress connection (unless skipped)
+      if (!skip_wp_test) {
+        try {
+          // Create abort controller for timeout (20 seconds - increased for slow servers)
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
           
-          let errorMessage = `WordPress verbinding mislukt (${testResponse.status})`;
+          const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
+            headers: {
+              'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
+              'User-Agent': 'WritGo-SEO-Agent/2.0',
+              'Accept': 'application/json',
+            },
+            signal: controller.signal,
+          });
           
-          if (testResponse.status === 401) {
-            errorMessage = 'WordPress authenticatie mislukt. Controleer je gebruikersnaam en applicatiewachtwoord. Zorg dat het applicatiewachtwoord correct is gekopieerd (met of zonder spaties).';
-          } else if (testResponse.status === 403) {
-            errorMessage = 'Toegang geweigerd. Controleer of de gebruiker de juiste rechten heeft en of de REST API toegankelijk is.';
-          } else if (testResponse.status === 404) {
-            errorMessage = 'WordPress REST API niet gevonden. Controleer of dit een WordPress website is en of de REST API is ingeschakeld.';
+          clearTimeout(timeoutId);
+
+          console.log('WordPress test response status:', testResponse.status);
+
+          if (testResponse.ok) {
+            wordpressConnected = true;
+            console.log('WordPress connection successful');
+          } else {
+            const errorText = await testResponse.text();
+            console.error('WordPress connection failed:', testResponse.status, errorText);
+            
+            // Don't block project creation, just warn
+            if (testResponse.status === 401) {
+              wordpressWarning = 'WordPress authenticatie mislukt. Controleer je credentials later.';
+            } else if (testResponse.status === 403) {
+              wordpressWarning = 'WordPress toegang geweigerd. Controleer gebruikersrechten.';
+            } else if (testResponse.status === 404) {
+              wordpressWarning = 'WordPress REST API niet gevonden.';
+            } else {
+              wordpressWarning = `WordPress test mislukt (${testResponse.status})`;
+            }
           }
+        } catch (wpError: any) {
+          console.error('WordPress connection error:', wpError);
           
-          return NextResponse.json(
-            { error: errorMessage },
-            { status: 400 }
-          );
+          // Don't block project creation on timeout or connection errors
+          if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT') {
+            wordpressWarning = 'WordPress test timeout - de server reageert traag. Credentials zijn opgeslagen, publiceren kan later werken.';
+          } else if (wpError.code === 'ENOTFOUND') {
+            wordpressWarning = 'Website niet gevonden. Controleer de URL.';
+          } else if (wpError.code === 'ECONNREFUSED') {
+            wordpressWarning = 'Verbinding geweigerd. Website mogelijk offline.';
+          } else {
+            wordpressWarning = `WordPress test mislukt: ${wpError.message || 'onbekende fout'}`;
+          }
         }
-      } catch (wpError: any) {
-        console.error('WordPress connection error:', wpError);
-        
-        let errorMessage = 'Kon geen verbinding maken met WordPress';
-        
-        if (wpError.name === 'AbortError') {
-          errorMessage = 'Verbinding met WordPress duurde te lang (timeout). Controleer of de website bereikbaar is.';
-        } else if (wpError.code === 'ENOTFOUND') {
-          errorMessage = 'Website niet gevonden. Controleer de URL.';
-        } else if (wpError.code === 'ECONNREFUSED') {
-          errorMessage = 'Verbinding geweigerd. Controleer of de website online is.';
-        } else if (wpError.message) {
-          errorMessage = `Verbindingsfout: ${wpError.message}`;
-        }
-        
-        return NextResponse.json(
-          { error: errorMessage },
-          { status: 400 }
-        );
+      } else {
+        // Test was skipped, assume credentials are correct
+        wordpressWarning = 'WordPress test overgeslagen. Credentials opgeslagen.';
       }
     }
 
-    // Create project in database
+    // Create project in database (always, even if WordPress test failed)
     const { data: project, error: dbError } = await supabase
       .from('projects')
       .insert({
@@ -157,7 +154,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true, 
       project,
-      wordpress_connected: wordpressConnected 
+      wordpress_connected: wordpressConnected,
+      wordpress_warning: wordpressWarning
     });
   } catch (error: any) {
     console.error('Error creating project:', error);
