@@ -59,8 +59,8 @@ function cleanHTMLContent(content: string): string {
   // Remove any "Here is" or similar AI preambles
   cleaned = cleaned.replace(/^(Here is|Here's|Below is|The following|Hier is|Hieronder)[^<]*</i, '<');
   
-  // Remove any trailing AI comments
-  cleaned = cleaned.replace(/\n*---\n*.*$/s, '');
+  // Remove any trailing AI comments (without /s flag for ES5 compatibility)
+  cleaned = cleaned.replace(/\n*---[\s\S]*$/, '');
   
   return cleaned;
 }
