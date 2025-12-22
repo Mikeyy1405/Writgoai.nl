@@ -284,12 +284,19 @@ Format the output as HTML with proper heading tags.`;
 
   const title = titleCompletion?.trim() || topic;
 
+  // Generate slug from title
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
   // Save article
   const { data: article } = await supabase
     .from('articles')
     .insert({
       project_id: project.id,
       title,
+      slug,
       content,
       status: 'draft',
     })
