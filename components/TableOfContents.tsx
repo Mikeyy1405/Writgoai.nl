@@ -20,6 +20,7 @@ interface TableOfContentsProps {
 export default function TableOfContents({ content }: TableOfContentsProps) {
   const [toc, setToc] = useState<TOCItem[]>([]);
   const [activeId, setActiveId] = useState<string>('');
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
     // Extract headings from content
@@ -62,7 +63,21 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
       observer.observe(heading);
     });
 
-    return () => observer.disconnect();
+    // Scroll progress handler
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.body.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setScrollProgress(Math.min(100, Math.max(0, progress)));
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial call
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [content]);
 
   const scrollToHeading = (id: string) => {
@@ -83,8 +98,8 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
 
   return (
     <div className="sticky top-24 hidden lg:block">
-      <div className="rounded-lg border bg-card p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="rounded-xl border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-orange-400">
           Inhoudsopgave
         </h3>
         <nav className="space-y-2">
@@ -93,12 +108,12 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
               key={item.id}
               onClick={() => scrollToHeading(item.id)}
               className={cn(
-                'block w-full text-left text-sm transition-colors hover:text-primary',
+                'block w-full text-left text-sm transition-colors',
                 item.level === 2 && 'font-medium',
-                item.level === 3 && 'pl-4 text-muted-foreground',
+                item.level === 3 && 'pl-4',
                 activeId === item.id
-                  ? 'text-primary font-semibold'
-                  : 'text-foreground/80'
+                  ? 'text-orange-400 font-semibold'
+                  : 'text-white hover:text-orange-300'
               )}
             >
               {item.text}
@@ -108,16 +123,16 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
       </div>
 
       {/* Progress indicator */}
-      <div className="mt-4 rounded-lg border bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-4 rounded-xl border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-4 shadow-lg">
+        <div className="flex items-center justify-between text-xs text-gray-300">
           <span>Leesvoortgang</span>
-          <span>{Math.round((window.scrollY / document.body.scrollHeight) * 100)}%</span>
+          <span className="text-white font-medium">{Math.round(scrollProgress)}%</span>
         </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-700">
           <div
-            className="h-full bg-primary transition-all duration-300"
+            className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-300"
             style={{
-              width: `${Math.min(100, (window.scrollY / document.body.scrollHeight) * 100)}%`,
+              width: `${scrollProgress}%`,
             }}
           />
         </div>
