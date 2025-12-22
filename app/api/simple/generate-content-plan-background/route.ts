@@ -247,31 +247,85 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
       es: 'Escribe TODO en español. Usa "tú" (informal).',
     };
 
-    // Step 2: Analyze niche
-    await updateJob(jobId, { progress: 15, current_step: '🔍 Website analyseren...' });
+    // Step 2: Scrape website content for better niche detection
+    await updateJob(jobId, { progress: 15, current_step: '🔍 Website content analyseren...' });
+
+    let websiteContent = '';
+    try {
+      const response = await fetch(websiteUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
+        signal: AbortSignal.timeout(15000),
+      });
+      
+      if (response.ok) {
+        const html = await response.text();
+        
+        // Extract title
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        const title = titleMatch ? titleMatch[1].trim() : '';
+        
+        // Extract meta description
+        const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+        const metaDesc = metaDescMatch ? metaDescMatch[1].trim() : '';
+        
+        // Extract headings
+        const h1Matches = html.match(/<h1[^>]*>([^<]+)<\/h1>/gi) || [];
+        const h2Matches = html.match(/<h2[^>]*>([^<]+)<\/h2>/gi) || [];
+        const headings = [...h1Matches, ...h2Matches]
+          .map(h => h.replace(/<[^>]+>/g, '').trim())
+          .filter(h => h.length > 3)
+          .slice(0, 20);
+        
+        // Extract main text content (remove scripts, styles, etc.)
+        let textContent = html
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+          .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+          .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 5000);
+        
+        websiteContent = `
+Titel: ${title}
+Meta beschrijving: ${metaDesc}
+Koppen: ${headings.join(', ')}
+Content: ${textContent.slice(0, 3000)}
+`.trim();
+      }
+    } catch (e) {
+      console.warn('Website scraping failed:', e);
+    }
 
     const currentMonth = now.toLocaleString(language === 'nl' ? 'nl-NL' : 'en-US', { month: 'long' });
 
-    const nichePrompt = `Analyseer deze website en bepaal de content strategie:
+    const nichePrompt = `Analyseer deze website en bepaal de EXACTE niche op basis van de content:
 
-Website: ${websiteUrl}
+Website URL: ${websiteUrl}
+${websiteContent ? `\n--- WEBSITE CONTENT ---\n${websiteContent}\n--- EINDE CONTENT ---\n` : ''}
 Datum: ${currentMonth} ${currentYear}
 
 ${languageInstructions[language]}
 
+BELANGRIJK: Bepaal de niche op basis van de DAADWERKELIJKE content van de website, NIET op basis van de URL alleen.
+Als de website over yoga gaat, is de niche "Yoga" of "Yoga en mindfulness", NIET "Content marketing".
+Als de website over koken gaat, is de niche "Koken" of "Recepten", etc.
+
 Output als JSON:
 {
-  "niche": "Specifieke niche naam in ${languageName}",
+  "niche": "Specifieke niche naam in ${languageName} (bijv. Yoga, Fitness, Koken, etc.)",
   "competitionLevel": "low|medium|high|very_high",
   "pillarTopics": [
     {
-      "topic": "Pillar topic naam",
+      "topic": "Pillar topic naam relevant voor de niche",
       "estimatedArticles": 30,
       "subtopics": ["subtopic1", "subtopic2", "subtopic3"]
     }
   ],
   "totalArticlesNeeded": 500,
-  "reasoning": "Uitleg in ${languageName}"
+  "reasoning": "Uitleg waarom deze niche is gekozen in ${languageName}"
 }`;
 
     let nicheData: any = {

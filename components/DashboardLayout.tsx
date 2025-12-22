@@ -26,6 +26,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     { icon: '📝', label: 'Editor', href: '/dashboard/editor' },
     { icon: '📑', label: 'Writgo Blog', href: '/dashboard/writgo-blog' },
     { icon: '📚', label: 'Bibliotheek', href: '/dashboard/library' },
+    { icon: '📱', label: 'Social Media', href: '/dashboard/social' },
     { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
   ];
 
