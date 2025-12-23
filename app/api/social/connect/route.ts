@@ -132,16 +132,15 @@ export async function POST(request: Request) {
     const { project_id } = await request.json();
 
     if (!project_id) {
-      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
     }
 
     const lateClient = getLateClient();
     
     if (!lateClient.isConfigured()) {
       return NextResponse.json({ 
-        accounts: [],
         configured: false,
-        message: 'Later.dev API key not configured. You can still create posts manually.'
+        accounts: []
       });
     }
 
