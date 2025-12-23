@@ -56,9 +56,9 @@ export async function GET(request: NextRequest) {
         project.wp_url
       );
       console.error('Configuration error:', formatErrorForLogging(errorDetails));
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -78,9 +78,9 @@ export async function GET(request: NextRequest) {
         wpUrl
       );
       console.error('Configuration error:', formatErrorForLogging(errorDetails));
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -91,14 +91,14 @@ export async function GET(request: NextRequest) {
     // Create Basic Auth header
     const authHeader = buildAuthHeader(username, password);
 
-    // First, test if REST API is available
-    const restApiTestUrl = `${wpUrl}${WORDPRESS_ENDPOINTS.base}/`;
-    console.log(`Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
+    // First, test if WooCommerce API is available
+    const wooApiTestUrl = `${wpUrl}${WORDPRESS_ENDPOINTS.woocommerce.base}/`;
+    console.log(`Testing WooCommerce API availability at: ${sanitizeUrl(wooApiTestUrl)}`);
     try {
       const apiTestController = new AbortController();
       const apiTestTimeoutId = setTimeout(() => apiTestController.abort(), 30000); // 30 second timeout
 
-      const apiTestResponse = await fetch(restApiTestUrl, {
+      const apiTestResponse = await fetch(wooApiTestUrl, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
@@ -110,15 +110,33 @@ export async function GET(request: NextRequest) {
       clearTimeout(apiTestTimeoutId);
 
       if (!apiTestResponse.ok) {
+        // WooCommerce might not be installed
+        if (apiTestResponse.status === 404) {
+          const errorDetails = classifyWordPressError(
+            new Error('WooCommerce is niet geïnstalleerd of de REST API is niet ingeschakeld'),
+            apiTestResponse,
+            wpUrl
+          );
+          console.error('WooCommerce not found:', formatErrorForLogging(errorDetails));
+
+          return NextResponse.json(
+            {
+              error: 'WooCommerce is niet geïnstalleerd op deze WordPress site',
+              errorDetails,
+            },
+            { status: 404 }
+          );
+        }
+
         const errorDetails = classifyWordPressError(
-          new Error(`REST API test failed: ${apiTestResponse.statusText}`),
+          new Error(`WooCommerce API test failed: ${apiTestResponse.statusText}`),
           apiTestResponse,
           wpUrl
         );
-        console.error('REST API test failed:', formatErrorForLogging(errorDetails));
-        
+        console.error('WooCommerce API test failed:', formatErrorForLogging(errorDetails));
+
         return NextResponse.json(
-          { 
+          {
             error: errorDetails.message,
             errorDetails,
           },
@@ -126,31 +144,13 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const apiData = await apiTestResponse.json();
-      if (!apiData.namespaces || !apiData.namespaces.includes('wp/v2')) {
-        const errorDetails = classifyWordPressError(
-          new Error('WordPress REST API wp/v2 niet beschikbaar'),
-          undefined,
-          wpUrl
-        );
-        console.error('REST API wp/v2 not available:', formatErrorForLogging(errorDetails));
-        
-        return NextResponse.json(
-          { 
-            error: errorDetails.message,
-            errorDetails,
-          },
-          { status: 404 }
-        );
-      }
-      
-      console.log('✓ REST API is available and wp/v2 is enabled');
+      console.log('✓ WooCommerce API is available');
     } catch (apiTestError: any) {
       const errorDetails = classifyWordPressError(apiTestError, undefined, wpUrl);
-      console.error('REST API test error:', formatErrorForLogging(errorDetails));
-      
+      console.error('WooCommerce API test error:', formatErrorForLogging(errorDetails));
+
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -158,29 +158,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch posts from WordPress with retry logic
-    const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, {
+    // Fetch products from WooCommerce with retry logic
+    const wooApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.woocommerce.products, {
       page,
       per_page: perPage,
-      _embed: true,
     });
 
-    console.log(`Fetching WordPress posts from: ${sanitizeUrl(wpApiUrl)}`);
+    console.log(`Fetching WooCommerce products from: ${sanitizeUrl(wooApiUrl)}`);
 
     // Retry logic for transient errors
-    let wpResponse: Response | null = null;
+    let wooResponse: Response | null = null;
     let lastError: any = null;
     const maxRetries = 3;
     const timeoutMs = 60000; // 60 second timeout
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
+        console.log(`Attempt ${attempt}/${maxRetries} to fetch WooCommerce products`);
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-        wpResponse = await fetch(wpApiUrl, {
+        wooResponse = await fetch(wooApiUrl, {
           method: 'GET',
           headers: {
             'Authorization': authHeader,
@@ -193,19 +192,19 @@ export async function GET(request: NextRequest) {
         clearTimeout(timeoutId);
 
         // If request succeeded, break out of retry loop
-        if (wpResponse.ok) {
-          console.log(`✓ Successfully fetched posts on attempt ${attempt}`);
+        if (wooResponse.ok) {
+          console.log(`✓ Successfully fetched products on attempt ${attempt}`);
           break;
         }
 
         // If we got a response but it wasn't ok, and it's not a server error, don't retry
-        if (wpResponse.status < 500) {
-          console.log(`✗ Got ${wpResponse.status} error, not retrying`);
+        if (wooResponse.status < 500) {
+          console.log(`✗ Got ${wooResponse.status} error, not retrying`);
           break;
         }
 
         // Server error (5xx), retry
-        lastError = new Error(`HTTP ${wpResponse.status}: ${wpResponse.statusText}`);
+        lastError = new Error(`HTTP ${wooResponse.status}: ${wooResponse.statusText}`);
         console.log(`✗ Server error on attempt ${attempt}, will retry...`);
 
       } catch (error: any) {
@@ -224,94 +223,102 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (!wpResponse) {
-      throw lastError || new Error('Failed to fetch WordPress posts after retries');
+    if (!wooResponse) {
+      throw lastError || new Error('Failed to fetch WooCommerce products after retries');
     }
 
-    if (!wpResponse.ok) {
-      const errorText = await wpResponse.text();
-      console.error(`WordPress fetch error: ${wpResponse.status} ${wpResponse.statusText}`, errorText);
+    if (!wooResponse.ok) {
+      const errorText = await wooResponse.text();
+      console.error(`WooCommerce fetch error: ${wooResponse.status} ${wooResponse.statusText}`, errorText);
 
       const errorDetails = classifyWordPressError(
-        new Error(errorText || wpResponse.statusText),
-        wpResponse,
+        new Error(errorText || wooResponse.statusText),
+        wooResponse,
         wpUrl
       );
-      console.error('WordPress API error:', formatErrorForLogging(errorDetails));
+      console.error('WooCommerce API error:', formatErrorForLogging(errorDetails));
 
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
-        { status: wpResponse.status }
+        { status: wooResponse.status }
       );
     }
 
-    const posts = await wpResponse.json();
+    const products = await wooResponse.json();
 
     // Get total pages from header
-    const totalPages = parseInt(wpResponse.headers.get('X-WP-TotalPages') || '1');
-    const totalPosts = parseInt(wpResponse.headers.get('X-WP-Total') || '0');
+    const totalPages = parseInt(wooResponse.headers.get('X-WP-TotalPages') || '1');
+    const totalProducts = parseInt(wooResponse.headers.get('X-WP-Total') || '0');
 
-    console.log(`✓ Successfully fetched ${posts.length} posts (page ${page}/${totalPages}, total: ${totalPosts})`);
+    console.log(`✓ Successfully fetched ${products.length} products (page ${page}/${totalPages}, total: ${totalProducts})`);
 
-    // Transform WordPress posts to our format
-    const transformedPosts = posts.map((post: any) => {
-      // Get featured image URL
-      let featuredImage = null;
-      if (post._embedded && post._embedded['wp:featuredmedia']) {
-        const media = post._embedded['wp:featuredmedia'][0];
-        featuredImage = media.source_url || null;
-      }
+    // Transform WooCommerce products to our format
+    const transformedProducts = products.map((product: any) => {
+      // Get product images
+      const images = product.images?.map((img: any) => ({
+        id: img.id,
+        src: img.src,
+        alt: img.alt,
+      })) || [];
 
-      // Get categories
-      const categories = post._embedded?.['wp:term']?.[0] || [];
+      // Get product categories
+      const categories = product.categories?.map((cat: any) => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+      })) || [];
 
-      // Get tags
-      const tags = post._embedded?.['wp:term']?.[1] || [];
+      // Get product tags
+      const tags = product.tags?.map((tag: any) => ({
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug,
+      })) || [];
 
       return {
-        wordpress_id: post.id,
-        title: post.title.rendered,
-        content: post.content.rendered,
-        excerpt: post.excerpt.rendered,
-        slug: post.slug,
-        status: post.status,
-        featured_image: featuredImage,
-        wordpress_url: post.link,
-        published_at: post.date,
-        modified_at: post.modified,
-        categories: categories.map((cat: any) => ({
-          id: cat.id,
-          name: cat.name,
-          slug: cat.slug,
-        })),
-        tags: tags.map((tag: any) => ({
-          id: tag.id,
-          name: tag.name,
-          slug: tag.slug,
-        })),
+        woocommerce_id: product.id,
+        name: product.name,
+        slug: product.slug,
+        type: product.type, // simple, grouped, external, variable
+        status: product.status, // draft, pending, private, publish
+        description: product.description,
+        short_description: product.short_description,
+        sku: product.sku,
+        price: product.price,
+        regular_price: product.regular_price,
+        sale_price: product.sale_price,
+        on_sale: product.on_sale,
+        stock_status: product.stock_status,
+        stock_quantity: product.stock_quantity,
+        manage_stock: product.manage_stock,
+        images,
+        categories,
+        tags,
+        permalink: product.permalink,
+        date_created: product.date_created,
+        date_modified: product.date_modified,
         // SEO fields (if Yoast is installed)
-        meta_title: post.yoast_head_json?.title || post.title.rendered,
-        meta_description: post.yoast_head_json?.description || '',
-        focus_keyword: post.yoast_head_json?.focus_keyword || '',
+        meta_title: product.yoast_head_json?.title || product.name,
+        meta_description: product.yoast_head_json?.description || product.short_description,
       };
     });
 
     return NextResponse.json({
       success: true,
-      posts: transformedPosts,
+      products: transformedProducts,
       pagination: {
         current_page: page,
         per_page: perPage,
         total_pages: totalPages,
-        total_posts: totalPosts,
+        total_products: totalProducts,
       },
     });
 
   } catch (error: any) {
-    console.error('Error fetching WordPress posts:', error);
+    console.error('Error fetching WooCommerce products:', error);
     console.error('Error code:', error.code || 'N/A');
     console.error('Error cause:', error.cause?.message || 'N/A');
 
@@ -319,7 +326,7 @@ export async function GET(request: NextRequest) {
     console.error('Detailed error info:', formatErrorForLogging(errorDetails));
 
     return NextResponse.json(
-      { 
+      {
         error: errorDetails.message,
         errorDetails,
       },

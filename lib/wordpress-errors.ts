@@ -49,18 +49,20 @@ export function classifyWordPressError(
   const timestamp = new Date().toISOString();
   
   // Timeout errors
-  if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+  if (error.name === 'AbortError' || error.name === 'TimeoutError' || error.message?.includes('aborted')) {
     return {
       type: WordPressErrorType.TIMEOUT,
-      message: `WordPress server niet bereikbaar op ${wpUrl ? sanitizeUrl(wpUrl) : 'het opgegeven adres'}`,
-      technicalDetails: 'Connection timeout - server did not respond within 15 seconds',
+      message: `WordPress server reageert te traag of is niet bereikbaar`,
+      technicalDetails: `Connection timeout - server did not respond in time (${error.message})`,
       wpUrl: wpUrl ? sanitizeUrl(wpUrl) : undefined,
       troubleshooting: [
-        'Controleer of je WordPress website online is',
-        'Controleer of de WordPress URL correct is',
-        'Test de website in je browser',
+        'De WordPress server reageert niet binnen de timeout periode',
+        'Controleer of je WordPress website online is en normaal werkt',
+        'Test de website in je browser - laadt deze snel?',
+        'Mogelijk is de server overbelast of heeft een trage internetverbinding',
         'Controleer of er geen firewall de verbinding blokkeert',
-        'Mogelijk is de server tijdelijk overbelast',
+        'Probeer het over een paar minuten opnieuw',
+        'Als het probleem aanhoudt, neem contact op met je hosting provider',
       ],
       timestamp,
     };

@@ -56,9 +56,9 @@ export async function GET(request: NextRequest) {
         project.wp_url
       );
       console.error('Configuration error:', formatErrorForLogging(errorDetails));
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -78,9 +78,9 @@ export async function GET(request: NextRequest) {
         wpUrl
       );
       console.error('Configuration error:', formatErrorForLogging(errorDetails));
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -116,9 +116,9 @@ export async function GET(request: NextRequest) {
           wpUrl
         );
         console.error('REST API test failed:', formatErrorForLogging(errorDetails));
-        
+
         return NextResponse.json(
-          { 
+          {
             error: errorDetails.message,
             errorDetails,
           },
@@ -134,23 +134,23 @@ export async function GET(request: NextRequest) {
           wpUrl
         );
         console.error('REST API wp/v2 not available:', formatErrorForLogging(errorDetails));
-        
+
         return NextResponse.json(
-          { 
+          {
             error: errorDetails.message,
             errorDetails,
           },
           { status: 404 }
         );
       }
-      
+
       console.log('✓ REST API is available and wp/v2 is enabled');
     } catch (apiTestError: any) {
       const errorDetails = classifyWordPressError(apiTestError, undefined, wpUrl);
       console.error('REST API test error:', formatErrorForLogging(errorDetails));
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -158,14 +158,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch posts from WordPress with retry logic
-    const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, {
+    // Fetch pages from WordPress with retry logic
+    const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.pages, {
       page,
       per_page: perPage,
       _embed: true,
     });
 
-    console.log(`Fetching WordPress posts from: ${sanitizeUrl(wpApiUrl)}`);
+    console.log(`Fetching WordPress pages from: ${sanitizeUrl(wpApiUrl)}`);
 
     // Retry logic for transient errors
     let wpResponse: Response | null = null;
@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
+        console.log(`Attempt ${attempt}/${maxRetries} to fetch WordPress pages`);
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
 
         // If request succeeded, break out of retry loop
         if (wpResponse.ok) {
-          console.log(`✓ Successfully fetched posts on attempt ${attempt}`);
+          console.log(`✓ Successfully fetched pages on attempt ${attempt}`);
           break;
         }
 
@@ -225,7 +225,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!wpResponse) {
-      throw lastError || new Error('Failed to fetch WordPress posts after retries');
+      throw lastError || new Error('Failed to fetch WordPress pages after retries');
     }
 
     if (!wpResponse.ok) {
@@ -240,7 +240,7 @@ export async function GET(request: NextRequest) {
       console.error('WordPress API error:', formatErrorForLogging(errorDetails));
 
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -248,70 +248,57 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const posts = await wpResponse.json();
+    const pages = await wpResponse.json();
 
     // Get total pages from header
     const totalPages = parseInt(wpResponse.headers.get('X-WP-TotalPages') || '1');
-    const totalPosts = parseInt(wpResponse.headers.get('X-WP-Total') || '0');
+    const totalItems = parseInt(wpResponse.headers.get('X-WP-Total') || '0');
 
-    console.log(`✓ Successfully fetched ${posts.length} posts (page ${page}/${totalPages}, total: ${totalPosts})`);
+    console.log(`✓ Successfully fetched ${pages.length} pages (page ${page}/${totalPages}, total: ${totalItems})`);
 
-    // Transform WordPress posts to our format
-    const transformedPosts = posts.map((post: any) => {
+    // Transform WordPress pages to our format
+    const transformedPages = pages.map((pageItem: any) => {
       // Get featured image URL
       let featuredImage = null;
-      if (post._embedded && post._embedded['wp:featuredmedia']) {
-        const media = post._embedded['wp:featuredmedia'][0];
+      if (pageItem._embedded && pageItem._embedded['wp:featuredmedia']) {
+        const media = pageItem._embedded['wp:featuredmedia'][0];
         featuredImage = media.source_url || null;
       }
 
-      // Get categories
-      const categories = post._embedded?.['wp:term']?.[0] || [];
-
-      // Get tags
-      const tags = post._embedded?.['wp:term']?.[1] || [];
-
       return {
-        wordpress_id: post.id,
-        title: post.title.rendered,
-        content: post.content.rendered,
-        excerpt: post.excerpt.rendered,
-        slug: post.slug,
-        status: post.status,
+        wordpress_id: pageItem.id,
+        title: pageItem.title.rendered,
+        content: pageItem.content.rendered,
+        excerpt: pageItem.excerpt.rendered,
+        slug: pageItem.slug,
+        status: pageItem.status,
         featured_image: featuredImage,
-        wordpress_url: post.link,
-        published_at: post.date,
-        modified_at: post.modified,
-        categories: categories.map((cat: any) => ({
-          id: cat.id,
-          name: cat.name,
-          slug: cat.slug,
-        })),
-        tags: tags.map((tag: any) => ({
-          id: tag.id,
-          name: tag.name,
-          slug: tag.slug,
-        })),
+        wordpress_url: pageItem.link,
+        parent_id: pageItem.parent,
+        menu_order: pageItem.menu_order,
+        template: pageItem.template,
+        published_at: pageItem.date,
+        modified_at: pageItem.modified,
         // SEO fields (if Yoast is installed)
-        meta_title: post.yoast_head_json?.title || post.title.rendered,
-        meta_description: post.yoast_head_json?.description || '',
-        focus_keyword: post.yoast_head_json?.focus_keyword || '',
+        meta_title: pageItem.yoast_head_json?.title || pageItem.title.rendered,
+        meta_description: pageItem.yoast_head_json?.description || '',
+        focus_keyword: pageItem.yoast_head_json?.focus_keyword || '',
       };
     });
 
     return NextResponse.json({
       success: true,
-      posts: transformedPosts,
+      pages: transformedPages,
       pagination: {
         current_page: page,
         per_page: perPage,
         total_pages: totalPages,
-        total_posts: totalPosts,
+        total_items: totalItems,
       },
     });
 
   } catch (error: any) {
-    console.error('Error fetching WordPress posts:', error);
+    console.error('Error fetching WordPress pages:', error);
     console.error('Error code:', error.code || 'N/A');
     console.error('Error cause:', error.cause?.message || 'N/A');
 
@@ -319,7 +306,7 @@ export async function GET(request: NextRequest) {
     console.error('Detailed error info:', formatErrorForLogging(errorDetails));
 
     return NextResponse.json(
-      { 
+      {
         error: errorDetails.message,
         errorDetails,
       },
