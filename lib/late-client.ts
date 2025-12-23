@@ -250,7 +250,7 @@ class LateClient {
     console.log('✅ Media uploaded successfully:', result._id);
     
     // Determine media type from filename or result
-    const isVideo = filename.toLowerCase().match(/\.(mp4|mov|avi|webm|mkv)$/);
+    const isVideo = !!filename.toLowerCase().match(/\.(mp4|mov|avi|webm|mkv)$/);
     
     return {
       mediaId: result._id,
