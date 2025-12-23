@@ -1257,6 +1257,42 @@ export default function SocialMediaPage() {
               📤 Post Publiceren
             </h3>
 
+            {/* Post Preview */}
+            <div className="mb-6 bg-gray-700 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-300 mb-3">📋 Post Preview</h4>
+
+              {/* Image Preview */}
+              {publishingPost.image_url ? (
+                <div className="mb-4">
+                  <label className="block text-xs text-gray-400 mb-2">Afbeelding:</label>
+                  <img
+                    src={publishingPost.image_url}
+                    alt="Post preview"
+                    className="w-full max-h-64 object-contain rounded-lg bg-gray-800"
+                  />
+                </div>
+              ) : (
+                <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <p className="text-sm text-yellow-400 flex items-center gap-2">
+                    ⚠️ Geen afbeelding - Instagram vereist media voor posts
+                  </p>
+                </div>
+              )}
+
+              {/* Text Preview */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-2">Tekst:</label>
+                <div className="bg-gray-800 rounded-lg p-3 max-h-48 overflow-y-auto">
+                  <p className="text-sm text-gray-200 whitespace-pre-wrap">
+                    {publishingPost.content}
+                  </p>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {publishingPost.content.length} karakters
+                </div>
+              </div>
+            </div>
+
             {/* Connected accounts counter */}
             <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <p className="text-sm text-blue-400">
