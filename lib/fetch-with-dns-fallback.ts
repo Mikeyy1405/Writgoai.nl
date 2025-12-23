@@ -1,8 +1,9 @@
 /**
  * Fetch wrapper with DNS resolution fallback
  *
- * Fixes EAI_AGAIN errors for Dutch (.nl) domains by using system DNS
- * when Node.js's built-in DNS resolver fails
+ * Fixes EAI_AGAIN errors by using system DNS pre-resolution
+ * for all domains. This ensures reliable connections regardless
+ * of geographic location or TLD.
  */
 
 import { lookup } from 'dns/promises';
@@ -14,11 +15,13 @@ export interface FetchOptions extends RequestInit {
 }
 
 /**
- * Enhanced fetch with DNS fallback for Dutch hosting providers
+ * Enhanced fetch with DNS fallback for all domains
  *
- * This wrapper resolves DNS issues with Node.js fetch on .nl domains
- * by pre-resolving the hostname using system DNS before making the request.
- * Also increases connection timeout from default 10s to 30s for slow hosts.
+ * This wrapper resolves DNS issues with Node.js fetch by pre-resolving
+ * the hostname using system DNS before making the request. This ensures
+ * reliable connections for multi-site WordPress setups across different
+ * geographic regions and TLDs. Also increases connection timeout from
+ * default 10s to 30s for slow hosts.
  */
 export async function fetchWithDnsFallback(
   url: string | URL,
@@ -30,26 +33,25 @@ export async function fetchWithDnsFallback(
   const urlObj = typeof url === 'string' ? new URL(url) : url;
   const hostname = urlObj.hostname;
 
-  // Try DNS pre-resolution for .nl domains and others that might have issues
+  // Try DNS pre-resolution for all domains
   // This forces Node.js to use system DNS instead of its own resolver
-  if (hostname.endsWith('.nl') || hostname.endsWith('.be')) {
-    try {
-      console.log(`[DNS] Pre-resolving ${hostname}...`);
-      const addresses = await lookup(hostname, { family: 0, all: true });
+  // Critical for multi-site setups where Render server location differs from WordPress sites
+  try {
+    console.log(`[DNS] Pre-resolving ${hostname}...`);
+    const addresses = await lookup(hostname, { family: 0, all: true });
 
-      if (addresses && addresses.length > 0) {
-        const address = addresses[0].address;
-        console.log(`[DNS] ✓ Resolved ${hostname} to ${address} (${addresses[0].family === 4 ? 'IPv4' : 'IPv6'})`);
+    if (addresses && addresses.length > 0) {
+      const address = addresses[0].address;
+      console.log(`[DNS] ✓ Resolved ${hostname} to ${address} (${addresses[0].family === 4 ? 'IPv4' : 'IPv6'})`);
 
-        // We resolved it successfully, Node.js should now be able to use it
-        // The DNS cache should help subsequent requests
-      } else {
-        console.warn(`[DNS] ⚠ No addresses found for ${hostname}`);
-      }
-    } catch (dnsError: any) {
-      console.error(`[DNS] ✗ Pre-resolution failed for ${hostname}:`, dnsError.message);
-      // Continue anyway, fetch might still work
+      // We resolved it successfully, Node.js should now be able to use it
+      // The DNS cache should help subsequent requests
+    } else {
+      console.warn(`[DNS] ⚠ No addresses found for ${hostname}`);
     }
+  } catch (dnsError: any) {
+    console.error(`[DNS] ✗ Pre-resolution failed for ${hostname}:`, dnsError.message);
+    // Continue anyway, fetch might still work
   }
 
   // Create custom Agent with increased connection timeout
@@ -83,8 +85,9 @@ export async function fetchWithDnsFallback(
     // If we get EAI_AGAIN, add more context to the error
     if (error.cause?.code === 'EAI_AGAIN') {
       const enhancedError = new Error(
-        `DNS resolution failed for ${hostname}. This is a known issue with Node.js DNS resolver for some Dutch hosting providers. ` +
-        `The domain exists but Node.js cannot resolve it. Contact support or check server DNS configuration.`
+        `DNS resolution failed for ${hostname}. This can occur when the Node.js DNS resolver cannot reach the domain ` +
+        `from the current server location. The domain exists but Node.js cannot resolve it. ` +
+        `Contact support or check server DNS configuration.`
       );
       enhancedError.cause = error.cause;
       (enhancedError as any).code = 'EAI_AGAIN';
