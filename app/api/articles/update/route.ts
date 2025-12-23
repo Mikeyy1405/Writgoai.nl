@@ -55,8 +55,8 @@ export async function POST(request: Request) {
         );
       }
 
-      // Verify project belongs to user
-      if (article.project?.user_id !== user.id) {
+      // Verify project belongs to user (skip if article has no project, i.e., WritGo blog article)
+      if (article.project && article.project.user_id !== user.id) {
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 403 }
@@ -78,6 +78,8 @@ export async function POST(request: Request) {
       if (meta_title !== undefined) updateData.meta_title = meta_title;
       if (meta_description !== undefined) updateData.meta_description = meta_description;
       if (focus_keyword !== undefined) updateData.focus_keyword = focus_keyword;
+      // Allow updating project_id (e.g., setting to null when publishing to WritGo blog)
+      if (project_id !== undefined) updateData.project_id = project_id;
 
       // Update article in database
       const { error: updateError } = await supabase
