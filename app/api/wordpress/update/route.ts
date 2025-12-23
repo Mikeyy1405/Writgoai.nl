@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { getPostsEndpoint, getMediaEndpoint } from '@/lib/wordpress-endpoints';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update post in WordPress
-    const wpApiUrl = `${wpUrl}/wp-json/wp/v2/posts/${article.wordpress_id}`;
+    const wpApiUrl = getPostsEndpoint(wpUrl, article.wordpress_id);
 
     console.log(`Updating WordPress post ${article.wordpress_id}:`, updateData);
 
@@ -257,7 +258,7 @@ async function uploadFeaturedImage(
     console.log(`Uploading featured image to WordPress: ${filename}`);
 
     // Upload to WordPress media library
-    const mediaApiUrl = `${wpUrl}/wp-json/wp/v2/media`;
+    const mediaApiUrl = getMediaEndpoint(wpUrl);
 
     const uploadResponse = await fetch(mediaApiUrl, {
       method: 'POST',

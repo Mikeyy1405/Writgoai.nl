@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
+import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -88,7 +89,8 @@ export async function POST(request: Request) {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-          const testResponse = await fetch(`${wp_url}/wp-json/wp/v2/posts?per_page=1`, {
+          const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
+          const testResponse = await fetch(testUrl, {
             headers: {
               'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
               'User-Agent': 'WritGo-SEO-Agent/2.0',
