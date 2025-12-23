@@ -29,9 +29,12 @@ export interface ConnectionTestResult {
   checks: {
     siteReachable: { passed: boolean; message: string; details?: string };
     restApiEnabled: { passed: boolean; message: string; details?: string };
+    wpV2ApiEnabled?: { passed: boolean; message: string; details?: string };
+    postsEndpointAccessible?: { passed: boolean; message: string; details?: string };
     authenticationValid: { passed: boolean; message: string; details?: string };
   };
   wpUrl: string;
+  testedEndpoints?: string[];
   timestamp: string;
 }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { buildAuthHeader, getPostsEndpoint } from '@/lib/wordpress-endpoints';
 
 export async function POST(request: NextRequest) {
   try {
@@ -89,10 +90,10 @@ async function syncSinglePost(
     const wpUrl = project.wp_url.replace(/\/$/, '');
     const username = project.wp_username || '';
     const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
-    const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+    const authHeader = buildAuthHeader(username, password);
 
     // Fetch single post with _embed for featured image
-    const wpApiUrl = `${wpUrl}/wp-json/wp/v2/posts/${wordpressId}?_embed`;
+    const wpApiUrl = `${getPostsEndpoint(wpUrl, wordpressId)}?_embed`;
 
     const wpResponse = await fetch(wpApiUrl, {
       method: 'GET',
@@ -213,9 +214,9 @@ async function syncAllPosts(
         const wpUrl = project.wp_url.replace(/\/$/, '');
         const username = project.wp_username || '';
         const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
-        const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+        const authHeader = buildAuthHeader(username, password);
 
-        const wpApiUrl = `${wpUrl}/wp-json/wp/v2/posts?page=${page}&per_page=50&_embed`;
+        const wpApiUrl = `${getPostsEndpoint(wpUrl)}?page=${page}&per_page=50&_embed`;
 
         const wpResponse = await fetch(wpApiUrl, {
           method: 'GET',
