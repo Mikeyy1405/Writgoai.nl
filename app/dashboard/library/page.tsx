@@ -123,6 +123,8 @@ export default function LibraryPage() {
       const hasWordPress = isWordPressConfigured(article.project_id);
       
       if (isWritGo) {
+        // When publishing to WritGo blog, set project_id to NULL
+        // This ensures the article appears on writgo.nl/blog
         const response = await fetch('/api/articles/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -130,7 +132,8 @@ export default function LibraryPage() {
             id: article.id,
             status: 'published',
             published_at: new Date().toISOString(),
-            slug: article.slug || article.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+            slug: article.slug || article.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            project_id: null  // Remove project association to show on WritGo blog
           })
         });
 
