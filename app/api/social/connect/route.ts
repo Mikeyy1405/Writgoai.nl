@@ -70,7 +70,33 @@ export async function GET(request: Request) {
     }
 
     if (!socialProfile.late_profile_id) {
-      return NextResponse.json({ error: 'No Late profile ID' }, { status: 500 });
+      // Try to create Late profile if it doesn't exist
+      try {
+        const { data: project } = await supabaseAdmin
+          .from('projects')
+          .select('name')
+          .eq('id', projectId)
+          .single();
+
+        const lateProfile = await lateClient.createProfile(
+          project?.name || `Project ${projectId}`,
+          `WritGo social media profile`
+        );
+
+        // Update the profile with the Late ID
+        await supabaseAdmin
+          .from('social_profiles')
+          .update({ late_profile_id: lateProfile._id })
+          .eq('id', socialProfile.id);
+
+        socialProfile.late_profile_id = lateProfile._id;
+      } catch (createError) {
+        console.error('Failed to create Late profile:', createError);
+        return NextResponse.json({ 
+          error: 'Later.dev profile creation failed. You can still create posts manually.',
+          configured: false 
+        }, { status: 500 });
+      }
     }
 
     // Generate connect URL
