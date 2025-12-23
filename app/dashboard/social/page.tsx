@@ -120,6 +120,8 @@ export default function SocialMediaPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [lateConfigured, setLateConfigured] = useState<boolean | null>(null);
+  const [socialActivated, setSocialActivated] = useState<boolean>(false);
+  const [activating, setActivating] = useState(false);
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'posts' | 'strategy'>('strategy');
@@ -161,8 +163,46 @@ export default function SocialMediaPage() {
       loadPosts(selectedProject.id);
       loadStrategy(selectedProject.id);
       syncAccounts(selectedProject.id);
+      checkActivation(selectedProject.id);
     }
   }, [selectedProject]);
+
+  async function checkActivation(projectId: string) {
+    try {
+      const response = await fetch(`/api/social/activate?project_id=${projectId}`);
+      const data = await response.json();
+      setSocialActivated(data.activated);
+      setLateConfigured(data.late_configured);
+    } catch (error) {
+      console.error('Failed to check activation:', error);
+    }
+  }
+
+  async function activateSocial() {
+    if (!selectedProject) return;
+    
+    setActivating(true);
+    try {
+      const response = await fetch('/api/social/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: selectedProject.id }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSocialActivated(true);
+        alert('Social media geactiveerd! Je kunt nu accounts koppelen.');
+      } else {
+        alert(data.error || 'Activatie mislukt');
+      }
+    } catch (error: any) {
+      alert('Fout bij activeren: ' + error.message);
+    } finally {
+      setActivating(false);
+    }
+  }
 
   async function loadProjects() {
     try {
@@ -801,20 +841,53 @@ export default function SocialMediaPage() {
                   </p>
                 )}
 
+                {lateConfigured && !socialActivated && (
+                  <div className="mb-4 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                    <p className="text-sm text-orange-300 mb-3">
+                      Activeer social media om accounts te koppelen en posts automatisch te publiceren.
+                    </p>
+                    <button
+                      onClick={activateSocial}
+                      disabled={activating}
+                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 text-white font-medium px-4 py-2 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                      {activating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                          Activeren...
+                        </>
+                      ) : (
+                        <>
+                          🚀 Activeer Social Media
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {socialActivated && (
+                  <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <p className="text-sm text-green-400 flex items-center gap-2">
+                      ✓ Social media geactiveerd - Klik op een platform om te koppelen
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2">
                   {PLATFORMS.slice(0, 6).map(platform => {
                     const connected = accounts.some(a => a.platform === platform.id);
+                    const canConnect = socialActivated && lateConfigured;
                     return (
                       <button
                         key={platform.id}
-                        onClick={() => !connected && lateConfigured && connectPlatform(platform.id)}
-                        disabled={!lateConfigured}
+                        onClick={() => !connected && canConnect && connectPlatform(platform.id)}
+                        disabled={!canConnect}
                         className={`flex items-center gap-2 p-3 rounded-lg transition ${
                           connected 
                             ? 'bg-green-500/20 border border-green-500/50' 
-                            : lateConfigured
+                            : canConnect
                               ? 'bg-gray-700 hover:bg-gray-600'
-                              : 'bg-gray-700/50 cursor-not-allowed'
+                              : 'bg-gray-700/50 cursor-not-allowed opacity-50'
                         }`}
                       >
                         <span>{platform.icon}</span>
