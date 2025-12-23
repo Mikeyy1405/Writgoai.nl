@@ -464,6 +464,12 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
         });
         
         // Extract main text content (remove scripts, styles, etc.)
+        // SECURITY NOTE: This HTML is scraped from external websites for ANALYSIS ONLY.
+        // The extracted text is never rendered as HTML or inserted into the DOM.
+        // It is only used for:
+        // 1. Word frequency analysis to identify main topics
+        // 2. Passing context to AI models for niche detection
+        // The simple regex-based cleaning is sufficient for this use case.
         let textContent = html
           .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
