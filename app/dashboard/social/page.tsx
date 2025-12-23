@@ -85,8 +85,8 @@ const PLATFORMS = [
   { id: 'tiktok', name: 'TikTok', icon: '🎵', color: 'bg-black' },
   { id: 'threads', name: 'Threads', icon: '🧵', color: 'bg-gray-800' },
   { id: 'bluesky', name: 'Bluesky', icon: '🦋', color: 'bg-blue-400' },
-  { id: 'pinterest', name: 'Pinterest', icon: '📌', color: 'bg-red-600' },
-  { id: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-600' },
+  { id: 'pinterest', name: 'Pinterest', icon: '📌', color: 'bg-red-500' },
+  { id: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-700' },
   { id: 'reddit', name: 'Reddit', icon: '🤖', color: 'bg-orange-600' },
   { id: 'google_business', name: 'Google Business', icon: '🏢', color: 'bg-blue-500' },
   { id: 'telegram', name: 'Telegram', icon: '✈️', color: 'bg-blue-400' },
@@ -1175,7 +1175,7 @@ export default function SocialMediaPage() {
                                   onClick={() => downloadImage(post.image_url!, `social-post-${post.id}.png`)}
                                   className="text-xs bg-purple-600 hover:bg-purple-500 px-3 py-1.5 rounded transition"
                                 >
-                                  ⬇️ Download
+                                  ⬇️ Download Afbeelding
                                 </button>
                               )}
                               {(post.status === 'draft' || post.status === 'ready') && (
