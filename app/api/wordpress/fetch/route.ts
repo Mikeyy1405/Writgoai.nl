@@ -99,13 +99,14 @@ export async function GET(request: NextRequest) {
     console.log(`Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
     try {
       const apiTestController = new AbortController();
-      const apiTestTimeoutId = setTimeout(() => apiTestController.abort(), 30000); // 30 second timeout
+      const apiTestTimeoutId = setTimeout(() => apiTestController.abort(), 15000); // 15 second timeout
 
       const apiTestResponse = await fetch(restApiTestUrl, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'User-Agent': 'WritgoAI/1.0 (Next.js)',
         },
         signal: apiTestController.signal,
       });
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest) {
     let wpResponse: Response | null = null;
     let lastError: any = null;
     const maxRetries = 3;
-    const timeoutMs = 60000; // 60 second timeout
+    const timeoutMs = 15000; // 15 second timeout
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -189,6 +190,7 @@ export async function GET(request: NextRequest) {
             'Authorization': authHeader,
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'User-Agent': 'WritgoAI/1.0 (Next.js)',
           },
           signal: controller.signal,
         });
@@ -221,7 +223,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Wait before retrying (exponential backoff)
-        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        const waitTime = Math.min(2000 * Math.pow(2, attempt - 1), 10000);
         console.log(`Waiting ${waitTime}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }

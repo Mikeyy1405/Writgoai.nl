@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
       const siteResponse = await fetch(wpUrl, {
         method: 'HEAD',
@@ -156,12 +156,13 @@ export async function POST(request: NextRequest) {
     console.log(`Testing REST API availability: ${sanitizeUrl(restApiEndpoint)}`);
     try {
       const controller2 = new AbortController();
-      const timeoutId2 = setTimeout(() => controller2.abort(), 30000); // 30 second timeout
+      const timeoutId2 = setTimeout(() => controller2.abort(), 15000); // 15 second timeout
 
       const apiResponse = await fetch(restApiEndpoint, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'WritgoAI/1.0 (Next.js)',
         },
         signal: controller2.signal,
       });
@@ -211,12 +212,13 @@ export async function POST(request: NextRequest) {
     console.log(`Testing WordPress v2 API: ${sanitizeUrl(wpV2Endpoint)}`);
     try {
       const controller3 = new AbortController();
-      const timeoutId3 = setTimeout(() => controller3.abort(), 30000); // 30 second timeout
+      const timeoutId3 = setTimeout(() => controller3.abort(), 15000); // 15 second timeout
 
       const wpV2Response = await fetch(wpV2Endpoint, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'WritgoAI/1.0 (Next.js)',
         },
         signal: controller3.signal,
       });
@@ -254,13 +256,14 @@ export async function POST(request: NextRequest) {
     console.log(`Testing posts endpoint: ${sanitizeUrl(postsEndpoint)}?per_page=1`);
     try {
       const controller4 = new AbortController();
-      const timeoutId4 = setTimeout(() => controller4.abort(), 30000); // 30 second timeout
+      const timeoutId4 = setTimeout(() => controller4.abort(), 15000); // 15 second timeout
 
       const postsResponse = await fetch(`${postsEndpoint}?per_page=1`, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
+          'User-Agent': 'WritgoAI/1.0 (Next.js)',
         },
         signal: controller4.signal,
       });
@@ -298,13 +301,14 @@ export async function POST(request: NextRequest) {
     console.log(`Testing authentication with ${sanitizeUrl(usersEndpoint)}`);
     try {
       const controller5 = new AbortController();
-      const timeoutId5 = setTimeout(() => controller5.abort(), 30000); // 30 second timeout
+      const timeoutId5 = setTimeout(() => controller5.abort(), 15000); // 15 second timeout
 
       const authResponse = await fetch(usersEndpoint, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
+          'User-Agent': 'WritgoAI/1.0 (Next.js)',
         },
         signal: controller5.signal,
       });

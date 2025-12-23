@@ -84,8 +84,11 @@ export function classifyWordPressError(
         'Controleer of de WordPress URL correct is (inclusief https:// of http://)',
         'Controleer of je WordPress website online en bereikbaar is',
         'Test de URL in je browser',
+        'Als je Render.com gebruikt: Controleer of je WordPress site een geldig SSL certificaat heeft',
+        'Render.com heeft een 30 seconden timeout - zorg dat je WordPress server snel reageert',
         'Controleer je internetverbinding',
         'Mogelijk blokkeert een firewall de verbinding',
+        'Probeer het over een paar minuten opnieuw als de server traag reageert',
       ],
       timestamp,
     };
