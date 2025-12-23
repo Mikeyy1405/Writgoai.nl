@@ -141,7 +141,26 @@ Schrijf het artikel in HTML formaat:`;
 
           // Handle streaming chunks
           for await (const chunk of completion) {
-            const content = chunk.choices[0]?.delta?.content || '';
+            // Skip invalid chunks without crashing
+            if (!chunk || typeof chunk !== 'object') {
+              console.warn('[Stream] Invalid chunk type, skipping:', typeof chunk);
+              continue;
+            }
+
+            // Detect response format dynamically - support all formats:
+            // 1. OpenAI format: chunk.choices[0].delta.content
+            // 2. Alternative format: chunk.delta.content
+            // 3. Direct format: chunk.content
+            const content = 
+              chunk.choices?.[0]?.delta?.content ||  // OpenAI format
+              chunk.delta?.content ||                // Alternative format
+              chunk.content ||                       // Direct format
+              '';
+            
+            // Log warnings for debugging unexpected formats
+            if (!content && Object.keys(chunk).length > 0) {
+              console.warn('[Stream] Unexpected chunk format:', JSON.stringify(chunk).slice(0, 200));
+            }
             
             if (content) {
               fullContent += content;
