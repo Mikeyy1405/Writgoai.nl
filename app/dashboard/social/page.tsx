@@ -316,17 +316,38 @@ export default function SocialMediaPage() {
 
   async function syncAccounts(projectId: string) {
     try {
+      // Call POST endpoint to ensure profile exists and is synced
       const response = await fetch('/api/social/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id: projectId }),
       });
+      
       const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('Sync accounts failed:', data);
+        setLateConfigured(false);
+        setAccounts([]);
+        
+        // Show user-friendly error
+        if (data.manual_mode) {
+          // Silent fail - user can still use manual mode
+        } else if (data.error) {
+          alert(`Fout bij verbinden met Later.dev: ${data.error}`);
+        }
+        return;
+      }
+      
       setAccounts(data.accounts || []);
-      setLateConfigured(data.configured ?? null);
+      setLateConfigured(data.configured ?? true);
+      
+      console.log('✅ Accounts synced:', data.accounts?.length || 0, 'accounts');
+      
     } catch (error) {
       console.error('Failed to sync accounts:', error);
       setLateConfigured(false);
+      setAccounts([]);
     }
   }
 
@@ -826,14 +847,24 @@ export default function SocialMediaPage() {
             <div className="lg:col-span-1 space-y-6">
               {/* Connected accounts */}
               <div className="bg-gray-800 rounded-xl p-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  🔗 Verbonden Accounts
-                  {lateConfigured === false && (
-                    <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">
-                      Optioneel
-                    </span>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    🔗 Verbonden Accounts
+                    {lateConfigured === false && (
+                      <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">
+                        Optioneel
+                      </span>
+                    )}
+                  </h2>
+                  {selectedProject && (
+                    <button
+                      onClick={() => syncAccounts(selectedProject.id)}
+                      className="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded transition"
+                    >
+                      🔄 Sync
+                    </button>
                   )}
-                </h2>
+                </div>
 
                 {lateConfigured === false && (
                   <p className="text-sm text-gray-400 mb-4">
