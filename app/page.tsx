@@ -228,6 +228,18 @@ export default function Home() {
                 title: "Content Updates",
                 desc: "Update automatisch oude artikelen met nieuwe informatie om je rankings te behouden.",
                 time: "Stay relevant",
+              },
+              {
+                icon: "📱",
+                title: "Social Media Publishing",
+                desc: "Publiceer automatisch je content naar sociale media kanalen. Vergroot je bereik en drive meer traffic.",
+                time: "Multi-channel publicatie",
+              },
+              {
+                icon: "🗺️",
+                title: "Topical Authority Map",
+                desc: "Visualiseer je content strategie en bouw topical authority op. Zie waar je expertise ligt en waar kansen zijn.",
+                time: "Strategisch overzicht",
               }
             ].map((feature, i) => (
               <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-orange-500/50 transition-all">
@@ -446,9 +458,6 @@ export default function Home() {
                 </li>
                 <li className="flex items-center text-gray-300">
                   <span className="mr-2 text-orange-400">⭐</span> Dedicated support
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-400">⭐</span> Custom integraties mogelijk
                 </li>
               </ul>
 
