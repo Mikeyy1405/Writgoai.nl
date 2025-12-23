@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
+import { fetchWithDnsFallback, testDnsResolution } from '@/lib/fetch-with-dns-fallback';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -128,22 +129,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
+    // Pre-flight DNS test for .nl and .be domains (known to have DNS issues)
+    if (parsedUrl.hostname.endsWith('.nl') || parsedUrl.hostname.endsWith('.be')) {
+      console.log(`[DNS Test] Checking DNS resolution for ${parsedUrl.hostname}...`);
+      const dnsTest = await testDnsResolution(parsedUrl.hostname);
+
+      if (!dnsTest.success) {
+        result.checks.siteReachable = {
+          passed: false,
+          message: 'DNS resolutie mislukt - domein kan niet worden gevonden',
+          details: `DNS lookup failed: ${dnsTest.error}\n\nDit is een bekend probleem met Node.js DNS resolver voor sommige Nederlandse hosting providers. Het domein bestaat mogelijk wel, maar de server kan het niet oplossen.`,
+        };
+        console.error(`[DNS Test] ✗ Failed:`, dnsTest.error);
+        return NextResponse.json(result);
+      }
+
+      console.log(`[DNS Test] ✓ Resolved to:`, dnsTest.addresses?.map(a => a.address).join(', '));
+    }
+
     // Test 1: Check if site is reachable
     console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
       console.log(`Attempting HEAD request to ${sanitizeUrl(wpUrl)}...`);
-      const siteResponse = await fetch(wpUrl, {
+      const siteResponse = await fetchWithDnsFallback(wpUrl, {
         method: 'HEAD',
         headers: {
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        signal: controller.signal,
+        timeout: 15000,
       });
-
-      clearTimeout(timeoutId);
 
       if (siteResponse.ok || siteResponse.status === 301 || siteResponse.status === 302) {
         result.checks.siteReachable = {
@@ -243,19 +257,14 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(restApiEndpoint);
     console.log(`Testing REST API availability: ${sanitizeUrl(restApiEndpoint)}`);
     try {
-      const controller2 = new AbortController();
-      const timeoutId2 = setTimeout(() => controller2.abort(), 15000); // 15 second timeout
-
-      const apiResponse = await fetch(restApiEndpoint, {
+      const apiResponse = await fetchWithDnsFallback(restApiEndpoint, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        signal: controller2.signal,
+        timeout: 15000,
       });
-
-      clearTimeout(timeoutId2);
 
       if (apiResponse.ok) {
         const apiData = await apiResponse.json();
@@ -299,19 +308,14 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(wpV2Endpoint);
     console.log(`Testing WordPress v2 API: ${sanitizeUrl(wpV2Endpoint)}`);
     try {
-      const controller3 = new AbortController();
-      const timeoutId3 = setTimeout(() => controller3.abort(), 15000); // 15 second timeout
-
-      const wpV2Response = await fetch(wpV2Endpoint, {
+      const wpV2Response = await fetchWithDnsFallback(wpV2Endpoint, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        signal: controller3.signal,
+        timeout: 15000,
       });
-
-      clearTimeout(timeoutId3);
 
       if (wpV2Response.ok) {
         const wpV2Data = await wpV2Response.json();
@@ -343,20 +347,15 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(`${postsEndpoint}?per_page=1`);
     console.log(`Testing posts endpoint: ${sanitizeUrl(postsEndpoint)}?per_page=1`);
     try {
-      const controller4 = new AbortController();
-      const timeoutId4 = setTimeout(() => controller4.abort(), 15000); // 15 second timeout
-
-      const postsResponse = await fetch(`${postsEndpoint}?per_page=1`, {
+      const postsResponse = await fetchWithDnsFallback(`${postsEndpoint}?per_page=1`, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        signal: controller4.signal,
+        timeout: 15000,
       });
-
-      clearTimeout(timeoutId4);
 
       if (postsResponse.ok) {
         const posts = await postsResponse.json();
@@ -388,20 +387,15 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(usersEndpoint);
     console.log(`Testing authentication with ${sanitizeUrl(usersEndpoint)}`);
     try {
-      const controller5 = new AbortController();
-      const timeoutId5 = setTimeout(() => controller5.abort(), 15000); // 15 second timeout
-
-      const authResponse = await fetch(usersEndpoint, {
+      const authResponse = await fetchWithDnsFallback(usersEndpoint, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        signal: controller5.signal,
+        timeout: 15000,
       });
-
-      clearTimeout(timeoutId5);
 
       if (authResponse.ok) {
         const userData = await authResponse.json();
