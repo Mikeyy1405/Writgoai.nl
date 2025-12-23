@@ -20,6 +20,15 @@ interface LateAccount {
   profilePicture?: string;
 }
 
+interface MediaItem {
+  mediaId: string;
+  url: string;
+  type: 'image' | 'video';
+  thumbnail?: {
+    url: string;
+  };
+}
+
 interface LatePlatform {
   platform: string;
   accountId: string;
@@ -29,7 +38,7 @@ interface LatePlatform {
 interface LatePost {
   _id: string;
   content: string;
-  media?: string[];
+  mediaItems?: MediaItem[];
   status: 'draft' | 'scheduled' | 'published' | 'failed';
   scheduledFor?: string;
   platforms: LatePlatform[];
@@ -39,11 +48,15 @@ interface LatePost {
 
 interface CreatePostOptions {
   content: string;
-  media?: string[];
-  platforms: { platform: string; accountId: string }[];
+  mediaItems?: MediaItem[];
+  platforms: { platform: string; accountId: string; platformSpecificData?: any }[];
   scheduledFor?: string;
   timezone?: string;
-  status?: 'draft' | 'scheduled' | 'published';
+  publishNow?: boolean;
+  isDraft?: boolean;
+  title?: string;
+  tags?: string[];
+  hashtags?: string[];
 }
 
 class LateClient {
@@ -162,11 +175,15 @@ class LateClient {
       method: 'POST',
       body: JSON.stringify({
         content: options.content,
-        media: options.media,
+        mediaItems: options.mediaItems,
         platforms: options.platforms,
         scheduledFor: options.scheduledFor,
         timezone: options.timezone || 'Europe/Amsterdam',
-        status: options.status || (options.scheduledFor ? 'scheduled' : 'draft'),
+        publishNow: options.publishNow,
+        isDraft: options.isDraft,
+        title: options.title,
+        tags: options.tags,
+        hashtags: options.hashtags,
       }),
     });
   }
@@ -209,7 +226,9 @@ class LateClient {
   }
 
   // Media Upload
-  async uploadMedia(file: Buffer | Blob, filename: string): Promise<{ _id: string; url: string }> {
+  async uploadMedia(file: Buffer | Blob, filename: string): Promise<MediaItem> {
+    console.log('📤 Uploading media file:', filename);
+    
     const formData = new FormData();
     const blob = Buffer.isBuffer(file) ? new Blob([new Uint8Array(file)]) : file;
     formData.append('file', blob, filename);
@@ -223,24 +242,42 @@ class LateClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to upload media: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Failed to upload media: ${response.status} - ${errorText}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('✅ Media uploaded successfully:', result._id);
+    
+    // Determine media type from filename or result
+    const isVideo = !!filename.toLowerCase().match(/\.(mp4|mov|avi|webm|mkv)$/);
+    
+    return {
+      mediaId: result._id,
+      url: result.url,
+      type: isVideo ? 'video' : 'image',
+    };
   }
 
-  async uploadMediaFromUrl(imageUrl: string): Promise<{ _id: string; url: string } | null> {
+  async uploadMediaFromUrl(imageUrl: string): Promise<MediaItem> {
+    console.log('📤 Uploading media from URL:', imageUrl);
+    
     try {
       const response = await fetch(imageUrl);
-      if (!response.ok) return null;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
       
       const buffer = await response.arrayBuffer();
       const filename = imageUrl.split('/').pop() || 'image.jpg';
       
-      return this.uploadMedia(Buffer.from(buffer), filename);
-    } catch (error) {
-      console.error('Failed to upload media from URL:', error);
-      return null;
+      const mediaItem = await this.uploadMedia(Buffer.from(buffer), filename);
+      console.log('✅ Media uploaded successfully:', mediaItem.mediaId);
+      
+      return mediaItem;
+    } catch (error: any) {
+      console.error('❌ Failed to upload media from URL:', error.message);
+      throw new Error(`Media upload failed: ${error.message}`);
     }
   }
 
@@ -260,4 +297,4 @@ export function getLateClient(): LateClient {
   return lateClient;
 }
 
-export { LateClient, type LateProfile, type LateAccount, type LatePost, type CreatePostOptions };
+export { LateClient, type LateProfile, type LateAccount, type LatePost, type CreatePostOptions, type MediaItem };

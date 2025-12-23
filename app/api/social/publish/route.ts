@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getLateClient } from '@/lib/late-client';
+import { getLateClient, type MediaItem } from '@/lib/late-client';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -66,15 +66,25 @@ export async function POST(request: Request) {
     }
 
     // Upload image if present
-    let mediaIds: string[] = [];
+    let mediaItems: MediaItem[] = [];
     if (post.image_url) {
+      console.log('📤 Uploading media from URL:', post.image_url);
       try {
         const media = await lateClient.uploadMediaFromUrl(post.image_url);
-        if (media) {
-          mediaIds.push(media._id);
+        mediaItems.push(media);
+        console.log('✅ Media uploaded successfully:', media.mediaId);
+      } catch (e: any) {
+        console.error('❌ Media upload failed:', e.message);
+        
+        // Check if Instagram is in the platforms
+        const hasInstagram = accounts.some(acc => acc.platform === 'instagram');
+        if (hasInstagram) {
+          return NextResponse.json({ 
+            error: 'Instagram posts vereisen altijd een afbeelding of video. Media upload is mislukt: ' + e.message 
+          }, { status: 400 });
         }
-      } catch (e) {
-        console.warn('Failed to upload media:', e);
+        // For other platforms, continue without media but log warning
+        console.warn('⚠️ Continuing without media for non-Instagram platforms');
       }
     }
 
@@ -84,13 +94,22 @@ export async function POST(request: Request) {
       accountId: acc.late_account_id,
     }));
 
+    // Validate Instagram requires media
+    const hasInstagram = platforms.some(p => p.platform === 'instagram');
+    if (hasInstagram && mediaItems.length === 0) {
+      return NextResponse.json({ 
+        error: 'Instagram posts vereisen altijd een afbeelding of video. Voeg eerst media toe aan je post.' 
+      }, { status: 400 });
+    }
+
     const latePost = await lateClient.createPost({
       content: post.content,
-      media: mediaIds.length > 0 ? mediaIds : undefined,
+      mediaItems: mediaItems.length > 0 ? mediaItems : undefined,
       platforms,
       scheduledFor: scheduled_for,
       timezone: 'Europe/Amsterdam',
-      status: publish_now ? 'published' : (scheduled_for ? 'scheduled' : 'draft'),
+      publishNow: publish_now,
+      isDraft: !publish_now && !scheduled_for,
     });
 
     // Update our post
