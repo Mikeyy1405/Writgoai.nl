@@ -174,6 +174,7 @@ export async function POST(request: Request) {
       wordCount: word_count,
       language,
       websiteUrl: website_url,
+      projectId: project_id,
     }).catch(err => {
       console.error('Background article generation failed:', err);
       updateJob(job.id, { status: 'failed', error: err.message });
@@ -198,8 +199,9 @@ async function processArticle(jobId: string, params: {
   wordCount: number;
   language: string;
   websiteUrl?: string;
+  projectId?: string;
 }) {
-  const { title, keyword, description, contentType, wordCount, language, websiteUrl } = params;
+  const { title, keyword, description, contentType, wordCount, language, websiteUrl, projectId } = params;
   
   try {
     const now = new Date();
@@ -395,30 +397,32 @@ ${CONTENT_PROMPT_RULES}
       meta_description: metaDescription,
     });
 
-    // Also save to articles table for library
-    try {
-      const { error: articleError } = await supabaseAdmin
-        .from('articles')
-        .insert({
-          project_id: projectId,
-          title,
-          content: fullContent,
-          featured_image: featuredImage,
-          slug,
-          excerpt: metaDescription,
-          status: 'draft',
-          meta_title: title,
-          meta_description: metaDescription,
-          word_count: wordCountActual,
-        });
-      
-      if (articleError) {
-        console.error('Failed to save to articles table:', articleError);
-      } else {
-        console.log('Article saved to library');
+    // Also save to articles table for library (only if we have a project_id)
+    if (projectId) {
+      try {
+        const { error: articleError } = await supabaseAdmin
+          .from('articles')
+          .insert({
+            project_id: projectId,
+            title,
+            content: fullContent,
+            featured_image: featuredImage,
+            slug,
+            excerpt: metaDescription,
+            status: 'draft',
+            meta_title: title,
+            meta_description: metaDescription,
+            word_count: wordCountActual,
+          });
+        
+        if (articleError) {
+          console.error('Failed to save to articles table:', articleError);
+        } else {
+          console.log('Article saved to library');
+        }
+      } catch (e) {
+        console.error('Error saving to articles:', e);
       }
-    } catch (e) {
-      console.error('Error saving to articles:', e);
     }
 
     console.log(`Article job ${jobId} completed with ${wordCountActual} words`);
