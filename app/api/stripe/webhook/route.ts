@@ -6,7 +6,7 @@ import { getPackageTierByPriceId } from '@/lib/stripe-config';
 export const dynamic = 'force-dynamic';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-12-15.clover',
 });
 
 const supabaseAdmin = createClient(
@@ -115,11 +115,14 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   console.log('Payment succeeded:', invoice.id);
 
   // Only handle subscription renewals (not the initial payment)
-  if (!invoice.subscription || invoice.billing_reason === 'subscription_create') {
+  const invoiceAny = invoice as any;
+  const subscriptionId = typeof invoiceAny.subscription === 'string' 
+    ? invoiceAny.subscription 
+    : invoiceAny.subscription?.id;
+  
+  if (!subscriptionId || (invoiceAny.billing_reason as string) === 'subscription_create') {
     return;
   }
-
-  const subscriptionId = invoice.subscription as string;
 
   // Get subscription details
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -132,11 +135,12 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   // Reset monthly credits
+  const subAny = subscription as any;
   await supabaseAdmin
     .from('subscribers')
     .update({
       credits_remaining: credits,
-      next_billing_date: new Date(subscription.current_period_end * 1000).toISOString(),
+      next_billing_date: new Date((subAny.current_period_end || 0) * 1000).toISOString(),
     })
     .eq('user_id', userId);
 
@@ -174,13 +178,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const credits = parseInt(subscription.metadata?.credits || '0', 10);
 
   // Update subscriber record
+  const subAny2 = subscription as any;
   await supabaseAdmin
     .from('subscribers')
     .update({
       subscription_tier: packageTier,
       monthly_credits: credits,
       subscription_active: subscription.status === 'active',
-      next_billing_date: new Date(subscription.current_period_end * 1000).toISOString(),
+      next_billing_date: new Date((subAny2.current_period_end || 0) * 1000).toISOString(),
     })
     .eq('user_id', userId);
 
