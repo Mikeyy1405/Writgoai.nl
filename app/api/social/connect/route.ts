@@ -231,7 +231,7 @@ export async function POST(request: Request) {
       try {
         const { profiles } = await lateClient.listProfiles();
         const existing = profiles.find(p => 
-          p.name.toLowerCase() === project.name.toLowerCase()
+          p.name.toLowerCase().includes(project.name.toLowerCase())
         );
 
         if (existing) {
@@ -240,13 +240,23 @@ export async function POST(request: Request) {
             .update({ late_profile_id: existing._id })
             .eq('id', socialProfile.id);
 
-          const { accounts } = await lateClient.listAccounts(existing._id);
+          try {
+            const { accounts } = await lateClient.listAccounts(existing._id);
 
-          return NextResponse.json({ 
-            configured: true,
-            accounts: accounts || [],
-            profile_found: true
-          });
+            return NextResponse.json({ 
+              configured: true,
+              accounts: accounts || [],
+              profile_found: true
+            });
+          } catch (accountsError) {
+            console.error('Failed to list accounts for existing profile:', accountsError);
+            // Return success anyway - accounts can be synced later
+            return NextResponse.json({ 
+              configured: true,
+              accounts: [],
+              profile_found: true
+            });
+          }
         }
       } catch (findError) {
         console.error('Find existing failed:', findError);

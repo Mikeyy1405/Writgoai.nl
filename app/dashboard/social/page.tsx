@@ -865,12 +865,6 @@ export default function SocialMediaPage() {
                   </div>
                 )}
 
-                {lateConfigured === false && (
-                  <p className="text-sm text-gray-400 mb-4">
-                    Later.dev API niet geconfigureerd. Je kunt posts genereren en handmatig kopiëren.
-                  </p>
-                )}
-
                 {lateConfigured && !socialActivated && (
                   <div className="mb-4 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
                     <p className="text-sm text-orange-300 mb-3">
