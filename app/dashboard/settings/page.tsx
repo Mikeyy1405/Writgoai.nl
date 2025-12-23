@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
+import BillingSection from "@/components/BillingSection";
 
 export default async function SettingsPage() {
   const supabase = createClient();
@@ -20,17 +21,32 @@ export default async function SettingsPage() {
           </p>
         </div>
 
+        {/* Billing Section */}
+        <div className="mb-8">
+          <BillingSection />
+        </div>
+
+        {/* Account Section */}
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">⚙️</span>
+          <h2 className="text-2xl font-bold text-white mb-4">👤 Account Informatie</h2>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Email</label>
+              <div className="text-white">{user.email}</div>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">
-              Instellingen pagina komt binnenkort
-            </h3>
-            <p className="text-gray-400">
-              Hier beheer je straks je account en instellingen
-            </p>
+            
+            {user.user_metadata?.name && (
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Naam</label>
+                <div className="text-white">{user.user_metadata.name}</div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">User ID</label>
+              <div className="text-white font-mono text-sm">{user.id}</div>
+            </div>
           </div>
         </div>
       </div>
