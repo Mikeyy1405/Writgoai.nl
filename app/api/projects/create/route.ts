@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
+import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -85,26 +86,15 @@ export async function POST(request: Request) {
       // Test WordPress connection (unless skipped)
       if (!shouldSkipTest) {
         try {
-          // Create abort controller for timeout (30 seconds, increased from 15s)
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 30000);
-
           const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
-          const testResponse = await fetch(testUrl, {
+          const testResponse = await fetchWithDnsFallback(testUrl, {
             headers: {
               'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
               'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
               'Accept': 'application/json',
             },
-            signal: controller.signal,
-            // Node.js undici-specific options to override default connection timeout
-            // TypeScript doesn't have types for these, but they're required for proper timeout handling
-            // @ts-ignore
-            headersTimeout: 30000,
-            bodyTimeout: 30000,
+            timeout: 30000, // 30 second timeout with DNS fallback for .nl domains
           });
-          
-          clearTimeout(timeoutId);
 
           console.log('WordPress test response status:', testResponse.status);
 
