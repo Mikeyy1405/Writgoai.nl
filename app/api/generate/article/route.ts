@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
+import { requireCredits, deductCreditsAfterAction } from '@/lib/credit-middleware';
+import type { CreditAction } from '@/lib/credit-costs';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -65,6 +67,20 @@ export async function POST(request: Request) {
         { error: 'Topic is required' },
         { status: 400 }
       );
+    }
+
+    // Determine credit cost based on article length
+    const creditActions: Record<string, CreditAction> = {
+      short: 'article_short',
+      medium: 'article_medium',
+      long: 'article_long',
+    };
+    const creditAction = creditActions[length] || 'article_medium';
+
+    // Check if user has enough credits BEFORE generating
+    const creditCheck = await requireCredits(user.id, creditAction);
+    if (creditCheck) {
+      return creditCheck; // Return error response
     }
 
     // If project_id is provided, verify it belongs to user
@@ -212,6 +228,9 @@ BELANGRIJK:
       }
     }
 
+    // Deduct credits AFTER successful generation
+    const creditResult = await deductCreditsAfterAction(user.id, creditAction);
+
     return NextResponse.json({
       success: true,
       article_id: articleId,
@@ -221,6 +240,9 @@ BELANGRIJK:
       excerpt,
       focus_keyword: focusKeyword,
       word_count: wordCount,
+      credits_used: creditResult.success ? 
+        (creditAction === 'article_short' ? 1 : creditAction === 'article_medium' ? 2 : 3) : 0,
+      credits_remaining: creditResult.remaining,
     });
   } catch (error: any) {
     console.error('Error generating article:', error);

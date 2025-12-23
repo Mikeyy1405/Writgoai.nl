@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { generateAICompletion, generateJSONCompletion } from '@/lib/ai-client';
+import { requireCredits, deductCreditsAfterAction } from '@/lib/credit-middleware';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,12 @@ export async function POST(request: Request) {
         { error: 'Run niche detection first' },
         { status: 400 }
       );
+    }
+
+    // Check if user has enough credits BEFORE research
+    const creditCheck = await requireCredits(user.id, 'keyword_research');
+    if (creditCheck) {
+      return creditCheck; // Return error response
     }
 
     await supabase.from('activity_logs').insert({
@@ -142,10 +149,15 @@ Respond in JSON format:
       details: { top_keywords: keywords.slice(0, 5) },
     });
 
+    // Deduct credits AFTER successful research
+    const creditResult = await deductCreditsAfterAction(user.id, 'keyword_research');
+
     return NextResponse.json({
       success: true,
       keywords,
       count: keywords.length,
+      credits_used: 1,
+      credits_remaining: creditResult.remaining,
     });
   } catch (error: any) {
     console.error('Error in keyword research:', error);

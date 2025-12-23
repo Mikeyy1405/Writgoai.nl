@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { generateImage, generateFeaturedImage } from '@/lib/ai-image-client';
+import { requireCredits, deductCreditsAfterAction } from '@/lib/credit-middleware';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,12 @@ export async function POST(request: Request) {
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Check if user has enough credits BEFORE generating
+    const creditCheck = await requireCredits(user.id, 'featured_image');
+    if (creditCheck) {
+      return creditCheck; // Return error response
     }
 
     const startTime = Date.now();
@@ -95,13 +102,19 @@ export async function POST(request: Request) {
       output: imageUrl,
       duration_ms: duration,
       status: 'success',
+      credits_used: 1,
     });
+
+    // Deduct credits AFTER successful generation
+    const creditResult = await deductCreditsAfterAction(user.id, 'featured_image');
 
     return NextResponse.json({
       success: true,
       media_id: media?.id,
       url: imageUrl,
       duration_ms: duration,
+      credits_used: 1,
+      credits_remaining: creditResult.remaining,
     });
   } catch (error: any) {
     console.error('Image generation error:', error);

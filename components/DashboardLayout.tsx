@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import CreditBalance from './CreditBalance';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   user: {
+    id?: string;
     email?: string;
     user_metadata?: {
       name?: string;
@@ -104,6 +106,11 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
               );
             })}
           </nav>
+
+          {/* Credit Balance */}
+          <div className="px-4">
+            {user.id && <CreditBalance userId={user.id} />}
+          </div>
 
           {/* User Section */}
           <div className="border-t border-gray-800 p-4">
