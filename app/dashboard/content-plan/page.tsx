@@ -481,7 +481,11 @@ export default function ContentPlanPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleWriteArticle = (idea: ContentIdea, index: number) => {
+  const handleWriteArticle = async (idea: ContentIdea, index: number) => {
+    // Update status to 'in_progress' if not already published
+    if (idea.status !== 'published') {
+      await updateArticleStatus(index, 'in_progress');
+    }
     // Navigate to writer with project and article index - no localStorage needed
     router.push(`/dashboard/writer?project=${selectedProject}&article=${index}`);
   };
