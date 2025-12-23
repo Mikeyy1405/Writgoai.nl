@@ -257,57 +257,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Hoe het werkt Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Van Keyword naar Artikel in 3 Stappen
-            </h2>
-            <p className="text-xl text-gray-300">
-              Binnen minuten staat je SEO-geoptimaliseerde artikel live
-            </p>
-          </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
-                1
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                Koppel je WordPress
-              </h3>
-              <p className="text-gray-400">
-                Verbind je WordPress site in één klik. Geen plugins of ingewikkelde setup nodig.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
-                2
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                Voer je Keyword in
-              </h3>
-              <p className="text-gray-400">
-                Geef het onderwerp of keyword op waar je over wilt schrijven. De AI doet de rest.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
-                3
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                Klik op Genereren
-              </h3>
-              <p className="text-gray-400">
-                Binnen minuten is je artikel klaar en automatisch gepubliceerd op je WordPress site.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Gratis Starten Sectie */}
       <section className="py-20 px-4 bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-y border-gray-800">
@@ -372,6 +322,100 @@ export default function Home() {
           >
             Start Gratis met 25 Credits 🎁
           </Link>
+        </div>
+      </section>
+
+      {/* Hoe het werkt - 4 stappen */}
+      <section className="py-20 px-4 bg-gradient-to-b from-black to-gray-900/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Van niche naar gepubliceerd artikel in 4 stappen
+            </h2>
+            <p className="text-xl text-gray-300">
+              Geen keyword research nodig. AI doet het werk voor je.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Stap 1 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-orange-500/30 transition-all">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                  1
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    Koppel je WordPress
+                  </h3>
+                  <p className="text-gray-300">
+                    Verbind je WordPress site in één klik. Geen plugins of ingewikkelde setup nodig.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stap 2 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-orange-500/30 transition-all">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                  2
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    Maak een Topical Map
+                  </h3>
+                  <p className="text-gray-300">
+                    AI analyseert je niche en genereert automatisch een complete contentstrategie met alle relevante onderwerpen. <span className="text-orange-400 font-semibold">Geen keyword research nodig!</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stap 3 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-orange-500/30 transition-all">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                  3
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    Genereer met 1 klik
+                  </h3>
+                  <p className="text-gray-300">
+                    Kies een onderwerp uit je Topical Map en genereer instant een SEO-geoptimaliseerd artikel van 2000+ woorden.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stap 4 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-orange-500/30 transition-all">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                  4
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    Bewerk & Publiceer
+                  </h3>
+                  <p className="text-gray-300">
+                    Pas optioneel aan in de ingebouwde editor en publiceer direct naar je WordPress site met 1 klik.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Extra USP highlight */}
+          <div className="mt-12 text-center">
+            <div className="inline-block bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl px-8 py-4">
+              <p className="text-lg text-gray-300">
+                <span className="text-orange-400 font-bold">💡 Uniek:</span> De Topical Map genereert automatisch alle onderwerpen voor je niche.
+                Concurrenten vereisen handmatige keyword invoer - wij niet!
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
