@@ -338,6 +338,10 @@ export default function ContentPlanPage() {
         stopPolling();
         setError(job.error || 'Er is een fout opgetreden');
         setCurrentJobId(null);
+      } else if (job.status === 'cancelled') {
+        stopPolling();
+        setCurrentJobId(null);
+        setLoading(false);
       }
     } catch (err) {
       console.error('Polling error:', err);
@@ -388,10 +392,23 @@ export default function ContentPlanPage() {
     }
   };
 
-  const cancelGeneration = () => {
+  const cancelGeneration = async () => {
+    // First cancel the backend job
+    if (currentJobId) {
+      try {
+        await fetch(`/api/simple/generate-content-plan-background?jobId=${currentJobId}`, {
+          method: 'DELETE',
+        });
+      } catch (err) {
+        console.error('Failed to cancel job:', err);
+      }
+    }
+    
+    // Then stop polling and clear state
     stopPolling();
     setCurrentJobId(null);
     setJobData(null);
+    setLoading(false);
   };
 
   const loadMore = () => {

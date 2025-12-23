@@ -234,6 +234,39 @@ export async function GET(request: Request) {
   }
 }
 
+// DELETE - Cancel a job
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const jobId = searchParams.get('jobId');
+
+    if (!jobId) {
+      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
+    }
+
+    // Update job status to cancelled
+    const { error } = await supabaseAdmin
+      .from('content_plan_jobs')
+      .update({ 
+        status: 'cancelled',
+        current_step: 'Geannuleerd door gebruiker',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', jobId)
+      .in('status', ['pending', 'processing']); // Only cancel active jobs
+
+    if (error) {
+      console.error('Failed to cancel job:', error);
+      return NextResponse.json({ error: 'Failed to cancel job' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Job cancelled' });
+  } catch (error: any) {
+    console.error('DELETE error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 // Update job in database
 async function updateJob(jobId: string, updates: any) {
   const { error } = await supabaseAdmin
@@ -246,11 +279,28 @@ async function updateJob(jobId: string, updates: any) {
   }
 }
 
+// Check if job is cancelled
+async function isJobCancelled(jobId: string): Promise<boolean> {
+  const { data: job } = await supabaseAdmin
+    .from('content_plan_jobs')
+    .select('status')
+    .eq('id', jobId)
+    .single();
+  
+  return job?.status === 'cancelled';
+}
+
 // Background processing function
 async function processContentPlan(jobId: string, websiteUrl: string) {
   try {
     const now = new Date();
     const currentYear = now.getFullYear();
+
+    // Check if already cancelled before starting
+    if (await isJobCancelled(jobId)) {
+      console.log(`Job ${jobId} was cancelled before processing`);
+      return;
+    }
 
     // Step 1: Detect language
     await updateJob(jobId, { progress: 5, current_step: '🌍 Taal detecteren...' });
@@ -472,6 +522,12 @@ Output als JSON array:
     const pillarCount = nicheData.pillarTopics.length;
 
     for (let i = 0; i < pillarCount; i++) {
+      // Check if job was cancelled
+      if (await isJobCancelled(jobId)) {
+        console.log(`Job ${jobId} was cancelled during cluster generation`);
+        return;
+      }
+
       const pillarData = nicheData.pillarTopics[i];
       const pillarTopic = typeof pillarData === 'string' ? pillarData : pillarData.topic;
       const subtopics = typeof pillarData === 'object' ? pillarData.subtopics : [];
