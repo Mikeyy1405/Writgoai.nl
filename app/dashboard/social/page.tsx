@@ -506,8 +506,9 @@ export default function SocialMediaPage() {
 
     setPublishing(true);
     try {
+      // Note: We send local time, API will handle timezone conversion to Europe/Amsterdam
       const scheduledFor = publishTiming === 'scheduled' && scheduledDate && scheduledTime
-        ? `${scheduledDate}T${scheduledTime}:00.000Z`
+        ? `${scheduledDate}T${scheduledTime}:00`
         : undefined;
 
       const response = await fetch('/api/social/publish', {
@@ -524,16 +525,10 @@ export default function SocialMediaPage() {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        // Update post in local state
-        setPosts(posts.map(p => 
-          p.id === publishingPost.id 
-            ? { 
-                ...p, 
-                status: data.status || (publishTiming === 'now' ? 'published' : 'scheduled'),
-                scheduled_for: scheduledFor || null,
-              } 
-            : p
-        ));
+        // Reload posts to get updated status from server
+        if (selectedProject) {
+          await loadPosts(selectedProject.id);
+        }
         
         alert(data.manual 
           ? 'Post is klaar! Kopieer de content om handmatig te plaatsen.' 
@@ -1145,7 +1140,7 @@ export default function SocialMediaPage() {
                                 {post.status === 'published' ? '✅ Gepubliceerd' :
                                  post.status === 'scheduled' ? '📅 Gepland' : '📝 Concept'}
                               </span>
-                              {(post.status === 'scheduled' || post.status === 'published') && post.scheduled_for && (
+                              {post.status === 'scheduled' && post.scheduled_for && (
                                 <span className="text-xs text-gray-400">
                                   {formatDate(post.scheduled_for)}
                                 </span>
@@ -1400,7 +1395,11 @@ export default function SocialMediaPage() {
               </button>
               <button
                 onClick={publishPost}
-                disabled={publishing || selectedAccounts.length === 0 || (publishTiming === 'scheduled' && (!scheduledDate || !scheduledTime))}
+                disabled={
+                  publishing || 
+                  selectedAccounts.length === 0 || 
+                  (publishTiming === 'scheduled' && (!scheduledDate || !scheduledTime))
+                }
                 className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition flex items-center gap-2"
               >
                 {publishing ? (
