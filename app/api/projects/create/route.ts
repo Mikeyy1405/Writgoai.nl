@@ -12,20 +12,22 @@ function cleanApplicationPassword(password: string): string {
   return password.replace(/\s+/g, '');
 }
 
-// Helper function to ensure proper WordPress REST API URL
-function getWordPressApiUrl(websiteUrl: string): string {
+// Helper function to normalize WordPress base URL
+// Returns only the base website URL (e.g., "https://example.com")
+// The wp-json paths should be added by the wordpress-endpoints helper functions
+function normalizeWordPressBaseUrl(websiteUrl: string): string {
   let url = websiteUrl.trim();
-  
+
   // Remove trailing slash
   if (url.endsWith('/')) {
     url = url.slice(0, -1);
   }
-  
+
   // Remove any existing /wp-json paths to start fresh
   url = url.replace(/\/wp-json.*$/, '');
-  
-  // Add the REST API path
-  return `${url}/wp-json/wp/v2`;
+
+  // Return only the base URL without any API paths
+  return url;
 }
 
 export async function POST(request: Request) {
@@ -64,9 +66,9 @@ export async function POST(request: Request) {
 
     // Only process WordPress connection if credentials are provided
     if (hasWordPressCredentials) {
-      // Generate wp_url from website_url
-      wp_url = getWordPressApiUrl(website_url);
-      
+      // Generate wp_url from website_url (base URL only)
+      wp_url = normalizeWordPressBaseUrl(website_url);
+
       // Clean the password (remove spaces from Application Password)
       const cleanPassword = cleanApplicationPassword(wp_password);
 
@@ -76,7 +78,7 @@ export async function POST(request: Request) {
 
       // ALWAYS skip test if skip_wp_test is truthy (string "true", boolean true, or any truthy value)
       const shouldSkipTest = skip_wp_test === true || skip_wp_test === 'true' || skip_wp_test === 1 || skip_wp_test === '1';
-      
+
       console.log('Should skip test:', shouldSkipTest);
 
       // Test WordPress connection (unless skipped)
@@ -85,8 +87,8 @@ export async function POST(request: Request) {
           // Create abort controller for timeout (30 seconds, increased from 15s)
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
-          
-          const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
+
+          const testResponse = await fetch(`${wp_url}/wp-json/wp/v2/posts?per_page=1`, {
             headers: {
               'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
               'User-Agent': 'WritGo-SEO-Agent/2.0',
