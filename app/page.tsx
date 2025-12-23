@@ -411,7 +411,7 @@ export default function Home() {
           <div className="mt-12 text-center">
             <div className="inline-block bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl px-8 py-4">
               <p className="text-lg text-gray-300">
-                <span className="text-orange-400 font-bold">💡 Uniek:</span> De Topical Map genereert automatisch alle onderwerpen voor je niche. 
+                <span className="text-orange-400 font-bold">💡 Uniek:</span> De Topical Map genereert automatisch alle onderwerpen voor je niche.
                 Concurrenten vereisen handmatige keyword invoer - wij niet!
               </p>
             </div>
