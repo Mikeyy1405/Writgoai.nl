@@ -82,9 +82,9 @@ export async function POST(request: Request) {
       // Test WordPress connection (unless skipped)
       if (!shouldSkipTest) {
         try {
-          // Create abort controller for timeout (15 seconds)
+          // Create abort controller for timeout (30 seconds, increased from 15s)
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
           
           const testResponse = await fetch(`${wp_url}/posts?per_page=1`, {
             headers: {
@@ -93,6 +93,11 @@ export async function POST(request: Request) {
               'Accept': 'application/json',
             },
             signal: controller.signal,
+            // Node.js undici-specific options to override default connection timeout
+            // TypeScript doesn't have types for these, but they're required for proper timeout handling
+            // @ts-ignore
+            headersTimeout: 30000,
+            bodyTimeout: 30000,
           });
           
           clearTimeout(timeoutId);
@@ -119,10 +124,12 @@ export async function POST(request: Request) {
           }
         } catch (wpError: any) {
           console.error('WordPress connection error:', wpError);
+          console.error('Error code:', wpError.code || 'N/A');
+          console.error('Error cause:', wpError.cause?.message || 'N/A');
           
           // Don't block project creation on timeout or connection errors
-          if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT') {
-            wordpressWarning = 'WordPress test timeout - de server reageert traag. Credentials zijn opgeslagen.';
+          if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT') {
+            wordpressWarning = 'WordPress test timeout - de server reageert traag (>30s). Credentials zijn opgeslagen.';
           } else if (wpError.code === 'ENOTFOUND') {
             wordpressWarning = 'Website niet gevonden. Controleer de URL.';
           } else if (wpError.code === 'ECONNREFUSED') {
