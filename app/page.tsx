@@ -108,20 +108,20 @@ export default function Home() {
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-block mb-4 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full">
             <span className="text-orange-400 text-sm font-medium">
-              🚀 Vanaf €0.49 per artikel • 87% winstmarge
+              🚀 14 dagen gratis proberen • Geen setup nodig
             </span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            AI Content op Credits
+            Van Keyword naar Artikel
             <br />
             <span className="bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
-              Transparant & Winstgevend
+              in Minuten
             </span>
           </h1>
           
           <p className="text-xl text-gray-300 mb-6 max-w-3xl mx-auto">
-            Betaal alleen voor wat je gebruikt. Geen limiet op features, alleen op credits. Alle tools beschikbaar vanaf dag 1.
+            Automatiseer je WordPress content met AI. Betaal alleen voor wat je gebruikt. Alle features beschikbaar vanaf dag 1.
           </p>
           
           <div className="flex flex-wrap gap-4 justify-center mb-12 text-gray-300">
@@ -161,16 +161,16 @@ export default function Home() {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-3 gap-8 max-w-3xl mx-auto">
             <div>
-              <div className="text-4xl font-bold text-white mb-2">€0.20</div>
-              <div className="text-gray-400">Per Credit (Enterprise)</div>
+              <div className="text-4xl font-bold text-white mb-2">2000+</div>
+              <div className="text-gray-400">Artikelen Gegenereerd</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">87%</div>
-              <div className="text-gray-400">Winstmarge</div>
+              <div className="text-4xl font-bold text-white mb-2">10x</div>
+              <div className="text-gray-400">Sneller dan Handmatig</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">100%</div>
-              <div className="text-gray-400">Features Toegang</div>
+              <div className="text-4xl font-bold text-white mb-2">50+</div>
+              <div className="text-gray-400">Uur Bespaard per Maand</div>
             </div>
           </div>
         </div>
@@ -183,8 +183,11 @@ export default function Home() {
             <h2 className="text-4xl font-bold text-white mb-4">
               Alles wat je nodig hebt voor SEO Success
             </h2>
-            <p className="text-xl text-gray-300">
+            <p className="text-xl text-gray-300 mb-4">
               Krachtige AI-tools om je WordPress content naar het volgende level te tillen
+            </p>
+            <p className="text-sm text-orange-400">
+              Perfect voor bloggers, marketeers en affiliate marketeers
             </p>
           </div>
 
@@ -194,31 +197,37 @@ export default function Home() {
                 icon: "🤖",
                 title: "AI Content Generatie",
                 desc: "Genereer automatisch hoogwaardige, SEO-geoptimaliseerde artikelen met de nieuwste AI-modellen (GPT-4, Claude).",
+                time: "Bespaar 2+ uur per artikel",
               },
               {
                 icon: "⚡",
                 title: "AutoPilot Mode",
                 desc: "Stel een schema in en laat de AI automatisch content schrijven en publiceren. Volledig hands-off.",
+                time: "Volledig geautomatiseerd",
               },
               {
                 icon: "🎯",
                 title: "SEO Optimalisatie",
                 desc: "Keyword research, meta descriptions, internal linking - alles automatisch geoptimaliseerd voor Google.",
+                time: "Bespaar 30 min per artikel",
               },
               {
                 icon: "📝",
                 title: "WordPress Integratie",
                 desc: "Direct publiceren naar je WordPress site via REST API. Geen plugins nodig.",
+                time: "Instant publicatie",
               },
               {
                 icon: "📊",
                 title: "Content Library",
                 desc: "Beheer al je gegenereerde content op één plek. Bewerk, plan en publiceer wanneer je wilt.",
+                time: "Overzichtelijk beheer",
               },
               {
                 icon: "🔄",
                 title: "Content Updates",
                 desc: "Update automatisch oude artikelen met nieuwe informatie om je rankings te behouden.",
+                time: "Stay relevant",
               }
             ].map((feature, i) => (
               <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-orange-500/50 transition-all">
@@ -228,25 +237,75 @@ export default function Home() {
                 <h3 className="text-xl font-semibold text-white mb-3">
                   {feature.title}
                 </h3>
-                <p className="text-gray-400">{feature.desc}</p>
+                <p className="text-gray-400 mb-3">{feature.desc}</p>
+                <p className="text-sm text-orange-400">{feature.time}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4">
+      {/* Hoe het werkt Section */}
+      <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">
-              Credit-Based Pricing met Hoge Marges
+              Van Keyword naar Artikel in 3 Stappen
+            </h2>
+            <p className="text-xl text-gray-300">
+              Binnen minuten staat je SEO-geoptimaliseerde artikel live
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
+                1
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-3">
+                Koppel je WordPress
+              </h3>
+              <p className="text-gray-400">
+                Verbind je WordPress site in één klik. Geen plugins of ingewikkelde setup nodig.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
+                2
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-3">
+                Voer je Keyword in
+              </h3>
+              <p className="text-gray-400">
+                Geef het onderwerp of keyword op waar je over wilt schrijven. De AI doet de rest.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
+                3
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-3">
+                Klik op Genereren
+              </h3>
+              <p className="text-gray-400">
+                Binnen minuten is je artikel klaar en automatisch gepubliceerd op je WordPress site.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-4 bg-gray-900/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Kies het Pakket dat bij je Past
             </h2>
             <p className="text-xl text-gray-300 mb-2">
-              Betaal alleen voor wat je gebruikt. Alle features beschikbaar vanaf dag 1.
-            </p>
-            <p className="text-sm text-gray-400">
-              Geen whitelabel nonsense. Geen API limiet gedoe. Alleen credits.
+              Alle features beschikbaar in elk pakket. Betaal alleen voor je credits.
             </p>
           </div>
 
@@ -260,42 +319,34 @@ export default function Home() {
               </div>
               <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                 <div className="text-3xl font-bold text-orange-400 mb-1">100 Credits</div>
-                <div className="text-sm text-gray-400">€0.49 per credit</div>
+                <div className="text-sm text-gray-400">Per maand</div>
               </div>
               
               <div className="mb-6 text-sm text-gray-300">
                 <div className="font-semibold text-white mb-2">Wat kun je maken:</div>
                 <div className="space-y-1">
-                  <div>• 50 artikelen (2 credits)</div>
-                  <div>• 100 korte artikelen</div>
-                  <div>• 25 artikelen + afbeeldingen</div>
+                  <div>• Tot 50 lange artikelen (2000+ woorden)</div>
+                  <div>• Tot 100 korte artikelen (1000 woorden)</div>
                 </div>
               </div>
 
               <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> Volledige toegang tot alle features
+                  <span className="mr-2 text-green-400">✓</span> AI afbeeldingen met Flux Pro
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AI Content Generatie
+                  <span className="mr-2 text-green-400">✓</span> WordPress auto-publicatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AI Afbeeldingen (Flux Pro)
+                  <span className="mr-2 text-green-400">✓</span> SEO optimalisatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> SEO Research & Analyse
+                  <span className="mr-2 text-green-400">✓</span> AutoPilot scheduling
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> WordPress Integratie
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AutoPilot Mode
+                  <span className="mr-2 text-green-400">✓</span> Alle features unlocked
                 </li>
               </ul>
-
-              <div className="mb-4 text-xs text-gray-500 text-center">
-                87% winstmarge • ~€6.20 API costs
-              </div>
 
               <Link
                 href="/register?package=starter"
@@ -317,42 +368,37 @@ export default function Home() {
               </div>
               <div className="mb-6 p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg">
                 <div className="text-3xl font-bold text-orange-400 mb-1">250 Credits</div>
-                <div className="text-sm text-gray-400">€0.32 per credit</div>
+                <div className="text-sm text-gray-400">Per maand</div>
               </div>
               
               <div className="mb-6 text-sm text-gray-300">
                 <div className="font-semibold text-white mb-2">Wat kun je maken:</div>
                 <div className="space-y-1">
-                  <div>• 125 artikelen (2 credits)</div>
-                  <div>• 250 korte artikelen</div>
-                  <div>• 62 artikelen + afbeeldingen</div>
+                  <div>• Tot 125 lange artikelen</div>
+                  <div>• Tot 250 korte artikelen</div>
                 </div>
               </div>
 
               <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> Volledige toegang tot alle features
+                  <span className="mr-2 text-green-400">✓</span> AI afbeeldingen met Flux Pro
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AI Content Generatie
+                  <span className="mr-2 text-green-400">✓</span> WordPress auto-publicatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AI Afbeeldingen (Flux Pro)
+                  <span className="mr-2 text-green-400">✓</span> SEO optimalisatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> SEO Research & Analyse
+                  <span className="mr-2 text-green-400">✓</span> AutoPilot scheduling
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> WordPress Integratie
+                  <span className="mr-2 text-green-400">✓</span> Alle features unlocked
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AutoPilot Mode
+                  <span className="mr-2 text-orange-400">⭐</span> Prioriteit support
                 </li>
               </ul>
-
-              <div className="mb-4 text-xs text-gray-500 text-center">
-                80% winstmarge • ~€15.50 API costs
-              </div>
 
               <Link
                 href="/register?package=pro"
@@ -371,42 +417,40 @@ export default function Home() {
               </div>
               <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                 <div className="text-3xl font-bold text-orange-400 mb-1">1000 Credits</div>
-                <div className="text-sm text-gray-400">€0.20 per credit</div>
+                <div className="text-sm text-gray-400">Per maand</div>
               </div>
               
               <div className="mb-6 text-sm text-gray-300">
                 <div className="font-semibold text-white mb-2">Wat kun je maken:</div>
                 <div className="space-y-1">
-                  <div>• 500 artikelen (2 credits)</div>
-                  <div>• 1000 korte artikelen</div>
-                  <div>• 250 artikelen + afbeeldingen</div>
+                  <div>• Tot 500 lange artikelen</div>
+                  <div>• Tot 1000 korte artikelen</div>
                 </div>
               </div>
 
               <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> Volledige toegang tot alle features
+                  <span className="mr-2 text-green-400">✓</span> AI afbeeldingen met Flux Pro
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AI Content Generatie
+                  <span className="mr-2 text-green-400">✓</span> WordPress auto-publicatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AI Afbeeldingen (Flux Pro)
+                  <span className="mr-2 text-green-400">✓</span> SEO optimalisatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> SEO Research & Analyse
+                  <span className="mr-2 text-green-400">✓</span> AutoPilot scheduling
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> WordPress Integratie
+                  <span className="mr-2 text-green-400">✓</span> Alle features unlocked
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-green-400">✓</span> AutoPilot Mode
+                  <span className="mr-2 text-orange-400">⭐</span> Dedicated support
+                </li>
+                <li className="flex items-center text-gray-300">
+                  <span className="mr-2 text-orange-400">⭐</span> Custom integraties mogelijk
                 </li>
               </ul>
-
-              <div className="mb-4 text-xs text-gray-500 text-center">
-                69% winstmarge • ~€62.00 API costs
-              </div>
 
               <Link
                 href="/register?package=enterprise"
@@ -421,20 +465,20 @@ export default function Home() {
           <div className="mt-16 max-w-4xl mx-auto">
             <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
               <h3 className="text-xl font-semibold text-white mb-4 text-center">
-                💎 Volledige Transparantie
+                💎 Waarom WritGo AI?
               </h3>
               <div className="grid md:grid-cols-3 gap-6 text-center">
                 <div>
                   <div className="text-2xl font-bold text-orange-400 mb-2">Geen Limieten</div>
-                  <div className="text-sm text-gray-400">Alle features beschikbaar in elk pakket</div>
+                  <div className="text-sm text-gray-400">Alle features in elk pakket vanaf dag 1</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-orange-400 mb-2">Hoge Marges</div>
-                  <div className="text-sm text-gray-400">69-87% winst op subscriptions</div>
+                  <div className="text-2xl font-bold text-orange-400 mb-2">Fair & Transparant</div>
+                  <div className="text-sm text-gray-400">Betaal alleen voor wat je gebruikt. Geen verborgen kosten.</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-orange-400 mb-2">Fair Pricing</div>
-                  <div className="text-sm text-gray-400">API costs: €0.031-€0.145 per actie</div>
+                  <div className="text-2xl font-bold text-orange-400 mb-2">Nederlands & Support</div>
+                  <div className="text-sm text-gray-400">Volledig Nederlandstalige interface en support</div>
                 </div>
               </div>
             </div>
@@ -449,7 +493,7 @@ export default function Home() {
             Klaar om te beginnen?
           </h2>
           <p className="text-xl text-gray-300 mb-8">
-            Betaal alleen voor wat je gebruikt. Alle features direct beschikbaar. Start met 100 credits voor slechts €49/maand.
+            Begin vandaag met automatische content generatie. Betaal alleen voor wat je gebruikt.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
