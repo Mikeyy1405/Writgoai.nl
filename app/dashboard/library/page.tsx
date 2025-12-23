@@ -81,19 +81,8 @@ export default function LibraryPage() {
   }
 
   function openEditor(article: Article) {
-    localStorage.setItem('generatedArticle', JSON.stringify({
-      title: article.title,
-      content: article.content,
-      word_count: article.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length,
-      project_id: article.project_id
-    }));
-    
-    const project = projects.find(p => p.id === article.project_id);
-    if (project) {
-      localStorage.setItem('selectedProject', JSON.stringify(project));
-    }
-    
-    router.push('/dashboard/editor');
+    // Navigate with article ID for proper loading
+    router.push(`/dashboard/editor?article=${article.id}`);
   }
 
   async function deleteArticle(articleId: string) {

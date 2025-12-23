@@ -174,6 +174,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('jobId');
     const userId = searchParams.get('userId');
+    const projectId = searchParams.get('projectId');
+    const status = searchParams.get('status');
 
     if (jobId) {
       // Get specific job
@@ -188,6 +190,27 @@ export async function GET(request: Request) {
       }
 
       return NextResponse.json(job);
+    } else if (projectId) {
+      // Get active/processing job for project
+      let query = supabaseAdmin
+        .from('content_plan_jobs')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      // Filter by status if provided (e.g., 'processing')
+      if (status) {
+        query = query.in('status', ['processing', 'pending']);
+      }
+
+      const { data: jobs, error } = await query;
+
+      if (error || !jobs || jobs.length === 0) {
+        return NextResponse.json({ error: 'No jobs found' }, { status: 404 });
+      }
+
+      return NextResponse.json(jobs[0]);
     } else if (userId) {
       // Get latest job for user
       const { data: jobs, error } = await supabaseAdmin
@@ -204,7 +227,7 @@ export async function GET(request: Request) {
       return NextResponse.json(jobs[0]);
     }
 
-    return NextResponse.json({ error: 'Job ID or User ID is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Job ID, Project ID, or User ID is required' }, { status: 400 });
   } catch (error: any) {
     console.error('GET error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

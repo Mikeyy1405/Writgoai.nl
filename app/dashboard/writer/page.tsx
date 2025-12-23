@@ -118,14 +118,7 @@ export default function WriterPage() {
       }
     }
 
-    // Fallback to localStorage
-    if (!idea) {
-      const savedIdea = localStorage.getItem('selectedContentIdea') || localStorage.getItem('selectedIdea');
-      if (savedIdea) {
-        setIdea(JSON.parse(savedIdea));
-      }
-    }
-
+    // No localStorage fallback - everything via database
     setLoading(false);
   }
 

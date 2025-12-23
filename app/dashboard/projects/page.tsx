@@ -117,9 +117,8 @@ export default function ProjectsPage() {
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => {
-                        // Store project in localStorage and go to content plan
-                        localStorage.setItem('selectedProject', JSON.stringify(project));
-                        router.push('/dashboard/content-plan');
+                        // Navigate with project ID - no localStorage needed
+                        router.push(`/dashboard/content-plan?project=${project.id}`);
                       }}
                       className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
                     >

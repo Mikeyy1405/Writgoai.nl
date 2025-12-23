@@ -187,10 +187,6 @@ export default function ContentPlanPage() {
     setSearchQuery('');
   };
 
-  const getStorageKey = (projectId: string, key: string) => {
-    return `contentPlan_${projectId}_${key}`;
-  };
-
   const loadSavedPlan = async (projectId: string) => {
     // Clear current state first
     clearPlanState();
@@ -248,11 +244,18 @@ export default function ContentPlanPage() {
   };
 
   const checkForActiveJob = async (projectId: string) => {
-    // Check localStorage for active job for this project
-    const savedJobId = localStorage.getItem(getStorageKey(projectId, 'activeJobId'));
-    if (savedJobId) {
-      setCurrentJobId(savedJobId);
-      startPolling(savedJobId, projectId);
+    // Check database for active job for this project
+    try {
+      const response = await fetch(`/api/simple/generate-content-plan-background?projectId=${projectId}&status=processing`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.id && (data.status === 'processing' || data.status === 'pending')) {
+          setCurrentJobId(data.id);
+          startPolling(data.id, projectId);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check for active job:', err);
     }
   };
 
@@ -274,16 +277,13 @@ export default function ContentPlanPage() {
     }, 2000);
   };
 
-  const stopPolling = (projectId?: string) => {
+  const stopPolling = () => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
     setIsPolling(false);
     setLoading(false);
-    if (projectId) {
-      localStorage.removeItem(getStorageKey(projectId, 'activeJobId'));
-    }
   };
 
   const pollJobStatus = async (jobId: string, projectId: string) => {
@@ -307,7 +307,7 @@ export default function ContentPlanPage() {
 
       // Check if job is complete
       if (job.status === 'completed') {
-        stopPolling(projectId);
+        stopPolling();
         
         // Update state with results
         if (job.plan) {
@@ -335,7 +335,7 @@ export default function ContentPlanPage() {
         
         setCurrentJobId(null);
       } else if (job.status === 'failed') {
-        stopPolling(projectId);
+        stopPolling();
         setError(job.error || 'Er is een fout opgetreden');
         setCurrentJobId(null);
       }
@@ -378,9 +378,8 @@ export default function ContentPlanPage() {
 
       const { jobId } = await response.json();
       
-      // Save job ID and start polling
+      // Save job ID and start polling - no localStorage, job status is in database
       setCurrentJobId(jobId);
-      localStorage.setItem(getStorageKey(selectedProject, 'activeJobId'), jobId);
       startPolling(jobId, selectedProject);
 
     } catch (err: any) {
@@ -390,7 +389,7 @@ export default function ContentPlanPage() {
   };
 
   const cancelGeneration = () => {
-    stopPolling(selectedProject);
+    stopPolling();
     setCurrentJobId(null);
     setJobData(null);
   };
@@ -430,7 +429,7 @@ export default function ContentPlanPage() {
   const handleProjectChange = (newProjectId: string) => {
     // Stop any active polling for the old project
     if (isPolling && selectedProject) {
-      stopPolling(selectedProject);
+      stopPolling();
     }
     
     // Update selected project

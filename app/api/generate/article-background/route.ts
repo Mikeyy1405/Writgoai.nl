@@ -384,7 +384,7 @@ ${CONTENT_PROMPT_RULES}
     const slug = generateSlug(title);
     const metaDescription = outline?.metaDescription || `${title} - Lees alles over ${keyword} in dit uitgebreide artikel.`;
 
-    // Save completed article
+    // Save completed article to article_jobs
     await updateJob(jobId, {
       status: 'completed',
       progress: 100,
@@ -394,6 +394,32 @@ ${CONTENT_PROMPT_RULES}
       slug,
       meta_description: metaDescription,
     });
+
+    // Also save to articles table for library
+    try {
+      const { error: articleError } = await supabaseAdmin
+        .from('articles')
+        .insert({
+          project_id: projectId,
+          title,
+          content: fullContent,
+          featured_image: featuredImage,
+          slug,
+          excerpt: metaDescription,
+          status: 'draft',
+          meta_title: title,
+          meta_description: metaDescription,
+          word_count: wordCountActual,
+        });
+      
+      if (articleError) {
+        console.error('Failed to save to articles table:', articleError);
+      } else {
+        console.log('Article saved to library');
+      }
+    } catch (e) {
+      console.error('Error saving to articles:', e);
+    }
 
     console.log(`Article job ${jobId} completed with ${wordCountActual} words`);
 

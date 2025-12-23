@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 // Dynamic import for RichTextEditor to avoid SSR issues
@@ -11,10 +11,12 @@ const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
 });
 
 interface Article {
+  id?: string;
   title: string;
   content: string;
   word_count: number;
   project_id?: string;
+  featured_image?: string;
 }
 
 interface Project {
@@ -27,6 +29,7 @@ interface Project {
 
 export default function EditorPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [article, setArticle] = useState<Article | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [editedTitle, setEditedTitle] = useState('');
@@ -38,27 +41,92 @@ export default function EditorPage() {
   const [viewMode, setViewMode] = useState<'visual' | 'html' | 'preview'>('visual');
   const [featuredImage, setFeaturedImage] = useState<string>('');
   const [generatingFeaturedImage, setGeneratingFeaturedImage] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedArticle = localStorage.getItem('generatedArticle');
-    const savedProject = localStorage.getItem('selectedProject');
+    loadArticle();
+  }, [searchParams]);
+
+  async function loadArticle() {
+    setLoading(true);
     
-    if (!savedArticle) {
-      alert('Geen artikel gevonden! Ga eerst naar Writer.');
-      router.push('/dashboard/writer');
-      return;
+    const articleId = searchParams.get('article');
+    const jobId = searchParams.get('job');
+    
+    // Try to load from article ID (from library)
+    if (articleId) {
+      try {
+        const response = await fetch(`/api/articles/get?id=${articleId}`);
+        const data = await response.json();
+        
+        if (data.article) {
+          const articleData = data.article;
+          setArticle(articleData);
+          setEditedTitle(articleData.title);
+          setEditedContent(articleData.content);
+          setFeaturedImage(articleData.featured_image || '');
+          
+          // Load project
+          if (articleData.project_id) {
+            const projectResponse = await fetch('/api/projects/list');
+            const projectData = await projectResponse.json();
+            const foundProject = projectData.projects?.find((p: Project) => p.id === articleData.project_id);
+            if (foundProject) {
+              setProject(foundProject);
+            }
+          }
+          
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to load article:', e);
+      }
     }
     
-    const articleData = JSON.parse(savedArticle);
-    setArticle(articleData);
-    setEditedTitle(articleData.title);
-    setEditedContent(articleData.content);
-    setFeaturedImage(articleData.featured_image || '');
-    
-    if (savedProject) {
-      setProject(JSON.parse(savedProject));
+    // Try to load from job ID (from writer)
+    if (jobId) {
+      try {
+        const response = await fetch(`/api/generate/article-background?job_id=${jobId}`);
+        const job = await response.json();
+        
+        if (job && job.status === 'completed' && job.article_content) {
+          const articleData = {
+            title: job.title,
+            content: job.article_content,
+            word_count: job.article_content.split(/\s+/).length,
+            project_id: job.project_id,
+            featured_image: job.featured_image,
+          };
+          
+          setArticle(articleData);
+          setEditedTitle(articleData.title);
+          setEditedContent(articleData.content);
+          setFeaturedImage(articleData.featured_image || '');
+          
+          // Load project
+          if (job.project_id) {
+            const projectResponse = await fetch('/api/projects/list');
+            const projectData = await projectResponse.json();
+            const foundProject = projectData.projects?.find((p: Project) => p.id === job.project_id);
+            if (foundProject) {
+              setProject(foundProject);
+            }
+          }
+          
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to load job:', e);
+      }
     }
-  }, [router]);
+    
+    // No article found - no localStorage fallback, everything via database
+    setLoading(false);
+    alert('Geen artikel gevonden! Ga eerst naar Writer of Bibliotheek.');
+    router.push('/dashboard/writer');
+  }
 
   // Generate AI image
   const generateAIImage = useCallback(async (prompt: string): Promise<string | null> => {
@@ -98,36 +166,34 @@ export default function EditorPage() {
         setSuccess('Featured image gegenereerd!');
         setTimeout(() => setSuccess(null), 3000);
       }
+    } catch (err) {
+      console.error('Featured image generation error:', err);
     } finally {
       setGeneratingFeaturedImage(false);
     }
   };
 
-  // Save to library
-  async function saveToLibrary() {
-    if (!editedContent || !editedTitle) {
-      setError('Titel en content zijn verplicht');
-      return;
-    }
-    
-    if (!project) {
-      setError('Geen project geselecteerd. Ga terug naar Content Plan.');
-      return;
-    }
+  // Calculate word count
+  const wordCount = editedContent.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
+
+  // Save article
+  async function saveArticle() {
+    if (!article) return;
     
     setSaving(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/articles/update', {
+      const response = await fetch('/api/articles/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: article.id,
+          project_id: project?.id || article.project_id,
           title: editedTitle,
           content: editedContent,
           featured_image: featuredImage,
-          project_id: project.id,
-          status: 'draft'
+          status: 'draft',
         })
       });
 
@@ -137,11 +203,13 @@ export default function EditorPage() {
         throw new Error(data.error || 'Failed to save article');
       }
 
-      localStorage.removeItem('selectedIdea');
-      localStorage.removeItem('generatedArticle');
-      
-      setSuccess('Artikel opgeslagen in bibliotheek!');
-      setTimeout(() => router.push('/dashboard/library'), 1500);
+      // Update article with saved ID
+      if (data.article?.id) {
+        setArticle({ ...article, id: data.article.id });
+      }
+
+      setSuccess('Artikel opgeslagen!');
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       console.error('Save error:', err);
       setError(err.message || 'Fout bij opslaan');
@@ -150,60 +218,55 @@ export default function EditorPage() {
     }
   }
 
-  // Publish to WritGo Blog
-  async function publishToWritGoBlog() {
-    if (!editedContent || !editedTitle) {
-      setError('Titel en content zijn verplicht');
+  // Publish to WordPress
+  async function publishToWordPress() {
+    if (!project?.wp_url || !project?.wp_username) {
+      alert('WordPress is niet geconfigureerd voor dit project. Ga naar Projecten om WordPress credentials toe te voegen.');
       return;
     }
-    
+
     setPublishing(true);
     setError(null);
-    
+
     try {
-      // Generate slug from title
-      const slug = editedTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-
-      // Create excerpt from content
-      const plainText = editedContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-      const excerpt = plainText.substring(0, 160) + '...';
-
-      const response = await fetch('/api/blog/posts', {
+      // First save the article
+      const saveResponse = await fetch('/api/articles/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: article?.id,
+          project_id: project.id,
           title: editedTitle,
-          slug: slug,
           content: editedContent,
-          excerpt: excerpt,
           featured_image: featuredImage,
-          status: 'published',
-          published_at: new Date().toISOString(),
-          meta_title: editedTitle,
-          meta_description: excerpt
+          status: 'draft',
         })
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to publish');
+      const saveData = await saveResponse.json();
+      
+      if (!saveResponse.ok) {
+        throw new Error(saveData.error || 'Failed to save article');
       }
 
-      localStorage.removeItem('selectedIdea');
-      localStorage.removeItem('generatedArticle');
-      
-      setSuccess('🎉 Artikel gepubliceerd op WritGo Blog!');
-      
-      // Open the published article in new tab
-      if (data.post?.slug) {
-        window.open(`/blog/${data.post.slug}`, '_blank');
+      // Then publish to WordPress
+      const publishResponse = await fetch('/api/wordpress/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: project.id,
+          article_id: saveData.article?.id || article?.id,
+        })
+      });
+
+      const publishData = await publishResponse.json();
+
+      if (!publishResponse.ok) {
+        throw new Error(publishData.error || 'Failed to publish to WordPress');
       }
-      
-      setTimeout(() => router.push('/dashboard/blog'), 2000);
+
+      setSuccess(`Artikel gepubliceerd! ${publishData.url || ''}`);
+      setTimeout(() => setSuccess(null), 5000);
     } catch (err: any) {
       console.error('Publish error:', err);
       setError(err.message || 'Fout bij publiceren');
@@ -212,57 +275,8 @@ export default function EditorPage() {
     }
   }
 
-  // Publish to WordPress
-  async function publishToWordPress() {
-    if (!editedContent || !editedTitle) {
-      setError('Titel en content zijn verplicht');
-      return;
-    }
-
-    if (!project?.wp_url || !project?.wp_username) {
-      setError('WordPress is niet geconfigureerd voor dit project. Ga naar Projecten om WordPress credentials toe te voegen.');
-      return;
-    }
-    
-    setPublishing(true);
-    setError(null);
-    
-    try {
-      const response = await fetch('/api/wordpress/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: project.id,
-          title: editedTitle,
-          content: editedContent
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to publish to WordPress');
-      }
-
-      localStorage.removeItem('selectedIdea');
-      localStorage.removeItem('generatedArticle');
-      
-      setSuccess('🎉 Artikel gepubliceerd op WordPress!');
-      
-      if (data.url) {
-        window.open(data.url, '_blank');
-      }
-      
-      setTimeout(() => router.push('/dashboard/library'), 2000);
-    } catch (err: any) {
-      console.error('WordPress publish error:', err);
-      setError(err.message || 'Fout bij publiceren naar WordPress');
-    } finally {
-      setPublishing(false);
-    }
-  }
-
-  function downloadArticle() {
+  // Download as HTML
+  function downloadHTML() {
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="nl">
@@ -292,8 +306,9 @@ export default function EditorPage() {
             color: #666;
             font-style: italic;
         }
-        img { max-width: 100%; height: auto; border-radius: 8px; margin: 20px 0; }
-        .featured-image { width: 100%; margin-bottom: 30px; }
+        strong { color: #1a1a1a; }
+        img { max-width: 100%; height: auto; }
+        .featured-image { margin-bottom: 30px; }
     </style>
 </head>
 <body>
@@ -315,285 +330,182 @@ export default function EditorPage() {
     window.URL.revokeObjectURL(url);
   }
 
-  if (!article) {
+  // Copy to clipboard
+  function copyToClipboard() {
+    const plainText = editedContent.replace(/<[^>]*>/g, '\n').replace(/\n\s*\n/g, '\n\n').trim();
+    const fullText = `${editedTitle}\n\n${plainText}`;
+    
+    navigator.clipboard.writeText(fullText).then(() => {
+      setSuccess('Gekopieerd naar klembord!');
+      setTimeout(() => setSuccess(null), 3000);
+    }).catch(() => {
+      alert('Kon niet kopiëren. Probeer handmatig te kopiëren.');
+    });
+  }
+
+  if (loading) {
     return (
-      <div className="p-6 lg:p-12 flex items-center justify-center">
-        <div className="text-white text-xl">⏳ Laden...</div>
+      <div className="p-6 lg:p-12 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-white text-xl">Artikel laden...</p>
+        </div>
       </div>
     );
   }
 
-  const currentWordCount = editedContent.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
-  const isWritGoBlog = project?.website_url?.toLowerCase().includes('writgo.nl');
-  const hasWordPress = project?.wp_url && project?.wp_username;
+  if (!article) {
+    return (
+      <div className="p-6 lg:p-12">
+        <div className="bg-gray-800/50 rounded-xl p-8 text-center">
+          <p className="text-gray-400 text-lg mb-4">Geen artikel gevonden</p>
+          <button
+            onClick={() => router.push('/dashboard/writer')}
+            className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            Ga naar Writer
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-12">
       {/* Header */}
-      <div className="mb-8">
-        <button 
-          onClick={() => router.push('/dashboard/writer')}
-          className="mb-4 text-orange-400 hover:text-orange-300 transition-colors"
-        >
-          ← Terug naar Writer
-        </button>
-        <h1 className="text-4xl font-bold text-white mb-2">✏️ Artikel Editor</h1>
-        <p className="text-gray-400 text-lg">
-          Bewerk, verfijn en publiceer je content
-        </p>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Editor</h1>
+          <p className="text-gray-400">
+            {project?.name || 'Onbekend project'} • {wordCount.toLocaleString()} woorden
+          </p>
+        </div>
+        
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={copyToClipboard}
+            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            📋 Kopiëren
+          </button>
+          <button
+            onClick={downloadHTML}
+            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            ⬇️ Download
+          </button>
+          <button
+            onClick={saveArticle}
+            disabled={saving}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {saving ? '💾 Opslaan...' : '💾 Opslaan'}
+          </button>
+          <button
+            onClick={publishToWordPress}
+            disabled={publishing || !project?.wp_url}
+            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+            title={!project?.wp_url ? 'WordPress niet geconfigureerd' : 'Publiceer naar WordPress'}
+          >
+            {publishing ? '🚀 Publiceren...' : '🚀 WordPress'}
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <p className="text-red-400">{error}</p>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">✕</button>
-          </div>
+          <p className="text-red-400">{error}</p>
         </div>
       )}
-      
       {success && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6">
           <p className="text-green-400">{success}</p>
         </div>
       )}
 
-      {/* Project Info */}
-      {project && (
-        <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/30 rounded-xl p-6 mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-white mb-1">{project.name}</h3>
-              <p className="text-gray-400 text-sm">🌐 {project.website_url}</p>
-            </div>
-            <div className="flex gap-2">
-              {isWritGoBlog && (
-                <span className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm">
-                  🟠 WritGo Blog
-                </span>
-              )}
-              {hasWordPress && (
-                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">
-                  🔗 WordPress
-                </span>
-              )}
-            </div>
-          </div>
+      {/* Featured Image */}
+      <div className="bg-gray-800/50 rounded-xl p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">Featured Image</h3>
+          <button
+            onClick={generateFeaturedImageHandler}
+            disabled={generatingFeaturedImage}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+          >
+            {generatingFeaturedImage ? '🎨 Genereren...' : '🎨 Genereer met AI'}
+          </button>
         </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-          <div className="text-2xl font-bold text-orange-500 mb-1">{currentWordCount.toLocaleString()}</div>
-          <div className="text-gray-400 text-sm">Woorden</div>
-        </div>
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-          <div className="text-2xl font-bold text-white mb-1">{editedTitle.length}</div>
-          <div className="text-gray-400 text-sm">Titel karakters</div>
-        </div>
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-          <div className="text-2xl font-bold text-white mb-1">
-            {Math.ceil(currentWordCount / 200)}
-          </div>
-          <div className="text-gray-400 text-sm">Min. leestijd</div>
-        </div>
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-          <div className="text-2xl font-bold text-green-500 mb-1">
-            {featuredImage ? '✓' : '○'}
-          </div>
-          <div className="text-gray-400 text-sm">Featured Image</div>
-        </div>
-      </div>
-
-      {/* Featured Image Section */}
-      <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-6">
-        <h3 className="text-lg font-bold text-white mb-4">🖼️ Featured Image</h3>
-        
         {featuredImage ? (
-          <div className="relative">
-            <img 
-              src={featuredImage} 
-              alt="Featured" 
-              className="w-full max-h-64 object-cover rounded-lg"
-            />
-            <button
-              onClick={() => setFeaturedImage('')}
-              className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
-            >
-              ✕
-            </button>
-          </div>
+          <img src={featuredImage} alt="Featured" className="w-full max-h-64 object-cover rounded-lg" />
         ) : (
-          <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center">
-            <p className="text-gray-400 mb-4">Geen featured image</p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <button
-                onClick={generateFeaturedImageHandler}
-                disabled={generatingFeaturedImage}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg disabled:opacity-50 flex items-center gap-2"
-              >
-                {generatingFeaturedImage ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Genereren...
-                  </>
-                ) : (
-                  <>🤖 Genereer met AI</>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  const url = prompt('Voer afbeelding URL in:');
-                  if (url) setFeaturedImage(url);
-                }}
-                className="bg-gray-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600"
-              >
-                🔗 URL toevoegen
-              </button>
-            </div>
+          <div className="w-full h-32 bg-gray-700 rounded-lg flex items-center justify-center">
+            <p className="text-gray-400">Geen featured image</p>
           </div>
         )}
       </div>
 
-      {/* Title Input */}
-      <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-6">
-        <label className="block text-white font-medium mb-3">Titel</label>
+      {/* Title */}
+      <div className="bg-gray-800/50 rounded-xl p-6 mb-6">
+        <label className="block text-sm font-medium text-gray-400 mb-2">Titel</label>
         <input
           type="text"
           value={editedTitle}
           onChange={(e) => setEditedTitle(e.target.value)}
-          className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-xl font-bold"
-          placeholder="Artikel titel..."
+          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white text-xl font-semibold focus:outline-none focus:border-orange-500"
         />
       </div>
 
-      {/* View Mode Toggle */}
+      {/* View Mode Tabs */}
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setViewMode('visual')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            viewMode === 'visual' 
-              ? 'bg-orange-500 text-white' 
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            viewMode === 'visual' ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
           }`}
         >
-          ✨ Visueel
+          Visual Editor
         </button>
         <button
           onClick={() => setViewMode('html')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            viewMode === 'html' 
-              ? 'bg-orange-500 text-white' 
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            viewMode === 'html' ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
           }`}
         >
-          &lt;/&gt; HTML
+          HTML
         </button>
         <button
           onClick={() => setViewMode('preview')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            viewMode === 'preview' 
-              ? 'bg-orange-500 text-white' 
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            viewMode === 'preview' ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
           }`}
         >
-          👁️ Preview
+          Preview
         </button>
       </div>
 
-      {/* Editor Content */}
-      <div className="mb-6">
+      {/* Content Editor */}
+      <div className="bg-gray-800/50 rounded-xl overflow-hidden">
         {viewMode === 'visual' && (
           <RichTextEditor
             content={editedContent}
             onChange={setEditedContent}
-            onGenerateImage={generateAIImage}
-            placeholder="Begin met schrijven of plak je content..."
+            generateImage={generateAIImage}
           />
         )}
-        
         {viewMode === 'html' && (
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-            <label className="block text-white font-medium mb-3">HTML Code</label>
-            <textarea
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              rows={25}
-              className="w-full bg-gray-900 border border-gray-700 text-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm leading-relaxed"
-              placeholder="HTML content..."
-            />
-          </div>
+          <textarea
+            value={editedContent}
+            onChange={(e) => setEditedContent(e.target.value)}
+            className="w-full h-[600px] p-6 bg-gray-900 text-gray-300 font-mono text-sm focus:outline-none resize-none"
+            spellCheck={false}
+          />
         )}
-        
         {viewMode === 'preview' && (
-          <div className="bg-white rounded-xl overflow-hidden">
-            {featuredImage && (
-              <img src={featuredImage} alt={editedTitle} className="w-full h-64 object-cover" />
-            )}
-            <div className="p-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-6">{editedTitle}</h1>
-              <div 
-                className="prose prose-lg max-w-none text-gray-800"
-                dangerouslySetInnerHTML={{ __html: editedContent }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-white mb-4">📤 Publiceren</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Save to Library */}
-          <button
-            onClick={saveToLibrary}
-            disabled={saving}
-            className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-4 rounded-xl font-medium transition-all disabled:opacity-50 flex flex-col items-center gap-2"
-          >
-            <span className="text-2xl">💾</span>
-            <span>{saving ? 'Opslaan...' : 'Opslaan als Concept'}</span>
-          </button>
-
-          {/* Publish to WritGo Blog */}
-          <button
-            onClick={publishToWritGoBlog}
-            disabled={publishing}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/50 text-white px-6 py-4 rounded-xl font-medium transition-all disabled:opacity-50 flex flex-col items-center gap-2"
-          >
-            <span className="text-2xl">🚀</span>
-            <span>{publishing ? 'Publiceren...' : 'Publiceer op WritGo Blog'}</span>
-          </button>
-
-          {/* Publish to WordPress */}
-          {hasWordPress && (
-            <button
-              onClick={publishToWordPress}
-              disabled={publishing}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-medium transition-all disabled:opacity-50 flex flex-col items-center gap-2"
-            >
-              <span className="text-2xl">📝</span>
-              <span>{publishing ? 'Publiceren...' : 'Publiceer op WordPress'}</span>
-            </button>
-          )}
-
-          {/* Download */}
-          <button
-            onClick={downloadArticle}
-            className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-4 rounded-xl font-medium transition-all flex flex-col items-center gap-2"
-          >
-            <span className="text-2xl">📥</span>
-            <span>Download HTML</span>
-          </button>
-        </div>
-
-        {!hasWordPress && !isWritGoBlog && (
-          <p className="text-gray-400 text-sm mt-4">
-            💡 Tip: Voeg WordPress credentials toe aan je project om direct te kunnen publiceren.
-          </p>
+          <div 
+            className="p-8 prose prose-invert prose-lg max-w-none"
+            dangerouslySetInnerHTML={{ __html: editedContent }}
+          />
         )}
       </div>
     </div>
