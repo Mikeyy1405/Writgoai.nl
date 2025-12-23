@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 
 
 export const metadata: Metadata = {
-  title: "WritGo AI - WordPress SEO Agent",
+  title: "Writgo Media - WordPress SEO Agent",
   description: "Automated WordPress content generation with AI",
 };
 

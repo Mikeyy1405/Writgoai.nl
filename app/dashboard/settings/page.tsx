@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import BillingSection from "@/components/BillingSection";
+import BrandingSettings from "@/components/BrandingSettings";
 
 export default async function SettingsPage() {
   const supabase = createClient();
@@ -19,6 +20,11 @@ export default async function SettingsPage() {
           <p className="text-gray-400 text-lg">
             Beheer je account en applicatie instellingen
           </p>
+        </div>
+
+        {/* Branding Section */}
+        <div className="mb-8">
+          <BrandingSettings />
         </div>
 
         {/* Billing Section */}

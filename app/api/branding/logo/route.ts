@@ -1,0 +1,61 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase-server';
+
+export async function GET() {
+  try {
+    const supabase = createClient();
+
+    // Fetch logo URL from app_settings
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'logo_url')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 is "not found" error, which is ok
+      console.error('Error fetching logo:', error);
+      return NextResponse.json({ logoUrl: null });
+    }
+
+    return NextResponse.json({ logoUrl: data?.value || null });
+  } catch (error) {
+    console.error('Error in logo GET:', error);
+    return NextResponse.json({ logoUrl: null });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createClient();
+
+    // Check if user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { logoUrl } = await request.json();
+
+    // Update or insert logo URL
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert({
+        key: 'logo_url',
+        value: logoUrl,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'key'
+      });
+
+    if (error) {
+      console.error('Error updating logo:', error);
+      return NextResponse.json({ error: 'Failed to update logo' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, logoUrl });
+  } catch (error) {
+    console.error('Error in logo POST:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import Logo from '@/components/Logo';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -13,9 +14,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg"></div>
-              <span className="text-xl font-bold text-white">WritGo AI</span>
+            <Link href="/">
+              <Logo size="sm" />
             </Link>
 
             {/* Desktop Menu */}
@@ -267,7 +267,7 @@ export default function Home() {
           </div>
           
           <h2 className="text-4xl font-bold text-white mb-6">
-            Probeer WritGo AI Gratis
+            Probeer Writgo Media Gratis
           </h2>
           
           <p className="text-xl text-gray-300 mb-12">
@@ -596,7 +596,7 @@ export default function Home() {
           <div className="mt-16 max-w-4xl mx-auto">
             <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
               <h3 className="text-xl font-semibold text-white mb-4 text-center">
-                💎 Waarom WritGo AI?
+                💎 Waarom Writgo Media?
               </h3>
               <div className="grid md:grid-cols-3 gap-6 text-center">
                 <div>
@@ -689,7 +689,7 @@ export default function Home() {
 
           {/* Copyright */}
           <div className="text-center text-gray-400">
-            <p>© 2025 WritGo AI. Alle rechten voorbehouden.</p>
+            <p>© 2025 Writgo Media. Alle rechten voorbehouden.</p>
           </div>
         </div>
       </footer>

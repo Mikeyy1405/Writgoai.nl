@@ -310,7 +310,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 Wil jij ook automatisch SEO-content genereren?
               </h3>
               <p className="text-orange-100 mb-6 text-lg">
-                WritGo AI helpt je om automatisch hoogwaardige, SEO-geoptimaliseerde content te creëren en publiceren
+                Writgo Media helpt je om automatisch hoogwaardige, SEO-geoptimaliseerde content te creëren en publiceren
               </p>
               <Link
                 href="/register"
