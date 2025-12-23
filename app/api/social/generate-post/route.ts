@@ -161,10 +161,11 @@ ${isNL ? 'REGELS' : 'RULES'}:
 - ${isNL ? 'Gebruik witregels voor leesbaarheid' : 'Use line breaks for readability'}
 - ${isNL ? 'GEEN links in de tekst (die komen in bio/comments)' : 'NO links in text (those go in bio/comments)'}
 - ${isNL ? 'Schrijf in het Nederlands, informeel (je/jij)' : 'Write in English'}
+- ${isNL ? 'GEEN markdown formatting zoals **bold** of *italic* - gebruik gewoon plain text' : 'NO markdown formatting like **bold** or *italic* - use plain text only'}
 
 ${isNL ? 'VERBODEN WOORDEN' : 'FORBIDDEN WORDS'}: cruciaal, essentieel, kortom, duiken, jungle, gids, onmisbaar, onthullen, geheim, ultieme
 
-Output ALLEEN de post tekst, geen uitleg of extra tekst.`;
+Output ALLEEN de post tekst als plain text, geen markdown, geen uitleg of extra tekst.`;
 
     const postContent = await generateAICompletion({
       task: 'content',
@@ -176,10 +177,22 @@ Output ALLEEN de post tekst, geen uitleg of extra tekst.`;
       temperature: 0.8,
     });
 
-    // Clean up the response
+    // Clean up the response - remove markdown and formatting
     let cleanedPost = postContent
       .replace(/^["']|["']$/g, '')
       .replace(/^(Post:|Caption:|Tekst:)/i, '')
+      // Remove markdown bold
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      // Remove markdown italic
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/_([^_]+)_/g, '$1')
+      // Remove markdown headers
+      .replace(/^#{1,6}\s+/gm, '')
+      // Remove markdown links but keep text
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // Remove markdown code blocks
+      .replace(/```[^`]*```/g, '')
+      .replace(/`([^`]+)`/g, '$1')
       .trim();
 
     // Generate image prompt based on post content

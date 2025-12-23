@@ -1,13 +1,15 @@
 /**
  * AIML Image Generation with Flux Pro
  * Uses AIML API for high-quality AI-generated images
+ * 
+ * API Documentation: https://docs.aimlapi.com/api-references/image-models/flux
  */
 
 interface ImageGenerationOptions {
   prompt: string;
   style?: 'photorealistic' | 'illustration' | 'abstract' | 'minimalist' | 'artistic';
   aspectRatio?: '16:9' | '4:3' | '1:1' | '3:4' | '9:16';
-  model?: 'flux-pro' | 'flux-pro/v1.1' | 'flux-pro/v1.1-ultra';
+  model?: 'flux-pro' | 'flux-pro/v1.1' | 'flux-pro/v1.1-ultra' | 'flux-realism';
 }
 
 interface ImageGenerationResult {
@@ -17,7 +19,8 @@ interface ImageGenerationResult {
 }
 
 const AIML_API_KEY = process.env.AIML_API_KEY;
-const AIML_API_URL = 'https://api.aimlapi.com/v2/generate/image';
+// Correct endpoint per AIML API documentation
+const AIML_API_URL = 'https://api.aimlapi.com/v1/images/generations';
 
 /**
  * Generate image using Flux Pro via AIML API
@@ -37,38 +40,43 @@ export async function generateImage(options: ImageGenerationOptions): Promise<Im
 
     console.log('Generating image with Flux Pro:', { model, prompt: enhancedPrompt.substring(0, 100) });
 
+    // Build request body based on model type
+    const requestBody: Record<string, any> = {
+      model: model,
+      prompt: enhancedPrompt,
+    };
+
+    // flux-pro/v1.1-ultra has fixed size, others can specify size
+    if (model !== 'flux-pro/v1.1-ultra') {
+      requestBody.size = `${imageSize.width}x${imageSize.height}`;
+    }
+
     const response = await fetch(AIML_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${AIML_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: model,
-        prompt: enhancedPrompt,
-        image_size: `${imageSize.width}x${imageSize.height}`,
-        num_inference_steps: 28,
-        guidance_scale: 3.5,
-        num_images: 1,
-        safety_tolerance: 2
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('AIML API error:', response.status, errorText);
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('AIML response:', JSON.stringify(data).substring(0, 300));
+    console.log('AIML response:', JSON.stringify(data).substring(0, 500));
 
-    // Handle different response formats
+    // Handle response format per AIML API documentation
+    // Response: { images: [{ url: "...", width: ..., height: ..., content_type: "..." }], ... }
     let imageUrl = '';
     
     if (data.images && data.images.length > 0) {
       imageUrl = data.images[0].url || data.images[0];
     } else if (data.data && data.data.length > 0) {
+      // OpenAI-compatible format fallback
       imageUrl = data.data[0].url || data.data[0].b64_json;
     } else if (data.output && data.output.length > 0) {
       imageUrl = data.output[0];
@@ -79,6 +87,7 @@ export async function generateImage(options: ImageGenerationOptions): Promise<Im
     }
 
     if (!imageUrl) {
+      console.error('No image URL in response:', JSON.stringify(data));
       throw new Error('No image URL in response');
     }
 
@@ -117,8 +126,31 @@ export async function generateFeaturedImage(
     return result.url;
   }
 
+  console.warn('Flux Pro failed, falling back to Unsplash:', result.error);
   // Fallback to Unsplash
   return fallbackToUnsplash(title);
+}
+
+/**
+ * Generate social media image - optimized for social platforms
+ */
+export async function generateSocialImage(
+  prompt: string,
+  aspectRatio: '1:1' | '16:9' | '9:16' = '1:1'
+): Promise<string | null> {
+  const result = await generateImage({
+    prompt: `${prompt}, vibrant colors, eye-catching, social media optimized, no text`,
+    style: 'photorealistic',
+    aspectRatio,
+    model: 'flux-pro/v1.1'
+  });
+
+  if (result.success) {
+    return result.url;
+  }
+
+  console.warn('Social image generation failed:', result.error);
+  return null;
 }
 
 /**
@@ -156,7 +188,8 @@ function buildEnhancedPrompt(prompt: string, style: string): string {
 
   const enhancement = styleEnhancements[style] || styleEnhancements.photorealistic;
   
-  return `${prompt}, ${enhancement}, suitable for professional blog, high resolution`;
+  // Important: NO TEXT in images - Flux doesn't handle text well
+  return `${prompt}, ${enhancement}, no text, no words, no letters, no watermarks`;
 }
 
 /**
@@ -191,20 +224,33 @@ function extractTopic(title: string): string {
     return 'modern coding workspace, software development, programming concept';
   }
 
+  if (keywords.some(k => ['yoga', 'meditatie', 'mindfulness', 'wellness'].includes(k))) {
+    return 'peaceful yoga practice, serene meditation space, wellness and mindfulness';
+  }
+
+  if (keywords.some(k => ['fitness', 'sport', 'training', 'gym'].includes(k))) {
+    return 'modern fitness training, gym workout, healthy lifestyle';
+  }
+
+  if (keywords.some(k => ['food', 'eten', 'koken', 'recept', 'gezond'].includes(k))) {
+    return 'delicious healthy food, beautiful food photography, culinary art';
+  }
+
   // Default: use cleaned title as base
-  return `${cleanTitle}, modern professional concept, tech industry`;
+  return `${cleanTitle}, modern professional concept, high quality`;
 }
 
 /**
  * Get image size based on aspect ratio
+ * Sizes must be multiples of 32 for Flux Pro
  */
 function getImageSize(aspectRatio: string): { width: number; height: number } {
   const sizes: Record<string, { width: number; height: number }> = {
-    '16:9': { width: 1280, height: 720 },
+    '16:9': { width: 1280, height: 736 },  // 736 is closest multiple of 32 to 720
     '4:3': { width: 1024, height: 768 },
     '1:1': { width: 1024, height: 1024 },
     '3:4': { width: 768, height: 1024 },
-    '9:16': { width: 720, height: 1280 }
+    '9:16': { width: 736, height: 1280 }   // 736 is closest multiple of 32 to 720
   };
 
   return sizes[aspectRatio] || sizes['16:9'];
