@@ -255,7 +255,9 @@ export default function WritGoBlogPage() {
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
               📝 WritGo Blog Beheer
             </h1>
-            <p className="text-gray-400 mt-1 text-sm md:text-base">Beheer de artikelen op writgo.nl/blog</p>
+            <p className="text-gray-400 mt-1 text-sm md:text-base">
+              Beheer de artikelen op writgo.nl/blog (alleen WritGo.nl content, geen klant-projecten)
+            </p>
           </div>
 
           <button

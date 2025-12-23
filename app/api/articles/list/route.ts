@@ -48,11 +48,12 @@ export async function GET() {
       return NextResponse.json({ articles: [] });
     }
 
-    // Get articles for user's projects
+    // Get articles for user's projects (only articles WITH project_id)
     const { data: articles, error: dbError } = await supabaseAdmin
       .from('articles')
       .select('*')
       .in('project_id', userProjectIds)
+      .not('project_id', 'is', null)
       .order('created_at', { ascending: false });
 
     if (dbError) {
