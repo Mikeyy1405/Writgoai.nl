@@ -92,9 +92,6 @@ export async function PATCH(request: Request) {
               'Accept': 'application/json',
             },
             signal: controller.signal,
-            // @ts-ignore
-            headersTimeout: 30000,
-            bodyTimeout: 30000,
           });
           
           clearTimeout(timeoutId);

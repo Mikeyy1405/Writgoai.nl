@@ -50,7 +50,7 @@ export default function ProjectsPage() {
   };
 
   const handleDeleteProject = async (projectId: string, projectName: string) => {
-    if (!confirm(`Weet je zeker dat je "${projectName}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+    if (!confirm(`Weet je zeker dat je "${projectName}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt. Alle artikelen en instellingen van dit project worden ook verwijderd.`)) {
       return;
     }
 
@@ -65,11 +65,11 @@ export default function ProjectsPage() {
         // Reload projects list
         loadProjects();
       } else {
-        alert(data.error || 'Er is iets misgegaan bij het verwijderen van het project.');
+        alert(`Fout bij verwijderen project: ${data.error || 'Onbekende fout'}`);
       }
     } catch (error) {
       console.error('Failed to delete project:', error);
-      alert('Er is een fout opgetreden. Probeer het opnieuw.');
+      alert('Kan geen verbinding maken met de server. Probeer het later opnieuw.');
     }
   };
 

@@ -105,7 +105,7 @@ export default function ProjectSettingsModal({
             wp_url: project.wp_url || '',
             wp_username: project.wp_username || '',
             wp_password: project.wp_password || '',
-            isConnected: !!(project.wp_url && project.wp_username),
+            isConnected: !!(project.wp_url && project.wp_username && project.wp_password),
           });
           setWpUsername(project.wp_username || '');
         }
