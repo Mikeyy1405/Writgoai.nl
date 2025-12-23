@@ -228,12 +228,44 @@ class LateClient {
     });
   }
 
+  // Helper function to detect MIME type from filename
+  private getMimeType(filename: string): string {
+    const ext = filename.toLowerCase().split('.').pop() || '';
+    const mimeTypes: Record<string, string> = {
+      // Images
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'bmp': 'image/bmp',
+      // Videos
+      'mp4': 'video/mp4',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'webm': 'video/webm',
+      'mkv': 'video/x-matroska',
+      'flv': 'video/x-flv',
+      'wmv': 'video/x-ms-wmv',
+    };
+    return mimeTypes[ext] || 'application/octet-stream';
+  }
+
   // Media Upload
   async uploadMedia(file: Buffer | Blob, filename: string): Promise<MediaItem> {
     console.log('📤 Uploading media file:', filename);
-    
+
     const formData = new FormData();
-    const blob = Buffer.isBuffer(file) ? new Blob([new Uint8Array(file)]) : file;
+    const mimeType = this.getMimeType(filename);
+
+    // Create proper Blob with MIME type
+    const blob = Buffer.isBuffer(file)
+      ? new Blob([new Uint8Array(file)], { type: mimeType })
+      : file;
+
+    console.log(`📎 File details: ${filename}, MIME type: ${mimeType}, size: ${blob.size} bytes`);
+
     formData.append('file', blob, filename);
 
     const response = await fetch(`${LATE_API_BASE}/media`, {
@@ -251,10 +283,10 @@ class LateClient {
 
     const result = await response.json();
     console.log('✅ Media uploaded successfully:', result._id);
-    
+
     // Determine media type from filename or result
     const isVideo = !!filename.toLowerCase().match(/\.(mp4|mov|avi|webm|mkv)$/);
-    
+
     return {
       mediaId: result._id,
       url: result.url,

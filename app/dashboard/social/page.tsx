@@ -88,9 +88,7 @@ const PLATFORMS = [
   { id: 'pinterest', name: 'Pinterest', icon: '📌', color: 'bg-red-500' },
   { id: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-700' },
   { id: 'reddit', name: 'Reddit', icon: '🤖', color: 'bg-orange-600' },
-  { id: 'google_business', name: 'Google Business', icon: '🏢', color: 'bg-blue-500' },
-  { id: 'telegram', name: 'Telegram', icon: '✈️', color: 'bg-blue-400' },
-  { id: 'mastodon', name: 'Mastodon', icon: '🐘', color: 'bg-purple-600' },
+  // Note: Google Business, Telegram, and Mastodon are not supported by Late.dev API
 ];
 
 const POST_TYPES = [
