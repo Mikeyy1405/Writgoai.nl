@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const encoder = new TextEncoder();
 
   try {
-    const supabase = await createClient();
+    const supabase = createClient();
 
     // Get authenticated user
     const {
