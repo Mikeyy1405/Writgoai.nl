@@ -266,7 +266,9 @@ class LateClient {
 
     console.log(`📎 File details: ${filename}, MIME type: ${mimeType}, size: ${blob.size} bytes`);
 
-    formData.append('file', blob, filename);
+    // Create a proper File object instead of just appending blob
+    const fileObject = new File([blob], filename, { type: mimeType });
+    formData.append('file', fileObject);
 
     const response = await fetch(`${LATE_API_BASE}/media`, {
       method: 'POST',
@@ -298,20 +300,30 @@ class LateClient {
     console.log('📤 Uploading media from URL:', imageUrl);
     
     try {
+      console.log('📡 Fetching image from URL...');
       const response = await fetch(imageUrl);
       if (!response.ok) {
+        console.error(`❌ Failed to fetch image: ${response.status} ${response.statusText}`);
         throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
       }
       
+      console.log('✅ Image fetched successfully, converting to buffer...');
       const buffer = await response.arrayBuffer();
-      const filename = imageUrl.split('/').pop() || 'image.jpg';
+      console.log(`📦 Buffer size: ${buffer.byteLength} bytes`);
       
+      // Sanitize filename by removing query parameters
+      const urlWithoutQuery = imageUrl.split('?')[0];
+      const filename = urlWithoutQuery.split('/').pop() || 'image.jpg';
+      console.log(`📝 Sanitized filename: ${filename}`);
+      
+      console.log('🔄 Calling uploadMedia...');
       const mediaItem = await this.uploadMedia(Buffer.from(buffer), filename);
       console.log('✅ Media uploaded successfully:', mediaItem.mediaId);
       
       return mediaItem;
     } catch (error: any) {
       console.error('❌ Failed to upload media from URL:', error.message);
+      console.error('🔍 Error details:', error);
       throw new Error(`Media upload failed: ${error.message}`);
     }
   }
