@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       .from('project_knowledge_base')
       .select('*')
       .eq('project_id', projectId)
-      .eq('is_active', true)
+      // Note: is_active column removed until migration is applied
       .order('created_at', { ascending: false });
 
     if (category) {
@@ -60,15 +60,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { 
+    const {
       id,
-      project_id, 
+      project_id,
       title,
       content,
       category = 'general',
       source_url,
       tags = [],
-      is_active = true,
+      // Note: is_active removed until migration is applied
+      // is_active = true,
     } = body;
 
     if (!project_id || !title || !content) {
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
       category,
       source_url,
       tags,
-      is_active,
+      // Note: is_active removed until migration is applied
       updated_at: new Date().toISOString(),
     };
 
