@@ -151,15 +151,17 @@ Schrijf het artikel in HTML formaat:`;
             // 1. OpenAI format: chunk.choices[0].delta.content
             // 2. Alternative format: chunk.delta.content
             // 3. Direct format: chunk.content
-            const content = 
-              chunk.choices?.[0]?.delta?.content ||  // OpenAI format
-              chunk.delta?.content ||                // Alternative format
-              chunk.content ||                       // Direct format
+            const content =
+              chunk.choices?.[0]?.delta?.content || // OpenAI format
+              chunk.delta?.content ||               // Alternative format
+              chunk.content ||                      // Direct format
               '';
             
             // Log warnings for debugging unexpected formats
             if (!content && Object.keys(chunk).length > 0) {
-              console.warn('[Stream] Unexpected chunk format:', JSON.stringify(chunk).slice(0, 200));
+              const chunkStr = JSON.stringify(chunk);
+              const preview = chunkStr.length > 200 ? chunkStr.slice(0, 200) + '...' : chunkStr;
+              console.warn('[Stream] Unexpected chunk format:', preview);
             }
             
             if (content) {
