@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
 
     // First, test if REST API is available
-    console.log(`Testing REST API availability at: ${wpUrl}/wp-json/`);
+    console.log(`Testing REST API availability at: ${sanitizeUrl(wpUrl)}/wp-json/`);
     try {
       const apiTestResponse = await fetch(`${wpUrl}/wp-json/`, {
         method: 'GET',
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
     // Fetch posts from WordPress
     const wpApiUrl = `${wpUrl}/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}&_embed`;
 
-    console.log(`Fetching WordPress posts from: ${wpApiUrl}`);
+    console.log(`Fetching WordPress posts from: ${sanitizeUrl(wpUrl)}/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}&_embed`);
 
     const wpResponse = await fetch(wpApiUrl, {
       method: 'GET',

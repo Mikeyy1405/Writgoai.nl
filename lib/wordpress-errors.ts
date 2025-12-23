@@ -199,8 +199,8 @@ export function sanitizeUrl(url: string): string {
     urlObj.password = '';
     return urlObj.toString();
   } catch {
-    // If URL parsing fails, just return the original
-    return url;
+    // If URL parsing fails, return a safe placeholder instead of the original
+    return '[Invalid URL]';
   }
 }
 

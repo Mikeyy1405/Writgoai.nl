@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { WordPressErrorDetails, ConnectionTestResult } from '@/lib/wordpress-errors';
+import { WordPressErrorDetails, ConnectionTestResult, WordPressErrorType } from '@/lib/wordpress-errors';
 
 interface WordPressPost {
   wordpress_id: number;
@@ -111,7 +111,7 @@ export default function WordPressPostsManagement() {
       if (!navigator.onLine) {
         setError('Geen internetverbinding. Controleer je netwerk en probeer opnieuw.');
         setErrorDetails({
-          type: 'NETWORK' as any,
+          type: WordPressErrorType.NETWORK,
           message: 'Geen internetverbinding',
           troubleshooting: [
             'Controleer je internetverbinding',

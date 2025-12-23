@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
 
     // Test 1: Check if site is reachable
-    console.log(`Testing WordPress site reachability: ${wpUrl}`);
+    console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
     try {
       const siteResponse = await fetch(wpUrl, {
         method: 'HEAD',
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Test 2: Check if REST API is enabled
-    console.log(`Testing REST API availability: ${wpUrl}/wp-json/`);
+    console.log(`Testing REST API availability: ${sanitizeUrl(wpUrl)}/wp-json/`);
     try {
       const apiResponse = await fetch(`${wpUrl}/wp-json/`, {
         method: 'GET',
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
           result.checks.restApiEnabled = {
             passed: false,
             message: 'REST API is bereikbaar maar wp/v2 namespace ontbreekt',
-            details: JSON.stringify(apiData.namespaces),
+            details: `Gevonden namespaces: ${apiData.namespaces ? apiData.namespaces.join(', ') : 'geen'}`,
           };
           console.log('✗ REST API missing wp/v2 namespace');
         }
