@@ -650,61 +650,13 @@ export default function Home() {
           {/* Payment Methods */}
           <div className="mb-8 text-center">
             <p className="text-gray-500 text-sm mb-4">Veilig betalen met</p>
-            <div className="flex flex-wrap justify-center items-center gap-4">
-              {/* iDEAL */}
-              <div className="bg-white rounded-lg px-4 py-2 h-12 flex items-center justify-center">
-                <svg className="h-6" viewBox="0 0 56 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10.5 8C10.5 5.51472 12.5147 3.5 15 3.5H41C43.4853 3.5 45.5 5.51472 45.5 8V24C45.5 26.4853 43.4853 28.5 41 28.5H15C12.5147 28.5 10.5 26.4853 10.5 24V8Z" fill="#CC0066"/>
-                  <text x="28" y="20" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="bold">iDEAL</text>
-                </svg>
-              </div>
-
-              {/* Visa */}
-              <div className="bg-white rounded-lg px-4 py-2 h-12 flex items-center justify-center">
-                <svg className="h-6" viewBox="0 0 48 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17.9 2.2h-3.5l-2.2 11.6h3.5L17.9 2.2zM28.7 9.3c0-3-4.1-3.1-4.1-4.5 0-.4.4-.9 1.3-.9.7 0 1.9.1 2.7.6l.5-2.3c-.9-.3-2-.6-3.3-.6-3.5 0-5.9 1.8-5.9 4.5 0 2 1.8 3.1 3.1 3.7 1.4.7 1.9 1.1 1.9 1.7 0 .9-1.1 1.3-2.1 1.3-1.7 0-2.6-.2-4-.8l-.6 2.7c.9.4 2.6.7 4.3.7 3.7.2 6.1-1.7 6.1-4.4zM35.8 13.8h3.1L36.2 2.2h-2.7c-.6 0-1.1.3-1.3.9L27.6 13.8h3.7l.7-2h4.6l.4 2zm-4-4.7l1.9-5.2.9 5.2h-2.8zM13.9 2.2l-3.5 7.9L9.8 4c-.2-1-.8-1.7-2-1.8H3.7l-.1.3c1.2.3 2.6.7 3.4 1.2.5.3.7.6.8 1.1l3 11h3.7l5.6-13.6h-3.6" fill="#1434CB"/>
-                </svg>
-              </div>
-
-              {/* Mastercard */}
-              <div className="bg-white rounded-lg px-4 py-2 h-12 flex items-center justify-center">
-                <svg className="h-8" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="19" cy="16" r="11" fill="#EB001B"/>
-                  <circle cx="29" cy="16" r="11" fill="#F79E1B"/>
-                  <path d="M24 8.5c-1.9 1.8-3 4.3-3 7s1.1 5.2 3 7c1.9-1.8 3-4.3 3-7s-1.1-5.2-3-7z" fill="#FF5F00"/>
-                </svg>
-              </div>
-
-              {/* American Express */}
-              <div className="bg-white rounded-lg px-4 py-2 h-12 flex items-center justify-center">
-                <svg className="h-6" viewBox="0 0 48 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="48" height="16" rx="2" fill="#006FCF"/>
-                  <text x="24" y="11" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontSize="6" fontWeight="bold">AMEX</text>
-                </svg>
-              </div>
-
-              {/* PayPal */}
-              <div className="bg-white rounded-lg px-4 py-2 h-12 flex items-center justify-center">
-                <svg className="h-6" viewBox="0 0 48 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17.2 1.9h-5.3c-.4 0-.7.3-.8.6L8.5 13.2c0 .3.2.5.4.5h2.5c.4 0 .7-.3.8-.6l.6-3.9c.1-.4.4-.6.8-.6h1.8c3.8 0 6-1.8 6.6-5.4.3-1.6 0-2.8-.8-3.7-.9-.9-2.5-1.6-4.5-1.6zm.7 5.3c-.3 2.2-2 2.2-3.6 2.2H13l.8-5h.7c1.9 0 3.7 0 4.6 1.1.5.6.6 1.3.4 2.2zM32.5 1.9h-5.3c-.4 0-.7.3-.8.6l-2.6 10.7c0 .3.2.5.4.5h2.3c.3 0 .5-.2.6-.4l.7-4.4c.1-.4.4-.6.8-.6h1.8c3.8 0 6-1.8 6.6-5.4.3-1.6 0-2.8-.8-3.7-.9-.9-2.5-1.6-4.5-1.6zm.7 5.3c-.3 2.2-2 2.2-3.6 2.2h-1.3l.8-5h.7c1.9 0 3.7 0 4.6 1.1.5.6.6 1.3.4 2.2z" fill="#003087"/>
-                </svg>
-              </div>
-
-              {/* Bancontact */}
-              <div className="bg-white rounded-lg px-4 py-2 h-12 flex items-center justify-center">
-                <svg className="h-6" viewBox="0 0 64 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="64" height="24" rx="3" fill="#005498"/>
-                  <text x="32" y="15" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontSize="8" fontWeight="bold">Bancontact</text>
-                </svg>
-              </div>
-
-              {/* SOFORT */}
-              <div className="bg-white rounded-lg px-4 py-2 h-12 flex items-center justify-center">
-                <svg className="h-6" viewBox="0 0 64 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="64" height="16" rx="2" fill="#ED145A"/>
-                  <text x="32" y="11" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontSize="7" fontWeight="bold">SOFORT</text>
-                </svg>
-              </div>
+            <div className="flex justify-center">
+              <img 
+                src="/images/payment-methods.png" 
+                alt="Betaalmethoden: iDEAL, Visa, Mastercard, PayPal, Bancontact en SOFORT" 
+                className="max-w-full h-auto"
+                style={{ maxHeight: '60px' }}
+              />
             </div>
           </div>
 
