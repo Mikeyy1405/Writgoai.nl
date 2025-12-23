@@ -270,10 +270,23 @@ export async function DELETE(request: Request) {
 
 // Update job in database
 async function updateJob(jobId: string, updates: any) {
+  // Check first if job is cancelled - if so, don't update
+  const { data: currentJob } = await supabaseAdmin
+    .from('content_plan_jobs')
+    .select('status')
+    .eq('id', jobId)
+    .single();
+  
+  if (currentJob?.status === 'cancelled') {
+    console.log(`Job ${jobId} is cancelled, skipping update`);
+    return;
+  }
+  
   const { error } = await supabaseAdmin
     .from('content_plan_jobs')
     .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', jobId);
+    .eq('id', jobId)
+    .not('status', 'eq', 'cancelled'); // Extra safeguard
   
   if (error) {
     console.error('Failed to update job:', error);
@@ -611,7 +624,7 @@ Output als JSON:
         current_step: `✅ Cluster ${i + 1}/${pillarCount} voltooid (${allArticles.length} artikelen)` 
       });
 
-      // Check cancellation after each cluster
+      // Check cancellation immediately after update
       if (await isJobCancelled(jobId)) {
         console.log(`Job ${jobId} was cancelled after cluster ${i + 1}`);
         return;
@@ -731,6 +744,12 @@ Output als JSON:
           await updateJob(jobId, { progress: 93, current_step: '✅ SEO data toegevoegd' });
         } else {
           await updateJob(jobId, { progress: 93, current_step: '⚠️ Geen DataForSEO data beschikbaar' });
+        }
+        
+        // Check cancellation after DataForSEO enrichment
+        if (await isJobCancelled(jobId)) {
+          console.log(`Job ${jobId} was cancelled after DataForSEO enrichment`);
+          return;
         }
       } catch (dataForSEOError) {
         console.warn('DataForSEO enrichment failed:', dataForSEOError);

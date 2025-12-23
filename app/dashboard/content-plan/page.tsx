@@ -58,6 +58,9 @@ export default function ContentPlanPage() {
   const [isPolling, setIsPolling] = useState(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Track if user explicitly cancelled to prevent auto-resume
+  const userCancelledRef = useRef(false);
+  
   // Results state
   const [niche, setNiche] = useState('');
   const [language, setLanguage] = useState('nl');
@@ -244,6 +247,12 @@ export default function ContentPlanPage() {
   };
 
   const checkForActiveJob = async (projectId: string) => {
+    // Don't resume if user just cancelled
+    if (userCancelledRef.current) {
+      console.log('User cancelled, not resuming job');
+      return;
+    }
+    
     // Check database for active job for this project
     try {
       const response = await fetch(`/api/simple/generate-content-plan-background?projectId=${projectId}&status=processing`);
@@ -397,6 +406,9 @@ export default function ContentPlanPage() {
   };
 
   const cancelGeneration = async () => {
+    // Set flag to prevent auto-resume
+    userCancelledRef.current = true;
+    
     // First cancel the backend job
     if (currentJobId) {
       try {
@@ -413,6 +425,11 @@ export default function ContentPlanPage() {
     setCurrentJobId(null);
     setJobData(null);
     setLoading(false);
+    
+    // Reset flag after a delay
+    setTimeout(() => {
+      userCancelledRef.current = false;
+    }, 5000);
   };
 
   const loadMore = () => {
@@ -448,6 +465,9 @@ export default function ContentPlanPage() {
   };
 
   const handleProjectChange = (newProjectId: string) => {
+    // Reset cancellation flag when changing projects
+    userCancelledRef.current = false;
+    
     // Stop any active polling for the old project
     if (isPolling && selectedProject) {
       stopPolling();
