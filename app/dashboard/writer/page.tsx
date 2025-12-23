@@ -37,6 +37,14 @@ interface Project {
   website_url: string;
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
+type GenerationMode = 'background' | 'streaming';
+
 export default function WriterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,7 +57,25 @@ export default function WriterPage() {
   const [wordCount, setWordCount] = useState(2000);
   const [language, setLanguage] = useState('nl');
   const [viewMode, setViewMode] = useState<'preview' | 'html'>('preview');
+  const [generationMode, setGenerationMode] = useState<GenerationMode>('streaming');
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Streaming state
+  const [streaming, setStreaming] = useState(false);
+  const [streamedContent, setStreamedContent] = useState('');
+  const [fullContent, setFullContent] = useState('');
+  const [streamWordCount, setStreamWordCount] = useState(0);
+  const [articleId, setArticleId] = useState<string | null>(null);
+  const [streamProgress, setStreamProgress] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Chat state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadData();
@@ -57,8 +83,25 @@ export default function WriterPage() {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, [searchParams]);
+
+  useEffect(() => {
+    // Auto-scroll content as it streams
+    if (contentRef.current && streaming) {
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
+    }
+  }, [streamedContent, streaming]);
+
+  useEffect(() => {
+    // Auto-scroll chat
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
 
   async function loadData() {
     setLoading(true);
@@ -182,6 +225,14 @@ export default function WriterPage() {
       return;
     }
 
+    if (generationMode === 'streaming') {
+      await startStreamingGeneration();
+    } else {
+      await startBackgroundGeneration();
+    }
+  }
+
+  async function startBackgroundGeneration() {
     setStarting(true);
 
     try {
@@ -189,14 +240,14 @@ export default function WriterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project_id: project.id,
-          title: idea.title,
-          keyword: idea.keywords[0] || idea.title,
-          description: idea.description,
-          content_type: idea.contentType,
+          project_id: project!.id,
+          title: idea!.title,
+          keyword: idea!.keywords[0] || idea!.title,
+          description: idea!.description,
+          content_type: idea!.contentType,
           word_count: wordCount,
           language,
-          website_url: project.website_url,
+          website_url: project!.website_url,
         }),
       });
 
@@ -217,6 +268,130 @@ export default function WriterPage() {
       alert('Fout bij starten: ' + e.message);
     } finally {
       setStarting(false);
+    }
+  }
+
+  async function startStreamingGeneration() {
+    setStreaming(true);
+    setStreamedContent('');
+    setFullContent('');
+    setStreamWordCount(0);
+    setStreamProgress(0);
+    setStarting(false);
+
+    // Create abort controller for stop functionality
+    abortControllerRef.current = new AbortController();
+
+    try {
+      const response = await fetch('/api/generate/article-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: project!.id,
+          title: idea!.title,
+          keyword: idea!.keywords[0] || idea!.title,
+          description: idea!.description,
+          word_count: wordCount,
+          language,
+        }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error('Streaming failed');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'start') {
+                console.log('Starting generation:', data.title);
+              } else if (data.type === 'chunk') {
+                accumulatedContent += data.content;
+                setStreamedContent(accumulatedContent);
+                
+                // Estimate progress based on word count
+                const currentWords = accumulatedContent.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length;
+                const estimatedProgress = Math.min(95, (currentWords / wordCount) * 100);
+                setStreamProgress(Math.round(estimatedProgress));
+              } else if (data.type === 'complete') {
+                setFullContent(data.content);
+                setStreamWordCount(data.wordCount);
+                setArticleId(data.articleId);
+                setStreaming(false);
+                setStreamProgress(100);
+              } else if (data.type === 'error') {
+                alert('Fout: ' + data.error);
+                setStreaming(false);
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Generation stopped by user');
+        // Keep the partially generated content
+        setFullContent(streamedContent);
+        setStreamWordCount(streamedContent.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length);
+      } else {
+        console.error('Streaming error:', error);
+        alert('Fout bij streamen: ' + error.message);
+      }
+      setStreaming(false);
+    }
+  }
+
+  function stopGeneration() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  }
+
+  async function sendChatMessage() {
+    if (!chatInput.trim() || (!fullContent && !streamedContent)) return;
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: chatInput,
+      timestamp: new Date(),
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      // TODO: Implement chat API for content edits
+      // For now, just show a placeholder response
+      setTimeout(() => {
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: 'Chat functionaliteit komt binnenkort! Je kunt straks bijvoorbeeld vragen: "Voeg een paragraaf toe over..." of "Wijzig de tone naar professioneel"',
+          timestamp: new Date(),
+        };
+        setChatMessages(prev => [...prev, assistantMessage]);
+        setChatLoading(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setChatLoading(false);
     }
   }
 
@@ -253,19 +428,23 @@ export default function WriterPage() {
   }
 
   function copyToClipboard() {
-    if (currentJob?.article_content) {
-      navigator.clipboard.writeText(currentJob.article_content);
+    const content = fullContent || streamedContent || currentJob?.article_content;
+    if (content) {
+      navigator.clipboard.writeText(content);
       alert('Artikel gekopieerd naar klembord!');
     }
   }
 
   function downloadAsHTML() {
-    if (currentJob?.article_content) {
-      const blob = new Blob([currentJob.article_content], { type: 'text/html' });
+    const content = fullContent || streamedContent || currentJob?.article_content;
+    const fileName = idea?.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') || currentJob?.slug || 'artikel';
+    
+    if (content) {
+      const blob = new Blob([content], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentJob.slug || 'artikel'}.html`;
+      a.download = `${fileName}.html`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -364,11 +543,22 @@ export default function WriterPage() {
             )}
 
             {/* Generation Settings */}
-            {!currentJob && idea && (
+            {!currentJob && !streaming && !fullContent && idea && (
               <div className="bg-gray-800 rounded-xl p-6">
                 <h2 className="text-lg font-semibold text-white mb-4">⚙️ Instellingen</h2>
                 
                 <div className="space-y-4">
+                  <div>
+                    <label className="block text-gray-400 text-sm mb-2">Generatie Modus</label>
+                    <select
+                      value={generationMode}
+                      onChange={(e) => setGenerationMode(e.target.value as GenerationMode)}
+                      className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-orange-500 focus:outline-none"
+                    >
+                      <option value="streaming">🔴 Live Streaming (zie tekst verschijnen)</option>
+                      <option value="background">⏳ Op Achtergrond (kan pagina verlaten)</option>
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-gray-400 text-sm mb-2">Aantal woorden</label>
                     <select
@@ -402,7 +592,7 @@ export default function WriterPage() {
                   disabled={starting || !project}
                   className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg hover:shadow-orange-500/50 transition disabled:opacity-50"
                 >
-                  {starting ? '⏳ Starten...' : '🚀 Genereer Artikel'}
+                  {starting ? '⏳ Starten...' : '🚀 Start Live Generatie'}
                 </button>
               </div>
             )}
@@ -452,7 +642,48 @@ export default function WriterPage() {
 
           {/* Right Column - Article Content */}
           <div className="lg:col-span-2">
-            {/* Processing State */}
+            {/* Streaming Progress Bar */}
+            {(streaming || (fullContent && generationMode === 'streaming')) && (
+              <div className="bg-gray-800 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {streaming && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                        <span className="text-white font-medium">Live aan het schrijven...</span>
+                      </div>
+                    )}
+                    {!streaming && fullContent && (
+                      <span className="text-green-400 font-medium">✅ Artikel voltooid!</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-orange-400 font-semibold">
+                      {streaming ? streamedContent.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length : streamWordCount} woorden
+                    </span>
+                    <span className="text-gray-400 text-sm">{streamProgress}%</span>
+                  </div>
+                </div>
+                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300"
+                    style={{ width: `${streamProgress}%` }}
+                  />
+                </div>
+                {streaming && (
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      onClick={stopGeneration}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                    >
+                      ⏹️ Stop Generatie
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Background Job Processing State */}
             {currentJob && (currentJob.status === 'processing' || currentJob.status === 'pending') && (
               <div className="bg-gray-800 rounded-xl p-6 mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -470,6 +701,61 @@ export default function WriterPage() {
                 <p className="text-gray-400 text-sm">
                   Je kunt deze pagina verlaten. Het artikel wordt op de achtergrond gegenereerd.
                 </p>
+              </div>
+            )}
+
+            {/* Streaming Content Display */}
+            {(streaming || fullContent) && generationMode === 'streaming' && (
+              <div className="bg-white rounded-xl overflow-hidden shadow-xl">
+                <div
+                  ref={contentRef}
+                  className="p-8 overflow-y-auto"
+                  style={{ maxHeight: '70vh', minHeight: '500px' }}
+                >
+                  <div
+                    className="prose prose-lg max-w-none"
+                    dangerouslySetInnerHTML={{ __html: streaming ? streamedContent : fullContent }}
+                  />
+                  {streaming && (
+                    <div className="inline-block w-2 h-5 bg-orange-500 animate-pulse ml-1"></div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                {!streaming && fullContent && (
+                  <div className="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={copyToClipboard}
+                          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                        >
+                          📋 Kopiëren
+                        </button>
+                        <button
+                          onClick={downloadAsHTML}
+                          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                        >
+                          ⬇️ Download
+                        </button>
+                        {articleId && (
+                          <button
+                            onClick={() => router.push(`/dashboard/wordpress-editor/${articleId}`)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                          >
+                            ✏️ Bewerken
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setChatOpen(!chatOpen)}
+                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition"
+                      >
+                        💬 {chatOpen ? 'Verberg' : 'Open'} Chat
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -492,8 +778,8 @@ export default function WriterPage() {
               </div>
             )}
 
-            {/* Completed Article */}
-            {currentJob?.status === 'completed' && currentJob.article_content && (
+            {/* Completed Background Job Article */}
+            {currentJob?.status === 'completed' && currentJob.article_content && generationMode === 'background' && (
               <div className="bg-gray-800 rounded-xl overflow-hidden">
                 {/* Article Header */}
                 <div className="p-6 border-b border-gray-700">
@@ -564,7 +850,7 @@ export default function WriterPage() {
             )}
 
             {/* Empty State */}
-            {!currentJob && !idea && (
+            {!currentJob && !streaming && !fullContent && !idea && (
               <div className="bg-gray-800/30 border-2 border-dashed border-gray-700 rounded-xl p-12 text-center">
                 <div className="text-6xl mb-4">✍️</div>
                 <h3 className="text-2xl font-bold text-white mb-2">Geen artikel geselecteerd</h3>
@@ -581,18 +867,109 @@ export default function WriterPage() {
             )}
 
             {/* Ready to Generate State */}
-            {!currentJob && idea && (
+            {!currentJob && !streaming && !fullContent && idea && (
               <div className="bg-gray-800/30 border-2 border-dashed border-gray-700 rounded-xl p-12 text-center">
                 <div className="text-6xl mb-4">🚀</div>
                 <h3 className="text-2xl font-bold text-white mb-2">Klaar om te genereren</h3>
                 <p className="text-gray-400 mb-6">
-                  Klik op "Genereer Artikel" om te beginnen. Je kunt de pagina verlaten terwijl het artikel wordt geschreven.
+                  {generationMode === 'streaming' 
+                    ? 'Klik op "Start Live Generatie" om de tekst real-time te zien verschijnen.'
+                    : 'Klik op "Genereer Artikel" om te beginnen. Je kunt de pagina verlaten terwijl het artikel wordt geschreven.'}
                 </p>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Chat Sidebar */}
+      {chatOpen && (fullContent || streamedContent) && (
+        <div className="fixed right-0 top-0 h-full w-96 bg-gray-800 border-l border-gray-700 flex flex-col shadow-2xl z-50">
+          {/* Chat Header */}
+          <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-white">💬 Quick Edits Chat</h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Vraag om aanpassingen in het artikel
+              </p>
+            </div>
+            <button
+              onClick={() => setChatOpen(false)}
+              className="text-gray-400 hover:text-white text-2xl leading-none"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {chatMessages.length === 0 && (
+              <div className="text-center text-gray-500 py-8">
+                <p className="text-sm">Geen berichten nog.</p>
+                <p className="text-xs mt-2">
+                  Probeer: "Voeg een paragraaf toe over...", "Maak het formeler", etc.
+                </p>
+              </div>
+            )}
+            {chatMessages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    msg.role === 'user'
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-700 text-gray-100'
+                  }`}
+                >
+                  <p className="text-sm">{msg.content}</p>
+                  <p className="text-xs opacity-60 mt-1">
+                    {msg.timestamp.toLocaleTimeString('nl-NL', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-700 rounded-lg px-4 py-2">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Chat Input */}
+          <div className="px-6 py-4 border-t border-gray-700 bg-gray-800">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !chatLoading && sendChatMessage()}
+                placeholder="Vraag om een aanpassing..."
+                className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-orange-500 focus:outline-none text-sm"
+                disabled={chatLoading}
+              />
+              <button
+                onClick={sendChatMessage}
+                disabled={chatLoading || !chatInput.trim()}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 transition"
+              >
+                ➤
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
