@@ -482,8 +482,9 @@ export default function ContentPlanPage() {
   };
 
   const handleWriteArticle = async (idea: ContentIdea, index: number) => {
-    // Update status to 'in_progress' if not already published
-    if (idea.status !== 'published') {
+    // Update status to 'in_progress' if not already published or in review
+    // (don't override review status as that indicates the article is complete)
+    if (idea.status !== 'published' && idea.status !== 'review') {
       await updateArticleStatus(index, 'in_progress');
     }
     // Navigate to writer with project and article index - no localStorage needed
@@ -551,24 +552,21 @@ export default function ContentPlanPage() {
   };
 
   const showToast = (message: string) => {
-    // Simple toast implementation
+    // Simple toast implementation with automatic cleanup
     const toast = document.createElement('div');
     toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
     toast.textContent = message;
     document.body.appendChild(toast);
     
-    // Fade out and remove
-    const fadeOutTimeout = setTimeout(() => {
+    // Fade out and remove after 2 seconds
+    setTimeout(() => {
       toast.style.opacity = '0';
-      const removeTimeout = setTimeout(() => {
+      setTimeout(() => {
         if (document.body.contains(toast)) {
           document.body.removeChild(toast);
         }
       }, 300);
     }, 2000);
-    
-    // Return cleanup function to clear timeouts if needed
-    // Note: Currently not used but available for future implementation
   };
 
   const handleProjectChange = (newProjectId: string) => {
