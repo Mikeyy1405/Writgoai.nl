@@ -97,7 +97,10 @@ export async function GET(request: NextRequest) {
     try {
       const apiTestResponse = await fetch(restApiTestUrl, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
+        },
         signal: AbortSignal.timeout(10000),
       });
 
