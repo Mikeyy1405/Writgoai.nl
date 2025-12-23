@@ -6,9 +6,11 @@
  */
 
 import { lookup } from 'dns/promises';
+import { Agent, fetch as undiciFetch } from 'undici';
 
 export interface FetchOptions extends RequestInit {
   timeout?: number;
+  connectTimeout?: number;
 }
 
 /**
@@ -16,12 +18,13 @@ export interface FetchOptions extends RequestInit {
  *
  * This wrapper resolves DNS issues with Node.js fetch on .nl domains
  * by pre-resolving the hostname using system DNS before making the request.
+ * Also increases connection timeout from default 10s to 30s for slow hosts.
  */
 export async function fetchWithDnsFallback(
   url: string | URL,
   options: FetchOptions = {}
 ): Promise<Response> {
-  const { timeout = 15000, ...fetchOptions } = options;
+  const { timeout = 15000, connectTimeout = 30000, ...fetchOptions } = options;
 
   // Parse URL
   const urlObj = typeof url === 'string' ? new URL(url) : url;
@@ -49,20 +52,32 @@ export async function fetchWithDnsFallback(
     }
   }
 
-  // Create abort controller for timeout
+  // Create custom Agent with increased connection timeout
+  // Default undici connection timeout is 10s, we increase it to 30s for slow hosts
+  const agent = new Agent({
+    connect: {
+      timeout: connectTimeout,
+    },
+  });
+
+  // Create abort controller for overall timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const response = await fetch(url, {
+    // Use undici fetch directly to support custom dispatcher/agent
+    const response = await undiciFetch(url, {
       ...fetchOptions,
       signal: controller.signal,
-    });
+      dispatcher: agent,
+    } as any);
 
     clearTimeout(timeoutId);
+    agent.destroy();
     return response;
   } catch (error: any) {
     clearTimeout(timeoutId);
+    agent.destroy();
 
     // If we get EAI_AGAIN, add more context to the error
     if (error.cause?.code === 'EAI_AGAIN') {
