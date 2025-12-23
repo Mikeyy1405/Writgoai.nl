@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import CreditBalance from './CreditBalance';
+import Logo from './Logo';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -46,10 +47,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-sm border-b border-gray-800">
         <div className="flex items-center justify-between px-4 h-16">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg"></div>
-            <span className="text-xl font-bold text-white">WritGo AI</span>
-          </div>
+          <Logo size="sm" />
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="text-white p-2"
@@ -78,9 +76,8 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="hidden lg:flex items-center space-x-2 px-6 h-16 border-b border-gray-800">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg"></div>
-            <span className="text-xl font-bold text-white">WritGo AI</span>
+          <div className="hidden lg:flex items-center px-6 h-16 border-b border-gray-800">
+            <Logo size="sm" />
           </div>
 
           {/* Menu Items */}

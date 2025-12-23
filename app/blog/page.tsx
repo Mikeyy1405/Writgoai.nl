@@ -139,7 +139,7 @@ export default async function BlogPage() {
             Klaar om jouw WordPress site te laten groeien?
           </h2>
           <p className="text-xl text-orange-100 mb-8">
-            Laat WritGo AI automatisch SEO-geoptimaliseerde content creëren en publiceren
+            Laat Writgo Media automatisch SEO-geoptimaliseerde content creëren en publiceren
           </p>
           <Link
             href="/auth/register"

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Logo from '@/components/Logo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -65,9 +66,8 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg"></div>
-            <span className="text-2xl font-bold text-white">WritGo AI</span>
+          <Link href="/" className="inline-flex items-center mb-4">
+            <Logo size="md" textClassName="text-2xl font-bold text-white" />
           </Link>
           <h1 className="text-3xl font-bold text-white mb-2">Maak een account</h1>
           <p className="text-gray-400">Start vandaag nog met AI content generatie</p>
