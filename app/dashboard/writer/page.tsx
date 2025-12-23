@@ -888,8 +888,9 @@ export default function WriterPage() {
                         <button
                           onClick={publishToWordPress}
                           className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
+                          title={isWritGoBlog(project) ? 'Publiceer naar WritGo Blog' : isWordPressConfigured(project) ? 'Publiceer naar WordPress' : 'WordPress niet geconfigureerd'}
                         >
-                          🚀 Publiceren
+                          {isWritGoBlog(project) ? '🚀 Publiceer WritGo' : isWordPressConfigured(project) ? '🚀 Publiceer WP' : '🚀 Publiceren'}
                         </button>
                       )}
                     </div>

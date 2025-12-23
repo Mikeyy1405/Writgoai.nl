@@ -414,14 +414,15 @@ export default function LibraryPage() {
                     onClick={() => publishArticle(article)}
                     disabled={publishing && selectedArticle?.id === article.id}
                     className="flex-1 min-w-[100px] bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/50 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                    title={isWritGo ? 'Publiceer naar WritGo Blog' : hasWordPress ? 'Publiceer naar WordPress' : 'WordPress niet geconfigureerd'}
                   >
                     {publishing && selectedArticle?.id === article.id 
                       ? 'Publiceren...' 
                       : isWritGo 
-                        ? 'Publiceer Blog' 
+                        ? '🚀 Publiceer WritGo' 
                         : hasWordPress
-                          ? 'Publiceer WP'
-                          : 'Publiceer'}
+                          ? '🚀 Publiceer WP'
+                          : '🚀 Publiceer'}
                   </button>
                   <button
                     onClick={() => setConfirmDelete(article.id)}
