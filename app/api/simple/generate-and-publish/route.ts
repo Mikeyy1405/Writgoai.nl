@@ -37,10 +37,14 @@ Vereisten:
 Genereer ALLEEN de HTML content (zonder <html>, <head>, <body> tags).
 Begin met een intro paragraaf, gebruik <h2> voor secties, <p> voor tekst.`;
 
-    const message = await anthropicClient.messages.create({
-      model: 'claude-sonnet-4-5',
+    const message = await anthropicClient.chat.completions.create({
+      model: 'anthropic/claude-sonnet-4.5',
       max_tokens: 8000,
       messages: [
+        {
+          role: 'system',
+          content: 'Je bent een Nederlandse SEO content schrijver. Schrijf professionele, SEO-geoptimaliseerde artikelen in het Nederlands.',
+        },
         {
           role: 'user',
           content: prompt,
@@ -48,8 +52,7 @@ Begin met een intro paragraaf, gebruik <h2> voor secties, <p> voor tekst.`;
       ],
     });
 
-    const textContent = message.content.find((block) => block.type === 'text');
-    let content = textContent?.type === 'text' ? textContent.text : '';
+    let content = message.choices[0]?.message?.content || '';
 
     // Clean up
     content = content.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();

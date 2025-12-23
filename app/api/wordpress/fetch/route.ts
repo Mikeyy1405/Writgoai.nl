@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,8 +49,18 @@ export async function GET(request: NextRequest) {
 
     // Check if WordPress credentials are configured
     if (!project.wp_url || (!project.wp_username && !project.wp_app_password)) {
+      const errorDetails = classifyWordPressError(
+        new Error('WordPress configuratie is niet compleet. Configureer WordPress in project instellingen.'),
+        undefined,
+        project.wp_url
+      );
+      console.error('Configuration error:', formatErrorForLogging(errorDetails));
+      
       return NextResponse.json(
-        { error: 'WordPress configuratie is niet compleet. Configureer WordPress in project instellingen.' },
+        { 
+          error: errorDetails.message,
+          errorDetails,
+        },
         { status: 400 }
       );
     }
@@ -60,8 +71,18 @@ export async function GET(request: NextRequest) {
     const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
 
     if (!password) {
+      const errorDetails = classifyWordPressError(
+        new Error('WordPress wachtwoord ontbreekt'),
+        undefined,
+        wpUrl
+      );
+      console.error('Configuration error:', formatErrorForLogging(errorDetails));
+      
       return NextResponse.json(
-        { error: 'WordPress wachtwoord ontbreekt' },
+        { 
+          error: errorDetails.message,
+          errorDetails,
+        },
         { status: 400 }
       );
     }
@@ -69,10 +90,68 @@ export async function GET(request: NextRequest) {
     // Create Basic Auth header
     const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
 
+    // First, test if REST API is available
+    console.log(`Testing REST API availability at: ${sanitizeUrl(wpUrl)}/wp-json/`);
+    try {
+      const apiTestResponse = await fetch(`${wpUrl}/wp-json/`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!apiTestResponse.ok) {
+        const errorDetails = classifyWordPressError(
+          new Error(`REST API test failed: ${apiTestResponse.statusText}`),
+          apiTestResponse,
+          wpUrl
+        );
+        console.error('REST API test failed:', formatErrorForLogging(errorDetails));
+        
+        return NextResponse.json(
+          { 
+            error: errorDetails.message,
+            errorDetails,
+          },
+          { status: apiTestResponse.status }
+        );
+      }
+
+      const apiData = await apiTestResponse.json();
+      if (!apiData.namespaces || !apiData.namespaces.includes('wp/v2')) {
+        const errorDetails = classifyWordPressError(
+          new Error('WordPress REST API wp/v2 niet beschikbaar'),
+          undefined,
+          wpUrl
+        );
+        console.error('REST API wp/v2 not available:', formatErrorForLogging(errorDetails));
+        
+        return NextResponse.json(
+          { 
+            error: errorDetails.message,
+            errorDetails,
+          },
+          { status: 404 }
+        );
+      }
+      
+      console.log('✓ REST API is available and wp/v2 is enabled');
+    } catch (apiTestError: any) {
+      const errorDetails = classifyWordPressError(apiTestError, undefined, wpUrl);
+      console.error('REST API test error:', formatErrorForLogging(errorDetails));
+      
+      return NextResponse.json(
+        { 
+          error: errorDetails.message,
+          errorDetails,
+        },
+        { status: 503 }
+      );
+    }
+
     // Fetch posts from WordPress
     const wpApiUrl = `${wpUrl}/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}&_embed`;
 
-    console.log(`Fetching WordPress posts from: ${wpApiUrl}`);
+    console.log(`Fetching WordPress posts from: ${sanitizeUrl(wpUrl)}/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}&_embed`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout (increased from 15s)
@@ -95,17 +174,20 @@ export async function GET(request: NextRequest) {
 
     if (!wpResponse.ok) {
       const errorText = await wpResponse.text();
-      console.error('WordPress fetch error:', wpResponse.status, errorText);
+      console.error(`WordPress fetch error: ${wpResponse.status} ${wpResponse.statusText}`, errorText);
 
-      if (wpResponse.status === 401) {
-        return NextResponse.json(
-          { error: 'WordPress authenticatie mislukt. Controleer je gebruikersnaam en wachtwoord.' },
-          { status: 401 }
-        );
-      }
+      const errorDetails = classifyWordPressError(
+        new Error(errorText || wpResponse.statusText),
+        wpResponse,
+        wpUrl
+      );
+      console.error('WordPress API error:', formatErrorForLogging(errorDetails));
 
       return NextResponse.json(
-        { error: `WordPress fout: ${wpResponse.statusText}` },
+        { 
+          error: errorDetails.message,
+          errorDetails,
+        },
         { status: wpResponse.status }
       );
     }
@@ -115,6 +197,8 @@ export async function GET(request: NextRequest) {
     // Get total pages from header
     const totalPages = parseInt(wpResponse.headers.get('X-WP-TotalPages') || '1');
     const totalPosts = parseInt(wpResponse.headers.get('X-WP-Total') || '0');
+
+    console.log(`✓ Successfully fetched ${posts.length} posts (page ${page}/${totalPages}, total: ${totalPosts})`);
 
     // Transform WordPress posts to our format
     const transformedPosts = posts.map((post: any) => {
@@ -175,15 +259,14 @@ export async function GET(request: NextRequest) {
     console.error('Error code:', error.code || 'N/A');
     console.error('Error cause:', error.cause?.message || 'N/A');
 
-    if (error.name === 'AbortError' || error.name === 'TimeoutError' || error.code === 'UND_ERR_CONNECT_TIMEOUT' || error.code === 'ETIMEDOUT') {
-      return NextResponse.json(
-        { error: 'WordPress server reageert niet binnen 45 seconden. Server is mogelijk traag of overbelast. Probeer het later opnieuw.' },
-        { status: 504 }
-      );
-    }
+    const errorDetails = classifyWordPressError(error, undefined, undefined);
+    console.error('Detailed error info:', formatErrorForLogging(errorDetails));
 
     return NextResponse.json(
-      { error: error.message || 'Er is een fout opgetreden bij het ophalen van WordPress posts' },
+      { 
+        error: errorDetails.message,
+        errorDetails,
+      },
       { status: 500 }
     );
   }

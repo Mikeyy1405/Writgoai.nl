@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { WordPressErrorDetails, ConnectionTestResult, WordPressErrorType } from '@/lib/wordpress-errors';
 
 interface WordPressPost {
   wordpress_id: number;
@@ -39,6 +40,11 @@ export default function WordPressPostsManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<WordPressErrorDetails | null>(null);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionTestResult, setConnectionTestResult] = useState<ConnectionTestResult | null>(null);
+  const [showConnectionTest, setShowConnectionTest] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -69,6 +75,9 @@ export default function WordPressPostsManagement() {
 
     setLoading(true);
     setError(null);
+    setErrorDetails(null);
+    setShowErrorDetails(false);
+    
     try {
       const response = await fetch(
         `/api/wordpress/fetch?project_id=${selectedProject}&page=${currentPage}&per_page=20`
@@ -76,18 +85,96 @@ export default function WordPressPostsManagement() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Fout bij ophalen van WordPress posts');
+        // Enhanced error handling with detailed information
+        const errorMsg = data.error || 'Fout bij ophalen van WordPress posts';
+        setError(errorMsg);
+        
+        if (data.errorDetails) {
+          setErrorDetails(data.errorDetails);
+          console.error('WordPress fetch error details:', data.errorDetails);
+        }
+        
+        throw new Error(errorMsg);
       }
 
       setPosts(data.posts || []);
       setTotalPages(data.pagination?.total_pages || 1);
       setTotalPosts(data.pagination?.total_posts || 0);
+      
+      // Clear any previous errors on success
+      setError(null);
+      setErrorDetails(null);
     } catch (error: any) {
       console.error('Error fetching WordPress posts:', error);
-      setError(error.message);
+      
+      // Check if this is a network error (user is offline)
+      if (!navigator.onLine) {
+        setError('Geen internetverbinding. Controleer je netwerk en probeer opnieuw.');
+        setErrorDetails({
+          type: WordPressErrorType.NETWORK,
+          message: 'Geen internetverbinding',
+          troubleshooting: [
+            'Controleer je internetverbinding',
+            'Probeer de pagina te vernieuwen',
+          ],
+          timestamp: new Date().toISOString(),
+        });
+      } else if (!errorDetails) {
+        // Only set generic error if we don't already have detailed error from API
+        setError(error.message);
+      }
+      
       setPosts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const testConnection = async () => {
+    if (!selectedProject) return;
+
+    setTestingConnection(true);
+    setConnectionTestResult(null);
+    setShowConnectionTest(true);
+
+    try {
+      const response = await fetch('/api/wordpress/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: selectedProject }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setConnectionTestResult(data);
+        console.log('Connection test result:', data);
+      } else {
+        setConnectionTestResult({
+          success: false,
+          checks: {
+            siteReachable: { passed: false, message: data.error || 'Test mislukt' },
+            restApiEnabled: { passed: false, message: 'Niet getest' },
+            authenticationValid: { passed: false, message: 'Niet getest' },
+          },
+          wpUrl: '',
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (error: any) {
+      console.error('Error testing connection:', error);
+      setConnectionTestResult({
+        success: false,
+        checks: {
+          siteReachable: { passed: false, message: 'Test fout: ' + error.message },
+          restApiEnabled: { passed: false, message: 'Niet getest' },
+          authenticationValid: { passed: false, message: 'Niet getest' },
+        },
+        wpUrl: '',
+        timestamp: new Date().toISOString(),
+      });
+    } finally {
+      setTestingConnection(false);
     }
   };
 
@@ -240,6 +327,13 @@ export default function WordPressPostsManagement() {
             </div>
             <div className="md:col-span-2 flex items-end justify-end gap-4">
               <button
+                onClick={testConnection}
+                disabled={testingConnection || !selectedProject}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+              >
+                {testingConnection ? 'Testen...' : 'Test Connectie'}
+              </button>
+              <button
                 onClick={fetchWordPressPosts}
                 disabled={loading || !selectedProject}
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium disabled:opacity-50"
@@ -257,16 +351,186 @@ export default function WordPressPostsManagement() {
           </div>
         </div>
 
+        {/* Connection Test Results */}
+        {showConnectionTest && connectionTestResult && (
+          <div className={`rounded-lg border p-6 mb-6 ${
+            connectionTestResult.success 
+              ? 'bg-green-900/20 border-green-500/50' 
+              : 'bg-orange-900/20 border-orange-500/50'
+          }`}>
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start">
+                {connectionTestResult.success ? (
+                  <svg className="w-6 h-6 text-green-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-orange-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                )}
+                <div>
+                  <h3 className={`text-lg font-semibold ${
+                    connectionTestResult.success ? 'text-green-300' : 'text-orange-300'
+                  }`}>
+                    Connectie Test {connectionTestResult.success ? 'Geslaagd' : 'Resultaten'}
+                  </h3>
+                  {connectionTestResult.wpUrl && (
+                    <p className="text-sm text-gray-400 mt-1">WordPress URL: {connectionTestResult.wpUrl}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowConnectionTest(false)}
+                className="text-gray-400 hover:text-gray-300"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {/* Site Reachability */}
+              <div className="flex items-start p-3 bg-gray-800/50 rounded-lg">
+                <div className="flex-shrink-0 mr-3 mt-0.5">
+                  {connectionTestResult.checks.siteReachable.passed ? (
+                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">Site Bereikbaarheid</p>
+                  <p className="text-sm text-gray-300 mt-1">{connectionTestResult.checks.siteReachable.message}</p>
+                  {connectionTestResult.checks.siteReachable.details && (
+                    <p className="text-xs text-gray-400 mt-1">{connectionTestResult.checks.siteReachable.details}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* REST API */}
+              <div className="flex items-start p-3 bg-gray-800/50 rounded-lg">
+                <div className="flex-shrink-0 mr-3 mt-0.5">
+                  {connectionTestResult.checks.restApiEnabled.passed ? (
+                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">REST API Status</p>
+                  <p className="text-sm text-gray-300 mt-1">{connectionTestResult.checks.restApiEnabled.message}</p>
+                  {connectionTestResult.checks.restApiEnabled.details && (
+                    <p className="text-xs text-gray-400 mt-1">{connectionTestResult.checks.restApiEnabled.details}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Authentication */}
+              <div className="flex items-start p-3 bg-gray-800/50 rounded-lg">
+                <div className="flex-shrink-0 mr-3 mt-0.5">
+                  {connectionTestResult.checks.authenticationValid.passed ? (
+                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">Authenticatie</p>
+                  <p className="text-sm text-gray-300 mt-1">{connectionTestResult.checks.authenticationValid.message}</p>
+                  {connectionTestResult.checks.authenticationValid.details && (
+                    <p className="text-xs text-gray-400 mt-1">{connectionTestResult.checks.authenticationValid.details}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Error Message */}
         {error && (
           <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4 mb-6">
             <div className="flex items-start">
-              <svg className="w-5 h-5 text-red-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
-              <div>
+              <div className="flex-1">
                 <h3 className="text-sm font-medium text-red-300">Fout bij ophalen van WordPress posts</h3>
                 <p className="text-sm text-red-400 mt-1">{error}</p>
+                
+                {errorDetails && (
+                  <>
+                    {errorDetails.wpUrl && (
+                      <p className="text-xs text-red-300 mt-2">
+                        <strong>WordPress URL:</strong> {errorDetails.wpUrl}
+                      </p>
+                    )}
+                    
+                    {errorDetails.troubleshooting && errorDetails.troubleshooting.length > 0 && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setShowErrorDetails(!showErrorDetails)}
+                          className="text-sm text-red-300 hover:text-red-200 underline flex items-center"
+                        >
+                          {showErrorDetails ? 'Verberg' : 'Toon'} probleemoplossing
+                          <svg 
+                            className={`w-4 h-4 ml-1 transform transition-transform ${showErrorDetails ? 'rotate-180' : ''}`} 
+                            fill="currentColor" 
+                            viewBox="0 0 20 20"
+                          >
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        
+                        {showErrorDetails && (
+                          <div className="mt-3 p-3 bg-red-900/30 rounded-lg">
+                            <p className="text-sm font-medium text-red-200 mb-2">Probeer het volgende:</p>
+                            <ul className="text-sm text-red-300 space-y-1">
+                              {errorDetails.troubleshooting.map((tip, index) => (
+                                <li key={index} className="flex items-start">
+                                  <span className="mr-2">•</span>
+                                  <span>{tip}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            
+                            <button
+                              onClick={testConnection}
+                              disabled={testingConnection}
+                              className="mt-3 px-4 py-2 bg-red-700 hover:bg-red-600 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {testingConnection ? 'Testen...' : 'Test Connectie'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {errorDetails.technicalDetails && (
+                      <details className="mt-3">
+                        <summary className="text-xs text-red-400 cursor-pointer hover:text-red-300">
+                          Technische details (voor developers)
+                        </summary>
+                        <pre className="text-xs text-red-300 mt-2 p-2 bg-red-900/30 rounded overflow-x-auto">
+                          {errorDetails.technicalDetails}
+                        </pre>
+                      </details>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
