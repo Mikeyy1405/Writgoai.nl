@@ -35,6 +35,9 @@ interface Project {
   id: string;
   name: string;
   website_url: string;
+  wp_url?: string;
+  wp_username?: string;
+  wp_password?: string;
 }
 
 interface ChatMessage {
@@ -396,35 +399,83 @@ export default function WriterPage() {
     }
   }
 
+  // Helper functions for publishing logic
+  function isWritGoBlog(project: Project | null): boolean {
+    if (!project) return false;
+    return project.website_url.toLowerCase().includes('writgo.nl');
+  }
+
+  function isWordPressConfigured(project: Project | null): boolean {
+    if (!project) return false;
+    return !!(project.wp_url && project.wp_username);
+  }
+
   async function publishToWordPress() {
-    if (!currentJob?.article_content || !project) {
+    // Handle both streaming and background generation modes
+    const hasContent = !!(fullContent || streamedContent || currentJob?.article_content);
+    const articleIdToPublish = articleId || (currentJob as any)?.article_id;
+    
+    if (!hasContent || !project) {
       alert('Geen artikel of project beschikbaar');
       return;
     }
 
     try {
-      const response = await fetch('/api/wordpress/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: project.id,
-          title: currentJob.title,
-          content: currentJob.article_content,
-          featured_image: currentJob.featured_image,
-          slug: currentJob.slug,
-          meta_description: currentJob.meta_description,
-        }),
-      });
-
-      const data = await response.json();
+      const isWritGo = isWritGoBlog(project);
+      const hasWordPress = isWordPressConfigured(project);
       
-      if (data.success) {
-        alert('Artikel gepubliceerd naar WordPress!');
+      if (isWritGo) {
+        // Publish to WritGo Blog (internal)
+        if (!articleIdToPublish) {
+          alert('Geen artikel ID beschikbaar voor publicatie');
+          return;
+        }
+        
+        const response = await fetch(`/api/blog/posts/${articleIdToPublish}/publish`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to publish');
+        }
+
+        alert('Artikel gepubliceerd op WritGo Blog!');
+        
+        // Redirect to WritGo blog to see the published article
+        setTimeout(() => {
+          router.push('/dashboard/writgo-blog');
+        }, 1000);
+      } else if (hasWordPress) {
+        // Publish to WordPress (client project)
+        const response = await fetch('/api/wordpress/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: project.id,
+            article_id: articleIdToPublish,
+            title: currentJob?.title,
+            content: currentJob?.article_content || fullContent || streamedContent,
+            featured_image: currentJob?.featured_image,
+            slug: currentJob?.slug,
+            meta_description: currentJob?.meta_description,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to publish to WordPress');
+        }
+
+        alert(`Artikel gepubliceerd op WordPress!\n\n${data.url || 'Bekijk op je website'}`);
       } else {
-        alert('Fout bij publiceren: ' + (data.error || 'Onbekende fout'));
+        alert('WordPress is niet geconfigureerd voor dit project.\n\nGa naar Projecten om WordPress credentials toe te voegen, of download het artikel als HTML.');
       }
-    } catch (e) {
-      alert('Fout bij publiceren naar WordPress');
+    } catch (err: any) {
+      console.error('Publish error:', err);
+      alert(`Fout bij publiceren: ${err.message || 'Onbekende fout'}`);
     }
   }
 
