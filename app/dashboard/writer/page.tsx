@@ -320,6 +320,7 @@ export default function WriterPage() {
         const lines = chunk.split('\n');
 
         for (const line of lines) {
+          // Skip empty lines (SSE protocol requirement)
           if (!line.trim()) continue;
           
           // Handle proper SSE format

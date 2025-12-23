@@ -142,8 +142,8 @@ Schrijf het artikel in HTML formaat:`;
 
           // Handle streaming chunks
           for await (const chunk of completion) {
-            // Debug: log first 3 chunks completely
-            if (chunkCount < 3) {
+            // Debug: log first 3 chunks completely (can be disabled by setting DEBUG=false in env)
+            if (chunkCount < 3 && process.env.DEBUG !== 'false') {
               console.log(`[DEBUG] Chunk ${chunkCount + 1}:`, JSON.stringify(chunk, null, 2));
               chunkCount++;
             }
