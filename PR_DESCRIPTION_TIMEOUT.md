@@ -112,6 +112,13 @@ Getest met:
    - Maintain DNS pre-resolution for .nl/.be domains
    - Add proper agent cleanup
 
+3. `0d33f2e` - Add PR description for WordPress timeout fix
+   - Comprehensive documentation of the fix
+
+4. `3ba5b3c` - Add undici dependency for custom connection timeout
+   - Add undici v6.22.0 to package.json dependencies
+   - Fixes build error "Module not found: Can't resolve 'undici'"
+
 ## 🔗 Related Issues
 
 Fixes: WordPress connection timeout errors voor Nederlandse hosting providers
