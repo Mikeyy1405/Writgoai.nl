@@ -551,16 +551,27 @@ export default function ContentPlanPage() {
   };
 
   const showToast = (message: string) => {
-    // Simple toast implementation - you can enhance this later
+    // Simple toast implementation
     const toast = document.createElement('div');
-    toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+    toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
     toast.textContent = message;
     document.body.appendChild(toast);
-    setTimeout(() => {
+    
+    // Fade out and remove
+    const fadeOutTimeout = setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.3s';
-      setTimeout(() => document.body.removeChild(toast), 300);
+      const removeTimeout = setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast);
+        }
+      }, 300);
+      
+      // Clean up on unmount
+      return () => clearTimeout(removeTimeout);
     }, 2000);
+    
+    // Clean up on unmount
+    return () => clearTimeout(fadeOutTimeout);
   };
 
   const handleProjectChange = (newProjectId: string) => {
@@ -969,14 +980,22 @@ export default function ContentPlanPage() {
       {displayedPlan.length > 0 && !loading && (
         <>
           <div className="space-y-3 mb-6">
-            {displayedPlan.map((idea, index) => {
+            {displayedPlan.map((idea, displayIndex) => {
               // Find the actual index in the full contentPlan array
-              const actualIndex = contentPlan.findIndex(p => p.title === idea.title);
+              // Using title + cluster + contentType as a compound key for better uniqueness
+              const actualIndex = contentPlan.findIndex(p => 
+                p.title === idea.title && 
+                p.cluster === idea.cluster && 
+                p.contentType === idea.contentType
+              );
               const articleStatus = idea.status || 'todo';
+              
+              // Fallback to display index if not found (shouldn't happen but safeguard)
+              const safeIndex = actualIndex >= 0 ? actualIndex : displayIndex;
               
               return (
                 <div
-                  key={index}
+                  key={displayIndex}
                   className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4 hover:border-orange-500/50 transition-all"
                 >
                   <div className="flex justify-between items-start gap-4">
@@ -1019,7 +1038,7 @@ export default function ContentPlanPage() {
                       {/* Status Dropdown */}
                       <select
                         value={articleStatus}
-                        onChange={(e) => updateArticleStatus(actualIndex >= 0 ? actualIndex : 0, e.target.value as ContentIdea['status'])}
+                        onChange={(e) => updateArticleStatus(safeIndex, e.target.value as ContentIdea['status'])}
                         className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white text-xs hover:border-orange-500 focus:outline-none focus:border-orange-500"
                         title="Wijzig status"
                       >
@@ -1030,13 +1049,13 @@ export default function ContentPlanPage() {
                         <option value="update_needed">🔁 Update nodig</option>
                       </select>
                       <button
-                        onClick={() => handleWriteArticle(idea, actualIndex >= 0 ? actualIndex : 0)}
+                        onClick={() => handleWriteArticle(idea, safeIndex)}
                         className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all whitespace-nowrap"
                       >
                         Schrijven
                       </button>
                       <button
-                        onClick={() => deleteContentPlanItem(actualIndex >= 0 ? actualIndex : 0)}
+                        onClick={() => deleteContentPlanItem(safeIndex)}
                         className="text-red-400 hover:text-red-300 p-2"
                         title="Verwijderen"
                       >
