@@ -118,6 +118,9 @@ export async function POST(request: NextRequest) {
 
       const siteResponse = await fetch(wpUrl, {
         method: 'HEAD',
+        headers: {
+          'User-Agent': WORDPRESS_USER_AGENT,
+        },
         signal: controller.signal,
       });
 
@@ -142,9 +145,14 @@ export async function POST(request: NextRequest) {
       result.checks.siteReachable = {
         passed: false,
         message: 'Kan WordPress site niet bereiken',
-        details: error.message,
+        details: `${error.message}${error.cause ? ` (Cause: ${error.cause.message})` : ''}`,
       };
       console.error('✗ Site not reachable:', error.message);
+      console.error('Error details:', {
+        name: error.name,
+        code: error.code,
+        cause: error.cause?.message,
+      });
 
       // If site is not reachable, no point in checking further
       return NextResponse.json(result);
