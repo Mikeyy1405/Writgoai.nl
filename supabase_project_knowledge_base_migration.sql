@@ -90,10 +90,11 @@ CREATE POLICY "Users can delete own project knowledge base" ON project_knowledge
 COMMENT ON TABLE project_knowledge_base IS 'Stores project-specific knowledge base entries for AI content generation context';
 
 -- ============================================
--- VERIFICATION QUERIES
--- Run these after migration to verify:
+-- VERIFICATION QUERIES (Optional)
+-- Uncomment and run these separately after migration to verify:
 -- ============================================
 
+/*
 -- Check if table exists and has correct structure
 SELECT 
   column_name, 
@@ -132,3 +133,4 @@ SELECT
   with_check
 FROM pg_policies
 WHERE tablename = 'project_knowledge_base';
+*/
