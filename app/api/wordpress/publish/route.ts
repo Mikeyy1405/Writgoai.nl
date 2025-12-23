@@ -5,10 +5,11 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// Longer timeout for slow WordPress servers (60 seconds)
-const PUBLISH_TIMEOUT = 60000;
-const TEST_TIMEOUT = 30000;
-const MEDIA_TIMEOUT = 90000;
+// Improved timeouts for slow WordPress servers
+const CONNECT_TIMEOUT = 30000; // 30 seconds for initial connection
+const PUBLISH_TIMEOUT = 90000; // 90 seconds for publishing (increased from 60s)
+const TEST_TIMEOUT = 45000; // 45 seconds for connection tests (increased from 30s)
+const MEDIA_TIMEOUT = 120000; // 120 seconds for media uploads (increased from 90s)
 
 // Helper function to clean WordPress Application Password
 function cleanApplicationPassword(password: string): string {
@@ -40,7 +41,7 @@ function getWordPressApiUrl(wpUrl: string): string {
   return `${url}/wp-json/wp/v2`;
 }
 
-// Helper function to make fetch with retry
+// Helper function to make fetch with retry and improved timeout handling
 async function fetchWithRetry(
   url: string, 
   options: RequestInit, 
@@ -48,6 +49,7 @@ async function fetchWithRetry(
   retries: number = 2
 ): Promise<Response> {
   let lastError: Error | null = null;
+  const hostname = new URL(url).hostname;
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -57,23 +59,39 @@ async function fetchWithRetry(
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
+        // @ts-ignore - Node.js specific fetch options for undici
+        headersTimeout: timeout,
+        bodyTimeout: timeout,
       });
       
       clearTimeout(timeoutId);
       return response;
     } catch (error: any) {
       lastError = error;
-      console.warn(`Fetch attempt ${attempt + 1} failed:`, error.message);
+      console.warn(`[Fetch Retry] Attempt ${attempt + 1}/${retries + 1} failed`);
+      console.warn(`[Fetch Retry] Target: ${hostname}`);
+      console.warn(`[Fetch Retry] Error:`, error.message);
+      console.warn(`[Fetch Retry] Error code:`, error.code || 'N/A');
+      console.warn(`[Fetch Retry] Error cause:`, error.cause?.message || 'N/A');
       
-      // Don't retry on non-timeout errors
-      if (error.name !== 'AbortError' && !error.message?.includes('timeout')) {
-        throw error;
+      // Check if this is a timeout error
+      const isTimeoutError = 
+        error.name === 'AbortError' || 
+        error.code === 'UND_ERR_CONNECT_TIMEOUT' ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ECONNRESET' ||
+        error.message?.includes('timeout');
+      
+      // Only retry on timeout errors
+      if (isTimeoutError && attempt < retries) {
+        const backoffTime = 2000 * (attempt + 1); // 2s, 4s, 6s
+        console.log(`[Fetch Retry] Retrying in ${backoffTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        continue;
       }
       
-      // Wait before retry (exponential backoff)
-      if (attempt < retries) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-      }
+      // Don't retry non-timeout errors (auth errors, permission errors, etc.)
+      throw error;
     }
   }
   
@@ -164,6 +182,8 @@ export async function POST(request: Request) {
 
     console.log('WordPress API URL:', wpApiUrl);
     console.log('Publishing article:', articleTitle);
+    console.log('Target host:', new URL(wpApiUrl).hostname);
+    console.log('Using timeout:', PUBLISH_TIMEOUT, 'ms');
 
     // Publish to WordPress
     try {
@@ -252,16 +272,24 @@ export async function POST(request: Request) {
 
     } catch (wpError: any) {
       console.error('WordPress connection error:', wpError);
+      console.error('WordPress error code:', wpError.code || 'N/A');
+      console.error('WordPress error cause:', wpError.cause?.message || 'N/A');
       
       let errorMessage = 'Kon geen verbinding maken met WordPress';
       
-      if (wpError.name === 'AbortError' || wpError.message?.includes('timeout') || wpError.code === 'UND_ERR_CONNECT_TIMEOUT') {
-        errorMessage = `De WordPress server (${project.wp_url}) reageert te langzaam. Dit kan komen door:
-• Trage hosting of server
-• Firewall die de verbinding blokkeert
-• Server is overbelast
+      if (wpError.name === 'AbortError' || wpError.message?.includes('timeout') || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT') {
+        errorMessage = `De WordPress server (${new URL(wpApiUrl).hostname}) reageert te langzaam of is niet bereikbaar.
 
-Probeer het later opnieuw of neem contact op met je hosting provider.`;
+Mogelijke oorzaken:
+• Trage hosting of overbelaste server
+• Firewall die de verbinding blokkeert
+• Server tijdelijk offline
+
+Wat te doen:
+• Check of je WordPress site online is in een browser
+• Neem contact op met je hosting provider
+• Controleer firewall instellingen bij je hosting
+• Probeer het later opnieuw`;
       } else if (wpError.code === 'ENOTFOUND' || wpError.code === 'ECONNREFUSED') {
         errorMessage = 'Kon de WordPress website niet bereiken. Controleer of de URL correct is en de website online is.';
       } else if (wpError.message) {
@@ -384,6 +412,9 @@ export async function GET(request: Request) {
     const cleanPassword = cleanApplicationPassword(project.wp_password);
     const authHeader = 'Basic ' + Buffer.from(`${project.wp_username}:${cleanPassword}`).toString('base64');
 
+    console.log('[WordPress Test] Testing connection to:', new URL(wpApiUrl).hostname);
+    console.log('[WordPress Test] Using timeout:', TEST_TIMEOUT, 'ms');
+
     try {
       const testResponse = await fetchWithRetry(
         `${wpApiUrl}/posts?per_page=1`,
@@ -417,9 +448,17 @@ export async function GET(request: Request) {
         });
       }
     } catch (testError: any) {
+      console.error('[WordPress Test] Connection error:', testError);
+      console.error('[WordPress Test] Error code:', testError.code || 'N/A');
+      console.error('[WordPress Test] Error cause:', testError.cause?.message || 'N/A');
+      
       let errorMessage = testError.message;
-      if (testError.name === 'AbortError' || testError.code === 'UND_ERR_CONNECT_TIMEOUT') {
-        errorMessage = 'Server reageert te langzaam (timeout). De hosting is mogelijk traag.';
+      if (testError.name === 'AbortError' || testError.code === 'UND_ERR_CONNECT_TIMEOUT' || testError.code === 'ETIMEDOUT') {
+        errorMessage = 'Server reageert te langzaam (timeout). De hosting is mogelijk traag of de server is overbelast. Probeer het later opnieuw.';
+      } else if (testError.code === 'ENOTFOUND') {
+        errorMessage = 'Website niet gevonden. Controleer of de URL correct is.';
+      } else if (testError.code === 'ECONNREFUSED') {
+        errorMessage = 'Verbinding geweigerd. Website is mogelijk offline.';
       }
       return NextResponse.json({ 
         connected: false, 

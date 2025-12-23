@@ -74,14 +74,22 @@ export async function GET(request: NextRequest) {
 
     console.log(`Fetching WordPress posts from: ${wpApiUrl}`);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout (increased from 15s)
+
     const wpResponse = await fetch(wpApiUrl, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(15000), // 15 second timeout
+      signal: controller.signal,
+      // @ts-ignore - Node.js specific fetch options
+      headersTimeout: 45000,
+      bodyTimeout: 45000,
     });
+
+    clearTimeout(timeoutId);
 
     if (!wpResponse.ok) {
       const errorText = await wpResponse.text();
@@ -162,10 +170,12 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error fetching WordPress posts:', error);
+    console.error('Error code:', error.code || 'N/A');
+    console.error('Error cause:', error.cause?.message || 'N/A');
 
-    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+    if (error.name === 'AbortError' || error.name === 'TimeoutError' || error.code === 'UND_ERR_CONNECT_TIMEOUT' || error.code === 'ETIMEDOUT') {
       return NextResponse.json(
-        { error: 'WordPress server reageert niet. Probeer het later opnieuw.' },
+        { error: 'WordPress server reageert niet binnen 45 seconden. Server is mogelijk traag of overbelast. Probeer het later opnieuw.' },
         { status: 504 }
       );
     }
