@@ -17,7 +17,7 @@ function generateSlug(title: string): string {
     .trim();
 }
 
-// Get all blog posts from articles table
+// Get all blog posts from articles table (only posts WITHOUT project_id - WritGo.nl content)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     let query = supabaseAdmin
       .from('articles')
       .select('id, slug, title, content, excerpt, featured_image, focus_keyword, status, meta_title, meta_description, published_at, created_at, updated_at, views')
+      .is('project_id', null)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
   }
 }
 
-// Create new blog post in articles table
+// Create new blog post in articles table (WritGo.nl content - NO project_id)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -216,6 +217,7 @@ export async function PATCH(request: Request) {
       .from('articles')
       .update(updates)
       .eq('id', id)
+      .is('project_id', null)
       .select()
       .single();
 
@@ -248,7 +250,8 @@ export async function DELETE(request: Request) {
     const { error } = await supabaseAdmin
       .from('articles')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .is('project_id', null);
 
     if (error) throw error;
 
