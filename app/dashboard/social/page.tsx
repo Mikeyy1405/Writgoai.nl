@@ -85,6 +85,12 @@ const PLATFORMS = [
   { id: 'tiktok', name: 'TikTok', icon: '🎵', color: 'bg-black' },
   { id: 'threads', name: 'Threads', icon: '🧵', color: 'bg-gray-800' },
   { id: 'bluesky', name: 'Bluesky', icon: '🦋', color: 'bg-blue-400' },
+  { id: 'pinterest', name: 'Pinterest', icon: '📌', color: 'bg-red-500' },
+  { id: 'youtube', name: 'YouTube', icon: '📺', color: 'bg-red-700' },
+  { id: 'reddit', name: 'Reddit', icon: '🤖', color: 'bg-orange-600' },
+  { id: 'google_business', name: 'Google Business', icon: '🏢', color: 'bg-blue-500' },
+  { id: 'telegram', name: 'Telegram', icon: '✈️', color: 'bg-blue-400' },
+  { id: 'mastodon', name: 'Mastodon', icon: '🐘', color: 'bg-purple-600' },
 ];
 
 const POST_TYPES = [
@@ -142,6 +148,14 @@ export default function SocialMediaPage() {
   // Edit modal
   const [editingPost, setEditingPost] = useState<SocialPost | null>(null);
   const [editContent, setEditContent] = useState('');
+
+  // Publish modal
+  const [publishingPost, setPublishingPost] = useState<SocialPost | null>(null);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [publishTiming, setPublishTiming] = useState<'now' | 'scheduled'>('now');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [publishing, setPublishing] = useState(false);
 
   // Load projects
   useEffect(() => {
@@ -481,6 +495,60 @@ export default function SocialMediaPage() {
       alert('Gekopieerd naar klembord!');
     } catch (error) {
       console.error('Failed to copy:', error);
+    }
+  }
+
+  async function publishPost() {
+    if (!publishingPost || selectedAccounts.length === 0) {
+      alert('Selecteer minimaal één account');
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      // Note: We send local time, API will handle timezone conversion to Europe/Amsterdam
+      const scheduledFor = publishTiming === 'scheduled' && scheduledDate && scheduledTime
+        ? `${scheduledDate}T${scheduledTime}:00`
+        : undefined;
+
+      const response = await fetch('/api/social/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          post_id: publishingPost.id,
+          account_ids: selectedAccounts,
+          scheduled_for: scheduledFor,
+          publish_now: publishTiming === 'now',
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Reload posts to get updated status from server
+        if (selectedProject) {
+          await loadPosts(selectedProject.id);
+        }
+        
+        alert(data.manual 
+          ? 'Post is klaar! Kopieer de content om handmatig te plaatsen.' 
+          : `Post ${publishTiming === 'now' ? 'gepubliceerd' : 'ingepland'}!`
+        );
+        
+        // Close modal
+        setPublishingPost(null);
+        setSelectedAccounts([]);
+        setPublishTiming('now');
+        setScheduledDate('');
+        setScheduledTime('');
+      } else {
+        alert(data.error || 'Er ging iets mis bij het publiceren');
+      }
+    } catch (error) {
+      console.error('Failed to publish post:', error);
+      alert('Er ging iets mis bij het publiceren');
+    } finally {
+      setPublishing(false);
     }
   }
 
@@ -917,7 +985,7 @@ export default function SocialMediaPage() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  {PLATFORMS.slice(0, 6).map(platform => {
+                  {PLATFORMS.map(platform => {
                     const connected = accounts.some(a => a.platform === platform.id);
                     const canConnect = socialActivated && lateConfigured;
                     return (
@@ -1064,14 +1132,19 @@ export default function SocialMediaPage() {
                                   {PLATFORMS.find(pl => pl.id === p.platform)?.icon} {p.platform}
                                 </span>
                               ))}
-                              <span className={`text-xs px-2 py-1 rounded ${
+                              <span className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${
                                 post.status === 'published' ? 'bg-green-500/20 text-green-400' :
                                 post.status === 'scheduled' ? 'bg-blue-500/20 text-blue-400' :
                                 'bg-gray-600 text-gray-300'
                               }`}>
-                                {post.status === 'published' ? 'Gepubliceerd' :
-                                 post.status === 'scheduled' ? 'Gepland' : 'Concept'}
+                                {post.status === 'published' ? '✅ Gepubliceerd' :
+                                 post.status === 'scheduled' ? '📅 Gepland' : '📝 Concept'}
                               </span>
+                              {post.status === 'scheduled' && post.scheduled_for && (
+                                <span className="text-xs text-gray-400">
+                                  {formatDate(post.scheduled_for)}
+                                </span>
+                              )}
                               <span className="text-xs text-gray-500 ml-auto">
                                 {formatDate(post.created_at)}
                               </span>
@@ -1103,6 +1176,25 @@ export default function SocialMediaPage() {
                                   className="text-xs bg-purple-600 hover:bg-purple-500 px-3 py-1.5 rounded transition"
                                 >
                                   ⬇️ Download Afbeelding
+                                </button>
+                              )}
+                              {(post.status === 'draft' || post.status === 'ready') && (
+                                <button
+                                  onClick={() => {
+                                    if (accounts.length === 0) {
+                                      alert('Geen accounts verbonden. Koppel eerst een social media account.');
+                                      return;
+                                    }
+                                    setPublishingPost(post);
+                                    setSelectedAccounts([]);
+                                    setPublishTiming('now');
+                                    setScheduledDate('');
+                                    setScheduledTime('');
+                                  }}
+                                  disabled={accounts.length === 0}
+                                  className="text-xs bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded transition"
+                                >
+                                  📤 Publiceren
                                 </button>
                               )}
                               <button
@@ -1153,6 +1245,173 @@ export default function SocialMediaPage() {
                 className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg transition"
               >
                 Opslaan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Publish Modal */}
+      {publishingPost && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📤 Post Publiceren
+            </h3>
+
+            {/* Connected accounts counter */}
+            <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <p className="text-sm text-blue-400">
+                🔗 Verbonden: {accounts.length} account{accounts.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            {/* Account selection */}
+            <div className="mb-6">
+              <label className="block text-sm text-gray-400 mb-3">
+                Selecteer accounts om naar te publiceren:
+              </label>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {accounts.map(account => (
+                  <label
+                    key={account.id}
+                    className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAccounts.includes(account.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedAccounts([...selectedAccounts, account.id]);
+                        } else {
+                          setSelectedAccounts(selectedAccounts.filter(id => id !== account.id));
+                        }
+                      }}
+                      className="w-4 h-4"
+                    />
+                    <span>
+                      {PLATFORMS.find(p => p.id === account.platform)?.icon || '📱'}
+                    </span>
+                    <span className="font-medium">{account.platform}</span>
+                    <span className="text-gray-400 text-sm">@{account.username}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Timing selection */}
+            <div className="mb-6">
+              <label className="block text-sm text-gray-400 mb-3">
+                Wanneer publiceren?
+              </label>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition">
+                  <input
+                    type="radio"
+                    name="timing"
+                    checked={publishTiming === 'now'}
+                    onChange={() => setPublishTiming('now')}
+                    className="w-4 h-4"
+                  />
+                  <span className="font-medium">📤 Direct publiceren</span>
+                </label>
+                <label className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition">
+                  <input
+                    type="radio"
+                    name="timing"
+                    checked={publishTiming === 'scheduled'}
+                    onChange={() => setPublishTiming('scheduled')}
+                    className="w-4 h-4"
+                  />
+                  <span className="font-medium">📅 Inplannen</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Date/Time picker (shown when scheduled) */}
+            {publishTiming === 'scheduled' && (
+              <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+                <label className="block text-sm text-gray-400 mb-3">
+                  Selecteer datum en tijd:
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Datum</label>
+                    <input
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full bg-gray-600 border border-gray-500 rounded-lg px-3 py-2 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Tijd</label>
+                    <input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="w-full bg-gray-600 border border-gray-500 rounded-lg px-3 py-2 text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Selected platforms preview */}
+            {selectedAccounts.length > 0 && (
+              <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <div className="text-sm text-green-400 mb-2">
+                  ✓ Post wordt gepubliceerd naar {selectedAccounts.length} account{selectedAccounts.length !== 1 ? 's' : ''}:
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAccounts.map(accountId => {
+                    const account = accounts.find(a => a.id === accountId);
+                    if (!account) return null;
+                    return (
+                      <span key={accountId} className="text-xs bg-gray-700 px-2 py-1 rounded">
+                        {PLATFORMS.find(p => p.id === account.platform)?.icon} {account.platform}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setPublishingPost(null);
+                  setSelectedAccounts([]);
+                  setPublishTiming('now');
+                  setScheduledDate('');
+                  setScheduledTime('');
+                }}
+                disabled={publishing}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 rounded-lg transition"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={publishPost}
+                disabled={
+                  publishing || 
+                  selectedAccounts.length === 0 || 
+                  (publishTiming === 'scheduled' && (!scheduledDate || !scheduledTime))
+                }
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition flex items-center gap-2"
+              >
+                {publishing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    Publiceren...
+                  </>
+                ) : (
+                  <>
+                    📤 Publiceren
+                  </>
+                )}
               </button>
             </div>
           </div>
