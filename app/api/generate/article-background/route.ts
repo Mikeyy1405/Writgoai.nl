@@ -368,7 +368,7 @@ ${CONTENT_PROMPT_RULES}
     let featuredImage = '';
     try {
       const imagePrompt = `Professional blog header image for article about ${keyword}. Clean, modern design with subtle ${keyword} theme. No text overlay.`;
-      featuredImage = await generateFeaturedImage(imagePrompt, keyword);
+      featuredImage = await generateFeaturedImage(imagePrompt, keyword) || '';
     } catch (e) {
       console.warn('Image generation failed:', e);
     }
