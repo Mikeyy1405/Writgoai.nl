@@ -8,6 +8,28 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes max
 
+// Content extraction configuration
+const CONTENT_EXTRACTION_CONFIG = {
+  MIN_PRODUCT_NAME_LENGTH: 3,
+  MIN_CATEGORY_NAME_LENGTH: 2,
+  MAX_CATEGORY_NAME_LENGTH: 50,
+  MIN_KEYWORD_LENGTH: 4,
+  MAX_TEXT_CONTENT_LENGTH: 8000,
+  MAX_PRODUCTS: 20,
+  MAX_CATEGORIES: 15,
+  MAX_KEYWORDS: 20,
+};
+
+// Stop words for keyword analysis (multi-language)
+const STOP_WORDS = new Set([
+  // Dutch
+  'de', 'het', 'een', 'en', 'van', 'voor', 'op', 'in', 'met', 'is', 'zijn', 'dat', 'die', 'naar', 'te', 'aan',
+  // English
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'are', 'was', 'were',
+  // German
+  'der', 'die', 'das', 'und', 'oder', 'für', 'ist', 'sind', 'war', 'waren', 'auf', 'mit', 'von', 'zu', 'bei',
+]);
+
 // Create admin client for background jobs
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -359,6 +381,12 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
     await updateJob(jobId, { progress: 15, current_step: '🔍 Website content analyseren...' });
 
     let websiteContent = '';
+    let contentSignals = {
+      products: [] as string[],
+      categories: [] as string[],
+      keywords: [] as string[],
+    };
+    
     try {
       const response = await fetch(websiteUrl, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
@@ -376,15 +404,72 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
         const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
         const metaDesc = metaDescMatch ? metaDescMatch[1].trim() : '';
         
+        // Extract meta keywords if available
+        const metaKeywordsMatch = html.match(/<meta[^>]*name=["']keywords["'][^>]*content=["']([^"']+)["']/i);
+        const metaKeywords = metaKeywordsMatch ? metaKeywordsMatch[1].trim() : '';
+        
+        // Extract Open Graph metadata
+        const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
+        const ogTitle = ogTitleMatch ? ogTitleMatch[1].trim() : '';
+        const ogDescMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
+        const ogDesc = ogDescMatch ? ogDescMatch[1].trim() : '';
+        
         // Extract headings
         const h1Matches = html.match(/<h1[^>]*>([^<]+)<\/h1>/gi) || [];
         const h2Matches = html.match(/<h2[^>]*>([^<]+)<\/h2>/gi) || [];
-        const headings = [...h1Matches, ...h2Matches]
+        const h3Matches = html.match(/<h3[^>]*>([^<]+)<\/h3>/gi) || [];
+        const headings = [...h1Matches, ...h2Matches, ...h3Matches]
           .map(h => h.replace(/<[^>]+>/g, '').trim())
           .filter(h => h.length > 3)
-          .slice(0, 20);
+          .slice(0, 30);
+        
+        // Extract product titles (common e-commerce patterns)
+        const productTitlePatterns = [
+          /<h2[^>]*class=["'][^"']*product[^"']*["'][^>]*>([^<]+)<\/h2>/gi,
+          /<h3[^>]*class=["'][^"']*product[^"']*["'][^>]*>([^<]+)<\/h3>/gi,
+          /<div[^>]*class=["'][^"']*product[^"']*title[^"']*["'][^>]*>([^<]+)<\/div>/gi,
+          /<a[^>]*class=["'][^"']*product[^"']*["'][^>]*>([^<]+)<\/a>/gi,
+          /<span[^>]*class=["'][^"']*product[^"']*name[^"']*["'][^>]*>([^<]+)<\/span>/gi,
+        ];
+        
+        productTitlePatterns.forEach(pattern => {
+          const matches = Array.from(html.matchAll(pattern));
+          for (const match of matches) {
+            if (match[1] && match[1].trim().length > CONTENT_EXTRACTION_CONFIG.MIN_PRODUCT_NAME_LENGTH) {
+              contentSignals.products.push(match[1].trim());
+            }
+          }
+        });
+        
+        // Extract category information
+        const categoryPatterns = [
+          /<nav[^>]*class=["'][^"']*categor[^"']*["'][^>]*>([\s\S]*?)<\/nav>/gi,
+          /<ul[^>]*class=["'][^"']*categor[^"']*["'][^>]*>([\s\S]*?)<\/ul>/gi,
+          /<div[^>]*class=["'][^"']*categor[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+        ];
+        
+        categoryPatterns.forEach(pattern => {
+          const matches = Array.from(html.matchAll(pattern));
+          for (const match of matches) {
+            const categoryHtml = match[1];
+            const links = categoryHtml.match(/<a[^>]*>([^<]+)<\/a>/gi) || [];
+            links.forEach(link => {
+              const text = link.replace(/<[^>]+>/g, '').trim();
+              if (text.length > CONTENT_EXTRACTION_CONFIG.MIN_CATEGORY_NAME_LENGTH && 
+                  text.length < CONTENT_EXTRACTION_CONFIG.MAX_CATEGORY_NAME_LENGTH) {
+                contentSignals.categories.push(text);
+              }
+            });
+          }
+        });
         
         // Extract main text content (remove scripts, styles, etc.)
+        // SECURITY NOTE: This HTML is scraped from external websites for ANALYSIS ONLY.
+        // The extracted text is never rendered as HTML or inserted into the DOM.
+        // It is only used for:
+        // 1. Word frequency analysis to identify main topics
+        // 2. Passing context to AI models for niche detection
+        // The simple regex-based cleaning is sufficient for this use case.
         let textContent = html
           .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -394,13 +479,43 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
           .replace(/<[^>]+>/g, ' ')
           .replace(/\s+/g, ' ')
           .trim()
-          .slice(0, 5000);
+          .slice(0, CONTENT_EXTRACTION_CONFIG.MAX_TEXT_CONTENT_LENGTH);
+        
+        // Extract frequently appearing keywords from text (simple word frequency analysis)
+        const words = textContent.toLowerCase().split(/\s+/);
+        const wordFreq = new Map<string, number>();
+        
+        words.forEach(word => {
+          if (word.length > CONTENT_EXTRACTION_CONFIG.MIN_KEYWORD_LENGTH && 
+              !STOP_WORDS.has(word) && 
+              /^[a-zäöüß]+$/i.test(word)) {
+            wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
+          }
+        });
+        
+        // Get top keywords
+        const topWords = Array.from(wordFreq.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, CONTENT_EXTRACTION_CONFIG.MAX_KEYWORDS)
+          .map(([word]) => word);
+        
+        contentSignals.keywords = topWords;
+        
+        // Deduplicate products and categories
+        contentSignals.products = [...new Set(contentSignals.products)].slice(0, CONTENT_EXTRACTION_CONFIG.MAX_PRODUCTS);
+        contentSignals.categories = [...new Set(contentSignals.categories)].slice(0, CONTENT_EXTRACTION_CONFIG.MAX_CATEGORIES);
         
         websiteContent = `
 Titel: ${title}
 Meta beschrijving: ${metaDesc}
-Koppen: ${headings.join(', ')}
-Content: ${textContent.slice(0, 3000)}
+${metaKeywords ? `Meta keywords: ${metaKeywords}` : ''}
+${ogTitle ? `OG titel: ${ogTitle}` : ''}
+${ogDesc ? `OG beschrijving: ${ogDesc}` : ''}
+Koppen: ${headings.slice(0, 15).join(', ')}
+${contentSignals.products.length > 0 ? `\nProducten: ${contentSignals.products.join(', ')}` : ''}
+${contentSignals.categories.length > 0 ? `\nCategorieën: ${contentSignals.categories.join(', ')}` : ''}
+${contentSignals.keywords.length > 0 ? `\nVeelvoorkomende woorden: ${contentSignals.keywords.join(', ')}` : ''}
+Content preview: ${textContent.slice(0, 2000)}
 `.trim();
       }
       await updateJob(jobId, { progress: 18, current_step: '🔍 Website content verzameld' });
@@ -414,31 +529,51 @@ Content: ${textContent.slice(0, 3000)}
     const currentMonth = now.toLocaleString(language === 'nl' ? 'nl-NL' : 'en-US', { month: 'long' });
 
     // Use Perplexity Sonar Pro for accurate niche detection with real-time web access
-    const nichePrompt = `Analyseer de website ${websiteUrl} en bepaal de EXACTE niche.
+    const nichePrompt = `Analyseer de website ${websiteUrl} en bepaal de EXACTE niche op basis van de producten, diensten en content.
 
-Bezoek de website en analyseer de daadwerkelijke content.
+Bezoek de website LIVE en analyseer de daadwerkelijke content, producten en diensten die worden aangeboden.
+
+${websiteContent ? `\nHier is extra context die ik heb verzameld van de website:\n${websiteContent}\n` : ''}
 
 ${languageInstructions[language]}
 
-BELANGRIJK: 
-- Bepaal de niche op basis van de DAADWERKELIJKE content van de website
-- Als de website over yoga gaat, is de niche "Yoga" of "Yoga voor beginners"
-- Als de website over koken gaat, is de niche "Koken" of "Recepten"
-- NOOIT "Content Marketing" als niche tenzij de website echt over content marketing gaat
+KRITIEKE INSTRUCTIES: 
+- Focus op WAT de website verkoopt of over schrijft (producten, diensten, hoofdonderwerpen)
+- Als de website shampoo, haarverzorging of cosmetica verkoopt, is de niche "Haarverzorging", "Shampoo" of "Cosmetica"
+- Als de website yoga producten of yoga lessen aanbiedt, is de niche "Yoga"
+- Als de website recepten deelt, is de niche "Koken" of "Recepten"
+- Als de website software verkoopt, is de niche "Software" of de specifieke software categorie
+- NOOIT generieke termen zoals "Content Marketing", "E-commerce" of "Online Shop" gebruiken
+- Bepaal de niche op basis van de PRODUCTEN/DIENSTEN/CONTENT, niet op basis van de technologie of het platform
+- Bij twijfel: kijk naar de productnamen, categorieën en veelvoorkomende woorden in de content
 
-Output als JSON:
+VOORBEELDEN van GOEDE niches:
+- "Natuurlijke Haarverzorging" (als site shampoos verkoopt)
+- "Biologische Cosmetica" (als site natuurlijke cosmetica verkoopt)  
+- "Yoga & Meditatie" (als site over yoga gaat)
+- "Veganistische Recepten" (als site vegan recepten deelt)
+- "Project Management Software" (als site PM tools verkoopt)
+
+VOORBEELDEN van SLECHTE niches (NOOIT gebruiken):
+- "E-commerce" (te generiek)
+- "Online Shop" (te generiek)
+- "Content Marketing" (tenzij de site echt over marketing gaat)
+- "Web Development" (tenzij de site echt over webdev gaat)
+- "Digital Products" (te generiek)
+
+Output als JSON (ALLEEN JSON, geen markdown):
 {
-  "niche": "Specifieke niche naam (bijv. Yoga, Fitness, Koken, Software)",
+  "niche": "Specifieke, concrete niche gebaseerd op producten/diensten (bijv. Natuurlijke Haarverzorging, Biologische Cosmetica, Yoga, Software)",
   "competitionLevel": "low|medium|high|very_high",
   "pillarTopics": [
     {
-      "topic": "Pillar topic naam relevant voor de niche",
+      "topic": "Pillar topic naam die relevant is voor de PRODUCTEN/DIENSTEN",
       "estimatedArticles": 30,
       "subtopics": ["subtopic1", "subtopic2", "subtopic3"]
     }
   ],
   "totalArticlesNeeded": 500,
-  "reasoning": "Uitleg waarom deze niche is gekozen"
+  "reasoning": "Uitleg waarom deze specifieke niche is gekozen op basis van de producten/diensten/content"
 }`;
 
     let nicheData: any = {
@@ -457,35 +592,49 @@ Output als JSON:
     } catch (e) {
       console.warn('Perplexity niche detection failed, using fallback:', e);
       
-      // Fallback to Claude if Perplexity fails
+      // Fallback to Claude if Perplexity fails - with same improved instructions
       try {
-        const fallbackPrompt = `Analyseer deze website en bepaal de EXACTE niche:
+        const fallbackPrompt = `Analyseer deze website en bepaal de EXACTE niche op basis van producten, diensten en content:
 
 Website URL: ${websiteUrl}
-${websiteContent ? `\n--- WEBSITE CONTENT ---\n${websiteContent}\n--- EINDE CONTENT ---\n` : ''}
+${websiteContent ? `\n--- WEBSITE CONTENT (producten, categorieën, keywords) ---\n${websiteContent}\n--- EINDE CONTENT ---\n` : ''}
 
 ${languageInstructions[language]}
 
-Output als JSON:
+KRITIEKE INSTRUCTIES: 
+- Focus op WAT de website verkoopt of over schrijft (producten, diensten, hoofdonderwerpen)
+- Als je SHAMPOO, HAARVERZORGING of COSMETICA producten ziet → niche is "Haarverzorging", "Shampoo" of "Cosmetica"
+- Als je YOGA producten of lessen ziet → niche is "Yoga"
+- Als je RECEPTEN ziet → niche is "Koken" of "Recepten"
+- NOOIT generieke termen zoals "E-commerce", "Online Shop" of "Content Marketing"
+- Gebruik de productnamen, categorieën en veelvoorkomende woorden als bewijs
+
+VOORBEELDEN van GOEDE niches:
+- "Natuurlijke Haarverzorging" (site met shampoos)
+- "Biologische Cosmetica" (site met natuurlijke cosmetica)
+- "Yoga & Meditatie" (site over yoga)
+
+Output als JSON (ALLEEN JSON, geen tekst ervoor of erna):
 {
-  "niche": "Specifieke niche naam",
+  "niche": "Specifieke niche gebaseerd op producten/diensten",
   "competitionLevel": "medium",
   "pillarTopics": [],
   "totalArticlesNeeded": 500,
-  "reasoning": "Uitleg"
+  "reasoning": "Uitleg op basis van producten/content die je ziet"
 }`;
 
         const nicheResponse = await generateAICompletion({
           task: 'content',
-          systemPrompt: `SEO expert. ${languageInstructions[language]} Output JSON.`,
+          systemPrompt: `Je bent een SEO expert die websites analyseert op basis van hun PRODUCTEN en DIENSTEN, niet op basis van technologie. ${languageInstructions[language]} Output ALLEEN valide JSON.`,
           userPrompt: fallbackPrompt,
           maxTokens: 2000,
-          temperature: 0.5,
+          temperature: 0.3,
         });
 
         const jsonMatch = nicheResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           nicheData = { ...nicheData, ...JSON.parse(jsonMatch[0]) };
+          console.log('Fallback niche result:', nicheData.niche);
         }
       } catch (fallbackError) {
         console.warn('Fallback niche detection also failed:', fallbackError);
@@ -740,7 +889,7 @@ Output als JSON:
 
             // If no direct match, try partial matching
             if (!matchedData) {
-              for (const [key, data] of keywordMap.entries()) {
+              for (const [key, data] of Array.from(keywordMap.entries())) {
                 if (titleLower.includes(key) || key.includes(keywordLower)) {
                   matchedData = data;
                   break;
