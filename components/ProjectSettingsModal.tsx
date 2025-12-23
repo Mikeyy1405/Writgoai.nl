@@ -36,11 +36,21 @@ export default function ProjectSettingsModal({
   projectId, 
   projectName 
 }: ProjectSettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<'affiliates' | 'knowledge' | 'affiliate-settings'>('affiliates');
+  const [activeTab, setActiveTab] = useState<'wordpress' | 'affiliates' | 'knowledge' | 'affiliate-settings'>('wordpress');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // WordPress state
+  const [wordpressConfig, setWordpressConfig] = useState({
+    wp_url: '',
+    wp_username: '',
+    wp_password: '',
+    isConnected: false,
+  });
+  const [wpPassword, setWpPassword] = useState('');
+  const [wpUsername, setWpUsername] = useState('');
 
   // Affiliates state
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
@@ -77,11 +87,33 @@ export default function ProjectSettingsModal({
   // Load data when modal opens
   useEffect(() => {
     if (isOpen && projectId) {
+      loadWordPressConfig();
       loadAffiliates();
       loadKnowledgeBase();
       loadAffiliateSettings();
     }
   }, [isOpen, projectId]);
+
+  const loadWordPressConfig = async () => {
+    try {
+      const response = await fetch(`/api/projects/list`);
+      const data = await response.json();
+      if (data.success) {
+        const project = data.projects?.find((p: any) => p.id === projectId);
+        if (project) {
+          setWordpressConfig({
+            wp_url: project.wp_url || '',
+            wp_username: project.wp_username || '',
+            wp_password: project.wp_password || '',
+            isConnected: !!(project.wp_url && project.wp_username && project.wp_password),
+          });
+          setWpUsername(project.wp_username || '');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load WordPress config:', err);
+    }
+  };
 
   const loadAffiliates = async () => {
     try {
@@ -328,6 +360,78 @@ export default function ProjectSettingsModal({
     });
   };
 
+  const handleDisconnectWordPress = async () => {
+    if (!confirm('Weet je zeker dat je de WordPress verbinding wilt verwijderen?')) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`/api/projects/wordpress?id=${projectId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess('WordPress verbinding verwijderd!');
+        loadWordPressConfig();
+        setWpPassword('');
+        setWpUsername('');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to disconnect WordPress');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateWordPress = async () => {
+    if (!wpUsername || !wpPassword) {
+      setError('WordPress gebruikersnaam en wachtwoord zijn verplicht');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`/api/projects/wordpress?id=${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wp_username: wpUsername,
+          wp_password: wpPassword,
+          skip_wp_test: false,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        if (data.wordpress_warning) {
+          setSuccess(`WordPress verbinding bijgewerkt! Let op: ${data.wordpress_warning}`);
+        } else if (data.wordpress_connected) {
+          setSuccess('WordPress verbinding succesvol bijgewerkt en getest!');
+        } else {
+          setSuccess('WordPress credentials opgeslagen!');
+        }
+        loadWordPressConfig();
+        setWpPassword('');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to update WordPress connection');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const editEntry = (entry: KnowledgeBaseEntry) => {
     setEditingEntry(entry);
     setNewEntry({
@@ -359,6 +463,16 @@ export default function ProjectSettingsModal({
 
         {/* Tabs */}
         <div className="flex border-b border-gray-800">
+          <button
+            onClick={() => setActiveTab('wordpress')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'wordpress'
+                ? 'text-orange-400 border-b-2 border-orange-400 bg-orange-500/10'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            🔌 WordPress
+          </button>
           <button
             onClick={() => setActiveTab('affiliates')}
             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
@@ -405,6 +519,150 @@ export default function ProjectSettingsModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === 'wordpress' && (
+            <div className="space-y-6">
+              {/* Connection Status */}
+              <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🔌</span>
+                    <h3 className="text-lg font-semibold text-white">WordPress Verbinding</h3>
+                  </div>
+                  {wordpressConfig.isConnected && (
+                    <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm">
+                      ✓ Verbonden
+                    </span>
+                  )}
+                </div>
+
+                {wordpressConfig.isConnected ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 text-sm">
+                      <p className="mb-2">
+                        <strong>WordPress URL:</strong> {wordpressConfig.wp_url}
+                      </p>
+                      <p>
+                        <strong>Gebruikersnaam:</strong> {wordpressConfig.wp_username}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleDisconnectWordPress}
+                        disabled={saving}
+                        className="flex-1 px-4 py-2 bg-red-900/30 text-red-400 rounded-lg hover:bg-red-900/50 hover:text-red-300 disabled:opacity-50 transition-all"
+                      >
+                        {saving ? 'Verwijderen...' : 'Verbinding Verwijderen'}
+                      </button>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-700">
+                      <h4 className="text-white font-medium mb-3">Verbinding Bijwerken</h4>
+                      <p className="text-gray-400 text-sm mb-4">
+                        Update je WordPress credentials als deze zijn gewijzigd.
+                      </p>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-gray-300 mb-2 font-medium">
+                            WordPress Gebruikersnaam
+                          </label>
+                          <input
+                            type="text"
+                            value={wpUsername}
+                            onChange={(e) => setWpUsername(e.target.value)}
+                            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="admin"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-gray-300 mb-2 font-medium">
+                            WordPress Wachtwoord / Application Password
+                          </label>
+                          <input
+                            type="password"
+                            value={wpPassword}
+                            onChange={(e) => setWpPassword(e.target.value)}
+                            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Gebruik een Application Password voor betere beveiliging
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={handleUpdateWordPress}
+                          disabled={saving}
+                          className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 disabled:opacity-50 transition-all"
+                        >
+                          {saving ? 'Bijwerken...' : 'WordPress Verbinding Bijwerken'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-gray-400 mb-4">
+                      Geen WordPress verbinding geconfigureerd. Voeg je WordPress credentials toe om artikelen automatisch te publiceren.
+                    </p>
+
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 text-sm">
+                      <strong>💡 Hoe maak je een WordPress Application Password?</strong>
+                      <ol className="mt-2 ml-4 list-decimal space-y-1 text-blue-200">
+                        <li>Log in op je WordPress dashboard</li>
+                        <li>Ga naar Gebruikers → Profiel</li>
+                        <li>Scroll naar "Application Passwords"</li>
+                        <li>Maak een nieuwe Application Password aan</li>
+                        <li>Kopieer het gegenereerde wachtwoord</li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-gray-300 mb-2 font-medium">
+                          WordPress Gebruikersnaam
+                        </label>
+                        <input
+                          type="text"
+                          value={wpUsername}
+                          onChange={(e) => setWpUsername(e.target.value)}
+                          className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="admin"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-gray-300 mb-2 font-medium">
+                          WordPress Wachtwoord / Application Password
+                        </label>
+                        <input
+                          type="password"
+                          value={wpPassword}
+                          onChange={(e) => setWpPassword(e.target.value)}
+                          className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Het Application Password van WordPress (met of zonder spaties)
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={handleUpdateWordPress}
+                        disabled={saving}
+                        className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 disabled:opacity-50 transition-all"
+                      >
+                        {saving ? 'Verbinden...' : 'WordPress Verbinden'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'affiliates' && (
             <div className="space-y-6">
               {/* Bol.com Section */}
