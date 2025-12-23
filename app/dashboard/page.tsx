@@ -29,6 +29,18 @@ export default async function DashboardPage() {
 
   const totalArticles = projectsWithCounts.reduce((sum, p) => sum + p.articleCount, 0);
 
+  // Get total affiliate opportunities count
+  let totalOpportunities = 0;
+  if (projects && projects.length > 0) {
+    const projectIds = projects.map(p => p.id);
+    const { count } = await supabase
+      .from('affiliate_opportunities')
+      .select('*', { count: 'exact', head: true })
+      .in('project_id', projectIds)
+      .neq('status', 'dismissed');
+    totalOpportunities = count || 0;
+  }
+
   return (
     <div className="p-6 lg:p-12">
         {/* Welcome Section */}
@@ -42,7 +54,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
+        <div className="grid md:grid-cols-4 gap-6 mb-12">
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center">
@@ -62,6 +74,19 @@ export default async function DashboardPage() {
             </div>
             <h3 className="text-gray-400 text-sm font-medium">Totaal Artikelen</h3>
           </div>
+
+          <Link 
+            href="/dashboard/affiliate-opportunities"
+            className="bg-gradient-to-r from-purple-500/10 to-purple-600/10 border border-purple-500/20 hover:border-purple-500/40 rounded-xl p-6 transition-all group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-2xl">💼</span>
+              </div>
+              <span className="text-3xl font-bold text-purple-400">{totalOpportunities}</span>
+            </div>
+            <h3 className="text-purple-400 text-sm font-medium">Affiliate Opportunities</h3>
+          </Link>
 
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">

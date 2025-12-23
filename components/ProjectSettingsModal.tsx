@@ -36,7 +36,7 @@ export default function ProjectSettingsModal({
   projectId, 
   projectName 
 }: ProjectSettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<'affiliates' | 'knowledge'>('affiliates');
+  const [activeTab, setActiveTab] = useState<'affiliates' | 'knowledge' | 'affiliate-settings'>('affiliates');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -64,11 +64,22 @@ export default function ProjectSettingsModal({
   });
   const [editingEntry, setEditingEntry] = useState<KnowledgeBaseEntry | null>(null);
 
+  // Affiliate discovery settings state
+  const [affiliateSettings, setAffiliateSettings] = useState({
+    auto_detect: true,
+    auto_research: true,
+    blacklist: [] as string[],
+    whitelist: [] as string[],
+  });
+  const [newBlacklistItem, setNewBlacklistItem] = useState('');
+  const [newWhitelistItem, setNewWhitelistItem] = useState('');
+
   // Load data when modal opens
   useEffect(() => {
     if (isOpen && projectId) {
       loadAffiliates();
       loadKnowledgeBase();
+      loadAffiliateSettings();
     }
   }, [isOpen, projectId]);
 
@@ -233,6 +244,90 @@ export default function ProjectSettingsModal({
     }
   };
 
+  const loadAffiliateSettings = async () => {
+    try {
+      const response = await fetch(`/api/projects/list`);
+      const data = await response.json();
+      if (data.success) {
+        const project = data.projects?.find((p: any) => p.id === projectId);
+        if (project?.metadata?.affiliate_settings) {
+          setAffiliateSettings({
+            auto_detect: project.metadata.affiliate_settings.auto_detect ?? true,
+            auto_research: project.metadata.affiliate_settings.auto_research ?? true,
+            blacklist: project.metadata.affiliate_settings.blacklist || [],
+            whitelist: project.metadata.affiliate_settings.whitelist || [],
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load affiliate settings:', err);
+    }
+  };
+
+  const saveAffiliateSettings = async () => {
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Store in project metadata
+      const response = await fetch('/api/projects/create', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: projectId,
+          metadata: {
+            affiliate_settings: affiliateSettings,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        setSuccess('Affiliate instellingen opgeslagen!');
+      } else {
+        throw new Error('Failed to save settings');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to save affiliate settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addToBlacklist = () => {
+    if (newBlacklistItem.trim() && !affiliateSettings.blacklist.includes(newBlacklistItem.trim())) {
+      setAffiliateSettings({
+        ...affiliateSettings,
+        blacklist: [...affiliateSettings.blacklist, newBlacklistItem.trim()],
+      });
+      setNewBlacklistItem('');
+    }
+  };
+
+  const removeFromBlacklist = (item: string) => {
+    setAffiliateSettings({
+      ...affiliateSettings,
+      blacklist: affiliateSettings.blacklist.filter(i => i !== item),
+    });
+  };
+
+  const addToWhitelist = () => {
+    if (newWhitelistItem.trim() && !affiliateSettings.whitelist.includes(newWhitelistItem.trim())) {
+      setAffiliateSettings({
+        ...affiliateSettings,
+        whitelist: [...affiliateSettings.whitelist, newWhitelistItem.trim()],
+      });
+      setNewWhitelistItem('');
+    }
+  };
+
+  const removeFromWhitelist = (item: string) => {
+    setAffiliateSettings({
+      ...affiliateSettings,
+      whitelist: affiliateSettings.whitelist.filter(i => i !== item),
+    });
+  };
+
   const editEntry = (entry: KnowledgeBaseEntry) => {
     setEditingEntry(entry);
     setNewEntry({
@@ -283,6 +378,16 @@ export default function ProjectSettingsModal({
             }`}
           >
             📚 Kennisbank
+          </button>
+          <button
+            onClick={() => setActiveTab('affiliate-settings')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'affiliate-settings'
+                ? 'text-orange-400 border-b-2 border-orange-400 bg-orange-500/10'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            💼 Affiliate Discovery
           </button>
         </div>
 
@@ -599,6 +704,146 @@ VPN Service | https://vpn.example.com/aff/456 | Snelle en veilige VPN</pre>
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'affiliate-settings' && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-white mb-2">💼 Automatische Affiliate Discovery</h3>
+                <p className="text-gray-400 text-sm">
+                  Stel in hoe WritGo automatisch affiliate mogelijkheden moet detecteren in je gegenereerde content.
+                </p>
+              </div>
+
+              {/* Toggle Settings */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
+                  <div>
+                    <h4 className="text-white font-medium">Automatische Product Detectie</h4>
+                    <p className="text-sm text-gray-400">Detecteer automatisch producten en merken in gegenereerde content</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={affiliateSettings.auto_detect}
+                      onChange={(e) => setAffiliateSettings({ ...affiliateSettings, auto_detect: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
+                  <div>
+                    <h4 className="text-white font-medium">Automatisch Research via Perplexity</h4>
+                    <p className="text-sm text-gray-400">Gebruik Perplexity Pro Sonar om affiliate programma's te vinden</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={affiliateSettings.auto_research}
+                      onChange={(e) => setAffiliateSettings({ ...affiliateSettings, auto_research: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Blacklist */}
+              <div>
+                <h4 className="text-white font-medium mb-3">🚫 Blacklist - Negeer deze producten/merken</h4>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newBlacklistItem}
+                      onChange={(e) => setNewBlacklistItem(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addToBlacklist()}
+                      className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Bijv: Facebook, Google Ads"
+                    />
+                    <button
+                      onClick={addToBlacklist}
+                      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-all"
+                    >
+                      Toevoegen
+                    </button>
+                  </div>
+                  {affiliateSettings.blacklist.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {affiliateSettings.blacklist.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-sm"
+                        >
+                          {item}
+                          <button
+                            onClick={() => removeFromBlacklist(item)}
+                            className="hover:text-red-300"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Whitelist */}
+              <div>
+                <h4 className="text-white font-medium mb-3">✅ Whitelist - Alleen deze producten/merken (optioneel)</h4>
+                <p className="text-sm text-gray-400 mb-3">Laat leeg om alle producten te detecteren</p>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newWhitelistItem}
+                      onChange={(e) => setNewWhitelistItem(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addToWhitelist()}
+                      className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Bijv: Apple, Samsung"
+                    />
+                    <button
+                      onClick={addToWhitelist}
+                      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-all"
+                    >
+                      Toevoegen
+                    </button>
+                  </div>
+                  {affiliateSettings.whitelist.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {affiliateSettings.whitelist.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm"
+                        >
+                          {item}
+                          <button
+                            onClick={() => removeFromWhitelist(item)}
+                            className="hover:text-green-300"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="pt-4">
+                <button
+                  onClick={saveAffiliateSettings}
+                  disabled={saving}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all disabled:opacity-50"
+                >
+                  {saving ? 'Opslaan...' : 'Instellingen Opslaan'}
+                </button>
               </div>
             </div>
           )}
