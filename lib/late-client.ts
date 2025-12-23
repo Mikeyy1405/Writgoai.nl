@@ -171,11 +171,14 @@ class LateClient {
 
   // Post Management
   async createPost(options: CreatePostOptions): Promise<LatePost> {
+    // Convert mediaItems to media array of IDs (Late API expects "media": ["id1", "id2"])
+    const media = options.mediaItems?.map(item => item.mediaId);
+
     return this.request<LatePost>('/posts', {
       method: 'POST',
       body: JSON.stringify({
         content: options.content,
-        mediaItems: options.mediaItems,
+        media: media && media.length > 0 ? media : undefined,
         platforms: options.platforms,
         scheduledFor: options.scheduledFor,
         timezone: options.timezone || 'Europe/Amsterdam',
