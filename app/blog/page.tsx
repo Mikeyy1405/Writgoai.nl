@@ -21,11 +21,12 @@ interface Article {
 export default async function BlogPage() {
   const supabase = createClient();
 
-  // Fetch published articles
+  // Fetch published articles (only WritGo.nl blog articles, not project-specific)
   const { data: allPosts, error } = await supabase
     .from('articles')
     .select('id, slug, title, excerpt, featured_image, published_at, views, focus_keyword')
     .eq('status', 'published')
+    .is('project_id', null)
     .order('published_at', { ascending: false });
 
   if (error) {
