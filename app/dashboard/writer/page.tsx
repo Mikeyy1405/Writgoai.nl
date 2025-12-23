@@ -324,7 +324,8 @@ export default function WriterPage() {
                 setStreamedContent(accumulatedContent);
                 
                 // Estimate progress based on word count
-                const currentWords = accumulatedContent.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length;
+                const textOnly = accumulatedContent.replace(/<[^>]*>/g, ' ').trim();
+                const currentWords = textOnly ? textOnly.split(/\s+/).length : 0;
                 const estimatedProgress = Math.min(95, (currentWords / wordCount) * 100);
                 setStreamProgress(Math.round(estimatedProgress));
               } else if (data.type === 'complete') {
@@ -348,7 +349,8 @@ export default function WriterPage() {
         console.log('Generation stopped by user');
         // Keep the partially generated content
         setFullContent(streamedContent);
-        setStreamWordCount(streamedContent.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length);
+        const textOnly = streamedContent.replace(/<[^>]*>/g, ' ').trim();
+        setStreamWordCount(textOnly ? textOnly.split(/\s+/).length : 0);
       } else {
         console.error('Streaming error:', error);
         alert('Fout bij streamen: ' + error.message);
@@ -378,8 +380,9 @@ export default function WriterPage() {
     setChatLoading(true);
 
     try {
-      // TODO: Implement chat API for content edits
-      // For now, just show a placeholder response
+      // TODO: Implement chat API for content edits when backend is ready
+      // This requires a new API endpoint to process edit requests via AI
+      // For now, show placeholder response to demonstrate UI functionality
       setTimeout(() => {
         const assistantMessage: ChatMessage = {
           role: 'assistant',
@@ -427,6 +430,16 @@ export default function WriterPage() {
     }
   }
 
+  function getWordCount(html: string): number {
+    const textOnly = html.replace(/<[^>]*>/g, ' ').trim();
+    return textOnly ? textOnly.split(/\s+/).length : 0;
+  }
+
+  function getFileName(title: string, slug?: string): string {
+    if (slug) return slug;
+    return title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').substring(0, 60) || 'artikel';
+  }
+
   function copyToClipboard() {
     const content = fullContent || streamedContent || currentJob?.article_content;
     if (content) {
@@ -437,7 +450,7 @@ export default function WriterPage() {
 
   function downloadAsHTML() {
     const content = fullContent || streamedContent || currentJob?.article_content;
-    const fileName = idea?.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') || currentJob?.slug || 'artikel';
+    const fileName = getFileName(idea?.title || currentJob?.title || 'artikel', currentJob?.slug);
     
     if (content) {
       const blob = new Blob([content], { type: 'text/html' });
@@ -659,7 +672,7 @@ export default function WriterPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-orange-400 font-semibold">
-                      {streaming ? streamedContent.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length : streamWordCount} woorden
+                      {streaming ? getWordCount(streamedContent) : streamWordCount} woorden
                     </span>
                     <span className="text-gray-400 text-sm">{streamProgress}%</span>
                   </div>
@@ -712,6 +725,7 @@ export default function WriterPage() {
                   className="p-8 overflow-y-auto"
                   style={{ maxHeight: '70vh', minHeight: '500px' }}
                 >
+                  {/* Content is from server-controlled AI (Claude) via /api/generate/article-stream */}
                   <div
                     className="prose prose-lg max-w-none"
                     dangerouslySetInnerHTML={{ __html: streaming ? streamedContent : fullContent }}
@@ -938,8 +952,8 @@ export default function WriterPage() {
                 <div className="bg-gray-700 rounded-lg px-4 py-2">
                   <div className="flex gap-1">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:100ms]"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:200ms]"></div>
                   </div>
                 </div>
               </div>
