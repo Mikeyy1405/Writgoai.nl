@@ -32,6 +32,7 @@ export default function LibraryPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState<string>('all');
 
   useEffect(() => {
     loadData();
@@ -262,9 +263,14 @@ export default function LibraryPage() {
     );
   }
 
-  const draftCount = articles.filter(a => a.status === 'draft').length;
-  const publishedCount = articles.filter(a => a.status === 'published').length;
-  const totalWords = articles.reduce((sum, a) => {
+  // Filter articles based on selected project
+  const filteredArticles = selectedProjectFilter === 'all'
+    ? articles
+    : articles.filter(a => a.project_id === selectedProjectFilter);
+
+  const draftCount = filteredArticles.filter(a => a.status === 'draft').length;
+  const publishedCount = filteredArticles.filter(a => a.status === 'published').length;
+  const totalWords = filteredArticles.reduce((sum, a) => {
     const count = a.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
     return sum + count;
   }, 0);
@@ -275,6 +281,25 @@ export default function LibraryPage() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-white mb-2">Bibliotheek</h1>
         <p className="text-gray-400 text-lg">Beheer al je opgeslagen content</p>
+      </div>
+
+      {/* Project Filter */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Filter op project:
+        </label>
+        <select
+          value={selectedProjectFilter}
+          onChange={(e) => setSelectedProjectFilter(e.target.value)}
+          className="w-full md:w-64 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="all">Alle projecten</option>
+          {projects.map(project => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Error Message */}
@@ -317,7 +342,7 @@ export default function LibraryPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-          <div className="text-4xl font-bold text-orange-500 mb-2">{articles.length}</div>
+          <div className="text-4xl font-bold text-orange-500 mb-2">{filteredArticles.length}</div>
           <div className="text-gray-400">Totaal Artikelen</div>
         </div>
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
@@ -335,23 +360,27 @@ export default function LibraryPage() {
       </div>
 
       {/* Articles List */}
-      {articles.length === 0 ? (
+      {filteredArticles.length === 0 ? (
         <div className="bg-gray-800/30 border-2 border-dashed border-gray-700 rounded-xl p-12 text-center">
           <div className="text-6xl mb-4">📚</div>
           <h3 className="text-2xl font-bold text-white mb-2">Geen Artikelen</h3>
           <p className="text-gray-400 mb-6">
-            Je hebt nog geen artikelen opgeslagen. Ga naar Content Plan om te beginnen.
+            {selectedProjectFilter === 'all'
+              ? 'Je hebt nog geen artikelen opgeslagen. Ga naar Content Plan om te beginnen.'
+              : 'Geen artikelen gevonden voor dit project.'}
           </p>
-          <button
-            onClick={() => router.push('/dashboard/content-plan')}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
-          >
-            Ga naar Content Plan
-          </button>
+          {selectedProjectFilter === 'all' && (
+            <button
+              onClick={() => router.push('/dashboard/content-plan')}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+            >
+              Ga naar Content Plan
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
-          {articles.map((article) => {
+          {filteredArticles.map((article) => {
             const isWritGo = isWritGoBlog(article.project_id);
             const hasWordPress = isWordPressConfigured(article.project_id);
             const wordCount = article.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
