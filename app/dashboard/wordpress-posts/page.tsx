@@ -206,21 +206,21 @@ export default function WordPressPostsManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">WordPress Posts Beheer</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-white">WordPress Posts Beheer</h1>
+          <p className="text-gray-300 mt-1">
             Haal je bestaande WordPress posts op en beheer ze in Writgo.ai
           </p>
         </div>
 
         {/* Project Selection & Actions */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-gray-800 rounded-lg shadow-sm p-6 mb-6 border border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Selecteer Project
               </label>
               <select
@@ -229,7 +229,7 @@ export default function WordPressPostsManagement() {
                   setSelectedProject(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
@@ -242,14 +242,14 @@ export default function WordPressPostsManagement() {
               <button
                 onClick={fetchWordPressPosts}
                 disabled={loading || !selectedProject}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium disabled:opacity-50"
               >
                 {loading ? 'Laden...' : 'Posts Ophalen'}
               </button>
               <button
                 onClick={syncAllPosts}
                 disabled={syncing || !selectedProject || posts.length === 0}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+                className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50"
               >
                 {syncing ? 'Synchroniseren...' : 'Alles Synchroniseren'}
               </button>
@@ -259,14 +259,14 @@ export default function WordPressPostsManagement() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4 mb-6">
             <div className="flex items-start">
-              <svg className="w-5 h-5 text-red-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-red-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
               <div>
-                <h3 className="text-sm font-medium text-red-800">Fout bij ophalen van WordPress posts</h3>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
+                <h3 className="text-sm font-medium text-red-300">Fout bij ophalen van WordPress posts</h3>
+                <p className="text-sm text-red-400 mt-1">{error}</p>
               </div>
             </div>
           </div>
@@ -274,15 +274,15 @@ export default function WordPressPostsManagement() {
 
         {/* Bulk Actions */}
         {selectedPosts.length > 0 && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+          <div className="bg-orange-900/20 border border-orange-500/50 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
-              <span className="text-gray-700">
+              <span className="text-gray-200">
                 {selectedPosts.length} post(s) geselecteerd
               </span>
               <button
                 onClick={syncSelectedPosts}
                 disabled={syncing}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50"
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium disabled:opacity-50"
               >
                 {syncing ? 'Synchroniseren...' : 'Geselecteerde Synchroniseren'}
               </button>
@@ -291,69 +291,69 @@ export default function WordPressPostsManagement() {
         )}
 
         {/* Posts Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-700">
           {loading ? (
-            <div className="p-12 text-center text-gray-500">
+            <div className="p-12 text-center text-gray-400">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
               <p className="mt-4">WordPress posts laden...</p>
             </div>
           ) : !selectedProject ? (
-            <div className="p-12 text-center text-gray-500">
-              <p className="text-lg font-medium">Geen project geselecteerd</p>
+            <div className="p-12 text-center text-gray-400">
+              <p className="text-lg font-medium text-white">Geen project geselecteerd</p>
               <p className="mt-2">Selecteer eerst een project om WordPress posts te bekijken</p>
             </div>
           ) : posts.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-12 text-center text-gray-400">
+              <svg className="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-lg font-medium">Geen WordPress posts gevonden</p>
+              <p className="text-lg font-medium text-white">Geen WordPress posts gevonden</p>
               <p className="mt-2">Klik op "Posts Ophalen" om posts van je WordPress website te laden</p>
             </div>
           ) : (
             <>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead className="bg-gray-900">
                   <tr>
                     <th className="px-6 py-3 text-left">
                       <input
                         type="checkbox"
                         checked={selectedPosts.length === posts.length}
                         onChange={toggleSelectAll}
-                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                        className="rounded border-gray-600 bg-gray-700 text-orange-600 focus:ring-orange-500"
                       />
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Titel
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Afbeelding
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Datum
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Acties
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-gray-800 divide-y divide-gray-700">
                   {posts.map((post) => (
-                    <tr key={post.wordpress_id} className="hover:bg-gray-50">
+                    <tr key={post.wordpress_id} className="hover:bg-gray-700/50">
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
                           checked={selectedPosts.includes(post.wordpress_id)}
                           onChange={() => togglePostSelection(post.wordpress_id)}
-                          className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                          className="rounded border-gray-600 bg-gray-700 text-orange-600 focus:ring-orange-500"
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{post.title}</div>
-                        <div className="text-sm text-gray-500">/{post.slug}</div>
+                        <div className="text-sm font-medium text-white">{post.title}</div>
+                        <div className="text-sm text-gray-400">/{post.slug}</div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -380,14 +380,14 @@ export default function WordPressPostsManagement() {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 text-sm text-gray-400">
                         {new Date(post.published_at).toLocaleDateString('nl-NL')}
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium space-x-4">
                         <button
                           onClick={() => syncSinglePost(post.wordpress_id)}
                           disabled={syncing}
-                          className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                          className="text-orange-500 hover:text-orange-400 disabled:opacity-50"
                         >
                           Importeren
                         </button>
@@ -395,7 +395,7 @@ export default function WordPressPostsManagement() {
                           href={post.wordpress_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-orange-400 hover:text-orange-300"
                         >
                           Bekijken
                         </a>
@@ -407,22 +407,22 @@ export default function WordPressPostsManagement() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
-                  <div className="text-sm text-gray-700">
+                <div className="bg-gray-900 px-6 py-4 flex items-center justify-between border-t border-gray-700">
+                  <div className="text-sm text-gray-300">
                     Pagina {currentPage} van {totalPages} ({totalPosts} posts totaal)
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1 || loading}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="px-4 py-2 border border-gray-600 bg-gray-700 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-600 disabled:opacity-50"
                     >
                       Vorige
                     </button>
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages || loading}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="px-4 py-2 border border-gray-600 bg-gray-700 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-600 disabled:opacity-50"
                     >
                       Volgende
                     </button>
@@ -434,14 +434,14 @@ export default function WordPressPostsManagement() {
         </div>
 
         {/* Help Text */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">
+        <div className="mt-8 bg-orange-900/20 border border-orange-500/50 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-orange-400 mb-2">
             Hoe werkt WordPress post synchronisatie?
           </h3>
-          <ul className="text-sm text-blue-800 space-y-2">
-            <li>• <strong>Posts Ophalen:</strong> Haalt posts op van je WordPress website (alleen om te bekijken)</li>
-            <li>• <strong>Importeren:</strong> Importeert een enkele post naar Writgo.ai waar je hem kunt bewerken</li>
-            <li>• <strong>Alles Synchroniseren:</strong> Importeert alle WordPress posts in één keer</li>
+          <ul className="text-sm text-gray-300 space-y-2">
+            <li>• <strong className="text-white">Posts Ophalen:</strong> Haalt posts op van je WordPress website (alleen om te bekijken)</li>
+            <li>• <strong className="text-white">Importeren:</strong> Importeert een enkele post naar Writgo.ai waar je hem kunt bewerken</li>
+            <li>• <strong className="text-white">Alles Synchroniseren:</strong> Importeert alle WordPress posts in één keer</li>
             <li>• Na import kun je posts bewerken in Writgo.ai en wijzigingen terugpushen naar WordPress</li>
           </ul>
         </div>
