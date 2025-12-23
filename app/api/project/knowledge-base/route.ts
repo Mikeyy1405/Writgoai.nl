@@ -158,23 +158,3 @@ export async function DELETE(request: Request) {
   }
 }
 
-/**
- * Get knowledge base context for AI content generation
- */
-export async function getKnowledgeBaseContext(projectId: string): Promise<string> {
-  const { data: entries } = await supabaseAdmin
-    .from('project_knowledge_base')
-    .select('title, content, category')
-    .eq('project_id', projectId)
-    .eq('is_active', true);
-
-  if (!entries || entries.length === 0) {
-    return '';
-  }
-
-  const context = entries.map(entry => 
-    `### ${entry.title} (${entry.category})\n${entry.content}`
-  ).join('\n\n');
-
-  return `\n\n## Kennisbank informatie:\n${context}`;
-}
