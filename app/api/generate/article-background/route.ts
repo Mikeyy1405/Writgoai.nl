@@ -447,7 +447,12 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
         if (articleError) {
           console.error('Failed to save to articles table:', articleError);
         } else {
-          console.log('Article saved to library');
+          console.log('Article saved to library with ID:', article.id);
+          
+          // Store article_id in the job for publishing later
+          await updateJob(jobId, {
+            article_id: article.id,
+          });
           
           // Trigger affiliate opportunity discovery in the background
           if (article) {
