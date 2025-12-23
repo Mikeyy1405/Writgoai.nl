@@ -264,15 +264,26 @@ export async function POST(request: Request) {
       // Check if profile might already exist
       try {
         const { profiles } = await lateClient.listProfiles();
-        const existingProfile = profiles.find(
-          p => p.name.toLowerCase() === project.name.toLowerCase()
-        );
+        
+        // Normalize names for better matching
+        const normalizedProjectName = project.name
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]/g, ''); // Remove special characters
+        
+        const existingProfile = profiles.find(p => {
+          const normalizedProfileName = p.name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]/g, '');
+          return normalizedProfileName === normalizedProjectName;
+        });
 
         if (existingProfile) {
           console.log(`Found existing Late.dev profile: ${existingProfile._id}`);
           
           // Update database with existing profile ID
-          await supabaseAdmin
+          const { error: syncError } = await supabaseAdmin
             .from('social_profiles')
             .update({ 
               late_profile_id: existingProfile._id,
@@ -280,40 +291,60 @@ export async function POST(request: Request) {
             })
             .eq('id', socialProfile.id);
 
-          // Get accounts for this profile
-          const { accounts: lateAccounts } = await lateClient.listAccounts(existingProfile._id);
-
-          // Sync to our database
-          for (const account of lateAccounts) {
-            const { error } = await supabaseAdmin
-              .from('social_accounts')
-              .upsert({
-                social_profile_id: socialProfile.id,
-                late_account_id: account._id,
-                platform: account.platform,
-                username: account.username,
-                connected: true,
-              }, {
-                onConflict: 'late_account_id',
-              });
-
-            if (error) {
-              console.error('Failed to sync account:', error);
-            }
+          if (syncError) {
+            console.error('Failed to update social profile with existing profile ID:', syncError);
+            return NextResponse.json({ 
+              error: 'Failed to sync profile ID to database',
+              configured: true,
+              manual_mode: true
+            }, { status: 500 });
           }
 
-          // Get our synced accounts
-          const { data: accounts } = await supabaseAdmin
-            .from('social_accounts')
-            .select('*')
-            .eq('social_profile_id', socialProfile.id);
+          // Get accounts for this profile
+          try {
+            const { accounts: lateAccounts } = await lateClient.listAccounts(existingProfile._id);
 
-          return NextResponse.json({ 
-            configured: true,
-            accounts: accounts || [],
-            profile_id: existingProfile._id,
-            found_existing: true
-          });
+            // Sync to our database
+            for (const account of lateAccounts) {
+              const { error } = await supabaseAdmin
+                .from('social_accounts')
+                .upsert({
+                  social_profile_id: socialProfile.id,
+                  late_account_id: account._id,
+                  platform: account.platform,
+                  username: account.username,
+                  connected: true,
+                }, {
+                  onConflict: 'late_account_id',
+                });
+
+              if (error) {
+                console.error('Failed to sync account:', error);
+              }
+            }
+
+            // Get our synced accounts
+            const { data: accounts } = await supabaseAdmin
+              .from('social_accounts')
+              .select('*')
+              .eq('social_profile_id', socialProfile.id);
+
+            return NextResponse.json({ 
+              configured: true,
+              accounts: accounts || [],
+              profile_id: existingProfile._id,
+              found_existing: true
+            });
+          } catch (accountsError) {
+            console.error('Failed to list accounts for existing profile:', accountsError);
+            // Still return success with empty accounts - profile ID is synced
+            return NextResponse.json({ 
+              configured: true,
+              accounts: [],
+              profile_id: existingProfile._id,
+              found_existing: true
+            });
+          }
         }
       } catch (listError) {
         console.error('Failed to list existing profiles:', listError);

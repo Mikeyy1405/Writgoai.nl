@@ -333,7 +333,6 @@ export default function SocialMediaPage() {
         // Show user-friendly error
         if (data.manual_mode) {
           // Silent fail - user can still use manual mode
-          setLateConfigured(false);
         } else if (data.error) {
           alert(`Fout bij verbinden met Later.dev: ${data.error}`);
         }
