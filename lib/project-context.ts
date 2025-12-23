@@ -101,7 +101,7 @@ async function getKnowledgeBaseContext(projectId: string): Promise<string> {
 async function getInternalLinks(projectId: string): Promise<InternalLink[]> {
   // Get project website URL
   const { data: project } = await supabaseAdmin
-    .from('Project')
+    .from('projects')
     .select('websiteUrl')
     .eq('id', projectId)
     .single();
@@ -139,7 +139,7 @@ async function getInternalLinks(projectId: string): Promise<InternalLink[]> {
 async function getExternalLinks(projectId: string): Promise<ExternalLink[]> {
   // Get client ID for this project
   const { data: currentProject } = await supabaseAdmin
-    .from('Project')
+    .from('projects')
     .select('clientId')
     .eq('id', projectId)
     .single();
@@ -150,7 +150,7 @@ async function getExternalLinks(projectId: string): Promise<ExternalLink[]> {
 
   // Get other projects from the same client
   const { data: otherProjects } = await supabaseAdmin
-    .from('Project')
+    .from('projects')
     .select('id, name, websiteUrl')
     .eq('clientId', currentProject.clientId)
     .neq('id', projectId)
@@ -257,7 +257,7 @@ async function getCustomAffiliateLinks(projectId: string): Promise<CustomAffilia
  */
 async function getCustomInstructions(projectId: string): Promise<string> {
   const { data: project } = await supabaseAdmin
-    .from('Project')
+    .from('projects')
     .select('customInstructions, brandVoice, targetAudience, writingStyle')
     .eq('id', projectId)
     .single();
