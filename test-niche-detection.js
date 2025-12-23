@@ -173,7 +173,7 @@ console.log('Running test cases...\n');
 
 testCases.forEach((testCase, index) => {
   console.log(`\n📋 Test Case ${index + 1}: ${testCase.name}`);
-  console.log('=' .repeat(60));
+  console.log('='.repeat(60));
 
   const signals = extractContentSignals(testCase.html);
 

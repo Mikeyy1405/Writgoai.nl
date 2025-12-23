@@ -8,6 +8,28 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes max
 
+// Content extraction configuration
+const CONTENT_EXTRACTION_CONFIG = {
+  MIN_PRODUCT_NAME_LENGTH: 3,
+  MIN_CATEGORY_NAME_LENGTH: 2,
+  MAX_CATEGORY_NAME_LENGTH: 50,
+  MIN_KEYWORD_LENGTH: 4,
+  MAX_TEXT_CONTENT_LENGTH: 8000,
+  MAX_PRODUCTS: 20,
+  MAX_CATEGORIES: 15,
+  MAX_KEYWORDS: 20,
+};
+
+// Stop words for keyword analysis (multi-language)
+const STOP_WORDS = new Set([
+  // Dutch
+  'de', 'het', 'een', 'en', 'van', 'voor', 'op', 'in', 'met', 'is', 'zijn', 'dat', 'die', 'naar', 'te', 'aan',
+  // English
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'are', 'was', 'were',
+  // German
+  'der', 'die', 'das', 'und', 'oder', 'für', 'ist', 'sind', 'war', 'waren', 'auf', 'mit', 'von', 'zu', 'bei',
+]);
+
 // Create admin client for background jobs
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -413,7 +435,7 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
         productTitlePatterns.forEach(pattern => {
           const matches = Array.from(html.matchAll(pattern));
           for (const match of matches) {
-            if (match[1] && match[1].trim().length > 3) {
+            if (match[1] && match[1].trim().length > CONTENT_EXTRACTION_CONFIG.MIN_PRODUCT_NAME_LENGTH) {
               contentSignals.products.push(match[1].trim());
             }
           }
@@ -433,7 +455,8 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
             const links = categoryHtml.match(/<a[^>]*>([^<]+)<\/a>/gi) || [];
             links.forEach(link => {
               const text = link.replace(/<[^>]+>/g, '').trim();
-              if (text.length > 2 && text.length < 50) {
+              if (text.length > CONTENT_EXTRACTION_CONFIG.MIN_CATEGORY_NAME_LENGTH && 
+                  text.length < CONTENT_EXTRACTION_CONFIG.MAX_CATEGORY_NAME_LENGTH) {
                 contentSignals.categories.push(text);
               }
             });
@@ -450,30 +473,31 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
           .replace(/<[^>]+>/g, ' ')
           .replace(/\s+/g, ' ')
           .trim()
-          .slice(0, 8000);
+          .slice(0, CONTENT_EXTRACTION_CONFIG.MAX_TEXT_CONTENT_LENGTH);
         
         // Extract frequently appearing keywords from text (simple word frequency analysis)
         const words = textContent.toLowerCase().split(/\s+/);
         const wordFreq = new Map<string, number>();
-        const stopWords = new Set(['de', 'het', 'een', 'en', 'van', 'voor', 'op', 'in', 'met', 'is', 'are', 'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'der', 'die', 'das', 'und', 'oder', 'für']);
         
         words.forEach(word => {
-          if (word.length > 4 && !stopWords.has(word) && /^[a-zäöüß]+$/i.test(word)) {
+          if (word.length > CONTENT_EXTRACTION_CONFIG.MIN_KEYWORD_LENGTH && 
+              !STOP_WORDS.has(word) && 
+              /^[a-zäöüß]+$/i.test(word)) {
             wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
           }
         });
         
-        // Get top 20 most frequent words
+        // Get top keywords
         const topWords = Array.from(wordFreq.entries())
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 20)
+          .slice(0, CONTENT_EXTRACTION_CONFIG.MAX_KEYWORDS)
           .map(([word]) => word);
         
         contentSignals.keywords = topWords;
         
         // Deduplicate products and categories
-        contentSignals.products = [...new Set(contentSignals.products)].slice(0, 20);
-        contentSignals.categories = [...new Set(contentSignals.categories)].slice(0, 15);
+        contentSignals.products = [...new Set(contentSignals.products)].slice(0, CONTENT_EXTRACTION_CONFIG.MAX_PRODUCTS);
+        contentSignals.categories = [...new Set(contentSignals.categories)].slice(0, CONTENT_EXTRACTION_CONFIG.MAX_CATEGORIES);
         
         websiteContent = `
 Titel: ${title}
