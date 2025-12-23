@@ -149,12 +149,13 @@ Schrijf het artikel in HTML formaat:`;
 
             // Detect response format dynamically - support all formats:
             // 1. OpenAI format: chunk.choices[0].delta.content
-            // 2. Alternative format: chunk.delta.content
-            // 3. Direct format: chunk.content
+            // 2. Alternative format: chunk.delta.content (not in OpenAI types)
+            // 3. Direct format: chunk.content (not in OpenAI types)
+            const chunkAny = chunk as any;
             const content =
-              chunk.choices?.[0]?.delta?.content || // OpenAI format
-              chunk.delta?.content ||               // Alternative format
-              chunk.content ||                      // Direct format
+              (chunk.choices && Array.isArray(chunk.choices) && chunk.choices.length > 0 && chunk.choices[0]?.delta?.content) || 
+              chunkAny.delta?.content ||
+              chunkAny.content ||
               '';
             
             // Log warnings for debugging unexpected formats
