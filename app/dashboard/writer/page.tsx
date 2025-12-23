@@ -855,8 +855,8 @@ export default function WriterPage() {
                         [&_strong]:text-white [&_strong]:font-bold
                         [&_em]:text-white
                         [&_a]:text-orange-400 [&_a]:no-underline hover:[&_a]:text-orange-300 hover:[&_a]:underline
-                        [&_blockquote]:text-gray-300 [&_blockquote]:border-l-4 [&_blockquote]:border-orange-500 [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:my-6
-                        [&_code]:text-orange-400 [&_code]:bg-gray-800 [&_code]:px-2 [&_code]:py-1 [&_code]:rounded
+                        [&_blockquote]:border-l-4 [&_blockquote]:border-orange-500 [&_blockquote]:bg-gray-800/50 [&_blockquote]:rounded-r-lg [&_blockquote]:py-4 [&_blockquote]:px-6 [&_blockquote]:my-8 [&_blockquote]:text-white
+                        [&_code]:bg-gray-800 [&_code]:px-2 [&_code]:py-1 [&_code]:rounded [&_code]:text-orange-400
                         [&_pre]:bg-gray-800 [&_pre]:rounded-xl [&_pre]:p-6
                         [&_img]:rounded-xl [&_img]:shadow-2xl [&_img]:my-10
                         [&_table]:w-full [&_th]:text-white [&_th]:bg-gray-800/50 [&_th]:p-3 [&_td]:text-white [&_td]:p-3 [&_td]:border-gray-700"
