@@ -127,6 +127,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: queueError.message }, { status: 500 });
     }
 
+    // Trigger affiliate opportunity discovery in the background (non-blocking)
+    if (queueItem) {
+      try {
+        console.log('Triggering affiliate opportunity discovery...');
+        
+        // Get project_id from topic
+        const { data: topicWithProject } = await supabase
+          .from('writgo_topics')
+          .select('id')
+          .eq('id', topicId)
+          .single();
+        
+        // For now, we'll use a default project or skip if no project context
+        // In a real scenario, you might want to link topics to projects
+        if (topicWithProject) {
+          await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('/rest/v1', '')}/api/affiliate/discover`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              project_id: topic.id, // Using topic id as project for now
+              article_id: queueItem.id,
+              content: article.content,
+              auto_research: true,
+            }),
+          }).catch(err => {
+            console.error('Affiliate discovery failed (non-blocking):', err);
+          });
+        }
+      } catch (discoveryError) {
+        // Don't fail the article generation if affiliate discovery fails
+        console.error('Affiliate discovery error (non-blocking):', discoveryError);
+      }
+    }
+
     // Update opportunity status if provided
     if (opportunityId) {
       await supabase

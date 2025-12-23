@@ -150,6 +150,45 @@ Schrijf nu het volledige artikel:`;
       throw insertError;
     }
 
+    // Trigger affiliate opportunity discovery in the background (non-blocking)
+    if (article) {
+      try {
+        console.log('Triggering affiliate opportunity discovery...');
+        
+        // For this route, we don't have a direct project_id, so we'll need to derive it
+        // or skip affiliate discovery. For now, we'll add it as optional.
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Get user's first project as a fallback
+          const { data: projects } = await supabase
+            .from('projects')
+            .select('id')
+            .eq('user_id', user.id)
+            .limit(1);
+          
+          if (projects && projects.length > 0) {
+            await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('/rest/v1', '')}/api/affiliate/discover`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                project_id: projects[0].id,
+                article_id: article.id,
+                content: cleanedContent,
+                auto_research: true,
+              }),
+            }).catch(err => {
+              console.error('Affiliate discovery failed (non-blocking):', err);
+            });
+          }
+        }
+      } catch (discoveryError) {
+        // Don't fail the article generation if affiliate discovery fails
+        console.error('Affiliate discovery error (non-blocking):', discoveryError);
+      }
+    }
+
     // Log activity
     await supabase.from('writgo_activity_logs').insert({
       action_type: 'content_generated',

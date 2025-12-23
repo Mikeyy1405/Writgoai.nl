@@ -427,7 +427,7 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
     // Also save to articles table for library (only if we have a project_id)
     if (projectId) {
       try {
-        const { error: articleError } = await supabaseAdmin
+        const { data: article, error: articleError } = await supabaseAdmin
           .from('articles')
           .insert({
             project_id: projectId,
@@ -440,12 +440,41 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
             meta_title: title,
             meta_description: metaDescription,
             word_count: wordCountActual,
-          });
+          })
+          .select()
+          .single();
         
         if (articleError) {
           console.error('Failed to save to articles table:', articleError);
         } else {
           console.log('Article saved to library');
+          
+          // Trigger affiliate opportunity discovery in the background
+          if (article) {
+            try {
+              console.log('Triggering affiliate opportunity discovery...');
+              
+              // Call the discover API endpoint
+              await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('/rest/v1', '')}/api/affiliate/discover`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+                },
+                body: JSON.stringify({
+                  project_id: projectId,
+                  article_id: article.id,
+                  content: fullContent,
+                  auto_research: true,
+                }),
+              }).catch(err => {
+                console.error('Affiliate discovery failed (non-blocking):', err);
+              });
+            } catch (discoveryError) {
+              // Don't fail the article generation if affiliate discovery fails
+              console.error('Affiliate discovery error (non-blocking):', discoveryError);
+            }
+          }
         }
       } catch (e) {
         console.error('Error saving to articles:', e);
