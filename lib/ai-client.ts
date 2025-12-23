@@ -243,7 +243,7 @@ export async function analyzeWithPerplexity(prompt: string): Promise<string> {
       messages: [
         {
           role: 'system',
-          content: 'Je bent een expert in het analyseren van websites en het bepalen van hun niche, doelgroep en branche. Je hebt toegang tot het internet en kunt websites live bekijken en analyseren. Geef altijd accurate, specifieke informatie gebaseerd op wat je daadwerkelijk op de website ziet.',
+          content: 'Je bent een expert in het analyseren van websites en het identificeren van hun niche op basis van PRODUCTEN, DIENSTEN en CONTENT. Je hebt toegang tot het internet en kunt websites live bekijken. Focus altijd op: (1) Welke producten worden verkocht, (2) Welke diensten worden aangeboden, (3) Waar gaat de content over. Geef specifieke niches zoals "Natuurlijke Haarverzorging", "Yoga", "Recepten" - NOOIT generieke termen zoals "E-commerce" of "Online Shop".',
         },
         {
           role: 'user',
