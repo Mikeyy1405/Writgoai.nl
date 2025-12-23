@@ -110,12 +110,31 @@ export async function POST(request: NextRequest) {
     // Track tested endpoints
     result.testedEndpoints = [];
 
+    // Pre-flight: Try to parse and validate the URL
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(wpUrl);
+      console.log(`✓ URL is valid: ${sanitizeUrl(wpUrl)}`);
+      console.log(`  Protocol: ${parsedUrl.protocol}`);
+      console.log(`  Hostname: ${parsedUrl.hostname}`);
+      console.log(`  Port: ${parsedUrl.port || 'default'}`);
+    } catch (urlError: any) {
+      result.checks.siteReachable = {
+        passed: false,
+        message: 'WordPress URL is ongeldig',
+        details: `URL parsing failed: ${urlError.message}`,
+      };
+      console.error('✗ Invalid URL:', urlError.message);
+      return NextResponse.json(result);
+    }
+
     // Test 1: Check if site is reachable
     console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
+      console.log(`Attempting HEAD request to ${sanitizeUrl(wpUrl)}...`);
       const siteResponse = await fetch(wpUrl, {
         method: 'HEAD',
         headers: {
@@ -142,17 +161,78 @@ export async function POST(request: NextRequest) {
         console.log(`✗ Site returned: ${siteResponse.status} ${siteResponse.statusText}`);
       }
     } catch (error: any) {
+      // Enhanced error diagnostics
+      const errorInfo = {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        cause: error.cause?.message || error.cause?.code,
+        errno: error.errno,
+        syscall: error.syscall,
+      };
+
+      console.error('✗ Site not reachable:', error.message);
+      console.error('Error details:', JSON.stringify(errorInfo, null, 2));
+
+      // Provide specific error messages based on error type
+      let userMessage = 'Kan WordPress site niet bereiken';
+      let troubleshooting: string[] = [];
+
+      if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
+        userMessage = 'DNS resolutie mislukt - domein kan niet worden gevonden';
+        troubleshooting = [
+          'Controleer of de WordPress URL correct is gespeld',
+          'Controleer of het domein actief is en DNS records correct zijn ingesteld',
+          'Test de URL in een browser op een ander apparaat',
+          `Probeer: ping ${parsedUrl.hostname}`,
+        ];
+      } else if (error.code === 'ECONNREFUSED') {
+        userMessage = 'Verbinding geweigerd - server accepteert geen verbindingen';
+        troubleshooting = [
+          'Controleer of de WordPress site online is',
+          'Mogelijk blokkeert een firewall de verbinding',
+          'Controleer of de juiste poort wordt gebruikt (443 voor HTTPS, 80 voor HTTP)',
+        ];
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') {
+        userMessage = 'Timeout - server reageert niet tijdig';
+        troubleshooting = [
+          'De hosting server reageert te langzaam',
+          'Mogelijk is er een netwerk probleem',
+          'Probeer het over enkele minuten opnieuw',
+        ];
+      } else if (error.name === 'AbortError') {
+        userMessage = 'Request timeout (15 seconden)';
+        troubleshooting = [
+          'De WordPress server reageert niet binnen 15 seconden',
+          'Controleer de snelheid van je hosting',
+          'Test de site in een browser - laadt deze snel?',
+        ];
+      } else if (error.message?.includes('SSL') || error.message?.includes('certificate')) {
+        userMessage = 'SSL/TLS certificaat probleem';
+        troubleshooting = [
+          'Controleer of je WordPress site een geldig SSL certificaat heeft',
+          'Test de URL in een browser - krijg je een certificaat waarschuwing?',
+          'Mogelijk is het certificaat verlopen of ongeldig',
+        ];
+      } else if (error.cause?.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || error.cause?.code === 'CERT_HAS_EXPIRED') {
+        userMessage = `SSL certificaat fout: ${error.cause.code}`;
+        troubleshooting = [
+          'Het SSL certificaat van je WordPress site is ongeldig of verlopen',
+          'Controleer het certificaat via je hosting provider',
+          'Test de URL op https://www.ssllabs.com/ssltest/',
+        ];
+      }
+
       result.checks.siteReachable = {
         passed: false,
-        message: 'Kan WordPress site niet bereiken',
-        details: `${error.message}${error.cause ? ` (Cause: ${error.cause.message})` : ''}`,
+        message: userMessage,
+        details: `${error.message}${error.cause ? ` (${error.cause.message || error.cause.code})` : ''} | Code: ${error.code || 'N/A'}`,
       };
-      console.error('✗ Site not reachable:', error.message);
-      console.error('Error details:', {
-        name: error.name,
-        code: error.code,
-        cause: error.cause?.message,
-      });
+
+      // Add troubleshooting to result if available
+      if (troubleshooting.length > 0) {
+        result.checks.siteReachable.details += `\n\nTroubleshooting:\n${troubleshooting.map((tip, i) => `${i + 1}. ${tip}`).join('\n')}`;
+      }
 
       // If site is not reachable, no point in checking further
       return NextResponse.json(result);
