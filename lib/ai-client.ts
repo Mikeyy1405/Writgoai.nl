@@ -21,6 +21,8 @@ export const aimlClient = openaiClient;
 export const anthropicClient = openaiClient;
 
 // Best models for each task
+// NOTE: Currently all tasks use the same model, but these constants provide
+// semantic clarity and make it easy to use different models in the future
 export const BEST_MODELS = {
   CONTENT: 'anthropic/claude-sonnet-4.5',      // Best content writing (Anthropic via AIML)
   TECHNICAL: 'anthropic/claude-sonnet-4.5',    // Best coding (Anthropic via AIML)

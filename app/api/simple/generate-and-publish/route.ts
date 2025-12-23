@@ -42,6 +42,10 @@ Begin met een intro paragraaf, gebruik <h2> voor secties, <p> voor tekst.`;
       max_tokens: 8000,
       messages: [
         {
+          role: 'system',
+          content: 'Je bent een Nederlandse SEO content schrijver. Schrijf professionele, SEO-geoptimaliseerde artikelen in het Nederlands.',
+        },
+        {
           role: 'user',
           content: prompt,
         },
