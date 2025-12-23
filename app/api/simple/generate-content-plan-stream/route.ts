@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
+import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -172,9 +173,9 @@ async function getDataForSEOKeywords(
 async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: string; languageName: string }> {
   try {
     // Try to fetch the website and detect language from HTML
-    const response = await fetch(websiteUrl, {
+    const response = await fetchWithDnsFallback(websiteUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
-      signal: AbortSignal.timeout(10000),
+      timeout: 15000,
     });
     
     if (response.ok) {

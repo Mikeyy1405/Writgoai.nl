@@ -3,6 +3,7 @@ import { generateAICompletion, analyzeWithPerplexityJSON } from '@/lib/ai-client
 import { createClient as createServerClient } from '@/lib/supabase-server';
 import { createClient } from '@supabase/supabase-js';
 import { getRelatedKeywords } from '@/lib/dataforseo-client';
+import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -96,9 +97,9 @@ const LANGUAGE_CONFIG: Record<string, {
 // Detect website language
 async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: string; languageName: string }> {
   try {
-    const response = await fetch(websiteUrl, {
+    const response = await fetchWithDnsFallback(websiteUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
-      signal: AbortSignal.timeout(10000),
+      timeout: 15000,
     });
     
     if (response.ok) {
@@ -388,9 +389,9 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
     };
     
     try {
-      const response = await fetch(websiteUrl, {
+      const response = await fetchWithDnsFallback(websiteUrl, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
-        signal: AbortSignal.timeout(15000),
+        timeout: 15000,
       });
       
       if (response.ok) {
