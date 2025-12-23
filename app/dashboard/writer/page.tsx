@@ -29,6 +29,7 @@ interface ArticleJob {
   meta_description?: string;
   error?: string;
   created_at: string;
+  article_id?: string; // ID of article saved in database
 }
 
 interface Project {
@@ -37,7 +38,7 @@ interface Project {
   website_url: string;
   wp_url?: string;
   wp_username?: string;
-  wp_password?: string;
+  wp_password?: string; // Note: Only used for WordPress API calls, never displayed
 }
 
 interface ChatMessage {
@@ -47,6 +48,9 @@ interface ChatMessage {
 }
 
 type GenerationMode = 'background' | 'streaming';
+
+// Constants
+const WRITGO_DOMAIN = 'writgo.nl';
 
 export default function WriterPage() {
   const router = useRouter();
@@ -402,7 +406,7 @@ export default function WriterPage() {
   // Helper functions for publishing logic
   function isWritGoBlog(project: Project | null): boolean {
     if (!project) return false;
-    return project.website_url.toLowerCase().includes('writgo.nl');
+    return project.website_url.toLowerCase().includes(WRITGO_DOMAIN);
   }
 
   function isWordPressConfigured(project: Project | null): boolean {
@@ -413,7 +417,7 @@ export default function WriterPage() {
   async function publishToWordPress() {
     // Handle both streaming and background generation modes
     const hasContent = !!(fullContent || streamedContent || currentJob?.article_content);
-    const articleIdToPublish = articleId || (currentJob as any)?.article_id;
+    const articleIdToPublish = articleId || currentJob?.article_id;
     
     if (!hasContent || !project) {
       alert('Geen artikel of project beschikbaar');
