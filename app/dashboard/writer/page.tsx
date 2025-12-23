@@ -717,10 +717,10 @@ export default function WriterPage() {
 
             {/* Streaming Content Display */}
             {(streaming || fullContent) && generationMode === 'streaming' && (
-              <div className="bg-white rounded-xl overflow-hidden shadow-xl">
+              <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl">
                 <div
                   ref={contentRef}
-                  className="p-8 overflow-y-auto"
+                  className="p-8 overflow-y-auto bg-gray-900"
                   style={{ maxHeight: '70vh', minHeight: '500px' }}
                 >
                   {/* 
@@ -730,7 +730,10 @@ export default function WriterPage() {
                     For additional security, consider using DOMPurify in production.
                   */}
                   <div
-                    className="prose prose-lg max-w-none"
+                    className="prose prose-invert prose-lg max-w-none text-white
+                               [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white
+                               [&_p]:text-gray-100 [&_li]:text-gray-100
+                               [&_strong]:text-white [&_a]:text-orange-400"
                     dangerouslySetInnerHTML={{ __html: streaming ? streamedContent : fullContent }}
                   />
                   {streaming && (
@@ -740,7 +743,7 @@ export default function WriterPage() {
 
                 {/* Action Buttons */}
                 {!streaming && fullContent && (
-                  <div className="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                  <div className="bg-gray-800 border-t border-gray-700 px-6 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap gap-2">
                         <button
