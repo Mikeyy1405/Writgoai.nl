@@ -74,7 +74,8 @@ export async function fetchWithDnsFallback(
 
     clearTimeout(timeoutId);
     agent.destroy();
-    return response;
+    // Cast undici Response to standard Response type - they're compatible for our use case
+    return response as unknown as Response;
   } catch (error: any) {
     clearTimeout(timeoutId);
     agent.destroy();
