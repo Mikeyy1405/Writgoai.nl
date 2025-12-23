@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
-import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader } from '@/lib/wordpress-endpoints';
+import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'WritgoAI/1.0 (Next.js)',
+          'User-Agent': WORDPRESS_USER_AGENT,
         },
         signal: controller2.signal,
       });
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'WritgoAI/1.0 (Next.js)',
+          'User-Agent': WORDPRESS_USER_AGENT,
         },
         signal: controller3.signal,
       });
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
-          'User-Agent': 'WritgoAI/1.0 (Next.js)',
+          'User-Agent': WORDPRESS_USER_AGENT,
         },
         signal: controller4.signal,
       });
@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
-          'User-Agent': 'WritgoAI/1.0 (Next.js)',
+          'User-Agent': WORDPRESS_USER_AGENT,
         },
         signal: controller5.signal,
       });

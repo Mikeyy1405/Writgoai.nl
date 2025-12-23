@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, getPostsEndpoint, getMediaEndpoint, buildWordPressUrl } from '@/lib/wordpress-endpoints';
+import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, getPostsEndpoint, getMediaEndpoint, buildWordPressUrl, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
 import { sanitizeUrl } from '@/lib/wordpress-errors';
 
 // Force dynamic rendering for this API route
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': authHeader,
-            'User-Agent': 'WritGo-SEO-Agent/2.0',
+            'User-Agent': WORDPRESS_USER_AGENT,
           },
           body: JSON.stringify({
             title: articleTitle,
@@ -315,7 +315,7 @@ async function uploadFeaturedImage(
           'Authorization': authHeader,
           'Content-Type': contentType,
           'Content-Disposition': `attachment; filename="featured-${postId}.${extension}"`,
-          'User-Agent': 'WritGo-SEO-Agent/2.0',
+          'User-Agent': WORDPRESS_USER_AGENT,
         },
         body: imageBuffer,
       },
@@ -335,7 +335,7 @@ async function uploadFeaturedImage(
           headers: {
             'Content-Type': 'application/json',
             'Authorization': authHeader,
-            'User-Agent': 'WritGo-SEO-Agent/2.0',
+            'User-Agent': WORDPRESS_USER_AGENT,
           },
           body: JSON.stringify({
             featured_media: media.id,
@@ -398,7 +398,7 @@ export async function GET(request: Request) {
         {
           headers: {
             'Authorization': authHeader,
-            'User-Agent': 'WritGo-SEO-Agent/2.0',
+            'User-Agent': WORDPRESS_USER_AGENT,
           },
         },
         TEST_TIMEOUT,

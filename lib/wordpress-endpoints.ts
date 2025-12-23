@@ -202,3 +202,9 @@ export function buildAuthHeader(username: string, password: string): string {
   const cleanPassword = password.replace(/\s+/g, '');
   return 'Basic ' + Buffer.from(`${username}:${cleanPassword}`).toString('base64');
 }
+
+/**
+ * Standard User-Agent header for WordPress API requests
+ * Uses a browser-like User-Agent to avoid being blocked by security plugins
+ */
+export const WORDPRESS_USER_AGENT = 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)';
