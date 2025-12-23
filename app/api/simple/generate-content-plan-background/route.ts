@@ -420,7 +420,7 @@ Output als JSON:
     });
 
     // Step 3: Generate pillar topics if needed
-    if (nicheData.pillarTopics.length < 5) {
+    if (!nicheData.pillarTopics || nicheData.pillarTopics.length < 5) {
       await updateJob(jobId, { progress: 30, current_step: '📊 Pillar topics genereren...' });
 
       try {
@@ -440,14 +440,29 @@ Output als JSON array:
 
         const jsonMatch = topicsResponse.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
-          nicheData.pillarTopics = JSON.parse(jsonMatch[0]);
+          const parsedTopics = JSON.parse(jsonMatch[0]);
+          if (parsedTopics && parsedTopics.length > 0) {
+            nicheData.pillarTopics = parsedTopics;
+          }
         }
       } catch (e) {
         console.warn('Topics generation failed:', e);
       }
+
+      // Fallback: generate default topics if still empty
+      if (!nicheData.pillarTopics || nicheData.pillarTopics.length === 0) {
+        console.log('Using fallback pillar topics for:', nicheData.niche);
+        nicheData.pillarTopics = [
+          { topic: `${nicheData.niche} Basis`, estimatedArticles: 30, subtopics: ['introductie', 'beginnen', 'tips'] },
+          { topic: `${nicheData.niche} Gids`, estimatedArticles: 30, subtopics: ['handleiding', 'stappenplan', 'voorbeelden'] },
+          { topic: `${nicheData.niche} Tips`, estimatedArticles: 30, subtopics: ['beste praktijken', 'fouten vermijden', 'optimaliseren'] },
+          { topic: `${nicheData.niche} Vergelijkingen`, estimatedArticles: 20, subtopics: ['alternatieven', 'reviews', 'keuzes'] },
+          { topic: `${nicheData.niche} FAQ`, estimatedArticles: 20, subtopics: ['veelgestelde vragen', 'problemen', 'oplossingen'] },
+        ];
+      }
     }
 
-    await updateJob(jobId, { progress: 35, current_step: `✅ ${nicheData.pillarTopics.length} pillar topics` });
+    await updateJob(jobId, { progress: 35, current_step: `✅ ${nicheData.pillarTopics?.length || 0} pillar topics` });
 
     // Step 4: Generate content clusters
     await updateJob(jobId, { progress: 38, current_step: '📝 Content clusters voorbereiden...' });

@@ -1,9 +1,16 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// Admin client for fetching articles (bypasses RLS)
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET() {
   try {
@@ -16,13 +23,36 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's articles with project info
-    const { data: articles, error: dbError } = await supabase
+    // First get user's projects (using Project table with clientId)
+    // The clientId in Project table links to Client.id, and Client.email matches user.email
+    const { data: client } = await supabaseAdmin
+      .from('Client')
+      .select('id')
+      .eq('email', user.email)
+      .single();
+
+    if (!client) {
+      // No client found, return empty
+      return NextResponse.json({ articles: [] });
+    }
+
+    // Get projects for this client
+    const { data: userProjects } = await supabaseAdmin
+      .from('Project')
+      .select('id, name, websiteUrl')
+      .eq('clientId', client.id);
+
+    const userProjectIds = userProjects?.map(p => p.id) || [];
+
+    if (userProjectIds.length === 0) {
+      return NextResponse.json({ articles: [] });
+    }
+
+    // Get articles for user's projects
+    const { data: articles, error: dbError } = await supabaseAdmin
       .from('articles')
-      .select(`
-        *,
-        project:projects(id, name, website_url)
-      `)
+      .select('*')
+      .in('project_id', userProjectIds)
       .order('created_at', { ascending: false });
 
     if (dbError) {
@@ -33,16 +63,20 @@ export async function GET() {
       );
     }
 
-    // Filter articles that belong to user's projects
-    const userProjects = await supabase
-      .from('projects')
-      .select('id')
-      .eq('user_id', user.id);
+    // Add project info to articles
+    const articlesWithProject = (articles || []).map(article => {
+      const project = userProjects?.find(p => p.id === article.project_id);
+      return {
+        ...article,
+        project: project ? {
+          id: project.id,
+          name: project.name,
+          website_url: project.websiteUrl
+        } : null
+      };
+    });
 
-    const userProjectIds = userProjects.data?.map(p => p.id) || [];
-    const filteredArticles = articles?.filter(a => userProjectIds.includes(a.project_id)) || [];
-
-    return NextResponse.json({ articles: filteredArticles });
+    return NextResponse.json({ articles: articlesWithProject });
   } catch (error) {
     console.error('Error fetching articles:', error);
     return NextResponse.json(
