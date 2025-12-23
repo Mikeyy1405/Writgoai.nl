@@ -19,7 +19,7 @@ interface ContentIdea {
 
 interface JobData {
   id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   progress: number;
   current_step: string;
   niche?: string;
