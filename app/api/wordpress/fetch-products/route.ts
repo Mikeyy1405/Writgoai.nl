@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
-import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader } from '@/lib/wordpress-endpoints';
+import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader, getWordPressEndpoint } from '@/lib/wordpress-endpoints';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     const authHeader = buildAuthHeader(username, password);
 
     // First, test if WooCommerce API is available
-    const wooApiTestUrl = `${wpUrl}${WORDPRESS_ENDPOINTS.woocommerce.base}/`;
+    const wooApiTestUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.woocommerce.base);
     console.log(`Testing WooCommerce API availability at: ${sanitizeUrl(wooApiTestUrl)}`);
     try {
       const apiTestController = new AbortController();

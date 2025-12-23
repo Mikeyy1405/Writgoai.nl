@@ -35,11 +35,11 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
     setWarning('');
 
     try {
-      // Build the WordPress API URL
-      let wpUrl = formData.website_url.trim();
-      if (wpUrl.endsWith('/')) wpUrl = wpUrl.slice(0, -1);
-      wpUrl = wpUrl.replace(/\/wp-json.*$/, '');
-      const apiUrl = `${wpUrl}/wp-json/wp/v2/posts?per_page=1`;
+      // Build the WordPress API URL - normalize to base URL only
+      let baseUrl = formData.website_url.trim();
+      if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+      baseUrl = baseUrl.replace(/\/wp-json.*$/, '');
+      const apiUrl = `${baseUrl}/wp-json/wp/v2/posts?per_page=1`;
 
       // Clean the password (remove spaces from Application Password)
       const cleanPassword = formData.wp_password.replace(/\s+/g, '');
