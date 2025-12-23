@@ -30,10 +30,11 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    // Mask sensitive data
+    // Mask sensitive data but keep custom_links visible
     const maskedAffiliates = affiliates?.map(a => ({
       ...a,
       client_secret: a.client_secret ? '••••••••' : null,
+      // Keep custom_links as-is for display
     }));
 
     return NextResponse.json({

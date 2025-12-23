@@ -50,6 +50,8 @@ export default function ProjectSettingsModal({
     client_secret: '',
     is_active: true,
   });
+  const [customAffiliateLinks, setCustomAffiliateLinks] = useState('');
+  const [savingCustomLinks, setSavingCustomLinks] = useState(false);
 
   // Knowledge base state
   const [knowledgeEntries, setKnowledgeEntries] = useState<KnowledgeBaseEntry[]>([]);
@@ -85,6 +87,12 @@ export default function ProjectSettingsModal({
             client_secret: bol.client_secret || '',
             is_active: bol.is_active,
           });
+        }
+        // Find custom links
+        const custom = data.affiliates.find((a: Affiliate) => a.platform === 'custom');
+        if (custom && custom.custom_links) {
+          // custom_links is stored as text in the database
+          setCustomAffiliateLinks(typeof custom.custom_links === 'string' ? custom.custom_links : JSON.stringify(custom.custom_links, null, 2));
         }
       }
     } catch (err) {
@@ -134,6 +142,37 @@ export default function ProjectSettingsModal({
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveCustomAffiliateLinks = async () => {
+    setSavingCustomLinks(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch('/api/project/affiliates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          platform: 'custom',
+          custom_links: customAffiliateLinks,
+          is_active: true,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess('Eigen affiliate links opgeslagen!');
+        loadAffiliates();
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingCustomLinks(false);
     }
   };
 
@@ -350,7 +389,54 @@ export default function ProjectSettingsModal({
                 </div>
               </div>
 
-              {/* Other affiliate platforms can be added here */}
+              {/* Custom Affiliate Links Section */}
+              <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-2xl">🔗</span>
+                  <h3 className="text-lg font-semibold text-white">Eigen Affiliate Links</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 text-sm">
+                    <strong>💡 Hoe werkt dit?</strong>
+                    <p className="mt-2 text-blue-200">
+                      Voeg hier je eigen affiliate links toe. De AI zal deze automatisch in relevante content verwerken.
+                      Gebruik het volgende formaat (één link per regel):
+                    </p>
+                    <pre className="mt-2 p-2 bg-gray-900/50 rounded text-xs text-gray-300 overflow-x-auto">
+Product/Dienst naam | URL | Korte beschrijving
+Bijvoorbeeld:
+Hosting Provider | https://example.com/ref=123 | Beste hosting voor WordPress
+VPN Service | https://vpn.example.com/aff/456 | Snelle en veilige VPN</pre>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-300 mb-2 font-medium">
+                      Affiliate Links
+                    </label>
+                    <textarea
+                      value={customAffiliateLinks}
+                      onChange={(e) => setCustomAffiliateLinks(e.target.value)}
+                      rows={10}
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded text-white font-mono text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Product naam | https://affiliate-link.com | Beschrijving&#10;Nog een product | https://andere-link.com | Beschrijving"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Formaat: Naam | URL | Beschrijving (één per regel)
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={saveCustomAffiliateLinks}
+                    disabled={savingCustomLinks}
+                    className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 disabled:opacity-50 transition-all"
+                  >
+                    {savingCustomLinks ? 'Opslaan...' : 'Eigen Links Opslaan'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Other affiliate platforms placeholder */}
               <div className="bg-gray-800/30 rounded-lg p-6 border border-gray-700/50 border-dashed">
                 <p className="text-gray-500 text-center">
                   Meer affiliate platforms komen binnenkort (Amazon, Coolblue, etc.)

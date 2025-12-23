@@ -45,16 +45,23 @@ export interface AffiliateConfig {
   isActive: boolean;
 }
 
+export interface CustomAffiliateLink {
+  name: string;
+  url: string;
+  description: string;
+}
+
 /**
  * Get full project context for content generation
  */
-export async function getProjectContext(projectId: string): Promise<ProjectContext> {
-  const [knowledgeBase, internalLinks, externalLinks, affiliateConfig, customInstructions] = await Promise.all([
+export async function getProjectContext(projectId: string): Promise<ProjectContext & { customAffiliateLinks: CustomAffiliateLink[] }> {
+  const [knowledgeBase, internalLinks, externalLinks, affiliateConfig, customInstructions, customAffiliateLinks] = await Promise.all([
     getKnowledgeBaseContext(projectId),
     getInternalLinks(projectId),
     getExternalLinks(projectId),
     getAffiliateConfig(projectId),
     getCustomInstructions(projectId),
+    getCustomAffiliateLinks(projectId),
   ]);
 
   return {
@@ -63,6 +70,7 @@ export async function getProjectContext(projectId: string): Promise<ProjectConte
     externalLinks,
     affiliateConfig,
     customInstructions,
+    customAffiliateLinks,
   };
 }
 
@@ -207,6 +215,44 @@ async function getAffiliateConfig(projectId: string): Promise<AffiliateConfig | 
 }
 
 /**
+ * Get custom affiliate links for the project
+ */
+async function getCustomAffiliateLinks(projectId: string): Promise<CustomAffiliateLink[]> {
+  const { data: affiliate } = await supabaseAdmin
+    .from('project_affiliates')
+    .select('custom_links')
+    .eq('project_id', projectId)
+    .eq('platform', 'custom')
+    .eq('is_active', true)
+    .single();
+
+  if (!affiliate?.custom_links) {
+    return [];
+  }
+
+  // Parse custom_links - it's stored as text in format: "Name | URL | Description" per line
+  const linksText = typeof affiliate.custom_links === 'string' 
+    ? affiliate.custom_links 
+    : '';
+
+  const links: CustomAffiliateLink[] = [];
+  const lines = linksText.split('\n').filter((line: string) => line.trim());
+
+  for (const line of lines) {
+    const parts = line.split('|').map((p: string) => p.trim());
+    if (parts.length >= 2) {
+      links.push({
+        name: parts[0] || '',
+        url: parts[1] || '',
+        description: parts[2] || '',
+      });
+    }
+  }
+
+  return links;
+}
+
+/**
  * Get custom instructions from project settings
  */
 async function getCustomInstructions(projectId: string): Promise<string> {
@@ -312,9 +358,33 @@ export function formatAffiliateInstructions(config: AffiliateConfig | null): str
 }
 
 /**
+ * Format custom affiliate links for AI prompt
+ */
+export function formatCustomAffiliateLinks(links: CustomAffiliateLink[]): string {
+  if (links.length === 0) {
+    return '';
+  }
+
+  const linkList = links.map(link => 
+    `- ${link.name}: ${link.url}${link.description ? ` - ${link.description}` : ''}`
+  ).join('\n');
+
+  return `
+## Eigen Affiliate Links (voeg deze toe waar relevant):
+${linkList}
+
+Instructies voor affiliate links:
+- Voeg deze links toe wanneer je producten of diensten noemt die hierbij passen
+- Gebruik de productnaam als anchor tekst
+- Maak de link natuurlijk onderdeel van de tekst
+- Gebruik HTML: <a href="URL" target="_blank" rel="noopener">productnaam</a>
+`;
+}
+
+/**
  * Build complete context prompt for content generation
  */
-export function buildContextPrompt(context: ProjectContext): string {
+export function buildContextPrompt(context: ProjectContext & { customAffiliateLinks?: CustomAffiliateLink[] }): string {
   const parts: string[] = [];
 
   if (context.customInstructions) {
@@ -335,6 +405,10 @@ export function buildContextPrompt(context: ProjectContext): string {
 
   if (context.affiliateConfig) {
     parts.push(formatAffiliateInstructions(context.affiliateConfig));
+  }
+
+  if (context.customAffiliateLinks && context.customAffiliateLinks.length > 0) {
+    parts.push(formatCustomAffiliateLinks(context.customAffiliateLinks));
   }
 
   return parts.join('\n\n');
