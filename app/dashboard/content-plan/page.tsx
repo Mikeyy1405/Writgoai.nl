@@ -61,6 +61,8 @@ export default function ContentPlanPage() {
   // Track if user explicitly cancelled to prevent auto-resume
   const userCancelledRef = useRef(false);
   // Cooldown period after cancellation to allow backend to process the cancellation
+  // 5 seconds chosen to: (1) give backend time to receive DELETE request,
+  // (2) allow in-flight updateJob() calls to complete, (3) prevent immediate re-polling
   const CANCELLATION_COOLDOWN_MS = 5000;
   
   // Results state

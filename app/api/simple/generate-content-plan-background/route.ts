@@ -272,6 +272,9 @@ export async function DELETE(request: Request) {
 async function updateJob(jobId: string, updates: any) {
   // Check first if job is cancelled - if so, don't update
   // This prevents unnecessary database writes and log spam
+  // Note: Adds one SELECT per update (N+1 pattern), but necessary for correctness
+  // in concurrent environment. Trade-off: ~1-2 seconds total overhead over 5-minute
+  // generation vs preventing race conditions and status overwrites.
   const { data: currentJob } = await supabaseAdmin
     .from('content_plan_jobs')
     .select('status')
