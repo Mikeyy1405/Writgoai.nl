@@ -842,7 +842,24 @@ export default function WriterPage() {
                 <div className="p-6 max-h-[600px] overflow-y-auto">
                   {viewMode === 'preview' ? (
                     <div 
-                      className="prose prose-invert max-w-none"
+                      className="prose prose-lg prose-invert max-w-none
+                        [&_*]:text-white
+                        [&_h1]:text-white [&_h1]:text-4xl [&_h1]:font-bold [&_h1]:mt-8 [&_h1]:mb-4
+                        [&_h2]:text-white [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:mt-10 [&_h2]:mb-4
+                        [&_h3]:text-white [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:mt-8 [&_h3]:mb-3
+                        [&_h4]:text-white [&_h4]:text-xl [&_h4]:font-bold [&_h4]:mt-6 [&_h4]:mb-2
+                        [&_p]:text-white [&_p]:text-lg [&_p]:leading-relaxed [&_p]:mb-5
+                        [&_ul]:text-white [&_ul]:my-6 [&_ul]:list-disc [&_ul]:pl-6
+                        [&_ol]:text-white [&_ol]:my-6 [&_ol]:list-decimal [&_ol]:pl-6
+                        [&_li]:text-white [&_li]:text-lg [&_li]:leading-relaxed [&_li]:mb-2
+                        [&_strong]:text-white [&_strong]:font-bold
+                        [&_em]:text-white
+                        [&_a]:text-orange-400 [&_a]:no-underline hover:[&_a]:text-orange-300 hover:[&_a]:underline
+                        [&_blockquote]:text-gray-300 [&_blockquote]:border-l-4 [&_blockquote]:border-orange-500 [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:my-6
+                        [&_code]:text-orange-400 [&_code]:bg-gray-800 [&_code]:px-2 [&_code]:py-1 [&_code]:rounded
+                        [&_pre]:bg-gray-800 [&_pre]:rounded-xl [&_pre]:p-6
+                        [&_img]:rounded-xl [&_img]:shadow-2xl [&_img]:my-10
+                        [&_table]:w-full [&_th]:text-white [&_th]:bg-gray-800/50 [&_th]:p-3 [&_td]:text-white [&_td]:p-3 [&_td]:border-gray-700"
                       dangerouslySetInnerHTML={{ __html: currentJob.article_content }}
                     />
                   ) : (
