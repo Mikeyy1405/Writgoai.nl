@@ -320,6 +320,10 @@ export default function WriterPage() {
         const lines = chunk.split('\n');
 
         for (const line of lines) {
+          // Skip empty lines (SSE protocol requirement)
+          if (!line.trim()) continue;
+          
+          // Handle proper SSE format
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
@@ -345,7 +349,29 @@ export default function WriterPage() {
                 setStreaming(false);
               }
             } catch (e) {
-              console.error('Failed to parse SSE data:', e);
+              console.error('Failed to parse SSE data:', line.slice(0, 100), e);
+            }
+          } 
+          // Handle raw JSON (fallback)
+          else if (line.startsWith('{')) {
+            try {
+              const data = JSON.parse(line);
+              if (data.type === 'chunk' && data.content) {
+                accumulatedContent += data.content;
+                setStreamedContent(accumulatedContent);
+                
+                const currentWords = getWordCount(accumulatedContent);
+                const estimatedProgress = Math.min(95, (currentWords / wordCount) * 100);
+                setStreamProgress(Math.round(estimatedProgress));
+              } else if (data.type === 'complete') {
+                setFullContent(data.content);
+                setStreamWordCount(data.wordCount);
+                setArticleId(data.articleId);
+                setStreaming(false);
+                setStreamProgress(100);
+              }
+            } catch (e) {
+              console.error('Failed to parse raw JSON:', line.slice(0, 100), e);
             }
           }
         }
@@ -358,6 +384,11 @@ export default function WriterPage() {
         setStreamWordCount(getWordCount(streamedContent));
       } else {
         console.error('Streaming error:', error);
+        // Preserve partial content even on error
+        if (streamedContent) {
+          setFullContent(streamedContent);
+          setStreamWordCount(getWordCount(streamedContent));
+        }
         alert('Fout bij streamen: ' + error.message);
       }
       setStreaming(false);
