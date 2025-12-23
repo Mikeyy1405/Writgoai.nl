@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
     // Get project info
     const { data: project } = await supabaseAdmin
-      .from('Project')
+      .from('projects')
       .select('name, website_url')
       .eq('id', project_id)
       .single();

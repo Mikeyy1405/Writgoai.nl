@@ -109,13 +109,42 @@ class LateClient {
   }
 
   // Account Connection
-  // Returns the OAuth connect URL for a platform
-  // The apiKey is passed as a query param because this URL is opened in the browser
-  getConnectUrl(platform: string, profileId: string, redirectUrl?: string): string {
+  // Gets the OAuth connect URL for a platform from Late.dev API
+  async getConnectUrl(platform: string, profileId: string, redirectUrl?: string): Promise<string> {
     const params = new URLSearchParams({ profileId });
     if (redirectUrl) params.append('redirect_url', redirectUrl);
-    // API key must be passed as apiKey query param for browser redirects
-    return `${LATE_API_BASE}/connect/${platform}?${params.toString()}&apiKey=${this.apiKey}`;
+
+    const url = `${LATE_API_BASE}/connect/${platform}?${params.toString()}&apiKey=${this.apiKey}`;
+
+    console.log(`🔗 Fetching auth URL from Late.dev: ${url}`);
+
+    try {
+      // Make API request to get the authUrl
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Late.dev connect error: ${response.status} - ${error}`);
+      }
+
+      const data = await response.json();
+
+      console.log('✅ Late.dev connect response:', data);
+
+      if (data.authUrl) {
+        return data.authUrl;
+      } else {
+        throw new Error('No authUrl in Late.dev response');
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to get authUrl from Late.dev:', error);
+      throw error;
+    }
   }
 
   async listAccounts(profileId?: string): Promise<{ accounts: LateAccount[] }> {

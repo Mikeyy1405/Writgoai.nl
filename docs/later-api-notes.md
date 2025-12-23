@@ -53,9 +53,15 @@ POST /profiles
 
 ### Connect Social Account
 ```bash
-GET /connect/{platform}?profileId={profileId}
+GET /connect/{platform}?profileId={profileId}&redirect_url={redirectUrl}&apiKey={apiKey}
 ```
-Returns OAuth URL to authorize the account.
+Returns a JSON response with OAuth URL to authorize the account:
+```json
+{
+  "authUrl": "https://www.instagram.com/oauth/authorize?...",
+  "state": "..."
+}
+```
 
 Platforms: twitter, instagram, facebook, linkedin, tiktok, youtube, pinterest, reddit, bluesky, threads, google_business
 
