@@ -60,6 +60,8 @@ export default function ContentPlanPage() {
   
   // Track if user explicitly cancelled to prevent auto-resume
   const userCancelledRef = useRef(false);
+  // Cooldown period after cancellation to allow backend to process the cancellation
+  const CANCELLATION_COOLDOWN_MS = 5000;
   
   // Results state
   const [niche, setNiche] = useState('');
@@ -429,7 +431,7 @@ export default function ContentPlanPage() {
     // Reset flag after a delay
     setTimeout(() => {
       userCancelledRef.current = false;
-    }, 5000);
+    }, CANCELLATION_COOLDOWN_MS);
   };
 
   const loadMore = () => {

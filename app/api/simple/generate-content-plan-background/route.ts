@@ -271,6 +271,7 @@ export async function DELETE(request: Request) {
 // Update job in database
 async function updateJob(jobId: string, updates: any) {
   // Check first if job is cancelled - if so, don't update
+  // This prevents unnecessary database writes and log spam
   const { data: currentJob } = await supabaseAdmin
     .from('content_plan_jobs')
     .select('status')
@@ -286,7 +287,7 @@ async function updateJob(jobId: string, updates: any) {
     .from('content_plan_jobs')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', jobId)
-    .not('status', 'eq', 'cancelled'); // Extra safeguard
+    .not('status', 'eq', 'cancelled'); // Extra safeguard against race conditions
   
   if (error) {
     console.error('Failed to update job:', error);
