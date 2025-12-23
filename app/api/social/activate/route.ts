@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Activate social media for a project (create Late.dev profile)
+// Activate social media for a project (create or find Late.dev profile)
 export async function POST(request: Request) {
   try {
     const supabase = await createServerClient();
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Check if profile already exists
+    // Check if profile already exists in our database
     const { data: existingProfile } = await supabaseAdmin
       .from('social_profiles')
       .select('*')
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
     // Get project info
     const { data: project } = await supabaseAdmin
-      .from('projects')
+      .from('Project')
       .select('name, website_url')
       .eq('id', project_id)
       .single();
@@ -61,11 +61,52 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Create Late.dev profile
-    const lateProfile = await lateClient.createProfile(
-      project.name || `Project ${project_id}`,
-      `WritGo social media profile for ${project.website_url || project.name}`
-    );
+    const profileName = project.name || `Project ${project_id}`;
+    let lateProfileId: string | null = null;
+
+    // Try to create Late.dev profile, or find existing one
+    try {
+      const lateProfile = await lateClient.createProfile(
+        profileName,
+        `WritGo social media profile for ${project.website_url || project.name}`
+      );
+      lateProfileId = lateProfile._id;
+    } catch (createError: any) {
+      // If profile already exists, try to find it
+      if (createError.message?.includes('already exists')) {
+        console.log('Profile already exists in Late.dev, searching for it...');
+        
+        try {
+          const { profiles } = await lateClient.listProfiles();
+          const existingLateProfile = profiles.find(p => p.name === profileName);
+          
+          if (existingLateProfile) {
+            lateProfileId = existingLateProfile._id;
+            console.log('Found existing Late.dev profile:', lateProfileId);
+          } else {
+            // Try with a unique name
+            const uniqueName = `${profileName} - ${project_id.slice(0, 8)}`;
+            const newProfile = await lateClient.createProfile(
+              uniqueName,
+              `WritGo social media profile for ${project.website_url || project.name}`
+            );
+            lateProfileId = newProfile._id;
+            console.log('Created Late.dev profile with unique name:', lateProfileId);
+          }
+        } catch (listError) {
+          console.error('Failed to list/create Late.dev profiles:', listError);
+          throw createError; // Re-throw original error
+        }
+      } else {
+        throw createError;
+      }
+    }
+
+    if (!lateProfileId) {
+      return NextResponse.json({ 
+        error: 'Failed to create or find Late.dev profile',
+      }, { status: 500 });
+    }
 
     // Save or update in our database
     let profileRecord;
@@ -75,7 +116,7 @@ export async function POST(request: Request) {
       const { data, error } = await supabaseAdmin
         .from('social_profiles')
         .update({ 
-          late_profile_id: lateProfile._id,
+          late_profile_id: lateProfileId,
           name: project.name,
         })
         .eq('id', existingProfile.id)
@@ -90,7 +131,7 @@ export async function POST(request: Request) {
         .from('social_profiles')
         .insert({
           project_id,
-          late_profile_id: lateProfile._id,
+          late_profile_id: lateProfileId,
           name: project.name,
         })
         .select()
@@ -104,7 +145,7 @@ export async function POST(request: Request) {
       success: true,
       message: 'Social media activated successfully',
       profile: profileRecord,
-      late_profile_id: lateProfile._id,
+      late_profile_id: lateProfileId,
     });
 
   } catch (error: any) {
