@@ -99,9 +99,12 @@ class LateClient {
   }
 
   // Account Connection
+  // Returns the OAuth connect URL for a platform
+  // The apiKey is passed as a query param because this URL is opened in the browser
   getConnectUrl(platform: string, profileId: string, redirectUrl?: string): string {
     const params = new URLSearchParams({ profileId });
-    if (redirectUrl) params.append('redirect', redirectUrl);
+    if (redirectUrl) params.append('redirect_url', redirectUrl);
+    // API key must be passed as apiKey query param for browser redirects
     return `${LATE_API_BASE}/connect/${platform}?${params.toString()}&apiKey=${this.apiKey}`;
   }
 
