@@ -64,41 +64,57 @@ export async function POST(request: Request) {
     const profileName = project.name || `Project ${project_id}`;
     let lateProfileId: string | null = null;
 
-    // Try to create Late.dev profile, or find existing one
+    // FIRST: Try to find existing profile before creating
     try {
-      const lateProfile = await lateClient.createProfile(
-        profileName,
-        `WritGo social media profile for ${project.website_url || project.name}`
-      );
-      lateProfileId = lateProfile._id;
-    } catch (createError: any) {
-      // If profile already exists, try to find it
-      if (createError.message?.includes('already exists')) {
-        console.log('Profile already exists in Late.dev, searching for it...');
-        
-        try {
-          const { profiles } = await lateClient.listProfiles();
-          const existingLateProfile = profiles.find(p => p.name === profileName);
+      console.log('Checking for existing Late.dev profiles...');
+      const { profiles } = await lateClient.listProfiles();
+      const existingLateProfile = profiles.find(p => p.name === profileName);
+      
+      if (existingLateProfile) {
+        lateProfileId = existingLateProfile._id;
+        console.log('✅ Found and syncing existing Late.dev profile:', lateProfileId);
+      }
+    } catch (listError) {
+      console.error('Failed to list Late.dev profiles:', listError);
+      // Continue to try creating if listing fails
+    }
+
+    // If no existing profile found, create a new one
+    if (!lateProfileId) {
+      try {
+        console.log('Creating new Late.dev profile:', profileName);
+        const lateProfile = await lateClient.createProfile(
+          profileName,
+          `WritGo social media profile for ${project.website_url || project.name}`
+        );
+        lateProfileId = lateProfile._id;
+        console.log('✅ Created new Late.dev profile:', lateProfileId);
+      } catch (createError: any) {
+        // If profile already exists (race condition), try to find it again
+        if (createError.message?.includes('already exists')) {
+          console.log('⚠️ Profile was created by another request, fetching it...');
           
-          if (existingLateProfile) {
-            lateProfileId = existingLateProfile._id;
-            console.log('Found existing Late.dev profile:', lateProfileId);
-          } else {
-            // Try with a unique name
-            const uniqueName = `${profileName} - ${project_id.slice(0, 8)}`;
-            const newProfile = await lateClient.createProfile(
-              uniqueName,
-              `WritGo social media profile for ${project.website_url || project.name}`
-            );
-            lateProfileId = newProfile._id;
-            console.log('Created Late.dev profile with unique name:', lateProfileId);
+          try {
+            const { profiles } = await lateClient.listProfiles();
+            const existingLateProfile = profiles.find(p => p.name === profileName);
+            
+            if (existingLateProfile) {
+              lateProfileId = existingLateProfile._id;
+              console.log('✅ Found profile after conflict:', lateProfileId);
+            } else {
+              return NextResponse.json({ 
+                error: 'Profile creation conflict. Please try again.',
+              }, { status: 409 });
+            }
+          } catch (secondListError) {
+            console.error('Failed to resolve profile conflict:', secondListError);
+            return NextResponse.json({ 
+              error: 'Unable to sync with Late.dev. Please try again or contact support.',
+            }, { status: 500 });
           }
-        } catch (listError) {
-          console.error('Failed to list/create Late.dev profiles:', listError);
-          throw createError; // Re-throw original error
+        } else {
+          throw createError;
         }
-      } else {
-        throw createError;
       }
     }
 

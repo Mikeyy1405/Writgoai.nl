@@ -103,9 +103,36 @@ Antwoord in JSON formaat:
 
     console.log('Analyzing website with Perplexity:', project.website_url);
     
-    const nicheAnalysis = await analyzeWithPerplexityJSON<NicheAnalysis>(nicheAnalysisPrompt);
+    // Retry logic for Perplexity analysis
+    let nicheAnalysis: NicheAnalysis | null = null;
+    let lastError: Error | null = null;
+    const maxRetries = 3;
     
-    console.log('Niche analysis result:', nicheAnalysis);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Attempt ${attempt}/${maxRetries} - Analyzing with Perplexity...`);
+        nicheAnalysis = await analyzeWithPerplexityJSON<NicheAnalysis>(nicheAnalysisPrompt);
+        console.log('✅ Niche analysis successful:', nicheAnalysis);
+        break; // Success - exit loop
+      } catch (error: any) {
+        lastError = error;
+        console.error(`❌ Attempt ${attempt}/${maxRetries} failed:`, error.message);
+        
+        if (attempt < maxRetries) {
+          // Wait before retry (exponential backoff)
+          const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+    
+    if (!nicheAnalysis) {
+      console.error('All Perplexity analysis attempts failed');
+      return NextResponse.json({ 
+        error: `Unable to analyze website after ${maxRetries} attempts. ${lastError?.message || 'Please try again later.'}`,
+      }, { status: 500 });
+    }
 
     // STEP 2: Generate strategy with Claude based on Perplexity analysis
     const strategyPrompt = `Je bent een social media strategie expert. Genereer een COMPLETE social media contentstrategie gebaseerd op deze website analyse:
@@ -181,13 +208,51 @@ BELANGRIJK:
 
 Antwoord ALLEEN met het JSON object.`;
 
-    const strategyData = await generateJSONCompletion<any>({
-      task: 'content',
-      systemPrompt: 'Je bent een social media strategie expert. Je antwoordt ALTIJD met pure, valid JSON zonder markdown code blocks.',
-      userPrompt: strategyPrompt,
-      maxTokens: 4000,
-      temperature: 0.6,
-    });
+    // Retry logic for strategy generation
+    let strategyData: any = null;
+    let lastStrategyError: Error | null = null;
+    const maxStrategyRetries = 3;
+    
+    for (let attempt = 1; attempt <= maxStrategyRetries; attempt++) {
+      try {
+        console.log(`Attempt ${attempt}/${maxStrategyRetries} - Generating strategy...`);
+        strategyData = await generateJSONCompletion<any>({
+          task: 'content',
+          systemPrompt: 'Je bent een social media strategie expert. Je antwoordt ALTIJD met pure, valid JSON zonder markdown code blocks.',
+          userPrompt: strategyPrompt,
+          maxTokens: 4000,
+          temperature: 0.6,
+        });
+        
+        // Validate required fields
+        if (!strategyData.content_pillars || !Array.isArray(strategyData.content_pillars)) {
+          throw new Error('Invalid strategy format: missing content_pillars');
+        }
+        if (!strategyData.weekly_schedule) {
+          throw new Error('Invalid strategy format: missing weekly_schedule');
+        }
+        
+        console.log('✅ Strategy generation successful');
+        break; // Success - exit loop
+      } catch (error: any) {
+        lastStrategyError = error;
+        console.error(`❌ Attempt ${attempt}/${maxStrategyRetries} failed:`, error.message);
+        
+        if (attempt < maxStrategyRetries) {
+          // Wait before retry (exponential backoff)
+          const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+    
+    if (!strategyData) {
+      console.error('All strategy generation attempts failed');
+      return NextResponse.json({ 
+        error: `Unable to generate strategy after ${maxStrategyRetries} attempts. ${lastStrategyError?.message || 'Please try again later.'}`,
+      }, { status: 500 });
+    }
 
     // Check if strategy exists for this project
     const { data: existingStrategy } = await supabaseAdmin
