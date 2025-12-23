@@ -90,12 +90,46 @@ export async function GET(request: Request) {
           .eq('id', socialProfile.id);
 
         socialProfile.late_profile_id = lateProfile._id;
-      } catch (createError) {
-        console.error('Failed to create Late profile:', createError);
-        return NextResponse.json({ 
-          error: 'Later.dev profile creation failed. You can still create posts manually.',
-          configured: false 
-        }, { status: 500 });
+        
+        console.log(`✅ Late.dev profile created: ${lateProfile._id}`);
+      } catch (createError: any) {
+        console.error('❌ Late.dev create failed:', createError.message);
+        
+        // Try to find existing profile by name
+        try {
+          const { profiles } = await lateClient.listProfiles();
+          const { data: project } = await supabaseAdmin
+            .from('projects')
+            .select('name')
+            .eq('id', projectId)
+            .single();
+            
+          const existing = profiles.find(
+            p => p.name.toLowerCase().includes((project?.name || '').toLowerCase())
+          );
+
+          if (existing) {
+            console.log(`Found existing profile: ${existing._id}`);
+            
+            await supabaseAdmin
+              .from('social_profiles')
+              .update({ late_profile_id: existing._id })
+              .eq('id', socialProfile.id);
+
+            socialProfile.late_profile_id = existing._id;
+          } else {
+            return NextResponse.json({ 
+              error: 'Could not create or find Late.dev profile',
+              manual_mode: true
+            }, { status: 500 });
+          }
+        } catch (listError) {
+          console.error('Failed to list profiles:', listError);
+          return NextResponse.json({ 
+            error: 'Late.dev connection failed',
+            manual_mode: true
+          }, { status: 500 });
+        }
       }
     }
 
@@ -119,64 +153,119 @@ export async function POST(request: Request) {
     const { project_id } = await request.json();
 
     if (!project_id) {
-      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
     }
 
     const lateClient = getLateClient();
     
     if (!lateClient.isConfigured()) {
       return NextResponse.json({ 
-        accounts: [],
         configured: false,
-        message: 'Later.dev API key not configured. You can still create posts manually.'
+        accounts: []
       });
     }
 
-    // Get our social profile
-    const { data: socialProfile } = await supabaseAdmin
+    // Get project
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('name')
+      .eq('id', project_id)
+      .single();
+
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Get or create social profile
+    let { data: socialProfile } = await supabaseAdmin
       .from('social_profiles')
       .select('*')
       .eq('project_id', project_id)
       .single();
 
-    if (!socialProfile?.late_profile_id) {
-      return NextResponse.json({ accounts: [], configured: true });
+    if (!socialProfile) {
+      const { data: newProfile } = await supabaseAdmin
+        .from('social_profiles')
+        .insert({ project_id, name: project.name })
+        .select()
+        .single();
+      socialProfile = newProfile;
     }
 
-    // Get accounts from Late
-    const { accounts: lateAccounts } = await lateClient.listAccounts(socialProfile.late_profile_id);
-
-    // Sync to our database
-    for (const account of lateAccounts) {
-      const { error } = await supabaseAdmin
-        .from('social_accounts')
-        .upsert({
-          social_profile_id: socialProfile.id,
-          late_account_id: account._id,
-          platform: account.platform,
-          username: account.username,
-          connected: true,
-        }, {
-          onConflict: 'late_account_id',
+    // If late_profile_id exists, get accounts
+    if (socialProfile?.late_profile_id) {
+      try {
+        const { accounts } = await lateClient.listAccounts(socialProfile.late_profile_id);
+        return NextResponse.json({ 
+          configured: true,
+          accounts: accounts || []
         });
-
-      if (error) {
-        console.error('Failed to sync account:', error);
+      } catch (err) {
+        console.error('List accounts failed:', err);
       }
     }
 
-    // Get our synced accounts
-    const { data: accounts } = await supabaseAdmin
-      .from('social_accounts')
-      .select('*')
-      .eq('social_profile_id', socialProfile.id);
+    // Try to create or find Late.dev profile
+    try {
+      // First try to create
+      const lateProfile = await lateClient.createProfile(
+        project.name,
+        `WritGo profile for ${project.name}`
+      );
 
-    return NextResponse.json({ 
-      accounts: accounts || [],
-      configured: true,
-    });
+      await supabaseAdmin
+        .from('social_profiles')
+        .update({ late_profile_id: lateProfile._id })
+        .eq('id', socialProfile.id);
+
+      return NextResponse.json({ 
+        configured: true,
+        accounts: [],
+        profile_created: true
+      });
+
+    } catch (createError) {
+      console.error('Create failed, trying to find existing:', createError);
+      
+      // If create fails, try to find existing
+      try {
+        const { profiles } = await lateClient.listProfiles();
+        const existing = profiles.find(p => 
+          p.name.toLowerCase() === project.name.toLowerCase()
+        );
+
+        if (existing) {
+          await supabaseAdmin
+            .from('social_profiles')
+            .update({ late_profile_id: existing._id })
+            .eq('id', socialProfile.id);
+
+          const { accounts } = await lateClient.listAccounts(existing._id);
+
+          return NextResponse.json({ 
+            configured: true,
+            accounts: accounts || [],
+            profile_found: true
+          });
+        }
+      } catch (findError) {
+        console.error('Find existing failed:', findError);
+      }
+
+      // Fallback: manual mode
+      return NextResponse.json({ 
+        configured: false,
+        accounts: [],
+        manual_mode: true
+      });
+    }
+
   } catch (error: any) {
-    console.error('Sync accounts error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('POST /api/social/connect error:', error);
+    return NextResponse.json({ 
+      error: error.message,
+      configured: false,
+      accounts: []
+    }, { status: 500 });
   }
 }

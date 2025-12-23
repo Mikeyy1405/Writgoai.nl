@@ -80,10 +80,20 @@ class LateClient {
 
   // Profile Management
   async createProfile(name: string, description?: string): Promise<LateProfile> {
-    return this.request<LateProfile>('/profiles', {
-      method: 'POST',
-      body: JSON.stringify({ name, description }),
-    });
+    console.log(`🔄 Creating Late.dev profile: ${name}`);
+    
+    try {
+      const result = await this.request<LateProfile>('/profiles', {
+        method: 'POST',
+        body: JSON.stringify({ name, description }),
+      });
+      
+      console.log(`✅ Late.dev profile created: ${result._id}`);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ Late.dev create profile failed: ${error.message}`);
+      throw error;
+    }
   }
 
   async listProfiles(): Promise<{ profiles: LateProfile[] }> {
