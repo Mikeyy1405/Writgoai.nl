@@ -419,10 +419,10 @@ export default function LibraryPage() {
                     {publishing && selectedArticle?.id === article.id 
                       ? 'Publiceren...' 
                       : isWritGo 
-                        ? 'Publiceer Blog' 
+                        ? '🚀 Publiceer WritGo' 
                         : hasWordPress
-                          ? 'Publiceer WP'
-                          : 'Publiceer'}
+                          ? '🚀 Publiceer WP'
+                          : '🚀 Publiceer'}
                   </button>
                   <button
                     onClick={() => setConfirmDelete(article.id)}
