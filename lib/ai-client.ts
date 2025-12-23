@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
 // Get API key - support multiple env var names for flexibility
@@ -11,13 +10,7 @@ const getApiKey = () => {
 
 const apiKey = getApiKey();
 
-// Anthropic client via AIML API (for Claude models)
-export const anthropicClient = new Anthropic({
-  baseURL: process.env.AIML_BASE_URL || 'https://api.aimlapi.com/',
-  apiKey: apiKey,
-});
-
-// OpenAI-compatible client via AIML API (for Perplexity and other models)
+// OpenAI-compatible client via AIML API (for all models including Claude)
 export const openaiClient = new OpenAI({
   apiKey: apiKey,
   baseURL: process.env.OPENAI_BASE_URL || 'https://api.aimlapi.com/v1',
@@ -25,15 +18,18 @@ export const openaiClient = new OpenAI({
 
 // For backwards compatibility
 export const aimlClient = openaiClient;
+export const anthropicClient = openaiClient;
 
 // Best models for each task
+// NOTE: Currently all tasks use the same model, but these constants provide
+// semantic clarity and make it easy to use different models in the future
 export const BEST_MODELS = {
-  CONTENT: 'claude-sonnet-4-5',              // Best content writing (Anthropic)
-  TECHNICAL: 'claude-sonnet-4-5',            // Best coding (Anthropic)
-  QUICK: 'claude-sonnet-4-5',                // Fast & reliable (Anthropic)
-  BUDGET: 'claude-sonnet-4-5',               // Same model (Anthropic)
-  IMAGE: 'flux-pro/v1.1',                    // Best quality images
-  PERPLEXITY: 'perplexity/sonar-pro',        // For research/discovery with web access
+  CONTENT: 'anthropic/claude-sonnet-4.5',      // Best content writing (Anthropic via AIML)
+  TECHNICAL: 'anthropic/claude-sonnet-4.5',    // Best coding (Anthropic via AIML)
+  QUICK: 'anthropic/claude-sonnet-4.5',        // Fast & reliable (Anthropic via AIML)
+  BUDGET: 'anthropic/claude-sonnet-4.5',       // Same model (Anthropic via AIML)
+  IMAGE: 'flux-pro/v1.1',                      // Best quality images
+  PERPLEXITY: 'perplexity/sonar-pro',          // For research/discovery with web access
 };
 
 interface GenerateOptions {
@@ -71,27 +67,7 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
   }
 
   try {
-    // Use Anthropic SDK for Claude models
-    if (selectedModel.includes('claude')) {
-      const message = await anthropicClient.messages.create({
-        model: selectedModel,
-        max_tokens: maxTokens,
-        temperature,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: userPrompt,
-          },
-        ],
-      });
-
-      // Extract text from response
-      const textContent = message.content.find((block) => block.type === 'text');
-      return textContent?.type === 'text' ? textContent.text : '';
-    }
-    
-    // Use OpenAI-compatible client for other models (Perplexity, etc.)
+    // Use OpenAI-compatible API for all models (including Claude via AIML)
     const completion = await openaiClient.chat.completions.create({
       model: selectedModel,
       messages: [

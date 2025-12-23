@@ -1,13 +1,14 @@
 import { createClient } from '@/lib/supabase-server';
 import { getProjectContext, buildContextPrompt } from '@/lib/project-context';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+const openai = new OpenAI({
+  apiKey: process.env.AIML_API_KEY!,
+  baseURL: 'https://api.aimlapi.com/v1',
 });
 
 // Language-specific instructions
@@ -120,13 +121,17 @@ Schrijf het artikel in HTML formaat:`;
 
           let fullContent = '';
 
-          // Stream from Claude
-          const stream = await anthropic.messages.stream({
-            model: 'claude-3-5-sonnet-20241022',
+          // Stream from Claude via AIML API
+          const completion = await openai.chat.completions.create({
+            model: 'anthropic/claude-sonnet-4.5',
             max_tokens: 8000,
             temperature: 0.7,
-            system: langInstructions.systemPrompt,
+            stream: true,
             messages: [
+              {
+                role: 'system',
+                content: langInstructions.systemPrompt,
+              },
               {
                 role: 'user',
                 content: prompt,
@@ -135,18 +140,16 @@ Schrijf het artikel in HTML formaat:`;
           });
 
           // Handle streaming chunks
-          for await (const chunk of stream) {
-            if (
-              chunk.type === 'content_block_delta' &&
-              chunk.delta.type === 'text_delta'
-            ) {
-              const text = chunk.delta.text;
-              fullContent += text;
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            
+            if (content) {
+              fullContent += content;
 
               // Send chunk to client
               controller.enqueue(
                 encoder.encode(
-                  `data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`
+                  `data: ${JSON.stringify({ type: 'chunk', content })}\n\n`
                 )
               );
             }
