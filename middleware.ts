@@ -2,6 +2,11 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // Redirect /dashboard/articles to /dashboard/wordpress-posts
+  if (request.nextUrl.pathname === '/dashboard/articles') {
+    return NextResponse.redirect(new URL('/dashboard/wordpress-posts', request.url));
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,

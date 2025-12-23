@@ -52,6 +52,7 @@ export default function WritGoBlogPage() {
 
   // Form state
   const [formTitle, setFormTitle] = useState('');
+  const [formSlug, setFormSlug] = useState('');
   const [formContent, setFormContent] = useState('');
   const [formExcerpt, setFormExcerpt] = useState('');
   const [formCategory, setFormCategory] = useState('Algemeen');
@@ -59,6 +60,7 @@ export default function WritGoBlogPage() {
   const [formFeaturedImage, setFormFeaturedImage] = useState('');
   const [formMetaTitle, setFormMetaTitle] = useState('');
   const [formMetaDescription, setFormMetaDescription] = useState('');
+  const [formFocusKeyword, setFormFocusKeyword] = useState('');
   const [formStatus, setFormStatus] = useState('draft');
 
   useEffect(() => {
@@ -85,10 +87,21 @@ export default function WritGoBlogPage() {
     }
   }
 
+  function generateSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-')          // Replace spaces with hyphens
+      .replace(/-+/g, '-')           // Replace multiple hyphens with one
+      .replace(/^-|-$/g, '');        // Remove leading/trailing hyphens
+  }
+
   function openNewPost() {
     setIsNewPost(true);
     setEditingPost(null);
     setFormTitle('');
+    setFormSlug('');
     setFormContent('');
     setFormExcerpt('');
     setFormCategory('Algemeen');
@@ -96,6 +109,7 @@ export default function WritGoBlogPage() {
     setFormFeaturedImage('');
     setFormMetaTitle('');
     setFormMetaDescription('');
+    setFormFocusKeyword('');
     setFormStatus('draft');
   }
 
@@ -103,6 +117,7 @@ export default function WritGoBlogPage() {
     setIsNewPost(false);
     setEditingPost(post);
     setFormTitle(post.title);
+    setFormSlug(post.slug);
     setFormContent(post.content);
     setFormExcerpt(post.excerpt || '');
     setFormCategory(post.category || 'Algemeen');
@@ -110,6 +125,7 @@ export default function WritGoBlogPage() {
     setFormFeaturedImage(post.featured_image || '');
     setFormMetaTitle(post.meta_title || '');
     setFormMetaDescription(post.meta_description || '');
+    setFormFocusKeyword('');
     setFormStatus(post.status);
   }
 
@@ -128,6 +144,7 @@ export default function WritGoBlogPage() {
     try {
       const postData = {
         title: formTitle,
+        slug: formSlug || generateSlug(formTitle),
         content: formContent,
         excerpt: formExcerpt,
         category: formCategory,
@@ -135,6 +152,7 @@ export default function WritGoBlogPage() {
         featured_image: formFeaturedImage || null,
         meta_title: formMetaTitle || formTitle,
         meta_description: formMetaDescription || formExcerpt,
+        focus_keyword: formFocusKeyword,
         status: formStatus,
       };
 
@@ -371,10 +389,31 @@ export default function WritGoBlogPage() {
                 <input
                   type="text"
                   value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
+                  onChange={(e) => {
+                    setFormTitle(e.target.value);
+                    // Auto-generate slug only for new posts and if slug is empty or auto-generated
+                    if (isNewPost || !formSlug || formSlug === generateSlug(formTitle)) {
+                      setFormSlug(generateSlug(e.target.value));
+                    }
+                  }}
                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
                   placeholder="Artikel titel"
                 />
+              </div>
+
+              {/* Slug */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Slug *</label>
+                <input
+                  type="text"
+                  value={formSlug}
+                  onChange={(e) => setFormSlug(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white font-mono text-sm"
+                  placeholder="artikel-slug"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  URL: /blog/{formSlug || 'slug'} • Lowercase, geen spaties (gebruik hyphens)
+                </p>
               </div>
 
               {/* Category & Status */}
@@ -465,6 +504,19 @@ export default function WritGoBlogPage() {
                       className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
                       placeholder="SEO titel (max 60 karakters)"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Focus Keyword</label>
+                    <input
+                      type="text"
+                      value={formFocusKeyword}
+                      onChange={(e) => setFormFocusKeyword(e.target.value)}
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                      placeholder="Hoofdzoekwoord voor dit artikel"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Optioneel maar aanbevolen voor SEO
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Meta Description</label>

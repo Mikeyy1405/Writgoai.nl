@@ -25,7 +25,6 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     { icon: '⚡', label: 'Stream Writer', href: '/dashboard/stream-writer' },
     { icon: '✍️', label: 'Content Writer', href: '/dashboard/writer' },
     { icon: '📝', label: 'Editor', href: '/dashboard/editor' },
-    { icon: '📄', label: 'Artikelen', href: '/dashboard/articles' },
     { icon: '📑', label: 'Writgo Blog', href: '/dashboard/writgo-blog' },
     { icon: '🔄', label: 'WordPress Posts', href: '/dashboard/wordpress-posts' },
     { icon: '📚', label: 'Bibliotheek', href: '/dashboard/library' },
