@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface ContentIdea {
@@ -15,6 +15,7 @@ interface ContentIdea {
   searchIntent?: string;
   searchVolume?: number | null;
   competition?: string | null;
+  status?: 'todo' | 'in_progress' | 'review' | 'published' | 'update_needed';
 }
 
 interface JobData {
@@ -84,6 +85,7 @@ export default function ContentPlanPage() {
   const [filterCluster, setFilterCluster] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('priority');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -132,6 +134,9 @@ export default function ContentPlanPage() {
     if (filterPriority !== 'all') {
       filtered = filtered.filter(idea => idea.priority === filterPriority);
     }
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(idea => (idea.status || 'todo') === filterStatus);
+    }
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(idea => 
@@ -159,7 +164,7 @@ export default function ContentPlanPage() {
 
     // Batch display
     setDisplayedPlan(filtered.slice(0, currentBatch * batchSize));
-  }, [contentPlan, filterCluster, filterType, filterPriority, sortBy, searchQuery, currentBatch, batchSize]);
+  }, [contentPlan, filterCluster, filterType, filterPriority, filterStatus, sortBy, searchQuery, currentBatch, batchSize]);
 
   const fetchProjects = async () => {
     try {
@@ -191,6 +196,7 @@ export default function ContentPlanPage() {
     setFilterCluster('all');
     setFilterType('all');
     setFilterPriority('all');
+    setFilterStatus('all');
     setSearchQuery('');
   };
 
@@ -204,7 +210,14 @@ export default function ContentPlanPage() {
       const data = await response.json();
       
       if (data.plan) {
-        if (data.plan.plan) setContentPlan(data.plan.plan);
+        // Ensure all articles have a status (backwards compatibility)
+        if (data.plan.plan) {
+          const planWithStatus = data.plan.plan.map((article: ContentIdea) => ({
+            ...article,
+            status: article.status || 'todo'
+          }));
+          setContentPlan(planWithStatus);
+        }
         if (data.plan.clusters) setClusters(data.plan.clusters);
         if (data.plan.stats) setStats(data.plan.stats);
         if (data.plan.niche) setNiche(data.plan.niche);
@@ -328,7 +341,12 @@ export default function ContentPlanPage() {
         
         // Update state with results
         if (job.plan) {
-          setContentPlan(job.plan);
+          // Ensure all articles have default 'todo' status
+          const planWithStatus = job.plan.map((article: ContentIdea) => ({
+            ...article,
+            status: article.status || 'todo'
+          }));
+          setContentPlan(planWithStatus);
         }
         if (job.clusters) {
           setClusters(job.clusters);
@@ -463,7 +481,12 @@ export default function ContentPlanPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleWriteArticle = (idea: ContentIdea, index: number) => {
+  const handleWriteArticle = async (idea: ContentIdea, index: number) => {
+    // Update status to 'in_progress' if not already published or in review
+    // (don't override review status as that indicates the article is complete)
+    if (idea.status !== 'published' && idea.status !== 'review') {
+      await updateArticleStatus(index, 'in_progress');
+    }
     // Navigate to writer with project and article index - no localStorage needed
     router.push(`/dashboard/writer?project=${selectedProject}&article=${index}`);
   };
@@ -498,6 +521,54 @@ export default function ContentPlanPage() {
     }
   };
 
+  const updateArticleStatus = async (index: number, newStatus: ContentIdea['status']) => {
+    if (!selectedProject) return;
+
+    try {
+      // Update local state
+      const newPlan = [...contentPlan];
+      newPlan[index] = { ...newPlan[index], status: newStatus };
+      setContentPlan(newPlan);
+
+      // Save to database
+      await savePlanToDatabase(
+        selectedProject,
+        newPlan,
+        clusters,
+        stats,
+        niche,
+        language,
+        targetCount,
+        competitionLevel,
+        reasoning
+      );
+
+      // Show success message
+      showToast('Status bijgewerkt');
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      alert('Fout bij bijwerken status');
+    }
+  };
+
+  const showToast = (message: string) => {
+    // Simple toast implementation with automatic cleanup
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Fade out and remove after 2 seconds
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast);
+        }
+      }, 300);
+    }, 2000);
+  };
+
   const handleProjectChange = (newProjectId: string) => {
     // Reset cancellation flag when changing projects
     userCancelledRef.current = false;
@@ -516,6 +587,84 @@ export default function ContentPlanPage() {
 
   const uniqueClusters = [...new Set(contentPlan.map(idea => idea.cluster))];
   const uniqueTypes = [...new Set(contentPlan.map(idea => idea.contentType))];
+
+  // Memoized status statistics to avoid recalculation on every render
+  const statusStats = useMemo(() => {
+    const statusCounts = {
+      todo: 0,
+      in_progress: 0,
+      review: 0,
+      published: 0,
+      update_needed: 0,
+    };
+
+    contentPlan.forEach(idea => {
+      const status = idea.status || 'todo';
+      statusCounts[status]++;
+    });
+
+    return statusCounts;
+  }, [contentPlan]);
+
+  // Memoized index map for efficient lookup during rendering
+  // Maps compound key (title-cluster-contentType) to actual index
+  const contentPlanIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    contentPlan.forEach((idea, index) => {
+      const key = `${idea.title}-${idea.cluster}-${idea.contentType}`;
+      map.set(key, index);
+    });
+    return map;
+  }, [contentPlan]);
+
+  const getStatusBadgeClass = (status: ContentIdea['status']) => {
+    switch (status) {
+      case 'in_progress':
+        return 'bg-blue-900/50 text-blue-300';
+      case 'review':
+        return 'bg-yellow-900/50 text-yellow-300';
+      case 'published':
+        return 'bg-green-900/50 text-green-300';
+      case 'update_needed':
+        return 'bg-orange-900/50 text-orange-300';
+      case 'todo':
+      default:
+        return 'bg-gray-800 text-gray-300';
+    }
+  };
+
+  const getStatusIcon = (status: ContentIdea['status']) => {
+    switch (status) {
+      case 'in_progress':
+        return '🔄';
+      case 'review':
+        return '👀';
+      case 'published':
+        return '✅';
+      case 'update_needed':
+        return '🔁';
+      case 'todo':
+      default:
+        return '📝';
+    }
+  };
+
+  const getStatusLabel = (status: ContentIdea['status']) => {
+    switch (status) {
+      case 'in_progress':
+        return 'In progress';
+      case 'review':
+        return 'Review';
+      case 'published':
+        return 'Gepubliceerd';
+      case 'update_needed':
+        return 'Update nodig';
+      case 'todo':
+      default:
+        return 'Te doen';
+    }
+  };
+
 
   const getProgressMessage = () => {
     if (!jobData) return 'Starten...';
@@ -678,24 +827,65 @@ export default function ContentPlanPage() {
 
       {/* Stats */}
       {stats && !loading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-            <div className="text-3xl font-bold text-orange-500">{stats.totalArticles}</div>
-            <div className="text-gray-400 text-sm">Totaal Artikelen</div>
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="text-3xl font-bold text-orange-500">{stats.totalArticles}</div>
+              <div className="text-gray-400 text-sm">Totaal Artikelen</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="text-3xl font-bold text-purple-500">{stats.pillarPages}</div>
+              <div className="text-gray-400 text-sm">Pillar Pages</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="text-3xl font-bold text-blue-500">{stats.clusters}</div>
+              <div className="text-gray-400 text-sm">Clusters</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="text-3xl font-bold text-green-500">{language.toUpperCase()}</div>
+              <div className="text-gray-400 text-sm">Taal</div>
+            </div>
           </div>
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-            <div className="text-3xl font-bold text-purple-500">{stats.pillarPages}</div>
-            <div className="text-gray-400 text-sm">Pillar Pages</div>
+
+          {/* Status Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">📝</span>
+                <div className="text-2xl font-bold text-gray-300">{statusStats.todo}</div>
+              </div>
+              <div className="text-gray-400 text-sm">Te doen</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">🔄</span>
+                <div className="text-2xl font-bold text-blue-300">{statusStats.in_progress}</div>
+              </div>
+              <div className="text-gray-400 text-sm">In progress</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">👀</span>
+                <div className="text-2xl font-bold text-yellow-300">{statusStats.review}</div>
+              </div>
+              <div className="text-gray-400 text-sm">Review</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">✅</span>
+                <div className="text-2xl font-bold text-green-300">{statusStats.published}</div>
+              </div>
+              <div className="text-gray-400 text-sm">Gepubliceerd</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">🔁</span>
+                <div className="text-2xl font-bold text-orange-300">{statusStats.update_needed}</div>
+              </div>
+              <div className="text-gray-400 text-sm">Update nodig</div>
+            </div>
           </div>
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-            <div className="text-3xl font-bold text-blue-500">{stats.clusters}</div>
-            <div className="text-gray-400 text-sm">Clusters</div>
-          </div>
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-            <div className="text-3xl font-bold text-green-500">{language.toUpperCase()}</div>
-            <div className="text-gray-400 text-sm">Taal</div>
-          </div>
-        </div>
+        </>
       )}
 
       {/* Filters */}
@@ -742,6 +932,21 @@ export default function ContentPlanPage() {
               </select>
             </div>
             <div>
+              <label className="text-sm text-gray-400 mr-2">Status:</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="bg-gray-900 border border-gray-700 rounded px-3 py-1 text-white text-sm"
+              >
+                <option value="all">Alle Statussen</option>
+                <option value="todo">📝 Te doen</option>
+                <option value="in_progress">🔄 In progress</option>
+                <option value="review">👀 Review</option>
+                <option value="published">✅ Gepubliceerd</option>
+                <option value="update_needed">🔁 Update nodig</option>
+              </select>
+            </div>
+            <div>
               <label className="text-sm text-gray-400 mr-2">Sorteer:</label>
               <select
                 value={sortBy}
@@ -776,68 +981,88 @@ export default function ContentPlanPage() {
       {displayedPlan.length > 0 && !loading && (
         <>
           <div className="space-y-3 mb-6">
-            {displayedPlan.map((idea, index) => (
-              <div
-                key={index}
-                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4 hover:border-orange-500/50 transition-all"
-              >
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        idea.priority === 'high' ? 'bg-red-500/20 text-red-400' :
-                        idea.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-green-500/20 text-green-400'
-                      }`}>
-                        {idea.priority}
-                      </span>
-                      <span className="px-2 py-0.5 rounded text-xs bg-purple-500/20 text-purple-400">
-                        {idea.contentType}
-                      </span>
-                      <span className="px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-400">
-                        {idea.cluster}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-1">{idea.title}</h3>
-                    {idea.description && (
-                      <p className="text-gray-400 text-sm mb-2">{idea.description}</p>
-                    )}
-                    {idea.keywords && idea.keywords.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {idea.keywords.slice(0, 5).map((kw, i) => (
-                          <span key={i} className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded">
-                            {kw}
-                          </span>
-                        ))}
+            {displayedPlan.map((idea, displayIndex) => {
+              // Use memoized index map for O(1) lookup instead of O(n) findIndex
+              const key = `${idea.title}-${idea.cluster}-${idea.contentType}`;
+              const actualIndex = contentPlanIndexMap.get(key);
+              const articleStatus = idea.status || 'todo';
+              
+              // Fallback to display index if not found (shouldn't happen but safeguard)
+              const safeIndex = actualIndex !== undefined ? actualIndex : displayIndex;
+              
+              return (
+                <div
+                  key={displayIndex}
+                  className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4 hover:border-orange-500/50 transition-all"
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {/* Status Badge */}
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1 ${getStatusBadgeClass(articleStatus)}`}>
+                          <span>{getStatusIcon(articleStatus)}</span>
+                          <span>{getStatusLabel(articleStatus)}</span>
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          idea.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+                          idea.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-green-500/20 text-green-400'
+                        }`}>
+                          {idea.priority}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs bg-purple-500/20 text-purple-400">
+                          {idea.contentType}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-400">
+                          {idea.cluster}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        // Find the actual index in the full contentPlan array
-                        const actualIndex = contentPlan.findIndex(p => p.title === idea.title);
-                        deleteContentPlanItem(actualIndex >= 0 ? actualIndex : 0);
-                      }}
-                      className="text-red-400 hover:text-red-300 p-2"
-                      title="Verwijderen"
-                    >
-                      🗑️
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Find the actual index in the full contentPlan array
-                        const actualIndex = contentPlan.findIndex(p => p.title === idea.title);
-                        handleWriteArticle(idea, actualIndex >= 0 ? actualIndex : 0);
-                      }}
-                      className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all whitespace-nowrap"
-                    >
-                      Schrijven
-                    </button>
+                      <h3 className="text-lg font-semibold text-white mb-1">{idea.title}</h3>
+                      {idea.description && (
+                        <p className="text-gray-400 text-sm mb-2">{idea.description}</p>
+                      )}
+                      {idea.keywords && idea.keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {idea.keywords.slice(0, 5).map((kw, i) => (
+                            <span key={i} className="text-xs text-gray-500 bg-gray-700/50 px-2 py-0.5 rounded">
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2 items-start">
+                      {/* Status Dropdown */}
+                      <select
+                        value={articleStatus}
+                        onChange={(e) => updateArticleStatus(safeIndex, e.target.value as ContentIdea['status'])}
+                        className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white text-xs hover:border-orange-500 focus:outline-none focus:border-orange-500"
+                        title="Wijzig status"
+                      >
+                        <option value="todo">📝 Te doen</option>
+                        <option value="in_progress">🔄 In progress</option>
+                        <option value="review">👀 Review</option>
+                        <option value="published">✅ Gepubliceerd</option>
+                        <option value="update_needed">🔁 Update nodig</option>
+                      </select>
+                      <button
+                        onClick={() => handleWriteArticle(idea, safeIndex)}
+                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all whitespace-nowrap"
+                      >
+                        Schrijven
+                      </button>
+                      <button
+                        onClick={() => deleteContentPlanItem(safeIndex)}
+                        className="text-red-400 hover:text-red-300 p-2"
+                        title="Verwijderen"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Load More */}
