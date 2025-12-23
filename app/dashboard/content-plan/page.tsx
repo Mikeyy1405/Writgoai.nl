@@ -468,6 +468,36 @@ export default function ContentPlanPage() {
     router.push(`/dashboard/writer?project=${selectedProject}&article=${index}`);
   };
 
+  const deleteContentPlanItem = async (index: number) => {
+    if (!window.confirm('Weet je zeker dat je dit item wilt verwijderen?')) {
+      return;
+    }
+
+    try {
+      // Remove from local state
+      const newPlan = contentPlan.filter((_, i) => i !== index);
+      setContentPlan(newPlan);
+
+      // Update in database if project selected
+      if (selectedProject) {
+        await savePlanToDatabase(
+          selectedProject,
+          newPlan,
+          clusters,
+          stats,
+          niche,
+          language,
+          targetCount,
+          competitionLevel,
+          reasoning
+        );
+      }
+    } catch (err) {
+      console.error('Failed to delete item:', err);
+      alert('Fout bij verwijderen');
+    }
+  };
+
   const handleProjectChange = (newProjectId: string) => {
     // Reset cancellation flag when changing projects
     userCancelledRef.current = false;
@@ -782,16 +812,29 @@ export default function ContentPlanPage() {
                       </div>
                     )}
                   </div>
-                  <button
-                    onClick={() => {
-                      // Find the actual index in the full contentPlan array
-                      const actualIndex = contentPlan.findIndex(p => p.title === idea.title);
-                      handleWriteArticle(idea, actualIndex >= 0 ? actualIndex : 0);
-                    }}
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all whitespace-nowrap"
-                  >
-                    Schrijven
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        // Find the actual index in the full contentPlan array
+                        const actualIndex = contentPlan.findIndex(p => p.title === idea.title);
+                        deleteContentPlanItem(actualIndex >= 0 ? actualIndex : 0);
+                      }}
+                      className="text-red-400 hover:text-red-300 p-2"
+                      title="Verwijderen"
+                    >
+                      🗑️
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Find the actual index in the full contentPlan array
+                        const actualIndex = contentPlan.findIndex(p => p.title === idea.title);
+                        handleWriteArticle(idea, actualIndex >= 0 ? actualIndex : 0);
+                      }}
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all whitespace-nowrap"
+                    >
+                      Schrijven
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

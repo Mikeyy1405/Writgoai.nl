@@ -196,18 +196,24 @@ export async function GET(request: Request) {
         .from('content_plan_jobs')
         .select('*')
         .eq('project_id', projectId)
-        .not('status', 'eq', 'cancelled') // Never return cancelled jobs
+        .neq('status', 'cancelled') // FIX: use .neq() instead of .not()
+        .neq('status', 'failed')
         .order('created_at', { ascending: false })
         .limit(1);
       
       // Filter by status if provided (e.g., 'processing')
-      if (status) {
+      if (status === 'processing') {
         query = query.in('status', ['processing', 'pending']);
       }
 
       const { data: jobs, error } = await query;
 
-      if (error || !jobs || jobs.length === 0) {
+      if (error) {
+        console.error('Query error:', error);
+        return NextResponse.json({ error: 'Database error', details: error.message }, { status: 500 });
+      }
+
+      if (!jobs || jobs.length === 0) {
         return NextResponse.json({ error: 'No jobs found' }, { status: 404 });
       }
 
@@ -245,8 +251,8 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
-    // Update job status to cancelled
-    const { error } = await supabaseAdmin
+    // FIXED: Better error handling
+    const { data, error } = await supabaseAdmin
       .from('content_plan_jobs')
       .update({ 
         status: 'cancelled',
@@ -254,14 +260,24 @@ export async function DELETE(request: Request) {
         updated_at: new Date().toISOString()
       })
       .eq('id', jobId)
-      .in('status', ['pending', 'processing']); // Only cancel active jobs
+      .in('status', ['pending', 'processing'])
+      .select(); // FIX: Add .select() to get updated data
 
     if (error) {
       console.error('Failed to cancel job:', error);
-      return NextResponse.json({ error: 'Failed to cancel job' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to cancel job', 
+        details: error.message 
+      }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: 'Job cancelled' });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ 
+        error: 'Job not found or already completed' 
+      }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Job cancelled', job: data[0] });
   } catch (error: any) {
     console.error('DELETE error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
