@@ -49,6 +49,30 @@ export default function ProjectsPage() {
     return project.wp_url && project.wp_username;
   };
 
+  const handleDeleteProject = async (projectId: string, projectName: string) => {
+    if (!confirm(`Weet je zeker dat je "${projectName}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/delete?id=${projectId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Reload projects list
+        loadProjects();
+      } else {
+        alert(data.error || 'Er is iets misgegaan bij het verwijderen van het project.');
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      alert('Er is een fout opgetreden. Probeer het opnieuw.');
+    }
+  };
+
   return (
     <div className="p-6 lg:p-12">
         <div className="mb-8 flex items-center justify-between">
@@ -117,6 +141,15 @@ export default function ProjectsPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => handleDeleteProject(project.id, project.name)}
+                      className="px-3 py-2 bg-red-900/30 text-red-400 rounded-lg hover:bg-red-900/50 hover:text-red-300 transition-all"
+                      title="Project Verwijderen"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                     <button
                       onClick={() => setSettingsProject(project)}
                       className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-all flex items-center gap-2"
