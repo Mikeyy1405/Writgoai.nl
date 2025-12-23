@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface ContentIdea {
@@ -565,13 +565,10 @@ export default function ContentPlanPage() {
           document.body.removeChild(toast);
         }
       }, 300);
-      
-      // Clean up on unmount
-      return () => clearTimeout(removeTimeout);
     }, 2000);
     
-    // Clean up on unmount
-    return () => clearTimeout(fadeOutTimeout);
+    // Return cleanup function to clear timeouts if needed
+    // Note: Currently not used but available for future implementation
   };
 
   const handleProjectChange = (newProjectId: string) => {
@@ -592,6 +589,35 @@ export default function ContentPlanPage() {
 
   const uniqueClusters = [...new Set(contentPlan.map(idea => idea.cluster))];
   const uniqueTypes = [...new Set(contentPlan.map(idea => idea.contentType))];
+
+  // Memoized status statistics to avoid recalculation on every render
+  const statusStats = useMemo(() => {
+    const statusCounts = {
+      todo: 0,
+      in_progress: 0,
+      review: 0,
+      published: 0,
+      update_needed: 0,
+    };
+
+    contentPlan.forEach(idea => {
+      const status = idea.status || 'todo';
+      statusCounts[status]++;
+    });
+
+    return statusCounts;
+  }, [contentPlan]);
+
+  // Memoized index map for efficient lookup during rendering
+  // Maps compound key (title-cluster-contentType) to actual index
+  const contentPlanIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    contentPlan.forEach((idea, index) => {
+      const key = `${idea.title}-${idea.cluster}-${idea.contentType}`;
+      map.set(key, index);
+    });
+    return map;
+  }, [contentPlan]);
 
   const getStatusBadgeClass = (status: ContentIdea['status']) => {
     switch (status) {
@@ -641,22 +667,6 @@ export default function ContentPlanPage() {
     }
   };
 
-  const getStatusStats = () => {
-    const statusCounts = {
-      todo: 0,
-      in_progress: 0,
-      review: 0,
-      published: 0,
-      update_needed: 0,
-    };
-
-    contentPlan.forEach(idea => {
-      const status = idea.status || 'todo';
-      statusCounts[status]++;
-    });
-
-    return statusCounts;
-  };
 
   const getProgressMessage = () => {
     if (!jobData) return 'Starten...';
@@ -841,48 +851,41 @@ export default function ContentPlanPage() {
 
           {/* Status Stats */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            {(() => {
-              const statusStats = getStatusStats();
-              return (
-                <>
-                  <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-2xl">📝</span>
-                      <div className="text-2xl font-bold text-gray-300">{statusStats.todo}</div>
-                    </div>
-                    <div className="text-gray-400 text-sm">Te doen</div>
-                  </div>
-                  <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-2xl">🔄</span>
-                      <div className="text-2xl font-bold text-blue-300">{statusStats.in_progress}</div>
-                    </div>
-                    <div className="text-gray-400 text-sm">In progress</div>
-                  </div>
-                  <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-2xl">👀</span>
-                      <div className="text-2xl font-bold text-yellow-300">{statusStats.review}</div>
-                    </div>
-                    <div className="text-gray-400 text-sm">Review</div>
-                  </div>
-                  <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-2xl">✅</span>
-                      <div className="text-2xl font-bold text-green-300">{statusStats.published}</div>
-                    </div>
-                    <div className="text-gray-400 text-sm">Gepubliceerd</div>
-                  </div>
-                  <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-2xl">🔁</span>
-                      <div className="text-2xl font-bold text-orange-300">{statusStats.update_needed}</div>
-                    </div>
-                    <div className="text-gray-400 text-sm">Update nodig</div>
-                  </div>
-                </>
-              );
-            })()}
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">📝</span>
+                <div className="text-2xl font-bold text-gray-300">{statusStats.todo}</div>
+              </div>
+              <div className="text-gray-400 text-sm">Te doen</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">🔄</span>
+                <div className="text-2xl font-bold text-blue-300">{statusStats.in_progress}</div>
+              </div>
+              <div className="text-gray-400 text-sm">In progress</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">👀</span>
+                <div className="text-2xl font-bold text-yellow-300">{statusStats.review}</div>
+              </div>
+              <div className="text-gray-400 text-sm">Review</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">✅</span>
+                <div className="text-2xl font-bold text-green-300">{statusStats.published}</div>
+              </div>
+              <div className="text-gray-400 text-sm">Gepubliceerd</div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">🔁</span>
+                <div className="text-2xl font-bold text-orange-300">{statusStats.update_needed}</div>
+              </div>
+              <div className="text-gray-400 text-sm">Update nodig</div>
+            </div>
           </div>
         </>
       )}
@@ -981,17 +984,13 @@ export default function ContentPlanPage() {
         <>
           <div className="space-y-3 mb-6">
             {displayedPlan.map((idea, displayIndex) => {
-              // Find the actual index in the full contentPlan array
-              // Using title + cluster + contentType as a compound key for better uniqueness
-              const actualIndex = contentPlan.findIndex(p => 
-                p.title === idea.title && 
-                p.cluster === idea.cluster && 
-                p.contentType === idea.contentType
-              );
+              // Use memoized index map for O(1) lookup instead of O(n) findIndex
+              const key = `${idea.title}-${idea.cluster}-${idea.contentType}`;
+              const actualIndex = contentPlanIndexMap.get(key);
               const articleStatus = idea.status || 'todo';
               
               // Fallback to display index if not found (shouldn't happen but safeguard)
-              const safeIndex = actualIndex >= 0 ? actualIndex : displayIndex;
+              const safeIndex = actualIndex !== undefined ? actualIndex : displayIndex;
               
               return (
                 <div

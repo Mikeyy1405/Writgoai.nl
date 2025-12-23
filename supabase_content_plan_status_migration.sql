@@ -5,7 +5,10 @@
 -- ============================================
 
 -- 1. Add status column to content_plans table
--- This tracks the overall status of the content plan
+-- This tracks the overall status of the content plan (not individual articles)
+-- Note: This is different from article-level status in the plan JSONB field
+-- Table-level status: 'active', 'archived', 'draft' (for the entire plan)
+-- Article-level status: 'todo', 'in_progress', 'review', 'published', 'update_needed' (for each article in plan JSONB)
 ALTER TABLE content_plans 
 ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active' 
 CHECK (status IN ('active', 'archived', 'draft'));
