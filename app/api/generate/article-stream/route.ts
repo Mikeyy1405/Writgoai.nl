@@ -163,10 +163,10 @@ Schrijf het artikel in HTML formaat:`;
             // Object chunks - try all possible formats
             const content =
               chunk.choices?.[0]?.delta?.content || // OpenAI standard
-              chunk.delta?.content || // Alternative format
-              chunk.content || // Direct content
-              chunk.text || // Text field
-              (chunk.choices?.[0]?.text) || // Choices text
+              (chunk as any).delta?.content || // Alternative format
+              (chunk as any).content || // Direct content
+              (chunk as any).text || // Text field
+              (chunk.choices?.[0] as any)?.text || // Choices text
               '';
             
             if (content) {
