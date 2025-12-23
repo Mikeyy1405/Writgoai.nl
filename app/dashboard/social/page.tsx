@@ -365,18 +365,28 @@ export default function SocialMediaPage() {
     if (!selectedProject) return;
 
     try {
+      console.log(`🔗 Connecting ${platform} for project ${selectedProject.id}`);
       const response = await fetch(
         `/api/social/connect?project_id=${selectedProject.id}&platform=${platform}`
       );
       const data = await response.json();
 
+      console.log('Connect response:', data);
+
       if (data.connectUrl) {
+        console.log('✅ Redirecting to Getlate.dev:', data.connectUrl);
+        // Use window.location.href for redirect to external auth page
         window.location.href = data.connectUrl;
       } else if (data.error) {
-        alert(data.error);
+        console.error('❌ Connect error:', data.error);
+        alert(`Fout bij verbinden: ${data.error}\n\n${data.details || ''}`);
+      } else {
+        console.error('❌ No connectUrl in response:', data);
+        alert('Er ging iets mis: geen connectUrl ontvangen van de server');
       }
     } catch (error) {
-      console.error('Failed to get connect URL:', error);
+      console.error('❌ Failed to get connect URL:', error);
+      alert('Fout bij verbinden: ' + (error as Error).message);
     }
   }
 

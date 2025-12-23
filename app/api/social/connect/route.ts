@@ -16,18 +16,24 @@ export async function GET(request: Request) {
     const projectId = searchParams.get('project_id');
     const platform = searchParams.get('platform');
 
+    console.log('🔗 GET /api/social/connect', { projectId, platform });
+
     if (!projectId || !platform) {
+      console.error('❌ Missing required parameters');
       return NextResponse.json({ error: 'Project ID and platform are required' }, { status: 400 });
     }
 
     const lateClient = getLateClient();
-    
+
     if (!lateClient.isConfigured()) {
-      return NextResponse.json({ 
+      console.error('❌ Late API key not configured');
+      return NextResponse.json({
         error: 'Later.dev API key not configured',
-        configured: false 
+        configured: false
       }, { status: 400 });
     }
+
+    console.log('✅ Late client configured');
 
     // Check if project has a Late profile, create one if not
     let { data: socialProfile } = await supabaseAdmin
@@ -112,17 +118,32 @@ export async function GET(request: Request) {
       }
     }
 
-    // Generate connect URL
+    // Generate connect URL by calling Late.dev API
     const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://writgo.nl'}/dashboard/social?connected=${platform}&project=${projectId}`;
-    const connectUrl = lateClient.getConnectUrl(platform, socialProfile.late_profile_id, redirectUrl);
 
-    return NextResponse.json({ 
+    console.log('🔗 Requesting authUrl from Late.dev...', {
+      platform,
+      profileId: socialProfile.late_profile_id,
+      redirectUrl
+    });
+
+    const connectUrl = await lateClient.getConnectUrl(platform, socialProfile.late_profile_id, redirectUrl);
+
+    console.log('✅ Received connect URL from Late.dev:', {
+      connectUrlLength: connectUrl.length,
+      connectUrlPreview: connectUrl.substring(0, 100)
+    });
+
+    return NextResponse.json({
       connectUrl,
       profileId: socialProfile.late_profile_id,
     });
   } catch (error: any) {
-    console.error('Connect error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('❌ Connect error:', error);
+    return NextResponse.json({
+      error: error.message || 'Unknown error occurred',
+      details: error.toString()
+    }, { status: 500 });
   }
 }
 
@@ -131,18 +152,24 @@ export async function POST(request: Request) {
   try {
     const { project_id } = await request.json();
 
+    console.log('🔄 POST /api/social/connect - Syncing accounts for project:', project_id);
+
     if (!project_id) {
+      console.error('❌ Project ID missing');
       return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
     }
 
     const lateClient = getLateClient();
-    
+
     if (!lateClient.isConfigured()) {
-      return NextResponse.json({ 
+      console.warn('⚠️ Late API key not configured');
+      return NextResponse.json({
         configured: false,
         accounts: []
       });
     }
+
+    console.log('✅ Late client configured, proceeding with sync');
 
     // Get project from database
     const { data: project } = await supabaseAdmin
@@ -183,11 +210,17 @@ export async function POST(request: Request) {
 
     // If late_profile_id is already set, get accounts
     if (socialProfile.late_profile_id) {
+      console.log(`📋 Profile exists with Late ID: ${socialProfile.late_profile_id}`);
       try {
+        console.log('🔍 Fetching accounts from Late.dev...');
         const { accounts: lateAccounts } = await lateClient.listAccounts(socialProfile.late_profile_id);
-        
+
+        console.log(`✅ Found ${lateAccounts.length} accounts in Late.dev:`,
+          lateAccounts.map(a => `${a.platform}:${a.username}`));
+
         // Sync to our database
         for (const account of lateAccounts) {
+          console.log(`💾 Syncing account: ${account.platform} (${account.username})`);
           const { error } = await supabaseAdmin
             .from('social_accounts')
             .upsert({
@@ -201,7 +234,9 @@ export async function POST(request: Request) {
             });
 
           if (error) {
-            console.error('Failed to sync account:', error);
+            console.error(`❌ Failed to sync ${account.platform} account:`, error);
+          } else {
+            console.log(`✅ Synced ${account.platform} account`);
           }
         }
 
@@ -211,17 +246,22 @@ export async function POST(request: Request) {
           .select('*')
           .eq('social_profile_id', socialProfile.id);
 
-        return NextResponse.json({ 
+        console.log(`✅ Total synced accounts in DB: ${accounts?.length || 0}`);
+
+        return NextResponse.json({
           accounts: accounts || [],
           configured: true,
-          profile_id: socialProfile.late_profile_id
+          profile_id: socialProfile.late_profile_id,
+          synced: true
         });
-      } catch (error) {
-        console.error('Failed to list accounts:', error);
-        return NextResponse.json({ 
+      } catch (error: any) {
+        console.error('❌ Failed to list/sync accounts:', error);
+        console.error('Error details:', error.message, error.stack);
+        return NextResponse.json({
           configured: true,
           accounts: [],
-          profile_id: socialProfile.late_profile_id
+          profile_id: socialProfile.late_profile_id,
+          error: error.message
         });
       }
     }
