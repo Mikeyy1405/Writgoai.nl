@@ -93,7 +93,9 @@ export async function POST(request: Request) {
               'Accept': 'application/json',
             },
             signal: controller.signal,
-            // @ts-ignore - Node.js specific fetch options
+            // Node.js undici-specific options to override default connection timeout
+            // TypeScript doesn't have types for these, but they're required for proper timeout handling
+            // @ts-ignore
             headersTimeout: 30000,
             bodyTimeout: 30000,
           });

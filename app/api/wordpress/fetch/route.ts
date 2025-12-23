@@ -84,7 +84,9 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       signal: controller.signal,
-      // @ts-ignore - Node.js specific fetch options
+      // Node.js undici-specific options to override default connection timeout
+      // TypeScript doesn't have types for these, but they're required for proper timeout handling
+      // @ts-ignore
       headersTimeout: 45000,
       bodyTimeout: 45000,
     });

@@ -10,6 +10,7 @@ const CONNECT_TIMEOUT = 30000; // 30 seconds for initial connection
 const PUBLISH_TIMEOUT = 90000; // 90 seconds for publishing (increased from 60s)
 const TEST_TIMEOUT = 45000; // 45 seconds for connection tests (increased from 30s)
 const MEDIA_TIMEOUT = 120000; // 120 seconds for media uploads (increased from 90s)
+const RETRY_BASE_DELAY = 2000; // 2 seconds base delay for exponential backoff
 
 // Helper function to clean WordPress Application Password
 function cleanApplicationPassword(password: string): string {
@@ -59,7 +60,9 @@ async function fetchWithRetry(
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
-        // @ts-ignore - Node.js specific fetch options for undici
+        // Node.js undici-specific options to override default connection timeout
+        // TypeScript doesn't have types for these, but they're required for proper timeout handling
+        // @ts-ignore
         headersTimeout: timeout,
         bodyTimeout: timeout,
       });
@@ -84,7 +87,7 @@ async function fetchWithRetry(
       
       // Only retry on timeout errors
       if (isTimeoutError && attempt < retries) {
-        const backoffTime = 2000 * (attempt + 1); // 2s, 4s, 6s
+        const backoffTime = RETRY_BASE_DELAY * (attempt + 1); // 2s, 4s, 6s
         console.log(`[Fetch Retry] Retrying in ${backoffTime}ms...`);
         await new Promise(resolve => setTimeout(resolve, backoffTime));
         continue;
