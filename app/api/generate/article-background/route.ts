@@ -4,6 +4,7 @@ import { generateFeaturedImage } from '@/lib/aiml-image-generator';
 import { CONTENT_PROMPT_RULES, cleanForbiddenWords } from '@/lib/writing-rules';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase-server';
+import { getProjectContext, buildContextPrompt, ProjectContext } from '@/lib/project-context';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -205,6 +206,24 @@ async function processArticle(jobId: string, params: {
   
   try {
     const now = new Date();
+
+    // Get project context (knowledge base, internal links, affiliates)
+    let projectContext: ProjectContext | null = null;
+    let contextPrompt = '';
+    if (projectId) {
+      try {
+        projectContext = await getProjectContext(projectId);
+        contextPrompt = buildContextPrompt(projectContext);
+        console.log('Project context loaded:', {
+          hasKnowledgeBase: !!projectContext.knowledgeBase,
+          internalLinksCount: projectContext.internalLinks.length,
+          externalLinksCount: projectContext.externalLinks.length,
+          hasAffiliate: !!projectContext.affiliateConfig,
+        });
+      } catch (e) {
+        console.warn('Failed to load project context:', e);
+      }
+    }
     const langConfig = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS['nl'];
     const localeMap: Record<string, string> = { nl: 'nl-NL', en: 'en-US', de: 'de-DE' };
     const currentMonth = now.toLocaleString(localeMap[language] || 'nl-NL', { month: 'long' });
@@ -219,6 +238,7 @@ ${description ? `Context: ${description}` : ''}
 Doellengte: ${wordCount} woorden
 
 ${langConfig.writingStyle}
+${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
 Geef een JSON outline:
 {
@@ -260,10 +280,12 @@ Focus keyword: ${keyword}
 
 ${langConfig.writingStyle}
 ${CONTENT_PROMPT_RULES}
+${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
 - Start direct met een hook
 - Vermeld het keyword in de eerste 100 woorden
 - Ongeveer 150-200 woorden
+- Voeg waar relevant interne links toe
 - Output als HTML met <p> tags`;
 
     let introContent = '';
@@ -308,10 +330,13 @@ Key points: ${section.keyPoints?.join(', ') || 'Belangrijke informatie'}
 
 ${langConfig.writingStyle}
 ${CONTENT_PROMPT_RULES}
+${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
 - Ongeveer ${wordsPerSection} woorden
 - Start met <h2>${section.heading}</h2>
 - Gebruik <h3> voor subsecties
+- Voeg waar relevant interne links toe naar gerelateerde artikelen
+- Als je producten noemt en er is een affiliate configuratie, voeg affiliate links toe
 - Output als HTML`;
 
       try {
@@ -341,10 +366,12 @@ Focus keyword: ${keyword}
 
 ${langConfig.writingStyle}
 ${CONTENT_PROMPT_RULES}
+${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
 - Start met <h2>${langConfig.conclusionHeading}</h2>
 - Vat de belangrijkste punten samen
 - Eindig met een call-to-action
+- Voeg een relevante interne link toe als afsluiter
 - Ongeveer 150-200 woorden
 - Output als HTML`;
 
