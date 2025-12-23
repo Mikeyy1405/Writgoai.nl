@@ -110,10 +110,15 @@ export async function POST(request: NextRequest) {
     // Test 1: Check if site is reachable
     console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const siteResponse = await fetch(wpUrl, {
         method: 'HEAD',
-        signal: AbortSignal.timeout(10000), // 10 second timeout
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (siteResponse.ok || siteResponse.status === 301 || siteResponse.status === 302) {
         result.checks.siteReachable = {
@@ -137,7 +142,7 @@ export async function POST(request: NextRequest) {
         details: error.message,
       };
       console.error('✗ Site not reachable:', error.message);
-      
+
       // If site is not reachable, no point in checking further
       return NextResponse.json(result);
     }
@@ -147,13 +152,18 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(restApiEndpoint);
     console.log(`Testing REST API availability: ${sanitizeUrl(restApiEndpoint)}`);
     try {
+      const controller2 = new AbortController();
+      const timeoutId2 = setTimeout(() => controller2.abort(), 30000); // 30 second timeout
+
       const apiResponse = await fetch(restApiEndpoint, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: controller2.signal,
       });
+
+      clearTimeout(timeoutId2);
 
       if (apiResponse.ok) {
         const apiData = await apiResponse.json();
@@ -197,13 +207,18 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(wpV2Endpoint);
     console.log(`Testing WordPress v2 API: ${sanitizeUrl(wpV2Endpoint)}`);
     try {
+      const controller3 = new AbortController();
+      const timeoutId3 = setTimeout(() => controller3.abort(), 30000); // 30 second timeout
+
       const wpV2Response = await fetch(wpV2Endpoint, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: controller3.signal,
       });
+
+      clearTimeout(timeoutId3);
 
       if (wpV2Response.ok) {
         const wpV2Data = await wpV2Response.json();
@@ -235,14 +250,19 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(`${postsEndpoint}?per_page=1`);
     console.log(`Testing posts endpoint: ${sanitizeUrl(postsEndpoint)}?per_page=1`);
     try {
+      const controller4 = new AbortController();
+      const timeoutId4 = setTimeout(() => controller4.abort(), 30000); // 30 second timeout
+
       const postsResponse = await fetch(`${postsEndpoint}?per_page=1`, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: controller4.signal,
       });
+
+      clearTimeout(timeoutId4);
 
       if (postsResponse.ok) {
         const posts = await postsResponse.json();
@@ -274,14 +294,19 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(usersEndpoint);
     console.log(`Testing authentication with ${sanitizeUrl(usersEndpoint)}`);
     try {
+      const controller5 = new AbortController();
+      const timeoutId5 = setTimeout(() => controller5.abort(), 30000); // 30 second timeout
+
       const authResponse = await fetch(usersEndpoint, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: controller5.signal,
       });
+
+      clearTimeout(timeoutId5);
 
       if (authResponse.ok) {
         const userData = await authResponse.json();
