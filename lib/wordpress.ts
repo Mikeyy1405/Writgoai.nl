@@ -2,6 +2,8 @@
  * WordPress REST API Integration
  */
 
+import { getPostsEndpoint, buildAuthHeader } from './wordpress-endpoints';
+
 export interface WordPressPost {
   title: string;
   content: string;
@@ -16,12 +18,13 @@ export async function publishToWordPress(
   post: WordPressPost
 ): Promise<{ success: boolean; postId?: number; url?: string; error?: string }> {
   try {
-    const auth = Buffer.from(`${wpUsername}:${wpPassword}`).toString('base64');
+    const authHeader = buildAuthHeader(wpUsername, wpPassword);
+    const postsEndpoint = getPostsEndpoint(wpUrl);
     
-    const response = await fetch(`${wpUrl}/wp-json/wp/v2/posts`, {
+    const response = await fetch(postsEndpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${auth}`,
+        'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

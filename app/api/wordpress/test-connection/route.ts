@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
+import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader } from '@/lib/wordpress-endpoints';
 
 /**
  * Test WordPress connection and verify credentials
@@ -58,9 +59,12 @@ export async function POST(request: NextRequest) {
       checks: {
         siteReachable: { passed: false, message: 'Nog niet getest' },
         restApiEnabled: { passed: false, message: 'Nog niet getest' },
+        wpV2ApiEnabled: { passed: false, message: 'Nog niet getest' },
+        postsEndpointAccessible: { passed: false, message: 'Nog niet getest' },
         authenticationValid: { passed: false, message: 'Nog niet getest' },
       },
       wpUrl: sanitizeUrl(project.wp_url || ''),
+      testedEndpoints: [],
       timestamp: new Date().toISOString(),
     };
 
@@ -98,7 +102,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Basic Auth header
-    const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+    const authHeader = buildAuthHeader(username, password);
+
+    // Track tested endpoints
+    result.testedEndpoints = [];
 
     // Test 1: Check if site is reachable
     console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
@@ -136,9 +143,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Test 2: Check if REST API is enabled
-    console.log(`Testing REST API availability: ${sanitizeUrl(wpUrl)}/wp-json/`);
+    const restApiEndpoint = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.base);
+    result.testedEndpoints.push(restApiEndpoint);
+    console.log(`Testing REST API availability: ${sanitizeUrl(restApiEndpoint)}`);
     try {
-      const apiResponse = await fetch(`${wpUrl}/wp-json/`, {
+      const apiResponse = await fetch(restApiEndpoint, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -180,13 +189,92 @@ export async function POST(request: NextRequest) {
       };
       console.error('✗ REST API not reachable:', error.message);
       
-      // Continue to test authentication even if REST API check failed
+      // Continue to test other endpoints even if REST API check failed
     }
 
-    // Test 3: Check authentication
-    console.log(`Testing authentication with wp/v2/users/me`);
+    // Test 3: Check if wp/v2 API is accessible
+    const wpV2Endpoint = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.wp.base);
+    result.testedEndpoints.push(wpV2Endpoint);
+    console.log(`Testing WordPress v2 API: ${sanitizeUrl(wpV2Endpoint)}`);
     try {
-      const authResponse = await fetch(`${wpUrl}/wp-json/wp/v2/users/me`, {
+      const wpV2Response = await fetch(wpV2Endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (wpV2Response.ok) {
+        const wpV2Data = await wpV2Response.json();
+        result.checks.wpV2ApiEnabled = {
+          passed: true,
+          message: 'WordPress REST API v2 is bereikbaar',
+          details: `Endpoints beschikbaar: ${Object.keys(wpV2Data.routes || {}).length}`,
+        };
+        console.log('✓ WordPress v2 API is accessible');
+      } else {
+        result.checks.wpV2ApiEnabled = {
+          passed: false,
+          message: `WordPress v2 API niet bereikbaar: ${wpV2Response.status}`,
+          details: wpV2Response.statusText,
+        };
+        console.log(`✗ WordPress v2 API returned: ${wpV2Response.status}`);
+      }
+    } catch (error: any) {
+      result.checks.wpV2ApiEnabled = {
+        passed: false,
+        message: 'Kan WordPress v2 API niet bereiken',
+        details: error.message,
+      };
+      console.error('✗ WordPress v2 API not reachable:', error.message);
+    }
+
+    // Test 4: Check if posts endpoint is accessible
+    const postsEndpoint = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.wp.posts);
+    result.testedEndpoints.push(`${postsEndpoint}?per_page=1`);
+    console.log(`Testing posts endpoint: ${sanitizeUrl(postsEndpoint)}?per_page=1`);
+    try {
+      const postsResponse = await fetch(`${postsEndpoint}?per_page=1`, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (postsResponse.ok) {
+        const posts = await postsResponse.json();
+        result.checks.postsEndpointAccessible = {
+          passed: true,
+          message: 'Posts endpoint is bereikbaar',
+          details: `Status ${postsResponse.status}, ${Array.isArray(posts) ? posts.length : 0} post(s) gevonden`,
+        };
+        console.log(`✓ Posts endpoint accessible: ${Array.isArray(posts) ? posts.length : 0} posts`);
+      } else {
+        result.checks.postsEndpointAccessible = {
+          passed: false,
+          message: `Posts endpoint niet bereikbaar: ${postsResponse.status}`,
+          details: postsResponse.statusText,
+        };
+        console.log(`✗ Posts endpoint returned: ${postsResponse.status}`);
+      }
+    } catch (error: any) {
+      result.checks.postsEndpointAccessible = {
+        passed: false,
+        message: 'Kan posts endpoint niet bereiken',
+        details: error.message,
+      };
+      console.error('✗ Posts endpoint not reachable:', error.message);
+    }
+
+    // Test 5: Check authentication
+    const usersEndpoint = `${getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.wp.base)}/users/me`;
+    result.testedEndpoints.push(usersEndpoint);
+    console.log(`Testing authentication with ${sanitizeUrl(usersEndpoint)}`);
+    try {
+      const authResponse = await fetch(usersEndpoint, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
@@ -238,6 +326,8 @@ export async function POST(request: NextRequest) {
     result.success = 
       result.checks.siteReachable.passed &&
       result.checks.restApiEnabled.passed &&
+      (result.checks.wpV2ApiEnabled?.passed ?? true) &&
+      (result.checks.postsEndpointAccessible?.passed ?? true) &&
       result.checks.authenticationValid.passed;
 
     console.log(`Connection test complete. Success: ${result.success}`);

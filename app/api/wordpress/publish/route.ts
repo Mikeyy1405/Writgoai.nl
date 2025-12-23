@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
+import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, getPostsEndpoint, getMediaEndpoint, buildWordPressUrl } from '@/lib/wordpress-endpoints';
+import { sanitizeUrl } from '@/lib/wordpress-errors';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -11,36 +13,6 @@ const PUBLISH_TIMEOUT = 90000; // 90 seconds for publishing (increased from 60s)
 const TEST_TIMEOUT = 45000; // 45 seconds for connection tests (increased from 30s)
 const MEDIA_TIMEOUT = 120000; // 120 seconds for media uploads (increased from 90s)
 const RETRY_BASE_DELAY = 2000; // 2 seconds base delay for exponential backoff
-
-// Helper function to clean WordPress Application Password
-function cleanApplicationPassword(password: string): string {
-  // WordPress Application Passwords are often displayed with spaces
-  // Remove all whitespace for the actual API call
-  return password.replace(/\s+/g, '');
-}
-
-// Helper function to ensure proper WordPress REST API URL
-function getWordPressApiUrl(wpUrl: string): string {
-  let url = wpUrl.trim();
-  
-  // Remove trailing slash
-  if (url.endsWith('/')) {
-    url = url.slice(0, -1);
-  }
-  
-  // If it already has /wp-json/wp/v2, use as is
-  if (url.includes('/wp-json/wp/v2')) {
-    return url;
-  }
-  
-  // If it has /wp-json but not /wp/v2, add it
-  if (url.includes('/wp-json')) {
-    return url.endsWith('/wp-json') ? `${url}/wp/v2` : url;
-  }
-  
-  // Otherwise, add the full REST API path
-  return `${url}/wp-json/wp/v2`;
-}
 
 // Helper function to make fetch with retry and improved timeout handling
 async function fetchWithRetry(
@@ -179,19 +151,19 @@ export async function POST(request: Request) {
     }
 
     // Prepare WordPress API URL and credentials
-    const wpApiUrl = getWordPressApiUrl(project.wp_url);
-    const cleanPassword = cleanApplicationPassword(project.wp_password);
-    const authHeader = 'Basic ' + Buffer.from(`${project.wp_username}:${cleanPassword}`).toString('base64');
+    const wpUrl = project.wp_url.replace(/\/$/, '');
+    const authHeader = buildAuthHeader(project.wp_username, project.wp_password);
+    const postsEndpoint = getPostsEndpoint(wpUrl);
 
-    console.log('WordPress API URL:', wpApiUrl);
+    console.log('WordPress API URL:', sanitizeUrl(postsEndpoint));
     console.log('Publishing article:', articleTitle);
-    console.log('Target host:', new URL(wpApiUrl).hostname);
+    console.log('Target host:', new URL(wpUrl).hostname);
     console.log('Using timeout:', PUBLISH_TIMEOUT, 'ms');
 
     // Publish to WordPress
     try {
       const wpResponse = await fetchWithRetry(
-        `${wpApiUrl}/posts`,
+        postsEndpoint,
         {
           method: 'POST',
           headers: {
@@ -248,7 +220,7 @@ export async function POST(request: Request) {
 
       // Upload featured image if provided (in background, don't block)
       if (articleFeaturedImage && wpPost.id) {
-        uploadFeaturedImage(wpApiUrl, authHeader, wpPost.id, articleFeaturedImage).catch(err => {
+        uploadFeaturedImage(wpUrl, authHeader, wpPost.id, articleFeaturedImage).catch(err => {
           console.warn('Featured image upload failed (non-blocking):', err.message);
         });
       }
@@ -281,7 +253,7 @@ export async function POST(request: Request) {
       let errorMessage = 'Kon geen verbinding maken met WordPress';
       
       if (wpError.name === 'AbortError' || wpError.message?.includes('timeout') || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT') {
-        errorMessage = `De WordPress server (${new URL(wpApiUrl).hostname}) reageert te langzaam of is niet bereikbaar.
+        errorMessage = `De WordPress server (${new URL(wpUrl).hostname}) reageert te langzaam of is niet bereikbaar.
 
 Mogelijke oorzaken:
 • Trage hosting of overbelaste server
@@ -316,7 +288,7 @@ Wat te doen:
 
 // Background function to upload featured image
 async function uploadFeaturedImage(
-  wpApiUrl: string, 
+  wpUrl: string, 
   authHeader: string, 
   postId: number, 
   imageUrl: string
@@ -334,8 +306,9 @@ async function uploadFeaturedImage(
     const extension = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
     
     // Upload to WordPress media library
+    const mediaEndpoint = getMediaEndpoint(wpUrl);
     const mediaResponse = await fetchWithRetry(
-      `${wpApiUrl}/media`,
+      mediaEndpoint,
       {
         method: 'POST',
         headers: {
@@ -354,8 +327,9 @@ async function uploadFeaturedImage(
       const media = await mediaResponse.json();
       
       // Set as featured image
+      const postEndpoint = getPostsEndpoint(wpUrl, postId);
       await fetchWithRetry(
-        `${wpApiUrl}/posts/${postId}`,
+        postEndpoint,
         {
           method: 'PUT',
           headers: {
@@ -411,16 +385,16 @@ export async function GET(request: Request) {
       });
     }
 
-    const wpApiUrl = getWordPressApiUrl(project.wp_url);
-    const cleanPassword = cleanApplicationPassword(project.wp_password);
-    const authHeader = 'Basic ' + Buffer.from(`${project.wp_username}:${cleanPassword}`).toString('base64');
+    const wpUrl = project.wp_url.replace(/\/$/, '');
+    const authHeader = buildAuthHeader(project.wp_username, project.wp_password);
 
-    console.log('[WordPress Test] Testing connection to:', new URL(wpApiUrl).hostname);
+    console.log('[WordPress Test] Testing connection to:', new URL(wpUrl).hostname);
     console.log('[WordPress Test] Using timeout:', TEST_TIMEOUT, 'ms');
 
     try {
+      const postsTestUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
       const testResponse = await fetchWithRetry(
-        `${wpApiUrl}/posts?per_page=1`,
+        postsTestUrl,
         {
           headers: {
             'Authorization': authHeader,

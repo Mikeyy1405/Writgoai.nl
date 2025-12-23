@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
+import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader } from '@/lib/wordpress-endpoints';
 
 export async function GET(request: NextRequest) {
   try {
@@ -88,12 +89,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Create Basic Auth header
-    const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+    const authHeader = buildAuthHeader(username, password);
 
     // First, test if REST API is available
-    console.log(`Testing REST API availability at: ${sanitizeUrl(wpUrl)}/wp-json/`);
+    const restApiTestUrl = `${wpUrl}${WORDPRESS_ENDPOINTS.base}/`;
+    console.log(`Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
     try {
-      const apiTestResponse = await fetch(`${wpUrl}/wp-json/`, {
+      const apiTestResponse = await fetch(restApiTestUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(10000),
@@ -149,9 +151,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch posts from WordPress
-    const wpApiUrl = `${wpUrl}/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}&_embed`;
+    const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, {
+      page,
+      per_page: perPage,
+      _embed: true,
+    });
 
-    console.log(`Fetching WordPress posts from: ${sanitizeUrl(wpUrl)}/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}&_embed`);
+    console.log(`Fetching WordPress posts from: ${sanitizeUrl(wpApiUrl)}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout (increased from 15s)
