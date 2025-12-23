@@ -490,7 +490,7 @@ export default function EditorPage() {
           <RichTextEditor
             content={editedContent}
             onChange={setEditedContent}
-            generateImage={generateAIImage}
+            onGenerateImage={generateAIImage}
           />
         )}
         {viewMode === 'html' && (
