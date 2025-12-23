@@ -93,7 +93,7 @@ export async function POST(request: Request) {
           const testResponse = await fetch(testUrl, {
             headers: {
               'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
-              'User-Agent': 'WritGo-SEO-Agent/2.0',
+              'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
               'Accept': 'application/json',
             },
             signal: controller.signal,
