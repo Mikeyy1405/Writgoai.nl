@@ -108,29 +108,48 @@ export default function Home() {
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-block mb-4 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full">
             <span className="text-orange-400 text-sm font-medium">
-              🤖 AI-Powered WordPress SEO Agent
+              🚀 Vanaf €0.49 per artikel • 87% winstmarge
             </span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            Automatisch SEO Content
+            AI Content op Credits
             <br />
             <span className="bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
-              voor je WordPress
+              Transparant & Winstgevend
             </span>
           </h1>
           
-          <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
-            Laat AI automatisch hoogwaardige, SEO-geoptimaliseerde content schrijven en publiceren naar je WordPress website. Bespaar uren werk en rank hoger in Google.
+          <p className="text-xl text-gray-300 mb-6 max-w-3xl mx-auto">
+            Betaal alleen voor wat je gebruikt. Geen limiet op features, alleen op credits. Alle tools beschikbaar vanaf dag 1.
           </p>
           
+          <div className="flex flex-wrap gap-4 justify-center mb-12 text-gray-300">
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>AI Artikelen</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>AI Afbeeldingen</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>SEO Research</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>WordPress Integratie</span>
+            </div>
+          </div>
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/register"
+            <a
+              href="#pricing"
               className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:shadow-2xl hover:shadow-orange-500/50 transition-all transform hover:scale-105"
             >
-              Start Gratis Trial →
-            </Link>
+              Bekijk Pakketten →
+            </a>
             <a
               href="#features"
               className="bg-gray-800 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-700 transition-all border border-gray-700"
@@ -142,16 +161,16 @@ export default function Home() {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-3 gap-8 max-w-3xl mx-auto">
             <div>
-              <div className="text-4xl font-bold text-white mb-2">10,000+</div>
-              <div className="text-gray-400">Artikelen Gegenereerd</div>
+              <div className="text-4xl font-bold text-white mb-2">€0.20</div>
+              <div className="text-gray-400">Per Credit (Enterprise)</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">95%</div>
-              <div className="text-gray-400">Tijd Bespaard</div>
+              <div className="text-4xl font-bold text-white mb-2">87%</div>
+              <div className="text-gray-400">Winstmarge</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">4.9/5</div>
-              <div className="text-gray-400">Klanttevredenheid</div>
+              <div className="text-4xl font-bold text-white mb-2">100%</div>
+              <div className="text-gray-400">Features Toegang</div>
             </div>
           </div>
         </div>
@@ -221,102 +240,203 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">
-              Simpele, Transparante Prijzen
+              Credit-Based Pricing met Hoge Marges
             </h2>
-            <p className="text-xl text-gray-300">
-              Kies het plan dat bij jou past. Altijd opzegbaar.
+            <p className="text-xl text-gray-300 mb-2">
+              Betaal alleen voor wat je gebruikt. Alle features beschikbaar vanaf dag 1.
+            </p>
+            <p className="text-sm text-gray-400">
+              Geen whitelabel nonsense. Geen API limiet gedoe. Alleen credits.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Starter */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-orange-500/30 transition-all">
               <h3 className="text-2xl font-bold text-white mb-2">Starter</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">€49</span>
+              <div className="mb-4">
+                <span className="text-5xl font-bold text-white">€49</span>
                 <span className="text-gray-400">/maand</span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                <div className="text-3xl font-bold text-orange-400 mb-1">100 Credits</div>
+                <div className="text-sm text-gray-400">€0.49 per credit</div>
+              </div>
+              
+              <div className="mb-6 text-sm text-gray-300">
+                <div className="font-semibold text-white mb-2">Wat kun je maken:</div>
+                <div className="space-y-1">
+                  <div>• 50 artikelen (2 credits)</div>
+                  <div>• 100 korte artikelen</div>
+                  <div>• 25 artikelen + afbeeldingen</div>
+                </div>
+              </div>
+
+              <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> 50 artikelen/maand
+                  <span className="mr-2 text-green-400">✓</span> Volledige toegang tot alle features
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> 1 WordPress site
+                  <span className="mr-2 text-green-400">✓</span> AI Content Generatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> SEO optimalisatie
+                  <span className="mr-2 text-green-400">✓</span> AI Afbeeldingen (Flux Pro)
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> Email support
+                  <span className="mr-2 text-green-400">✓</span> SEO Research & Analyse
+                </li>
+                <li className="flex items-center text-gray-300">
+                  <span className="mr-2 text-green-400">✓</span> WordPress Integratie
+                </li>
+                <li className="flex items-center text-gray-300">
+                  <span className="mr-2 text-green-400">✓</span> AutoPilot Mode
                 </li>
               </ul>
+
+              <div className="mb-4 text-xs text-gray-500 text-center">
+                87% winstmarge • ~€6.20 API costs
+              </div>
+
               <Link
-                href="/register"
+                href="/register?package=starter"
                 className="block w-full bg-gray-800 text-white text-center px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-all"
               >
-                Start Gratis
+                Kies Starter
               </Link>
             </div>
 
             {/* Pro */}
-            <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-2 border-orange-500 rounded-xl p-8 relative">
+            <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-2 border-orange-500 rounded-xl p-8 relative transform scale-105">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-                Meest Populair
+                🔥 Populair
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">€99</span>
+              <div className="mb-4">
+                <span className="text-5xl font-bold text-white">€79</span>
                 <span className="text-gray-400">/maand</span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <div className="mb-6 p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg">
+                <div className="text-3xl font-bold text-orange-400 mb-1">250 Credits</div>
+                <div className="text-sm text-gray-400">€0.32 per credit</div>
+              </div>
+              
+              <div className="mb-6 text-sm text-gray-300">
+                <div className="font-semibold text-white mb-2">Wat kun je maken:</div>
+                <div className="space-y-1">
+                  <div>• 125 artikelen (2 credits)</div>
+                  <div>• 250 korte artikelen</div>
+                  <div>• 62 artikelen + afbeeldingen</div>
+                </div>
+              </div>
+
+              <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> 200 artikelen/maand
+                  <span className="mr-2 text-green-400">✓</span> Volledige toegang tot alle features
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> 5 WordPress sites
+                  <span className="mr-2 text-green-400">✓</span> AI Content Generatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> AutoPilot mode
+                  <span className="mr-2 text-green-400">✓</span> AI Afbeeldingen (Flux Pro)
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> Priority support
+                  <span className="mr-2 text-green-400">✓</span> SEO Research & Analyse
+                </li>
+                <li className="flex items-center text-gray-300">
+                  <span className="mr-2 text-green-400">✓</span> WordPress Integratie
+                </li>
+                <li className="flex items-center text-gray-300">
+                  <span className="mr-2 text-green-400">✓</span> AutoPilot Mode
                 </li>
               </ul>
+
+              <div className="mb-4 text-xs text-gray-500 text-center">
+                80% winstmarge • ~€15.50 API costs
+              </div>
+
               <Link
-                href="/register"
+                href="/register?package=pro"
                 className="block w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-center px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
               >
-                Start Gratis
+                Kies Pro
               </Link>
             </div>
 
             {/* Enterprise */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-orange-500/30 transition-all">
               <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">€299</span>
+              <div className="mb-4">
+                <span className="text-5xl font-bold text-white">€199</span>
                 <span className="text-gray-400">/maand</span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                <div className="text-3xl font-bold text-orange-400 mb-1">1000 Credits</div>
+                <div className="text-sm text-gray-400">€0.20 per credit</div>
+              </div>
+              
+              <div className="mb-6 text-sm text-gray-300">
+                <div className="font-semibold text-white mb-2">Wat kun je maken:</div>
+                <div className="space-y-1">
+                  <div>• 500 artikelen (2 credits)</div>
+                  <div>• 1000 korte artikelen</div>
+                  <div>• 250 artikelen + afbeeldingen</div>
+                </div>
+              </div>
+
+              <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> Unlimited artikelen
+                  <span className="mr-2 text-green-400">✓</span> Volledige toegang tot alle features
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> Unlimited sites
+                  <span className="mr-2 text-green-400">✓</span> AI Content Generatie
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> White-label optie
+                  <span className="mr-2 text-green-400">✓</span> AI Afbeeldingen (Flux Pro)
                 </li>
                 <li className="flex items-center text-gray-300">
-                  <span className="mr-2 text-orange-500">✓</span> Dedicated support
+                  <span className="mr-2 text-green-400">✓</span> SEO Research & Analyse
+                </li>
+                <li className="flex items-center text-gray-300">
+                  <span className="mr-2 text-green-400">✓</span> WordPress Integratie
+                </li>
+                <li className="flex items-center text-gray-300">
+                  <span className="mr-2 text-green-400">✓</span> AutoPilot Mode
                 </li>
               </ul>
+
+              <div className="mb-4 text-xs text-gray-500 text-center">
+                69% winstmarge • ~€62.00 API costs
+              </div>
+
               <Link
-                href="/register"
+                href="/register?package=enterprise"
                 className="block w-full bg-gray-800 text-white text-center px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-all"
               >
-                Contact Sales
+                Kies Enterprise
               </Link>
+            </div>
+          </div>
+
+          {/* Transparency Note */}
+          <div className="mt-16 max-w-4xl mx-auto">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
+              <h3 className="text-xl font-semibold text-white mb-4 text-center">
+                💎 Volledige Transparantie
+              </h3>
+              <div className="grid md:grid-cols-3 gap-6 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-orange-400 mb-2">Geen Limieten</div>
+                  <div className="text-sm text-gray-400">Alle features beschikbaar in elk pakket</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-400 mb-2">Hoge Marges</div>
+                  <div className="text-sm text-gray-400">69-87% winst op subscriptions</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-400 mb-2">Fair Pricing</div>
+                  <div className="text-sm text-gray-400">API costs: €0.031-€0.145 per actie</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -326,17 +446,25 @@ export default function Home() {
       <section className="py-20 px-4 bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-y border-gray-800">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
-            Klaar om te starten?
+            Klaar om te beginnen?
           </h2>
           <p className="text-xl text-gray-300 mb-8">
-            Begin vandaag nog met automatische content generatie. Geen creditcard nodig voor de trial.
+            Betaal alleen voor wat je gebruikt. Alle features direct beschikbaar. Start met 100 credits voor slechts €49/maand.
           </p>
-          <Link
-            href="/register"
-            className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 text-white px-12 py-4 rounded-lg font-semibold text-lg hover:shadow-2xl hover:shadow-orange-500/50 transition-all transform hover:scale-105"
-          >
-            Start Gratis Trial →
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="#pricing"
+              className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 text-white px-12 py-4 rounded-lg font-semibold text-lg hover:shadow-2xl hover:shadow-orange-500/50 transition-all transform hover:scale-105"
+            >
+              Bekijk Pakketten →
+            </a>
+            <Link
+              href="/register"
+              className="inline-block bg-gray-800 text-white px-12 py-4 rounded-lg font-semibold text-lg hover:bg-gray-700 transition-all border border-gray-700"
+            >
+              Registreer Gratis
+            </Link>
+          </div>
         </div>
       </section>
 
