@@ -120,6 +120,7 @@ Schrijf het artikel in HTML formaat:`;
           );
 
           let fullContent = '';
+          let chunkCount = 0;
 
           // Stream from Claude via AIML API
           const completion = await openai.chat.completions.create({
@@ -141,38 +142,43 @@ Schrijf het artikel in HTML formaat:`;
 
           // Handle streaming chunks
           for await (const chunk of completion) {
-            // Skip invalid chunks without crashing
-            if (!chunk || typeof chunk !== 'object') {
-              console.warn('[Stream] Invalid chunk type, skipping:', typeof chunk);
+            // Debug: log first 3 chunks completely
+            if (chunkCount < 3) {
+              console.log(`[DEBUG] Chunk ${chunkCount + 1}:`, JSON.stringify(chunk, null, 2));
+              chunkCount++;
+            }
+
+            // Handle different chunk types
+            if (!chunk) {
               continue;
             }
 
-            // Detect response format dynamically - support all formats:
-            // 1. OpenAI format: chunk.choices[0].delta.content
-            // 2. Alternative format: chunk.delta.content (if present)
-            // 3. Direct format: chunk.content
-            const content =
-              chunk.choices?.[0]?.delta?.content || // OpenAI format
-              ('delta' in chunk ? (chunk as any).delta?.content : '') ||  // Alternative format
-              ('content' in chunk ? (chunk as any).content : '') ||        // Direct format
-              '';
-            
-            // Log warnings for debugging unexpected formats
-            if (!content && Object.keys(chunk).length > 0) {
-              const chunkStr = JSON.stringify(chunk);
-              const preview = chunkStr.length > 200 ? chunkStr.slice(0, 200) + '...' : chunkStr;
-              console.warn('[Stream] Unexpected chunk format:', preview);
+            // String chunks
+            if (typeof chunk === 'string') {
+              fullContent += chunk;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`));
+              continue;
             }
+
+            // Object chunks - try all possible formats
+            const content =
+              chunk.choices?.[0]?.delta?.content || // OpenAI standard
+              chunk.delta?.content || // Alternative format
+              chunk.content || // Direct content
+              chunk.text || // Text field
+              (chunk.choices?.[0]?.text) || // Choices text
+              '';
             
             if (content) {
               fullContent += content;
-
-              // Send chunk to client
               controller.enqueue(
                 encoder.encode(
                   `data: ${JSON.stringify({ type: 'chunk', content })}\n\n`
                 )
               );
+            } else if (Object.keys(chunk).length > 0 && chunkCount > 3) {
+              // Only log unexpected formats after the debug phase, and less verbosely
+              console.warn('[Stream] Unexpected chunk format (keys):', Object.keys(chunk).join(', '));
             }
           }
 
