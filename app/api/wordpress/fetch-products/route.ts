@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader } from '@/lib/wordpress-endpoints';
 
+// Force dynamic rendering since we use cookies for authentication
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient();

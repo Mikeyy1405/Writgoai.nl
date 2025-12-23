@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader } from '@/lib/wordpress-endpoints';
 
+// Force dynamic rendering since we use cookies for authentication
+export const dynamic = 'force-dynamic';
+
 /**
  * Test WordPress connection and verify credentials
  * 
