@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS project_knowledge_base (
   source_url TEXT,
   tags TEXT[] DEFAULT ARRAY[]::TEXT[],
   is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   CONSTRAINT fk_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
 
@@ -45,6 +45,7 @@ ALTER TABLE project_knowledge_base ENABLE ROW LEVEL SECURITY;
 -- RLS Policy: Users can view knowledge base entries for their own projects
 CREATE POLICY "Users can view own project knowledge base" ON project_knowledge_base
   FOR SELECT USING (
+    auth.uid() IS NOT NULL AND
     EXISTS (
       SELECT 1 FROM projects
       WHERE projects.id = project_knowledge_base.project_id
@@ -55,6 +56,7 @@ CREATE POLICY "Users can view own project knowledge base" ON project_knowledge_b
 -- RLS Policy: Users can insert knowledge base entries for their own projects
 CREATE POLICY "Users can insert own project knowledge base" ON project_knowledge_base
   FOR INSERT WITH CHECK (
+    auth.uid() IS NOT NULL AND
     EXISTS (
       SELECT 1 FROM projects
       WHERE projects.id = project_knowledge_base.project_id
@@ -65,6 +67,7 @@ CREATE POLICY "Users can insert own project knowledge base" ON project_knowledge
 -- RLS Policy: Users can update knowledge base entries for their own projects
 CREATE POLICY "Users can update own project knowledge base" ON project_knowledge_base
   FOR UPDATE USING (
+    auth.uid() IS NOT NULL AND
     EXISTS (
       SELECT 1 FROM projects
       WHERE projects.id = project_knowledge_base.project_id
@@ -75,6 +78,7 @@ CREATE POLICY "Users can update own project knowledge base" ON project_knowledge
 -- RLS Policy: Users can delete knowledge base entries for their own projects
 CREATE POLICY "Users can delete own project knowledge base" ON project_knowledge_base
   FOR DELETE USING (
+    auth.uid() IS NOT NULL AND
     EXISTS (
       SELECT 1 FROM projects
       WHERE projects.id = project_knowledge_base.project_id

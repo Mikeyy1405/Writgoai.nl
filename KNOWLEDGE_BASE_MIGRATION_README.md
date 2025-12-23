@@ -26,7 +26,7 @@ This migration creates the `project_knowledge_base` table with all necessary col
 
 ### Option 1: Using Supabase Dashboard (Recommended)
 
-1. Go to your Supabase Dashboard: https://supabase.com/dashboard/project/utursgxvfhhfheeoewfn
+1. Go to your Supabase Dashboard: https://supabase.com/dashboard/project/YOUR_PROJECT_ID
 2. Navigate to **SQL Editor** (left sidebar)
 3. Click **New Query**
 4. Copy the contents of `supabase_project_knowledge_base_migration.sql`
@@ -39,7 +39,7 @@ This migration creates the `project_knowledge_base` table with all necessary col
 If you have the Supabase CLI installed:
 
 ```bash
-supabase db push --db-url "postgresql://postgres:[PASSWORD]@db.utursgxvfhhfheeoewfn.supabase.co:5432/postgres" < supabase_project_knowledge_base_migration.sql
+supabase db push --db-url "postgresql://postgres:[YOUR_PASSWORD]@db.[YOUR_PROJECT_REF].supabase.co:5432/postgres" < supabase_project_knowledge_base_migration.sql
 ```
 
 ## Table Structure
