@@ -191,11 +191,12 @@ export async function GET(request: Request) {
 
       return NextResponse.json(job);
     } else if (projectId) {
-      // Get active/processing job for project
+      // Get active/processing job for project (exclude cancelled jobs)
       let query = supabaseAdmin
         .from('content_plan_jobs')
         .select('*')
         .eq('project_id', projectId)
+        .not('status', 'eq', 'cancelled') // Never return cancelled jobs
         .order('created_at', { ascending: false })
         .limit(1);
       
@@ -610,6 +611,12 @@ Output als JSON:
         current_step: `✅ Cluster ${i + 1}/${pillarCount} voltooid (${allArticles.length} artikelen)` 
       });
 
+      // Check cancellation after each cluster
+      if (await isJobCancelled(jobId)) {
+        console.log(`Job ${jobId} was cancelled after cluster ${i + 1}`);
+        return;
+      }
+
       // Small delay between clusters
       if (i < pillarCount - 1) {
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -617,6 +624,12 @@ Output als JSON:
     }
 
     await updateJob(jobId, { progress: 76, current_step: `✅ ${clusters.length} clusters met ${allArticles.length} artikelen` });
+
+    // Check cancellation before long-tail
+    if (await isJobCancelled(jobId)) {
+      console.log(`Job ${jobId} was cancelled before long-tail generation`);
+      return;
+    }
 
     // Step 5: Generate long-tail variations
     await updateJob(jobId, { progress: 80, current_step: '🔄 Long-tail variaties genereren...' });
@@ -644,6 +657,12 @@ Output als JSON:
           });
         }
       }
+    }
+
+    // Check cancellation before DataForSEO
+    if (await isJobCancelled(jobId)) {
+      console.log(`Job ${jobId} was cancelled before DataForSEO enrichment`);
+      return;
     }
 
     // Step 6: DataForSEO enrichment (85-95%)
@@ -722,6 +741,12 @@ Output als JSON:
     }
 
     await updateJob(jobId, { progress: 95, current_step: '🎯 Afronden...' });
+
+    // Final cancellation check before saving
+    if (await isJobCancelled(jobId)) {
+      console.log(`Job ${jobId} was cancelled before final save`);
+      return;
+    }
 
     // Deduplicate
     const seen = new Set<string>();

@@ -249,9 +249,13 @@ export default function ContentPlanPage() {
       const response = await fetch(`/api/simple/generate-content-plan-background?projectId=${projectId}&status=processing`);
       if (response.ok) {
         const data = await response.json();
-        if (data.id && (data.status === 'processing' || data.status === 'pending')) {
-          setCurrentJobId(data.id);
-          startPolling(data.id, projectId);
+        // Only resume if job is actually processing or pending (NOT cancelled or failed)
+        if (data.id && data.status === 'processing') {
+          // Double check it's not cancelled
+          if (data.status !== 'cancelled' && data.status !== 'failed') {
+            setCurrentJobId(data.id);
+            startPolling(data.id, projectId);
+          }
         }
       }
     } catch (err) {
