@@ -8,21 +8,28 @@ import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7);
+  console.log(`[WP-FETCH-${requestId}] 🔍 Starting WordPress posts fetch request`);
+
   try {
     const supabase = createClient();
 
     // Get authenticated user
+    console.log(`[WP-FETCH-${requestId}] 🔐 Checking authentication...`);
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      console.error(`[WP-FETCH-${requestId}] ❌ Authentication failed:`, authError?.message || 'No user');
       return NextResponse.json(
         { error: 'Niet geautoriseerd' },
         { status: 401 }
       );
     }
+
+    console.log(`[WP-FETCH-${requestId}] ✅ User authenticated: ${user.id}`);
 
     // Get project_id from query params
     const searchParams = request.nextUrl.searchParams;
@@ -30,7 +37,10 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const perPage = parseInt(searchParams.get('per_page') || '20');
 
+    console.log(`[WP-FETCH-${requestId}] 📋 Request params:`, { projectId, page, perPage });
+
     if (!projectId) {
+      console.error(`[WP-FETCH-${requestId}] ❌ No project_id provided`);
       return NextResponse.json(
         { error: 'project_id is verplicht' },
         { status: 400 }
@@ -38,6 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get project with WordPress credentials
+    console.log(`[WP-FETCH-${requestId}] 📂 Fetching project from database...`);
     const { data: project, error: projectError } = await supabase
       .from('projects')
       .select('id, name, wp_url, wp_username, wp_password, wp_app_password')
@@ -46,20 +57,32 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (projectError || !project) {
+      console.error(`[WP-FETCH-${requestId}] ❌ Project not found:`, projectError?.message || 'No project');
       return NextResponse.json(
         { error: 'Project niet gevonden' },
         { status: 404 }
       );
     }
 
+    console.log(`[WP-FETCH-${requestId}] ✅ Project found: ${project.name}`);
+
     // Check if WordPress credentials are configured
+    console.log(`[WP-FETCH-${requestId}] 🔧 Checking WordPress configuration...`);
+    console.log(`[WP-FETCH-${requestId}] 📊 Config status:`, {
+      hasWpUrl: !!project.wp_url,
+      hasUsername: !!project.wp_username,
+      hasAppPassword: !!project.wp_app_password,
+      hasPassword: !!project.wp_password
+    });
+
     if (!project.wp_url || (!project.wp_username && !project.wp_app_password)) {
+      console.error(`[WP-FETCH-${requestId}] ❌ WordPress configuration incomplete`);
       const errorDetails = classifyWordPressError(
         new Error('WordPress configuratie is niet compleet. Configureer WordPress in project instellingen.'),
         undefined,
         project.wp_url
       );
-      console.error('Configuration error:', formatErrorForLogging(errorDetails));
+      console.error(`[WP-FETCH-${requestId}]`, formatErrorForLogging(errorDetails));
       
       return NextResponse.json(
         { 
@@ -75,16 +98,19 @@ export async function GET(request: NextRequest) {
     let wpUrl = project.wp_url.replace(/\/$/, ''); // Remove trailing slash
     wpUrl = wpUrl.replace(/\/wp-json.*$/, ''); // Remove any /wp-json paths to ensure clean base URL
 
+    console.log(`[WP-FETCH-${requestId}] 🌐 WordPress URL:`, sanitizeUrl(wpUrl));
+
     const username = project.wp_username || '';
     const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
 
     if (!password) {
+      console.error(`[WP-FETCH-${requestId}] ❌ WordPress password missing`);
       const errorDetails = classifyWordPressError(
         new Error('WordPress wachtwoord ontbreekt'),
         undefined,
         wpUrl
       );
-      console.error('Configuration error:', formatErrorForLogging(errorDetails));
+      console.error(`[WP-FETCH-${requestId}]`, formatErrorForLogging(errorDetails));
       
       return NextResponse.json(
         { 
@@ -98,9 +124,11 @@ export async function GET(request: NextRequest) {
     // Create Basic Auth header
     const authHeader = buildAuthHeader(username, password);
 
+    console.log(`[WP-FETCH-${requestId}] ✅ WordPress credentials configured`);
+
     // First, test if REST API is available
     const restApiTestUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.base);
-    console.log(`Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
+    console.log(`[WP-FETCH-${requestId}] 🔌 Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
     try {
       const apiTestResponse = await fetchWithDnsFallback(restApiTestUrl, {
         method: 'GET',
@@ -146,11 +174,12 @@ export async function GET(request: NextRequest) {
           { status: 404 }
         );
       }
-      
-      console.log('✓ REST API is available and wp/v2 is enabled');
+
+      console.log(`[WP-FETCH-${requestId}] ✓ REST API is available and wp/v2 is enabled`);
     } catch (apiTestError: any) {
+      console.error(`[WP-FETCH-${requestId}] ❌ REST API test failed`);
       const errorDetails = classifyWordPressError(apiTestError, undefined, wpUrl);
-      console.error('REST API test error:', formatErrorForLogging(errorDetails));
+      console.error(`[WP-FETCH-${requestId}]`, formatErrorForLogging(errorDetails));
       
       return NextResponse.json(
         { 
@@ -168,7 +197,7 @@ export async function GET(request: NextRequest) {
       _embed: true,
     });
 
-    console.log(`Fetching WordPress posts from: ${sanitizeUrl(wpApiUrl)}`);
+    console.log(`[WP-FETCH-${requestId}] 📥 Fetching WordPress posts from: ${sanitizeUrl(wpApiUrl)}`);
 
     // Retry logic for transient errors
     let wpResponse: Response | null = null;
@@ -178,7 +207,7 @@ export async function GET(request: NextRequest) {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
+        console.log(`[WP-FETCH-${requestId}] 🔄 Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
 
         wpResponse = await fetchWithDnsFallback(wpApiUrl, {
           method: 'GET',
@@ -193,23 +222,23 @@ export async function GET(request: NextRequest) {
 
         // If request succeeded, break out of retry loop
         if (wpResponse.ok) {
-          console.log(`✓ Successfully fetched posts on attempt ${attempt}`);
+          console.log(`[WP-FETCH-${requestId}] ✓ Successfully fetched posts on attempt ${attempt}`);
           break;
         }
 
         // If we got a response but it wasn't ok, and it's not a server error, don't retry
         if (wpResponse.status < 500) {
-          console.log(`✗ Got ${wpResponse.status} error, not retrying`);
+          console.log(`[WP-FETCH-${requestId}] ✗ Got ${wpResponse.status} error, not retrying`);
           break;
         }
 
         // Server error (5xx), retry
         lastError = new Error(`HTTP ${wpResponse.status}: ${wpResponse.statusText}`);
-        console.log(`✗ Server error on attempt ${attempt}, will retry...`);
+        console.log(`[WP-FETCH-${requestId}] ✗ Server error on attempt ${attempt}, will retry...`);
 
       } catch (error: any) {
         lastError = error;
-        console.error(`✗ Attempt ${attempt} failed:`, error.message);
+        console.error(`[WP-FETCH-${requestId}] ✗ Attempt ${attempt} failed:`, error.message);
 
         // If this was the last attempt, throw the error
         if (attempt === maxRetries) {
@@ -218,18 +247,19 @@ export async function GET(request: NextRequest) {
 
         // Wait before retrying (exponential backoff)
         const waitTime = Math.min(2000 * Math.pow(2, attempt - 1), 10000);
-        console.log(`Waiting ${waitTime}ms before retry...`);
+        console.log(`[WP-FETCH-${requestId}] ⏳ Waiting ${waitTime}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
 
     if (!wpResponse) {
+      console.error(`[WP-FETCH-${requestId}] ❌ All retry attempts failed`);
       throw lastError || new Error('Failed to fetch WordPress posts after retries');
     }
 
     if (!wpResponse.ok) {
       const errorText = await wpResponse.text();
-      console.error(`WordPress fetch error: ${wpResponse.status} ${wpResponse.statusText}`, errorText);
+      console.error(`[WP-FETCH-${requestId}] ❌ WordPress fetch error: ${wpResponse.status} ${wpResponse.statusText}`, errorText);
 
       const errorDetails = classifyWordPressError(
         new Error(errorText || wpResponse.statusText),
@@ -253,7 +283,7 @@ export async function GET(request: NextRequest) {
     const totalPages = parseInt(wpResponse.headers.get('X-WP-TotalPages') || '1');
     const totalPosts = parseInt(wpResponse.headers.get('X-WP-Total') || '0');
 
-    console.log(`✓ Successfully fetched ${posts.length} posts (page ${page}/${totalPages}, total: ${totalPosts})`);
+    console.log(`[WP-FETCH-${requestId}] ✓ Successfully fetched ${posts.length} posts (page ${page}/${totalPages}, total: ${totalPosts})`);
 
     // Transform WordPress posts to our format
     const transformedPosts = posts.map((post: any) => {
@@ -298,6 +328,8 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    console.log(`[WP-FETCH-${requestId}] ✅ Request completed successfully`);
+
     return NextResponse.json({
       success: true,
       posts: transformedPosts,
@@ -310,12 +342,12 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Error fetching WordPress posts:', error);
-    console.error('Error code:', error.code || 'N/A');
-    console.error('Error cause:', error.cause?.message || 'N/A');
+    console.error(`[WP-FETCH-${requestId}] ❌ Fatal error fetching WordPress posts:`, error);
+    console.error(`[WP-FETCH-${requestId}] Error code:`, error.code || 'N/A');
+    console.error(`[WP-FETCH-${requestId}] Error cause:`, error.cause?.message || 'N/A');
 
     const errorDetails = classifyWordPressError(error, undefined, undefined);
-    console.error('Detailed error info:', formatErrorForLogging(errorDetails));
+    console.error(`[WP-FETCH-${requestId}] Detailed error info:`, formatErrorForLogging(errorDetails));
 
     return NextResponse.json(
       { 
