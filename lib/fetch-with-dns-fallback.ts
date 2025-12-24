@@ -4,16 +4,26 @@
  * Fixes EAI_AGAIN errors by using system DNS pre-resolution
  * for all domains. This ensures reliable connections regardless
  * of geographic location or TLD.
+ *
+ * Enhanced with detailed diagnostics for debugging blocked requests
+ * from cloud providers (Render, AWS, etc.) to WordPress sites.
  */
 
 import { lookup } from 'dns/promises';
 import { Agent, fetch as undiciFetch, Response as UndiciResponse } from 'undici';
+import {
+  createDiagnosticReport,
+  formatDiagnosticReport,
+  analyzeBlockingIndicators,
+} from './wordpress-request-diagnostics';
 
 export interface FetchOptions extends RequestInit {
   timeout?: number;
   connectTimeout?: number;
   maxRetries?: number;
   retryDelay?: number;
+  /** Enable detailed diagnostics logging for failed requests */
+  enableDiagnostics?: boolean;
 }
 
 // Type alias to handle undici Response compatibility with standard Response
@@ -102,8 +112,11 @@ export async function fetchWithDnsFallback(
     connectTimeout = 90000,
     maxRetries = 4,
     retryDelay = 2000,
+    enableDiagnostics = true, // Enable by default for WordPress debugging
     ...fetchOptions
   } = options;
+
+  const startTime = Date.now();
 
   // Parse URL
   const urlObj = typeof url === 'string' ? new URL(url) : url;
@@ -171,6 +184,28 @@ export async function fetchWithDnsFallback(
         console.log(`[Retry] ✓ Success on attempt ${attempt + 1} for ${hostname}`);
       }
 
+      // Check for blocked responses and log diagnostics
+      if (enableDiagnostics && (response.status === 403 || response.status === 406 || response.status === 429 || response.status === 503)) {
+        const responseHeaders: Record<string, string> = {};
+        response.headers.forEach((value: string, key: string) => {
+          responseHeaders[key] = value;
+        });
+
+        const indicators = analyzeBlockingIndicators(response.status, responseHeaders);
+        if (indicators.length > 0) {
+          console.log(`[Fetch] ⚠️ Potential blocking detected for ${hostname}:`);
+          indicators.forEach(indicator => {
+            console.log(`[Fetch]   [${indicator.confidence}] ${indicator.type}: ${indicator.evidence}`);
+          });
+        }
+
+        // Log all response headers for debugging
+        console.log(`[Fetch] Response headers from ${hostname}:`);
+        Object.entries(responseHeaders).forEach(([key, value]) => {
+          console.log(`[Fetch]   ${key}: ${value}`);
+        });
+      }
+
       // Cast undici Response to standard Response type
       return response as unknown as Response;
     } catch (error: any) {
@@ -197,13 +232,47 @@ export async function fetchWithDnsFallback(
 
   // All retries failed, handle the error
   const error = lastError;
+  const totalTime = Date.now() - startTime;
 
-    // Enhanced error diagnostics for better debugging
-    console.error(`[Fetch Error] Failed to fetch ${hostname}`);
-    console.error(`[Fetch Error] Error name: ${error.name}`);
-    console.error(`[Fetch Error] Error message: ${error.message}`);
-    console.error(`[Fetch Error] Error code: ${error.code || 'N/A'}`);
-    console.error(`[Fetch Error] Error cause:`, error.cause);
+  // Enhanced error diagnostics for better debugging
+  console.error(`[Fetch Error] Failed to fetch ${hostname}`);
+  console.error(`[Fetch Error] Error name: ${error.name}`);
+  console.error(`[Fetch Error] Error message: ${error.message}`);
+  console.error(`[Fetch Error] Error code: ${error.code || 'N/A'}`);
+  console.error(`[Fetch Error] Error cause:`, error.cause);
+
+  // Generate detailed diagnostic report for network errors
+  if (enableDiagnostics) {
+    const requestHeaders: Record<string, string> = {};
+    if (fetchOptions.headers) {
+      if (fetchOptions.headers instanceof Headers) {
+        fetchOptions.headers.forEach((value, key) => {
+          requestHeaders[key] = value;
+        });
+      } else if (Array.isArray(fetchOptions.headers)) {
+        fetchOptions.headers.forEach(([key, value]) => {
+          requestHeaders[key] = value;
+        });
+      } else {
+        Object.assign(requestHeaders, fetchOptions.headers);
+      }
+    }
+
+    const diagnosticReport = createDiagnosticReport(
+      url.toString(),
+      (fetchOptions.method as string) || 'GET',
+      requestHeaders,
+      undefined,
+      {
+        code: error.code || error.cause?.code,
+        message: error.message,
+        cause: error.cause?.message,
+      },
+      { totalMs: totalTime }
+    );
+
+    console.log(formatDiagnosticReport(diagnosticReport));
+  }
 
     // Categorize and enhance error messages
     if (error.cause?.code === 'EAI_AGAIN') {

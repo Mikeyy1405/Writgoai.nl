@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader, getWordPressEndpoint, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
 import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
+import { getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -130,14 +131,12 @@ export async function GET(request: NextRequest) {
     const restApiTestUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.base);
     console.log(`[WP-FETCH-${requestId}] 🔌 Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
     try {
+      // Use advanced browser-like headers to avoid WAF/firewall blocking
       const apiTestResponse = await fetchWithDnsFallback(restApiTestUrl, {
         method: 'GET',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json',
-          'User-Agent': WORDPRESS_USER_AGENT,
-        },
+        headers: getWordPressApiHeaders(authHeader, wpUrl),
         timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+        enableDiagnostics: true, // Enable detailed logging for blocked requests
       });
 
       if (!apiTestResponse.ok) {
@@ -209,15 +208,12 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`[WP-FETCH-${requestId}] 🔄 Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
 
+        // Use advanced browser-like headers to avoid WAF/firewall blocking
         wpResponse = await fetchWithDnsFallback(wpApiUrl, {
           method: 'GET',
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'User-Agent': WORDPRESS_USER_AGENT,
-          },
+          headers: getWordPressApiHeaders(authHeader, wpUrl),
           timeout: timeoutMs,
+          enableDiagnostics: true, // Enable detailed logging for blocked requests
         });
 
         // If request succeeded, break out of retry loop

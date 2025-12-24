@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
 import { fetchWithDnsFallback, testDnsResolution } from '@/lib/fetch-with-dns-fallback';
+import { getAdvancedBrowserHeaders, getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -154,12 +155,12 @@ export async function POST(request: NextRequest) {
     console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
     try {
       console.log(`Attempting HEAD request to ${sanitizeUrl(wpUrl)}...`);
+      // Use advanced browser-like headers to avoid WAF/firewall blocking
       const siteResponse = await fetchWithDnsFallback(wpUrl, {
         method: 'HEAD',
-        headers: {
-          'User-Agent': WORDPRESS_USER_AGENT,
-        },
+        headers: getAdvancedBrowserHeaders(wpUrl),
         timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+        enableDiagnostics: true,
       });
 
       if (siteResponse.ok || siteResponse.status === 301 || siteResponse.status === 302) {
@@ -263,10 +264,11 @@ export async function POST(request: NextRequest) {
       const apiResponse = await fetchWithDnsFallback(restApiEndpoint, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': WORDPRESS_USER_AGENT,
+          ...getAdvancedBrowserHeaders(wpUrl),
+          'Accept': 'application/json',
         },
         timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+        enableDiagnostics: true,
       });
 
       if (apiResponse.ok) {
@@ -314,10 +316,11 @@ export async function POST(request: NextRequest) {
       const wpV2Response = await fetchWithDnsFallback(wpV2Endpoint, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': WORDPRESS_USER_AGENT,
+          ...getAdvancedBrowserHeaders(wpUrl),
+          'Accept': 'application/json',
         },
         timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+        enableDiagnostics: true,
       });
 
       if (wpV2Response.ok) {
@@ -352,12 +355,9 @@ export async function POST(request: NextRequest) {
     try {
       const postsResponse = await fetchWithDnsFallback(`${postsEndpoint}?per_page=1`, {
         method: 'GET',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json',
-          'User-Agent': WORDPRESS_USER_AGENT,
-        },
+        headers: getWordPressApiHeaders(authHeader, wpUrl),
         timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+        enableDiagnostics: true,
       });
 
       if (postsResponse.ok) {
@@ -392,12 +392,9 @@ export async function POST(request: NextRequest) {
     try {
       const authResponse = await fetchWithDnsFallback(usersEndpoint, {
         method: 'GET',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json',
-          'User-Agent': WORDPRESS_USER_AGENT,
-        },
+        headers: getWordPressApiHeaders(authHeader, wpUrl),
         timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+        enableDiagnostics: true,
       });
 
       if (authResponse.ok) {
