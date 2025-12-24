@@ -1,11 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+
+  // Handle password reset redirect from email
+  useEffect(() => {
+    // Check if we have recovery tokens in the URL hash
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const type = hashParams.get('type');
+
+      // If this is a password recovery flow, redirect to reset-password page with the hash
+      if (type === 'recovery') {
+        router.replace('/reset-password' + window.location.hash);
+      }
+    }
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
