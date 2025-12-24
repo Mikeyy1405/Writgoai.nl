@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
 import { generateFeaturedImage } from '@/lib/aiml-image-generator';
+import { saveImageFromUrl } from '@/lib/storage-utils';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -219,11 +220,20 @@ ${isNL ? 'GEEN tekst in de afbeelding!' : 'NO text in the image!'}`;
     // Generate the image
     let imageUrl = '';
     try {
-      const generatedImage = await generateFeaturedImage(
+      console.log('🎨 Generating image...');
+      const tempImageUrl = await generateFeaturedImage(
         topic || articleTitle || cleanedPost.slice(0, 50),
         imagePrompt.slice(0, 500)
       );
-      imageUrl = generatedImage || '';
+
+      if (tempImageUrl) {
+        console.log('📥 Temporary image URL received, saving to permanent storage...');
+        // Save image to Supabase Storage for permanent access
+        // This ensures Getlate can always access the image when posting
+        const filename = `social-${Date.now()}.png`;
+        imageUrl = await saveImageFromUrl(tempImageUrl, filename);
+        console.log('✅ Image saved permanently:', imageUrl);
+      }
     } catch (e) {
       console.warn('Image generation failed:', e);
     }
