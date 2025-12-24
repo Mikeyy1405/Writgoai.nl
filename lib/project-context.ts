@@ -55,10 +55,19 @@ export interface CustomAffiliateLink {
  * Get full project context for content generation
  */
 export async function getProjectContext(projectId: string): Promise<ProjectContext & { customAffiliateLinks: CustomAffiliateLink[] }> {
+  // Check if backlinks are enabled for this project
+  const { data: project } = await supabaseAdmin
+    .from('projects')
+    .select('enable_backlinks')
+    .eq('id', projectId)
+    .single();
+
+  const backlinksEnabled = project?.enable_backlinks !== false; // Default to true
+
   const [knowledgeBase, internalLinks, externalLinks, affiliateConfig, customInstructions, customAffiliateLinks] = await Promise.all([
     getKnowledgeBaseContext(projectId),
-    getInternalLinks(projectId),
-    getExternalLinks(projectId),
+    backlinksEnabled ? getInternalLinks(projectId) : Promise.resolve([]),
+    backlinksEnabled ? getExternalLinks(projectId) : Promise.resolve([]),
     getAffiliateConfig(projectId),
     getCustomInstructions(projectId),
     getCustomAffiliateLinks(projectId),
@@ -134,59 +143,108 @@ async function getInternalLinks(projectId: string): Promise<InternalLink[]> {
 }
 
 /**
- * Get external links from other projects of the same client
+ * Get external links from other projects
+ * Includes both:
+ * 1. Other projects from the same user/client
+ * 2. Projects from other users participating in backlink exchange network
  */
 async function getExternalLinks(projectId: string): Promise<ExternalLink[]> {
-  // Get client ID for this project
+  // Get current project info
   const { data: currentProject } = await supabaseAdmin
     .from('projects')
-    .select('clientId')
+    .select('user_id, participate_in_backlink_exchange, backlink_exchange_category, max_outbound_backlinks')
     .eq('id', projectId)
     .single();
 
-  if (!currentProject?.clientId) {
+  if (!currentProject) {
     return [];
   }
 
-  // Get other projects from the same client
-  const { data: otherProjects } = await supabaseAdmin
-    .from('projects')
-    .select('id, name, websiteUrl')
-    .eq('clientId', currentProject.clientId)
-    .neq('id', projectId)
-    .eq('isActive', true);
-
-  if (!otherProjects || otherProjects.length === 0) {
-    return [];
-  }
-
-  // Get published articles from other projects
   const externalLinks: ExternalLink[] = [];
+  const maxLinks = currentProject.max_outbound_backlinks || 5;
 
-  for (const project of otherProjects) {
-    const { data: articles } = await supabaseAdmin
-      .from('articles')
-      .select('title, slug, excerpt')
-      .eq('project_id', project.id)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-      .limit(10);
+  // 1. Get projects from the same user (always included)
+  const { data: sameUserProjects } = await supabaseAdmin
+    .from('projects')
+    .select('id, name, website_url')
+    .eq('user_id', currentProject.user_id)
+    .neq('id', projectId)
+    .limit(3);
 
-    if (articles && articles.length > 0) {
-      const baseUrl = project.websiteUrl?.replace(/\/$/, '') || '';
-      
-      for (const article of articles) {
-        externalLinks.push({
-          projectName: project.name,
-          title: article.title,
-          url: `${baseUrl}/${article.slug}`,
-          excerpt: article.excerpt,
-        });
+  if (sameUserProjects && sameUserProjects.length > 0) {
+    for (const project of sameUserProjects) {
+      const { data: articles } = await supabaseAdmin
+        .from('articles')
+        .select('title, slug, excerpt')
+        .eq('project_id', project.id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (articles && articles.length > 0) {
+        const baseUrl = project.website_url?.replace(/\/$/, '') || '';
+
+        for (const article of articles) {
+          externalLinks.push({
+            projectName: project.name,
+            title: article.title,
+            url: `${baseUrl}/${article.slug}`,
+            excerpt: article.excerpt,
+          });
+        }
       }
     }
   }
 
-  return externalLinks;
+  // 2. Get projects from backlink exchange network (if opted in)
+  if (currentProject.participate_in_backlink_exchange) {
+    const { data: exchangeProjects } = await supabaseAdmin
+      .from('projects')
+      .select('id, name, website_url, backlink_exchange_category')
+      .eq('participate_in_backlink_exchange', true)
+      .neq('id', projectId)
+      .neq('user_id', currentProject.user_id) // Different users only
+      .limit(10);
+
+    if (exchangeProjects && exchangeProjects.length > 0) {
+      // Filter by matching category if specified
+      const relevantProjects = currentProject.backlink_exchange_category
+        ? exchangeProjects.filter(p =>
+            p.backlink_exchange_category === currentProject.backlink_exchange_category
+          )
+        : exchangeProjects;
+
+      // Shuffle to distribute backlinks fairly across the network
+      const shuffled = relevantProjects.sort(() => Math.random() - 0.5);
+      const selectedProjects = shuffled.slice(0, 3); // Max 3 external projects
+
+      for (const project of selectedProjects) {
+        const { data: articles } = await supabaseAdmin
+          .from('articles')
+          .select('id, title, slug, excerpt')
+          .eq('project_id', project.id)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(2); // Max 2 articles per external project
+
+        if (articles && articles.length > 0) {
+          const baseUrl = project.website_url?.replace(/\/$/, '') || '';
+
+          for (const article of articles) {
+            externalLinks.push({
+              projectName: project.name,
+              title: article.title,
+              url: `${baseUrl}/${article.slug}`,
+              excerpt: article.excerpt,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Limit total external links
+  return externalLinks.slice(0, maxLinks);
 }
 
 /**
@@ -316,13 +374,26 @@ export function formatExternalLinksForPrompt(links: ExternalLink[]): string {
     return '';
   }
 
-  const linkList = links.slice(0, 10).map(link => 
+  const linkList = links.slice(0, 10).map(link =>
     `- "${link.title}" (${link.projectName}): ${link.url}`
   ).join('\n');
 
   return `
-## Externe links naar gerelateerde websites (optioneel, voeg 1-2 toe indien relevant):
+## BACKLINK EXCHANGE - Externe links naar partner websites (VERPLICHT - voeg 2-4 toe!):
 ${linkList}
+
+**Backlink Exchange Instructies:**
+- Dit zijn websites van andere WritGo gebruikers die ook naar jouw site linken
+- Voeg MINIMAAL 2-4 van deze links toe in je artikel waar ze relevant zijn
+- Gebruik beschrijvende anchor tekst (niet "klik hier" of "lees meer")
+- Link naar artikelen die gerelateerd zijn aan jouw onderwerp
+- Gebruik HTML: <a href="URL" target="_blank" rel="noopener">anchor tekst</a>
+- Dit is een WIN-WIN: zij linken naar jou, jij linkt naar hen = betere SEO voor iedereen!
+
+**Voorbeelden van goede integratie:**
+- "Zoals uitgelegd in dit artikel over [onderwerp]..."
+- "Meer informatie over [onderwerp] vind je hier: [link]"
+- "Een vergelijkbaar perspectief wordt besproken in [artikel titel]"
 `;
 }
 

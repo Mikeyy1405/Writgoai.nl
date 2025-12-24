@@ -147,7 +147,8 @@ ${keywords.length > 0 ? `**Related Keywords:** ${keywords.join(', ')}` : ''}
    - Intro (150-200 woorden) met focus keyword - GEEN "Inleiding:" heading, begin direct met tekst
    - Minimaal 5 H2 secties voor de hoofdinhoud
    - H3 subsecties waar nodig
-   - Conclusie met call-to-action
+   - Afsluiting met inhoudelijke heading (NIET "Conclusie", "Tot slot", "Ten slotte" - gebruik "Aan de slag met [onderwerp]" of "Jouw volgende stappen")
+   - ⚠️ VERBODEN: Gebruik NOOIT dezelfde woorden of frasen meerdere keren in headings
 
 3. **Content Kwaliteit:**
    - Actuele informatie (2024/2025)
@@ -156,13 +157,14 @@ ${keywords.length > 0 ? `**Related Keywords:** ${keywords.join(', ')}` : ''}
    - Nederlandse markt focus
    - E-E-A-T principes (Expertise, Experience, Authoritativeness, Trustworthiness)
 
-4. **VERPLICHTE Content Variatie - ZEER BELANGRIJK:**
-   - ✓ Gebruik MINIMAAL 3 <ul> of <ol> lijsten in het artikel
-   - ✓ Voeg MINIMAAL 1 tabel toe met <table> (voor vergelijkingen, voor/na, features)
-   - ✓ Gebruik MINIMAAL 2 <blockquote> voor belangrijke quotes of highlights
-   - ✓ Wissel af tussen paragrafen, lijsten, tabellen en quotes
-   - ✓ GEEN lange blokken tekst - elke 3-4 paragrafen moet een lijst, tabel of quote komen
-   - ✓ Maak het visueel aantrekkelijk en scanbaar
+4. **VERPLICHTE Content Variatie - ABSOLUUT KRITIEK:**
+   - ✓ Gebruik MINIMAAL 5 <ul> of <ol> lijsten in het artikel (verplicht!)
+   - ✓ Voeg MINIMAAL 3 tabellen toe met <table> (voor vergelijkingen, voor/na, features, statistieken) (verplicht!)
+   - ✓ Gebruik MINIMAAL 4 <blockquote> voor belangrijke quotes of highlights (verplicht!)
+   - ✓ Wissel CONSTANT af tussen paragrafen, lijsten, tabellen en quotes
+   - ✓ NOOIT meer dan 2-3 paragrafen achter elkaar zonder lijst, tabel of quote
+   - ✓ Maak het VISUEEL AANTREKKELIJK en makkelijk scanbaar
+   - ✓ ELKE H2 sectie moet MINIMAAL 1 lijst, tabel OF blockquote bevatten
 
 5. **Internal Linking:**
 ${relatedArticles.length > 0 ? `   - Link naar deze gerelateerde artikelen:
