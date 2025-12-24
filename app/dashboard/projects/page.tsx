@@ -75,7 +75,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-6 lg:p-12">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Projecten</h1>
             <p className="text-gray-400 text-lg">
@@ -84,7 +84,7 @@ export default function ProjectsPage() {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all whitespace-nowrap"
           >
             + Nieuw Project
           </button>
@@ -123,13 +123,13 @@ export default function ProjectsPage() {
                 key={project.id}
                 className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:border-orange-500/50 transition-all"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-white mb-2">
+                    <h3 className="text-xl font-semibold text-white mb-2 break-words">
                       {project.name}
                     </h3>
-                    <p className="text-gray-400 mb-4">{project.website_url}</p>
-                    <div className="flex items-center space-x-4 text-sm">
+                    <p className="text-gray-400 mb-4 break-words">{project.website_url}</p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                       {isWordPressConnected(project) ? (
                         <span className="text-green-500">✓ WordPress verbonden</span>
                       ) : (
@@ -140,7 +140,7 @@ export default function ProjectsPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                     <button
                       onClick={() => handleDeleteProject(project.id, project.name)}
                       className="px-3 py-2 bg-red-900/30 text-red-400 rounded-lg hover:bg-red-900/50 hover:text-red-300 transition-all"

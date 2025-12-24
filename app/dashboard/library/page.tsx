@@ -423,42 +423,42 @@ export default function LibraryPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 flex-wrap">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   <button
                     onClick={() => openEditor(article)}
-                    className="flex-1 min-w-[100px] bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
                   >
                     Bewerken
                   </button>
                   <button
                     onClick={() => copyToClipboard(article)}
-                    className="flex-1 min-w-[100px] bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                    className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
                   >
                     Kopiëren
                   </button>
                   <button
                     onClick={() => downloadArticle(article)}
-                    className="flex-1 min-w-[100px] bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
                   >
                     Download
                   </button>
                   <button
                     onClick={() => publishArticle(article)}
                     disabled={publishing && selectedArticle?.id === article.id}
-                    className="flex-1 min-w-[100px] bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/50 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-lg hover:shadow-orange-500/50 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 text-sm"
                     title={isWritGo ? 'Publiceer naar WritGo Blog' : hasWordPress ? 'Publiceer naar WordPress' : 'WordPress niet geconfigureerd'}
                   >
-                    {publishing && selectedArticle?.id === article.id 
-                      ? 'Publiceren...' 
-                      : isWritGo 
-                        ? '🚀 Publiceer WritGo' 
+                    {publishing && selectedArticle?.id === article.id
+                      ? 'Publiceren...'
+                      : isWritGo
+                        ? '🚀 WritGo'
                         : hasWordPress
-                          ? '🚀 Publiceer WP'
-                          : '🚀 Publiceer'}
+                          ? '🚀 WP'
+                          : '🚀 Pub'}
                   </button>
                   <button
                     onClick={() => setConfirmDelete(article.id)}
-                    className="px-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg font-medium transition-all"
+                    className="px-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg font-medium transition-all col-span-2 sm:col-span-1 text-sm"
                   >
                     Verwijderen
                   </button>

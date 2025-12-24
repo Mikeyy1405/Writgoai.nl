@@ -104,7 +104,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-32 px-4">
+      <section className="pt-24 sm:pt-32 pb-20 sm:pb-32 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-block mb-4 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full">
             <span className="text-orange-400 text-sm font-medium">
@@ -112,7 +112,7 @@ export default function Home() {
             </span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
             Automatiseer je WordPress
             <br />
             <span className="bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
@@ -159,17 +159,17 @@ export default function Home() {
           </div>
 
           {/* Stats */}
-          <div className="mt-20 grid grid-cols-3 gap-8 max-w-3xl mx-auto">
+          <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-3xl mx-auto">
             <div>
-              <div className="text-4xl font-bold text-white mb-2">2000+</div>
+              <div className="text-3xl sm:text-4xl font-bold text-white mb-2">2000+</div>
               <div className="text-gray-400">Artikelen gegenereerd</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">10x</div>
+              <div className="text-3xl sm:text-4xl font-bold text-white mb-2">10x</div>
               <div className="text-gray-400">Sneller dan handmatig</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">50+</div>
+              <div className="text-3xl sm:text-4xl font-bold text-white mb-2">50+</div>
               <div className="text-gray-400">Uur bespaard/maand</div>
             </div>
           </div>
@@ -484,7 +484,7 @@ export default function Home() {
             </div>
 
             {/* Pro */}
-            <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-2 border-orange-500 rounded-xl p-8 relative transform scale-105">
+            <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-2 border-orange-500 rounded-xl p-8 relative md:transform md:scale-105">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-1 rounded-full text-sm font-medium">
                 🔥 Populair
               </div>
@@ -648,13 +648,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           
           {/* Payment Methods */}
-          <div className="mb-8 text-center">
+          <div className="mb-8 text-center px-4">
             <p className="text-gray-500 text-sm mb-4">Veilig betalen met</p>
-            <div className="flex justify-center">
-              <img 
-                src="/images/payment-methods.png" 
-                alt="Betaalmethoden: iDEAL, Visa, Mastercard, PayPal, Bancontact en SOFORT" 
-                className="max-w-full h-auto"
+            <div className="flex justify-center overflow-hidden">
+              <img
+                src="/images/payment-methods.png"
+                alt="Betaalmethoden: iDEAL, Visa, Mastercard, PayPal, Bancontact en SOFORT"
+                className="max-w-full h-auto object-contain"
                 style={{ maxHeight: '60px' }}
               />
             </div>
