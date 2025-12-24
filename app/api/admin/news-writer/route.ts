@@ -24,6 +24,10 @@ interface NewsResearchResponse {
     content: string;
     excerpt: string;
     category: string;
+    seoTitle: string;
+    metaDescription: string;
+    focusKeyword: string;
+    headings: string[];
   };
   featuredImage?: {
     url: string;
@@ -321,36 +325,54 @@ export async function POST(request: NextRequest) {
       ? 'Antwoord in het Nederlands.'
       : 'Answer in English.';
 
+    const today = new Date().toLocaleDateString('nl-NL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
     switch (type) {
       case 'website':
         researchPrompt = `
 ${langInstruction}
 
-Analyseer de website "${input}" en zoek naar het MEEST RECENTE en BELANGRIJKSTE nieuws dat gerelateerd is aan deze website, branche of niche.
+VANDAAG IS: ${today}
+
+Analyseer de website "${input}" en zoek naar het ALLERLAATSTE en MEEST IMPACTVOLLE nieuws dat gerelateerd is aan deze website, branche of niche.
+
+KRITIEKE VEREISTEN:
+- ALLEEN nieuws van de afgelopen 24-48 uur
+- GEEN oud nieuws of algemene informatie
+- Focus op BREAKING NEWS en grote ontwikkelingen
+- Prioriteer nieuws met hoge impact en nieuwswaarde
+- Gebruik alleen betrouwbare bronnen (grote nieuwssites, officiële bronnen)
 
 Zoek naar:
-1. Breaking news in deze niche (laatste 48 uur)
-2. Belangrijke aankondigingen of ontwikkelingen
-3. Trending topics en virale verhalen
-4. Relevante statistieken of onderzoeken
+1. Breaking news en urgente ontwikkelingen (vandaag of gisteren)
+2. Belangrijke aankondigingen, launches of onthullingen
+3. Significante verschuivingen in de markt of industrie
+4. Controverses, schandalen of grote veranderingen
+5. Nieuwe wetten, regelgeving of beleidswijzigingen
+
+NEGEER:
+- Algemene tips of how-to content
+- Evergreen content zonder nieuwswaarde
+- Nieuws ouder dan 48 uur
+- Speculatie zonder concrete feiten
 
 Geef je antwoord in het volgende JSON formaat:
 {
   "sources": [
     {
-      "title": "Nieuwstitel",
-      "summary": "Uitgebreide samenvatting met alle belangrijke feiten (4-5 zinnen)",
-      "source": "Bronwebsite",
-      "url": "URL",
-      "publishedDate": "Publicatiedatum"
+      "title": "Exacte nieuwstitel",
+      "summary": "Uitgebreide samenvatting met WIE, WAT, WAAR, WANNEER, WAAROM (4-5 zinnen)",
+      "source": "Bronwebsite (bijv. NU.nl, RTL Nieuws, NOS)",
+      "url": "Exacte URL naar het artikel",
+      "publishedDate": "Exacte publicatiedatum (bijv. 24 december 2024)"
     }
   ],
-  "mainTopic": "Het belangrijkste nieuwsonderwerp om over te schrijven",
-  "keyFacts": ["Feit 1", "Feit 2", "Feit 3", "Feit 4", "Feit 5"],
-  "suggestedTopics": ["Topic 1", "Topic 2", "Topic 3"]
+  "mainTopic": "Het meest nieuwswaardige onderwerp met hoogste impact",
+  "keyFacts": ["Concreet feit 1", "Concreet feit 2", "Concreet feit 3", "Concreet feit 4", "Concreet feit 5"],
+  "suggestedTopics": ["Gerelateerd actueel topic 1", "Gerelateerd actueel topic 2", "Gerelateerd actueel topic 3"]
 }
 
-Geef 3-5 bronnen met de meest nieuwswaardige informatie.
+Geef 3-5 bronnen, gesorteerd op nieuwswaarde en actualiteit.
 `;
         break;
 
@@ -358,31 +380,47 @@ Geef 3-5 bronnen met de meest nieuwswaardige informatie.
         researchPrompt = `
 ${langInstruction}
 
-Zoek naar het MEEST RECENTE en BELANGRIJKSTE nieuws over: "${input}"
+VANDAAG IS: ${today}
+
+Zoek naar het ALLERLAATSTE en MEEST IMPACTVOLLE nieuws over: "${input}"
+
+KRITIEKE VEREISTEN:
+- ALLEEN nieuws van de afgelopen 24-48 uur
+- GEEN oud nieuws of algemene informatie
+- Focus op BREAKING NEWS en grote ontwikkelingen
+- Prioriteer nieuws met hoge impact en nieuwswaarde
+- Gebruik alleen betrouwbare bronnen (grote nieuwssites, officiële bronnen)
 
 Zoek naar:
-1. Breaking news (laatste 48 uur)
-2. Belangrijke ontwikkelingen en updates
-3. Expert meningen en analyses
-4. Relevante cijfers en statistieken
+1. Breaking news en urgente ontwikkelingen (vandaag of gisteren)
+2. Belangrijke aankondigingen, launches of onthullingen
+3. Nieuwe data, onderzoeken of rapporten
+4. Controverses, schandalen of grote veranderingen
+5. Expert reacties en officiële statements
+
+NEGEER:
+- Algemene tips of how-to content
+- Evergreen content zonder nieuwswaarde
+- Nieuws ouder dan 48 uur
+- Speculatie zonder concrete feiten
 
 Geef je antwoord in het volgende JSON formaat:
 {
   "sources": [
     {
-      "title": "Nieuwstitel",
-      "summary": "Uitgebreide samenvatting met alle belangrijke feiten (4-5 zinnen)",
-      "source": "Bronwebsite",
-      "url": "URL",
-      "publishedDate": "Publicatiedatum"
+      "title": "Exacte nieuwstitel",
+      "summary": "Uitgebreide samenvatting met WIE, WAT, WAAR, WANNEER, WAAROM (4-5 zinnen)",
+      "source": "Bronwebsite (bijv. NU.nl, RTL Nieuws, NOS)",
+      "url": "Exacte URL naar het artikel",
+      "publishedDate": "Exacte publicatiedatum (bijv. 24 december 2024)"
     }
   ],
-  "mainTopic": "Het belangrijkste nieuwsonderwerp om over te schrijven",
-  "keyFacts": ["Feit 1", "Feit 2", "Feit 3", "Feit 4", "Feit 5"],
-  "suggestedTopics": ["Topic 1", "Topic 2", "Topic 3"]
+  "mainTopic": "Het meest nieuwswaardige onderwerp met hoogste impact",
+  "keyFacts": ["Concreet feit 1", "Concreet feit 2", "Concreet feit 3", "Concreet feit 4", "Concreet feit 5"],
+  "suggestedTopics": ["Gerelateerd actueel topic 1", "Gerelateerd actueel topic 2", "Gerelateerd actueel topic 3"]
 }
 
-Geef 3-5 bronnen met de meest nieuwswaardige informatie.
+Geef 3-5 bronnen, gesorteerd op nieuwswaarde en actualiteit.
 `;
         break;
 
@@ -390,27 +428,34 @@ Geef 3-5 bronnen met de meest nieuwswaardige informatie.
         researchPrompt = `
 ${langInstruction}
 
+VANDAAG IS: ${today}
+
 Voer de volgende nieuwsresearch opdracht uit: "${input}"
 
-Zoek naar het meest recente en relevante nieuws gebaseerd op deze opdracht.
+KRITIEKE VEREISTEN:
+- ALLEEN nieuws van de afgelopen 24-48 uur
+- GEEN oud nieuws of algemene informatie
+- Focus op actuele, concrete nieuwsfeiten
+- Prioriteer nieuws met hoge impact en nieuwswaarde
+- Gebruik alleen betrouwbare bronnen
 
 Geef je antwoord in het volgende JSON formaat:
 {
   "sources": [
     {
-      "title": "Nieuwstitel",
-      "summary": "Uitgebreide samenvatting met alle belangrijke feiten (4-5 zinnen)",
+      "title": "Exacte nieuwstitel",
+      "summary": "Uitgebreide samenvatting met WIE, WAT, WAAR, WANNEER, WAAROM (4-5 zinnen)",
       "source": "Bronwebsite",
-      "url": "URL",
-      "publishedDate": "Publicatiedatum"
+      "url": "Exacte URL naar het artikel",
+      "publishedDate": "Exacte publicatiedatum"
     }
   ],
-  "mainTopic": "Het belangrijkste nieuwsonderwerp om over te schrijven",
-  "keyFacts": ["Feit 1", "Feit 2", "Feit 3", "Feit 4", "Feit 5"],
-  "suggestedTopics": ["Topic 1", "Topic 2", "Topic 3"]
+  "mainTopic": "Het meest nieuwswaardige onderwerp",
+  "keyFacts": ["Concreet feit 1", "Concreet feit 2", "Concreet feit 3", "Concreet feit 4", "Concreet feit 5"],
+  "suggestedTopics": ["Gerelateerd actueel topic 1", "Gerelateerd actueel topic 2", "Gerelateerd actueel topic 3"]
 }
 
-Geef 3-5 bronnen met de meest nieuwswaardige informatie.
+Geef 3-5 bronnen met de meest actuele en nieuwswaardige informatie.
 `;
         break;
 
@@ -506,7 +551,7 @@ BELANGRIJK:
     const mainTopic = researchData.mainTopic || input;
 
     const articlePrompt = language === 'nl'
-      ? `Je bent een professionele nieuwsjournalist voor een grote Nederlandse nieuwswebsite zoals NU.nl of RTL Nieuws. Schrijf een objectief, feitelijk nieuwsartikel.
+      ? `Je bent een professionele nieuwsjournalist en SEO expert voor een grote Nederlandse nieuwswebsite zoals NU.nl of RTL Nieuws. Schrijf een objectief, feitelijk nieuwsartikel met volledige SEO optimalisatie.
 
 ONDERWERP: ${mainTopic}
 
@@ -519,10 +564,11 @@ KERNFEITEN:
 SCHRIJF een professioneel nieuwsartikel met:
 1. Een pakkende, informatieve kop (geen clickbait)
 2. Een sterke lead paragraph die de 5 W's beantwoordt (wie, wat, waar, wanneer, waarom)
-3. De belangrijkste informatie eerst (omgekeerde piramide)
-4. Citaten of referenties naar bronnen
-5. Achtergrondinformatie en context
-6. Een afsluitende paragraph met toekomstperspectief
+3. MINIMAAL 3 tussenkoppen (H2) om het artikel te structureren
+4. De belangrijkste informatie eerst (omgekeerde piramide)
+5. Citaten of referenties naar bronnen
+6. Achtergrondinformatie en context
+7. Een afsluitende paragraph met toekomstperspectief
 
 STIJL:
 - Objectief en neutraal
@@ -531,14 +577,24 @@ STIJL:
 - Actieve schrijfstijl
 - Professionele journalistieke toon
 
+SEO VEREISTEN:
+- SEO titel: max 60 karakters, inclusief focus keyword
+- Meta omschrijving: max 155 karakters, wervend en informatief
+- Focus keyword: het belangrijkste zoekwoord voor dit artikel
+- Gebruik het focus keyword in de titel, eerste alinea en minimaal 1 tussenkop
+
 Geef je antwoord in JSON formaat:
 {
-  "title": "Nieuwskop",
+  "title": "Nieuwskop (pakkend, max 70 karakters)",
+  "seoTitle": "SEO Titel | Website (max 60 karakters)",
+  "metaDescription": "Meta omschrijving voor zoekmachines (max 155 karakters)",
+  "focusKeyword": "belangrijkste zoekwoord",
+  "headings": ["H2 Tussenkop 1", "H2 Tussenkop 2", "H2 Tussenkop 3"],
   "content": "Het volledige artikel in HTML met <p>, <h2>, <h3>, <blockquote> tags",
   "excerpt": "Korte samenvatting van 1-2 zinnen voor social media",
   "category": "Technologie/Economie/Sport/Entertainment/Wetenschap/Politiek/etc"
 }`
-      : `You are a professional news journalist for a major news website like BBC or CNN. Write an objective, factual news article.
+      : `You are a professional news journalist and SEO expert for a major news website like BBC or CNN. Write an objective, factual news article with full SEO optimization.
 
 TOPIC: ${mainTopic}
 
@@ -551,10 +607,11 @@ KEY FACTS:
 WRITE a professional news article with:
 1. A compelling, informative headline (no clickbait)
 2. A strong lead paragraph answering the 5 W's (who, what, where, when, why)
-3. Most important information first (inverted pyramid)
-4. Quotes or references to sources
-5. Background information and context
-6. A closing paragraph with future perspective
+3. AT LEAST 3 subheadings (H2) to structure the article
+4. Most important information first (inverted pyramid)
+5. Quotes or references to sources
+6. Background information and context
+7. A closing paragraph with future perspective
 
 STYLE:
 - Objective and neutral
@@ -563,9 +620,19 @@ STYLE:
 - Active writing style
 - Professional journalistic tone
 
+SEO REQUIREMENTS:
+- SEO title: max 60 characters, including focus keyword
+- Meta description: max 155 characters, compelling and informative
+- Focus keyword: the main search term for this article
+- Use the focus keyword in the title, first paragraph and at least 1 subheading
+
 Provide your response in JSON format:
 {
-  "title": "News headline",
+  "title": "News headline (catchy, max 70 characters)",
+  "seoTitle": "SEO Title | Website (max 60 characters)",
+  "metaDescription": "Meta description for search engines (max 155 characters)",
+  "focusKeyword": "main search keyword",
+  "headings": ["H2 Subheading 1", "H2 Subheading 2", "H2 Subheading 3"],
   "content": "The full article in HTML with <p>, <h2>, <h3>, <blockquote> tags",
   "excerpt": "Short 1-2 sentence summary for social media",
   "category": "Technology/Business/Sports/Entertainment/Science/Politics/etc"
@@ -633,6 +700,10 @@ Provide your response in JSON format:
         content: articleData.content,
         excerpt: articleData.excerpt,
         category: articleData.category,
+        seoTitle: articleData.seoTitle || articleData.title,
+        metaDescription: articleData.metaDescription || articleData.excerpt,
+        focusKeyword: articleData.focusKeyword || mainTopic,
+        headings: articleData.headings || [],
       },
       featuredImage: featuredImage || undefined,
       suggestedTopics: researchData.suggestedTopics || [],

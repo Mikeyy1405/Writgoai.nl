@@ -15,6 +15,10 @@ interface NewsArticle {
   content: string;
   excerpt: string;
   category: string;
+  seoTitle: string;
+  metaDescription: string;
+  focusKeyword: string;
+  headings: string[];
 }
 
 interface FeaturedImage {
@@ -334,6 +338,90 @@ export default function AdminNewsWriter() {
                   className="prose prose-invert prose-lg max-w-none mb-6"
                   dangerouslySetInnerHTML={{ __html: result.article.content }}
                 />
+
+                {/* SEO Section */}
+                <div className="bg-gray-900/50 rounded-lg p-5 mb-6 border border-gray-600">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <span>🔍</span> SEO Gegevens
+                  </h3>
+
+                  <div className="space-y-4">
+                    {/* Focus Keyword */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-sm font-medium text-gray-400">Focus Keyword</label>
+                        <button
+                          onClick={() => copyToClipboard(result.article!.focusKeyword, 'focusKeyword')}
+                          className="text-xs text-orange-400 hover:text-orange-300"
+                        >
+                          {copiedField === 'focusKeyword' ? '✓ Gekopieerd' : 'Kopieer'}
+                        </button>
+                      </div>
+                      <div className="px-3 py-2 bg-orange-500/10 border border-orange-500/30 rounded-lg text-orange-300 font-medium">
+                        {result.article.focusKeyword}
+                      </div>
+                    </div>
+
+                    {/* SEO Title */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-sm font-medium text-gray-400">
+                          SEO Titel <span className="text-gray-500">({result.article.seoTitle?.length || 0}/60)</span>
+                        </label>
+                        <button
+                          onClick={() => copyToClipboard(result.article!.seoTitle, 'seoTitle')}
+                          className="text-xs text-orange-400 hover:text-orange-300"
+                        >
+                          {copiedField === 'seoTitle' ? '✓ Gekopieerd' : 'Kopieer'}
+                        </button>
+                      </div>
+                      <div className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white">
+                        {result.article.seoTitle}
+                      </div>
+                    </div>
+
+                    {/* Meta Description */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-sm font-medium text-gray-400">
+                          Meta Omschrijving <span className="text-gray-500">({result.article.metaDescription?.length || 0}/155)</span>
+                        </label>
+                        <button
+                          onClick={() => copyToClipboard(result.article!.metaDescription, 'metaDescription')}
+                          className="text-xs text-orange-400 hover:text-orange-300"
+                        >
+                          {copiedField === 'metaDescription' ? '✓ Gekopieerd' : 'Kopieer'}
+                        </button>
+                      </div>
+                      <div className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 text-sm">
+                        {result.article.metaDescription}
+                      </div>
+                    </div>
+
+                    {/* Headings */}
+                    {result.article.headings && result.article.headings.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-sm font-medium text-gray-400">Tussenkoppen (H2)</label>
+                          <button
+                            onClick={() => copyToClipboard(result.article!.headings.join('\n'), 'headings')}
+                            className="text-xs text-orange-400 hover:text-orange-300"
+                          >
+                            {copiedField === 'headings' ? '✓ Gekopieerd' : 'Kopieer alle'}
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {result.article.headings.map((heading, index) => (
+                            <div key={index} className="flex items-center gap-2 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 text-sm">
+                              <span className="text-orange-400 font-mono text-xs">H2</span>
+                              {heading}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-700">
