@@ -232,14 +232,25 @@ async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: st
     console.warn('Language detection failed:', e);
   }
   
-  // Default to Dutch for .nl domains, English otherwise
+  // Fallback: check TLD if HTML fetch failed
   try {
     const url = new URL(websiteUrl);
-    if (url.hostname.endsWith('.nl')) {
+    const hostname = url.hostname.toLowerCase();
+
+    if (hostname.endsWith('.nl')) {
       return { language: 'nl', languageName: 'Nederlands' };
     }
+    if (hostname.endsWith('.de')) {
+      return { language: 'de', languageName: 'Deutsch' };
+    }
+    if (hostname.endsWith('.fr')) {
+      return { language: 'fr', languageName: 'Français' };
+    }
+    if (hostname.endsWith('.es')) {
+      return { language: 'es', languageName: 'Español' };
+    }
   } catch {}
-  
+
   return { language: 'en', languageName: 'English' };
 }
 
