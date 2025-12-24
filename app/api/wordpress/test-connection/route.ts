@@ -91,8 +91,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    // Prepare WordPress credentials
-    const wpUrl = project.wp_url.replace(/\/$/, ''); // Remove trailing slash
+    // Prepare WordPress credentials and normalize URL
+    // Remove trailing slash AND any /wp-json paths that might have been incorrectly saved
+    let wpUrl = project.wp_url.replace(/\/$/, ''); // Remove trailing slash
+    wpUrl = wpUrl.replace(/\/wp-json.*$/, ''); // Remove any /wp-json paths to ensure clean base URL
+
     const username = project.wp_username || '';
     const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
 
@@ -156,7 +159,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 30000,
+        timeout: 60000, // Increased to 60s for slow .nl/.be domains
       });
 
       if (siteResponse.ok || siteResponse.status === 301 || siteResponse.status === 302) {
@@ -215,9 +218,9 @@ export async function POST(request: NextRequest) {
           'Probeer het over enkele minuten opnieuw',
         ];
       } else if (error.name === 'AbortError') {
-        userMessage = 'Request timeout (30 seconden)';
+        userMessage = 'Request timeout (60 seconden)';
         troubleshooting = [
-          'De WordPress server reageert niet binnen 30 seconden',
+          'De WordPress server reageert niet binnen 60 seconden',
           'Controleer de snelheid van je hosting',
           'Test de site in een browser - laadt deze snel?',
         ];
@@ -263,7 +266,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 30000,
+        timeout: 60000, // Increased to 60s for slow .nl/.be domains
       });
 
       if (apiResponse.ok) {
@@ -314,7 +317,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 30000,
+        timeout: 60000, // Increased to 60s for slow .nl/.be domains
       });
 
       if (wpV2Response.ok) {
@@ -354,7 +357,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 30000,
+        timeout: 60000, // Increased to 60s for slow .nl/.be domains
       });
 
       if (postsResponse.ok) {
@@ -394,7 +397,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 30000,
+        timeout: 60000, // Increased to 60s for slow .nl/.be domains
       });
 
       if (authResponse.ok) {
