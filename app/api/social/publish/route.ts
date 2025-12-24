@@ -69,35 +69,61 @@ export async function POST(request: Request) {
     let mediaItems: MediaItem[] = [];
     if (post.image_url) {
       console.log('📤 Uploading media from URL:', post.image_url);
+
+      // First verify the image is accessible
       try {
-        const media = await lateClient.uploadMediaFromUrl(post.image_url);
-        mediaItems.push(media);
-        console.log('✅ Media uploaded successfully:', {
-          mediaId: media.mediaId,
-          url: media.url,
-          type: media.type,
-        });
+        const checkResponse = await fetch(post.image_url, { method: 'HEAD' });
+        if (!checkResponse.ok) {
+          throw new Error(`Image URL not accessible: ${checkResponse.status} ${checkResponse.statusText}`);
+        }
+        console.log('✅ Image URL is accessible');
       } catch (e: any) {
-        console.error('❌ Media upload failed:', e.message);
-        console.error('📸 Failed image URL:', post.image_url);
+        console.error('❌ Image URL check failed:', e.message);
 
-        // Provide helpful error message
-        const errorDetails = e.message.includes('403') || e.message.includes('404')
-          ? '\n\nDe afbeelding URL is mogelijk verlopen of niet toegankelijk. Probeer de post opnieuw te genereren met een nieuwe afbeelding.'
-          : '\n\nControleer of de afbeelding URL correct en toegankelijk is.';
-
-        // Check if Instagram or TikTok is in the platforms (they require media)
         const hasInstagram = accounts.some(acc => acc.platform === 'instagram');
         const hasTikTok = accounts.some(acc => acc.platform === 'tiktok');
 
         if (hasInstagram || hasTikTok) {
           const platform = hasInstagram ? 'Instagram' : 'TikTok';
           return NextResponse.json({
-            error: `${platform} posts vereisen altijd een afbeelding of video. Media upload is mislukt: ` + e.message + errorDetails
+            error: `${platform} vereist een afbeelding, maar de afbeelding URL is niet toegankelijk (${e.message}). Dit gebeurt meestal omdat:\n\n1. De afbeelding niet correct is opgeslagen in Supabase Storage\n2. De tijdelijke URL van AIML is verlopen\n3. Er is geen internetverbinding met de afbeelding\n\nGenereer de post opnieuw om een nieuwe afbeelding te maken.`,
+            image_url: post.image_url,
+            suggestion: 'Regenerate the post to create a new image'
           }, { status: 400 });
         }
-        // For other platforms, continue without media but log warning
-        console.warn('⚠️ Continuing without media for platforms that don\'t require it');
+
+        console.warn('⚠️ Image not accessible, continuing without media for platforms that don\'t require it');
+      }
+
+      // Now try to upload to Late
+      if (post.image_url) {
+        try {
+          const media = await lateClient.uploadMediaFromUrl(post.image_url);
+          mediaItems.push(media);
+          console.log('✅ Media uploaded to Late.dev successfully:', {
+            mediaId: media.mediaId,
+            url: media.url,
+            type: media.type,
+          });
+        } catch (e: any) {
+          console.error('❌ Media upload to Late.dev failed:', e.message);
+          console.error('📸 Failed image URL:', post.image_url);
+
+          // Check if Instagram or TikTok is in the platforms (they require media)
+          const hasInstagram = accounts.some(acc => acc.platform === 'instagram');
+          const hasTikTok = accounts.some(acc => acc.platform === 'tiktok');
+
+          if (hasInstagram || hasTikTok) {
+            const platform = hasInstagram ? 'Instagram' : 'TikTok';
+            return NextResponse.json({
+              error: `${platform} vereist een afbeelding, maar het uploaden naar Late.dev is mislukt: ${e.message}\n\nDit kan komen door:\n1. Netwerkproblemen\n2. Onjuist beeldformaat\n3. Bestand te groot\n\nGenereer de post opnieuw.`,
+              image_url: post.image_url,
+              late_error: e.message
+            }, { status: 400 });
+          }
+          // For other platforms, continue without media but log warning
+          console.warn('⚠️ Continuing without media for platforms that don\'t require it');
+        }
       }
     }
 
