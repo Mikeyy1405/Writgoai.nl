@@ -8,20 +8,31 @@ const AIML_API_KEY = process.env.AIML_API_KEY!;
 
 // Video model configurations
 export const VIDEO_MODELS = {
-  'luma/ray-2': {
-    id: 'luma/ray-2',
-    name: 'Luma Ray 2',
-    description: 'High-quality cinematic video generation',
-    credits: 15,
+  'runway/gen4_turbo': {
+    id: 'runway/gen4_turbo',
+    name: 'Runway Gen-4 Turbo',
+    description: 'State-of-the-art video generation',
+    credits: 20,
     maxDuration: 10,
+    defaultDuration: 5,
     endpoint: '/v2/video/generations',
   },
-  'luma/ray-flash-2': {
-    id: 'luma/ray-flash-2',
-    name: 'Luma Ray Flash 2',
-    description: 'Fast video generation with good quality',
-    credits: 8,
+  'minimax/hailuo-02': {
+    id: 'minimax/hailuo-02',
+    name: 'MiniMax Hailuo 02',
+    description: 'High quality with artistic styles',
+    credits: 10,
     maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'minimax/hailuo-2.3': {
+    id: 'minimax/hailuo-2.3',
+    name: 'MiniMax Hailuo 2.3',
+    description: 'Latest MiniMax model with improved quality',
+    credits: 12,
+    maxDuration: 10,
+    defaultDuration: 5,
     endpoint: '/v2/video/generations',
   },
   'kling-video/v1.6/standard/text-to-video': {
@@ -30,23 +41,17 @@ export const VIDEO_MODELS = {
     description: 'Excellent video quality with smooth motion',
     credits: 12,
     maxDuration: 10,
-    endpoint: '/v2/generate/video/kling/generation',
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
   },
-  'runway/gen4_turbo': {
-    id: 'runway/gen4_turbo',
-    name: 'Runway Gen-4 Turbo',
-    description: 'State-of-the-art video generation',
-    credits: 20,
+  'video-01': {
+    id: 'video-01',
+    name: 'Video 01',
+    description: 'Fast and reliable video generation',
+    credits: 8,
     maxDuration: 10,
-    endpoint: '/v2/generate/video/runway/generation',
-  },
-  'minimax/hailuo-02': {
-    id: 'minimax/hailuo-02',
-    name: 'MiniMax Hailuo 02',
-    description: 'High quality with artistic styles',
-    credits: 10,
-    maxDuration: 10,
-    endpoint: '/v2/generate/video/minimax/generation',
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
   },
 } as const;
 
@@ -105,7 +110,7 @@ export const VIDEO_STYLES = [
 export async function generateVideo(
   prompt: string,
   model: VideoModelId,
-  aspectRatio: '16:9' | '9:16' | '1:1' = '9:16',
+  aspectRatio: '16:9' | '9:16' | '1:1' = '16:9',
   duration: number = 5
 ): Promise<{ generationId: string }> {
   const modelConfig = VIDEO_MODELS[model];
@@ -113,12 +118,19 @@ export async function generateVideo(
     throw new Error(`Unknown video model: ${model}`);
   }
 
-  // Map aspect ratio to API format
-  const aspectRatioMap: Record<string, string> = {
-    '16:9': '16:9',
-    '9:16': '9:16',
-    '1:1': '1:1',
-  };
+  // Validate and normalize duration to 5 or 10 seconds
+  let validDuration = duration;
+  if (duration <= 5) {
+    validDuration = 5;
+  } else if (duration <= 10) {
+    validDuration = 10;
+  } else {
+    validDuration = modelConfig.maxDuration;
+  }
+
+  // Most AIML API models prefer 16:9 aspect ratio
+  // Use 16:9 as default for better compatibility
+  const validAspectRatio = aspectRatio === '9:16' ? '16:9' : aspectRatio;
 
   const response = await fetch(`${AIML_API_URL}${modelConfig.endpoint}`, {
     method: 'POST',
@@ -129,8 +141,8 @@ export async function generateVideo(
     body: JSON.stringify({
       model: model,
       prompt: prompt,
-      aspect_ratio: aspectRatioMap[aspectRatio],
-      duration: duration,
+      aspect_ratio: validAspectRatio,
+      duration: validDuration,
     }),
   });
 
@@ -193,7 +205,7 @@ export async function getVideoStatus(
 export async function generateVideoWithPolling(
   prompt: string,
   model: VideoModelId,
-  aspectRatio: '16:9' | '9:16' | '1:1' = '9:16',
+  aspectRatio: '16:9' | '9:16' | '1:1' = '16:9',
   duration: number = 5,
   maxWaitTimeMs: number = 300000, // 5 minutes
   pollIntervalMs: number = 15000 // 15 seconds
