@@ -89,7 +89,7 @@ export async function PATCH(request: Request) {
               'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
               'Accept': 'application/json',
             },
-            timeout: 60000, // Increased to 60s for slow .nl/.be domains
+            timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
           });
 
           if (testResponse.ok) {
@@ -107,7 +107,7 @@ export async function PATCH(request: Request) {
           }
         } catch (wpError: any) {
           if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT' || wpError.code === 'TIMEOUT') {
-            wordpressWarning = 'WordPress test timeout - de server reageert traag (>60s).';
+            wordpressWarning = 'WordPress test timeout - de server reageert traag (>120s).';
           } else if (wpError.code === 'ENOTFOUND') {
             wordpressWarning = 'Website niet gevonden. Controleer de URL.';
           } else if (wpError.code === 'ECONNREFUSED') {

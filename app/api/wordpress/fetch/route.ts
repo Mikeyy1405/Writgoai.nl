@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 60000, // Increased to 60s for slow .nl/.be domains
+        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
       });
 
       if (!apiTestResponse.ok) {
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
     let wpResponse: Response | null = null;
     let lastError: any = null;
     const maxRetries = 3;
-    const timeoutMs = 60000; // Increased to 60s for slow .nl/.be domains
+    const timeoutMs = 120000; // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
