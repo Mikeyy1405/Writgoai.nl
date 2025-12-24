@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { buildAuthHeader, getPostsEndpoint } from '@/lib/wordpress-endpoints';
+import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -90,7 +91,10 @@ async function syncSinglePost(
       );
     }
 
-    const wpUrl = project.wp_url.replace(/\/$/, '');
+    // Normalize URL to remove any /wp-json paths
+    let wpUrl = project.wp_url.replace(/\/$/, '');
+    wpUrl = wpUrl.replace(/\/wp-json.*$/, '');
+
     const username = project.wp_username || '';
     const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
     const authHeader = buildAuthHeader(username, password);
@@ -98,13 +102,13 @@ async function syncSinglePost(
     // Fetch single post with _embed for featured image
     const wpApiUrl = `${getPostsEndpoint(wpUrl, wordpressId)}?_embed`;
 
-    const wpResponse = await fetch(wpApiUrl, {
+    const wpResponse = await fetchWithDnsFallback(wpApiUrl, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(15000),
+      timeout: 60000, // Increased to 60s for slow .nl/.be domains
     });
 
     if (!wpResponse.ok) {
@@ -214,20 +218,23 @@ async function syncAllPosts(
           .eq('id', projectId)
           .single();
 
-        const wpUrl = project.wp_url.replace(/\/$/, '');
+        // Normalize URL to remove any /wp-json paths
+        let wpUrl = project.wp_url.replace(/\/$/, '');
+        wpUrl = wpUrl.replace(/\/wp-json.*$/, '');
+
         const username = project.wp_username || '';
         const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
         const authHeader = buildAuthHeader(username, password);
 
         const wpApiUrl = `${getPostsEndpoint(wpUrl)}?page=${page}&per_page=50&_embed`;
 
-        const wpResponse = await fetch(wpApiUrl, {
+        const wpResponse = await fetchWithDnsFallback(wpApiUrl, {
           method: 'GET',
           headers: {
             'Authorization': authHeader,
             'Content-Type': 'application/json',
           },
-          signal: AbortSignal.timeout(30000),
+          timeout: 60000, // Increased to 60s for slow .nl/.be domains
         });
 
         if (!wpResponse.ok) {
