@@ -749,7 +749,7 @@ Output als JSON array:
       });
 
       // Generate all clusters in this batch in parallel
-      const batchPromises = batch.map(async (pillarData) => {
+      const batchPromises = batch.map(async (pillarData: string | { topic: string; estimatedArticles: number; subtopics: string[] }) => {
         const pillarTopic = typeof pillarData === 'string' ? pillarData : pillarData.topic;
         const subtopics = typeof pillarData === 'object' ? pillarData.subtopics : [];
         const estimatedArticles = typeof pillarData === 'object' ? pillarData.estimatedArticles : Math.ceil(targetCount / pillarCount);
