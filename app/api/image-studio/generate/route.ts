@@ -100,24 +100,12 @@ export async function POST(req: NextRequest) {
     const totalCredits = modelConfig.credits * numImages;
 
     // Check credits
-    const creditCheck = await checkCredits(user.id, modelId as any);
-    if (!creditCheck.hasCredits) {
+    const hasCredits = await checkCredits(user.id, modelId as any);
+    if (!hasCredits) {
       return NextResponse.json(
         {
           error: 'Insufficient credits',
           required: totalCredits,
-          available: creditCheck.remainingCredits
-        },
-        { status: 402 }
-      );
-    }
-
-    if (creditCheck.remainingCredits < totalCredits) {
-      return NextResponse.json(
-        {
-          error: 'Insufficient credits for requested number of images',
-          required: totalCredits,
-          available: creditCheck.remainingCredits
         },
         { status: 402 }
       );

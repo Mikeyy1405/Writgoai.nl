@@ -707,7 +707,7 @@ export default function WriterPage() {
             )}
 
             {/* Empty State */}
-            {!currentJob && !streaming && !fullContent && !idea && (
+            {!currentJob && !idea && (
               <div className="bg-gray-800/30 border-2 border-dashed border-gray-700 rounded-xl p-12 text-center">
                 <div className="text-6xl mb-4">✍️</div>
                 <h3 className="text-2xl font-bold text-white mb-2">Geen artikel geselecteerd</h3>
