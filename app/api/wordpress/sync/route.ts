@@ -108,7 +108,7 @@ async function syncSinglePost(
         'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
-      timeout: 60000, // Increased to 60s for slow .nl/.be domains
+      timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
     });
 
     if (!wpResponse.ok) {
@@ -234,7 +234,7 @@ async function syncAllPosts(
             'Authorization': authHeader,
             'Content-Type': 'application/json',
           },
-          timeout: 60000, // Increased to 60s for slow .nl/.be domains
+          timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
         });
 
         if (!wpResponse.ok) {

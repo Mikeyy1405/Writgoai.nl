@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 60000, // Increased to 60s for slow .nl/.be domains
+        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
       });
 
       if (siteResponse.ok || siteResponse.status === 301 || siteResponse.status === 302) {
@@ -218,9 +218,9 @@ export async function POST(request: NextRequest) {
           'Probeer het over enkele minuten opnieuw',
         ];
       } else if (error.name === 'AbortError') {
-        userMessage = 'Request timeout (60 seconden)';
+        userMessage = 'Request timeout (120 seconden)';
         troubleshooting = [
-          'De WordPress server reageert niet binnen 60 seconden',
+          'De WordPress server reageert niet binnen 120 seconden',
           'Controleer de snelheid van je hosting',
           'Test de site in een browser - laadt deze snel?',
         ];
@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 60000, // Increased to 60s for slow .nl/.be domains
+        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
       });
 
       if (apiResponse.ok) {
@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 60000, // Increased to 60s for slow .nl/.be domains
+        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
       });
 
       if (wpV2Response.ok) {
@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 60000, // Increased to 60s for slow .nl/.be domains
+        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
       });
 
       if (postsResponse.ok) {
@@ -397,7 +397,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 60000, // Increased to 60s for slow .nl/.be domains
+        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
       });
 
       if (authResponse.ok) {
