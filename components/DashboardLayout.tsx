@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-client';
 import CreditBalance from './CreditBalance';
 import Logo from './Logo';
 
@@ -20,6 +21,39 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Listen for auth state changes and session expiration
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
+          router.push('/login');
+        }
+
+        // Refresh the page when token is refreshed to get updated user data
+        if (event === 'TOKEN_REFRESHED') {
+          router.refresh();
+        }
+      }
+    );
+
+    // Check session validity on mount and periodically
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+      }
+    };
+
+    checkSession();
+    const interval = setInterval(checkSession, 60000); // Check every minute
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(interval);
+    };
+  }, [router]);
 
   const menuItems = [
     { icon: '🏠', label: 'Dashboard', href: '/dashboard' },

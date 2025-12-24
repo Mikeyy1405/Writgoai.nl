@@ -59,7 +59,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  // Refresh session if expired - this will automatically update cookies
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // For protected routes, redirect to login if no user
+  const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard');
+  if (isProtectedRoute && !user) {
+    const redirectUrl = new URL('/login', request.url);
+    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
 
   return response;
 }
