@@ -3,13 +3,29 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { VIDEO_MODELS, VIDEO_STYLES, VideoModelId } from '@/lib/aiml-api-client';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Lazy initialization to prevent build-time errors
+let supabase: ReturnType<typeof createClient> | null = null;
+let openaiClient: OpenAI | null = null;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase;
+}
+
+function getOpenAI() {
+  if (!openaiClient) {
+    // Use AIML API's OpenAI-compatible endpoint
+    openaiClient = new OpenAI({
+      apiKey: process.env.AIML_API_KEY,
+      baseURL: 'https://api.aimlapi.com/v1',
+    });
+  }
+  return openaiClient;
+}
 
 // Available voices for ElevenLabs
 const AVAILABLE_VOICES = [
@@ -58,14 +74,14 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get projects with scenes
-    const { data: projects, error } = await supabase
+    const { data: projects, error } = await getSupabase()
       .from('video_projects')
       .select(`
         *,
@@ -99,7 +115,7 @@ export async function POST(req: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -132,7 +148,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Create the project
-    const { data: project, error: projectError } = await supabase
+    const { data: project, error: projectError } = await getSupabase()
       .from('video_projects')
       .insert({
         user_id: user.id,
@@ -164,14 +180,14 @@ export async function POST(req: NextRequest) {
       status: 'pending',
     }));
 
-    const { data: scenes, error: scenesError } = await supabase
+    const { data: scenes, error: scenesError } = await getSupabase()
       .from('video_scenes')
       .insert(scenesData)
       .select();
 
     if (scenesError) {
       console.error('Error creating scenes:', scenesError);
-      await supabase.from('video_projects').delete().eq('id', project.id);
+      await getSupabase().from('video_projects').delete().eq('id', project.id);
       return NextResponse.json({ error: 'Failed to create scenes' }, { status: 500 });
     }
 
@@ -220,7 +236,7 @@ async function generateCompleteScenes(
   const styleIds = VIDEO_STYLES.map(s => s.id);
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
