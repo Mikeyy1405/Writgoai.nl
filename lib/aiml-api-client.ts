@@ -6,6 +6,51 @@
 const AIML_API_URL = 'https://api.aimlapi.com';
 const AIML_API_KEY = process.env.AIML_API_KEY!;
 
+// Retry configuration for network errors
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 2000; // 2 seconds
+
+/**
+ * Retry a function with exponential backoff
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES,
+  initialDelay: number = INITIAL_RETRY_DELAY,
+  retryableErrors: string[] = ['EAI_AGAIN', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND']
+): Promise<T> {
+  let lastError: Error;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if error is retryable (network/DNS errors)
+      const errorMessage = error.message || '';
+      const isRetryable = retryableErrors.some(code =>
+        errorMessage.includes(code) ||
+        (error.code && error.code === code)
+      );
+
+      // If it's the last attempt or error is not retryable, throw immediately
+      if (attempt === maxRetries || !isRetryable) {
+        throw error;
+      }
+
+      // Calculate delay with exponential backoff
+      const delay = initialDelay * Math.pow(2, attempt);
+      console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms due to: ${errorMessage}`);
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError!;
+}
+
 // Video model configurations
 export const VIDEO_MODELS = {
   // MiniMax Models
@@ -271,7 +316,7 @@ export const VIDEO_STYLES = [
 ] as const;
 
 /**
- * Generate a video using AIML API
+ * Generate a video using AIML API with retry logic for network errors
  */
 export async function generateVideo(
   prompt: string,
@@ -298,32 +343,54 @@ export async function generateVideo(
   // Use 16:9 as default for better compatibility
   const validAspectRatio = aspectRatio === '9:16' ? '16:9' : aspectRatio;
 
-  const response = await fetch(`${AIML_API_URL}${modelConfig.endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${AIML_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: model,
-      prompt: prompt,
-      aspect_ratio: validAspectRatio,
-      duration: validDuration,
-    }),
+  return retryWithBackoff(async () => {
+    const response = await fetch(`${AIML_API_URL}${modelConfig.endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${AIML_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: model,
+        prompt: prompt,
+        aspect_ratio: validAspectRatio,
+        duration: validDuration,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        errorDetails = { message: errorText };
+      }
+
+      console.error('AIML API video generation error:', errorDetails);
+
+      // Check if it's a backend provider error (like MiniMax DNS issues)
+      if (errorDetails.meta?.errno || errorDetails.meta?.syscall) {
+        const backendError = errorDetails.meta;
+        throw new Error(
+          `AIML API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'} ` +
+          `(${backendError.syscall || 'unknown'} ${backendError.hostname || ''}). ` +
+          `This is a temporary infrastructure issue. Please try again in a few moments.`
+        );
+      }
+
+      throw new Error(
+        `Video generation failed (${response.status}): ${errorDetails.message || 'Unknown error'}`
+      );
+    }
+
+    const data = await response.json();
+    return { generationId: data.generation_id || data.id };
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('AIML API video generation error:', errorText);
-    throw new Error(`Video generation failed: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return { generationId: data.generation_id || data.id };
 }
 
 /**
- * Check video generation status and get result
+ * Check video generation status and get result with retry logic
  */
 export async function getVideoStatus(
   generationId: string,
@@ -331,38 +398,56 @@ export async function getVideoStatus(
 ): Promise<{ status: 'queued' | 'processing' | 'completed' | 'failed'; url?: string; error?: string }> {
   const modelConfig = VIDEO_MODELS[model];
 
-  const response = await fetch(`${AIML_API_URL}${modelConfig.endpoint}?generation_id=${generationId}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${AIML_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
+  return retryWithBackoff(async () => {
+    const response = await fetch(`${AIML_API_URL}${modelConfig.endpoint}?generation_id=${generationId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${AIML_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        errorDetails = { message: errorText };
+      }
+
+      console.error('AIML API status check error:', errorDetails);
+
+      // Check for backend connectivity issues
+      if (errorDetails.meta?.errno || errorDetails.meta?.syscall) {
+        const backendError = errorDetails.meta;
+        throw new Error(
+          `AIML API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
+        );
+      }
+
+      throw new Error(`Status check failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Normalize status response
+    if (data.status === 'completed' || data.status === 'done') {
+      return {
+        status: 'completed',
+        url: data.video?.url || data.output?.url || data.url,
+      };
+    } else if (data.status === 'failed' || data.status === 'error') {
+      return {
+        status: 'failed',
+        error: data.error || 'Video generation failed',
+      };
+    } else {
+      return {
+        status: data.status === 'queued' ? 'queued' : 'processing',
+      };
+    }
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('AIML API status check error:', errorText);
-    throw new Error(`Status check failed: ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  // Normalize status response
-  if (data.status === 'completed' || data.status === 'done') {
-    return {
-      status: 'completed',
-      url: data.video?.url || data.output?.url || data.url,
-    };
-  } else if (data.status === 'failed' || data.status === 'error') {
-    return {
-      status: 'failed',
-      error: data.error || 'Video generation failed',
-    };
-  } else {
-    return {
-      status: data.status === 'queued' ? 'queued' : 'processing',
-    };
-  }
 }
 
 /**
