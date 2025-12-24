@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "node .next/standalone/server.js"
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.1",
