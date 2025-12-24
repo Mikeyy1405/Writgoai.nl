@@ -3,7 +3,37 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { WordPressErrorDetails, ConnectionTestResult, WordPressErrorType } from '@/lib/wordpress-errors';
+
+// Types
+enum WordPressErrorType {
+  NETWORK = 'NETWORK',
+  AUTH = 'AUTH',
+  API = 'API',
+  TIMEOUT = 'TIMEOUT',
+  CONFIG = 'CONFIG',
+  NOT_FOUND = 'NOT_FOUND',
+  UNKNOWN = 'UNKNOWN',
+}
+
+interface WordPressErrorDetails {
+  type: WordPressErrorType;
+  message: string;
+  technicalDetails?: string;
+  troubleshooting: string[];
+  timestamp: string;
+}
+
+interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  checks?: {
+    siteReachable: { passed: boolean; message: string };
+    restApiEnabled: { passed: boolean; message: string };
+    authenticationValid: { passed: boolean; message: string };
+  };
+  wpUrl?: string;
+  timestamp?: string;
+}
 
 interface WordPressPost {
   wordpress_id: number;

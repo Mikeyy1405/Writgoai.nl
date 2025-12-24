@@ -1,38 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { getPostsEndpoint, getMediaEndpoint } from '@/lib/wordpress-endpoints';
+import { createWordPressClient } from '@/lib/wordpress-client';
 
-// Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
+    // Check authenticatie
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Niet geautoriseerd' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Niet geautoriseerd' }, { status: 401 });
     }
 
     const body = await request.json();
     const { article_id, update_fields } = body;
 
     if (!article_id) {
-      return NextResponse.json(
-        { error: 'article_id is verplicht' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'article_id is verplicht' }, { status: 400 });
     }
 
-    // Get article with project info
+    // Haal article op met project info
     const { data: article, error: articleError } = await supabase
       .from('articles')
       .select(`
@@ -50,18 +39,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (articleError || !article) {
-      return NextResponse.json(
-        { error: 'Artikel niet gevonden' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Artikel niet gevonden' }, { status: 404 });
     }
 
     // Verify ownership
     if (article.projects.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Geen toegang tot dit artikel' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Geen toegang tot dit artikel' }, { status: 403 });
     }
 
     if (!article.wordpress_id) {
@@ -71,110 +54,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare WordPress credentials
-    const wpUrl = article.projects.wp_url.replace(/\/$/, '');
-    const username = article.projects.wp_username || '';
-    const password = (article.projects.wp_app_password || article.projects.wp_password || '').replace(/\s+/g, '');
-
+    // Check WordPress configuratie
+    const password = article.projects.wp_app_password || article.projects.wp_password;
     if (!password) {
-      return NextResponse.json(
-        { error: 'WordPress wachtwoord ontbreekt' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'WordPress wachtwoord ontbreekt' }, { status: 400 });
     }
 
-    const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+    // Maak WordPress client
+    const wpClient = createWordPressClient({
+      url: article.projects.wp_url,
+      username: article.projects.wp_username,
+      password: password,
+    });
 
     // Prepare update data
     const updateData: any = {};
 
-    if (update_fields.title !== undefined) {
-      updateData.title = update_fields.title;
-    }
-
-    if (update_fields.content !== undefined) {
-      updateData.content = update_fields.content;
-    }
-
-    if (update_fields.excerpt !== undefined) {
-      updateData.excerpt = update_fields.excerpt;
-    }
-
-    if (update_fields.slug !== undefined) {
-      updateData.slug = update_fields.slug;
-    }
-
+    if (update_fields.title !== undefined) updateData.title = update_fields.title;
+    if (update_fields.content !== undefined) updateData.content = update_fields.content;
     if (update_fields.status !== undefined) {
       // Convert our status to WordPress status
-      const wpStatus = update_fields.status === 'published' ? 'publish' : update_fields.status;
-      updateData.status = wpStatus;
+      updateData.status = update_fields.status === 'published' ? 'publish' : update_fields.status;
     }
 
-    // Handle featured image update
+    // Handle featured image
     let featuredMediaId = null;
-    if (update_fields.featured_image !== undefined && update_fields.featured_image) {
+    if (update_fields.featured_image) {
       try {
-        featuredMediaId = await uploadFeaturedImage(
-          update_fields.featured_image,
-          wpUrl,
-          authHeader,
-          update_fields.title || article.title
-        );
-        if (featuredMediaId) {
-          updateData.featured_media = featuredMediaId;
-        }
+        const filename = `${update_fields.title || article.title}.jpg`.replace(/[^a-z0-9.]/gi, '-').toLowerCase();
+        const media = await wpClient.uploadMedia(update_fields.featured_image, filename);
+        featuredMediaId = media.id;
+        updateData.featured_media = media.id;
       } catch (imageError) {
         console.error('Error uploading featured image:', imageError);
         // Continue with update even if image upload fails
       }
     }
 
-    // Handle Yoast SEO fields if available
-    if (update_fields.meta_title !== undefined ||
-        update_fields.meta_description !== undefined ||
-        update_fields.focus_keyword !== undefined) {
-      // Note: Yoast SEO fields require Yoast REST API extension
-      // These will be set as meta fields
-      updateData.meta = {
-        _yoast_wpseo_title: update_fields.meta_title,
-        _yoast_wpseo_metadesc: update_fields.meta_description,
-        _yoast_wpseo_focuskw: update_fields.focus_keyword,
-      };
-    }
+    console.log(`Updating WordPress post ${article.wordpress_id}`);
 
     // Update post in WordPress
-    const wpApiUrl = getPostsEndpoint(wpUrl, article.wordpress_id);
-
-    console.log(`Updating WordPress post ${article.wordpress_id}:`, updateData);
-
-    const wpResponse = await fetch(wpApiUrl, {
-      method: 'POST', // WordPress uses POST for updates
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updateData),
-      signal: AbortSignal.timeout(60000), // 60 second timeout
-    });
-
-    if (!wpResponse.ok) {
-      const errorText = await wpResponse.text();
-      console.error('WordPress update error:', wpResponse.status, errorText);
-
-      if (wpResponse.status === 401) {
-        return NextResponse.json(
-          { error: 'WordPress authenticatie mislukt. Controleer je wachtwoord.' },
-          { status: 401 }
-        );
-      }
-
-      return NextResponse.json(
-        { error: `WordPress update mislukt: ${wpResponse.statusText}` },
-        { status: wpResponse.status }
-      );
-    }
-
-    const updatedPost = await wpResponse.json();
+    const updatedPost = await wpClient.updatePost(article.wordpress_id, updateData);
 
     // Update local database
     const dbUpdateData: any = {
@@ -183,18 +103,9 @@ export async function POST(request: NextRequest) {
 
     if (update_fields.title !== undefined) dbUpdateData.title = update_fields.title;
     if (update_fields.content !== undefined) dbUpdateData.content = update_fields.content;
-    if (update_fields.excerpt !== undefined) dbUpdateData.excerpt = update_fields.excerpt;
-    if (update_fields.slug !== undefined) dbUpdateData.slug = update_fields.slug;
     if (update_fields.status !== undefined) dbUpdateData.status = update_fields.status;
     if (update_fields.featured_image !== undefined) dbUpdateData.featured_image = update_fields.featured_image;
-    if (update_fields.meta_title !== undefined) dbUpdateData.meta_title = update_fields.meta_title;
-    if (update_fields.meta_description !== undefined) dbUpdateData.meta_description = update_fields.meta_description;
-    if (update_fields.focus_keyword !== undefined) dbUpdateData.focus_keyword = update_fields.focus_keyword;
-
-    // Update WordPress URL if slug changed
-    if (updatedPost.link) {
-      dbUpdateData.wordpress_url = updatedPost.link;
-    }
+    if (updatedPost.link) dbUpdateData.wordpress_url = updatedPost.link;
 
     const { error: dbError } = await supabase
       .from('articles')
@@ -215,76 +126,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error updating WordPress post:', error);
-
-    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-      return NextResponse.json(
-        { error: 'WordPress server reageert niet. Probeer het later opnieuw.' },
-        { status: 504 }
-      );
-    }
-
     return NextResponse.json(
       { error: error.message || 'Er is een fout opgetreden bij het bijwerken' },
       { status: 500 }
     );
-  }
-}
-
-async function uploadFeaturedImage(
-  imageUrl: string,
-  wpUrl: string,
-  authHeader: string,
-  title: string
-): Promise<number | null> {
-  try {
-    console.log(`Downloading featured image: ${imageUrl}`);
-
-    // Download image
-    const imageResponse = await fetch(imageUrl, {
-      signal: AbortSignal.timeout(30000),
-    });
-
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to download image: ${imageResponse.statusText}`);
-    }
-
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
-
-    // Extract filename from URL or generate one
-    const urlParts = imageUrl.split('/');
-    const filename = urlParts[urlParts.length - 1] || `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg`;
-
-    console.log(`Uploading featured image to WordPress: ${filename}`);
-
-    // Upload to WordPress media library
-    const mediaApiUrl = getMediaEndpoint(wpUrl);
-
-    const uploadResponse = await fetch(mediaApiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-      body: imageBuffer,
-      signal: AbortSignal.timeout(60000),
-    });
-
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error('WordPress media upload error:', uploadResponse.status, errorText);
-      throw new Error(`Media upload failed: ${uploadResponse.statusText}`);
-    }
-
-    const media = await uploadResponse.json();
-    console.log(`Featured image uploaded successfully. Media ID: ${media.id}`);
-
-    return media.id;
-
-  } catch (error) {
-    console.error('Error uploading featured image:', error);
-    // Return null instead of throwing to allow the update to continue
-    return null;
   }
 }
