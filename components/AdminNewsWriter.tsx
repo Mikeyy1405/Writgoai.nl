@@ -2,21 +2,37 @@
 
 import { useState } from 'react';
 
-interface NewsArticle {
+interface NewsSource {
   title: string;
   summary: string;
   source: string;
   url?: string;
   publishedDate?: string;
-  relevanceScore: number;
+}
+
+interface NewsArticle {
+  title: string;
+  content: string;
+  excerpt: string;
+  category: string;
+}
+
+interface FeaturedImage {
+  url: string;
+  alt: string;
+  photographer?: string;
+  photographerUrl?: string;
+  source?: string;
 }
 
 interface NewsResearchResponse {
-  articles: NewsArticle[];
-  analysis: string;
+  sources: NewsSource[];
+  article?: NewsArticle;
+  featuredImage?: FeaturedImage;
   suggestedTopics: string[];
   generatedAt: string;
-  parseError?: boolean;
+  error?: string;
+  rawResearch?: string;
 }
 
 type ResearchType = 'website' | 'topic' | 'prompt';
@@ -28,6 +44,7 @@ export default function AdminNewsWriter() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<NewsResearchResponse | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const handleResearch = async () => {
     if (!input.trim()) {
@@ -49,6 +66,7 @@ export default function AdminNewsWriter() {
           type: researchType,
           input: input.trim(),
           language,
+          generateArticle: true,
         }),
       });
 
@@ -71,9 +89,9 @@ export default function AdminNewsWriter() {
       case 'website':
         return 'https://voorbeeld.nl of voorbeeld.nl';
       case 'topic':
-        return 'bijv. AI ontwikkelingen, duurzame energie, crypto nieuws...';
+        return 'bijv. AI ontwikkelingen, elektrische autos, crypto nieuws...';
       case 'prompt':
-        return 'bijv. Zoek naar nieuws over de laatste iPhone release en vergelijk met Samsung...';
+        return 'bijv. Schrijf een nieuwsartikel over de laatste ontwikkelingen in de techsector...';
       default:
         return '';
     }
@@ -84,28 +102,42 @@ export default function AdminNewsWriter() {
       case 'website':
         return 'Website URL';
       case 'topic':
-        return 'Onderwerp';
+        return 'Nieuwsonderwerp';
       case 'prompt':
-        return 'Research Opdracht';
+        return 'Custom Opdracht';
       default:
         return 'Input';
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string, field: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const copyFullArticle = () => {
+    if (!result?.article) return;
+    const fullContent = `# ${result.article.title}\n\n${result.article.content.replace(/<[^>]*>/g, '\n').replace(/\n\n+/g, '\n\n').trim()}`;
+    copyToClipboard(fullContent, 'article');
+  };
+
+  const copyHtmlArticle = () => {
+    if (!result?.article) return;
+    const htmlContent = `<h1>${result.article.title}</h1>\n${result.article.content}`;
+    copyToClipboard(htmlContent, 'html');
   };
 
   return (
     <div className="space-y-8">
       {/* Input Section */}
       <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-6">Nieuws Research</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">Nieuwsartikel Genereren</h2>
 
         {/* Research Type Selection */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-3">
-            Research Type
+            Input Type
           </label>
           <div className="grid grid-cols-3 gap-3">
             <button
@@ -139,7 +171,7 @@ export default function AdminNewsWriter() {
               }`}
             >
               <span className="text-lg mr-2">✍️</span>
-              Custom Prompt
+              Custom
             </button>
           </div>
         </div>
@@ -147,7 +179,7 @@ export default function AdminNewsWriter() {
         {/* Language Selection */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-3">
-            Taal
+            Artikel Taal
           </label>
           <div className="flex gap-3">
             <button
@@ -158,7 +190,7 @@ export default function AdminNewsWriter() {
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
-              🇳🇱 Nederlands
+              Nederlands
             </button>
             <button
               onClick={() => setLanguage('en')}
@@ -168,7 +200,7 @@ export default function AdminNewsWriter() {
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
-              🇬🇧 English
+              English
             </button>
           </div>
         </div>
@@ -209,7 +241,7 @@ export default function AdminNewsWriter() {
           </div>
         )}
 
-        {/* Research Button */}
+        {/* Generate Button */}
         <button
           onClick={handleResearch}
           disabled={loading || !input.trim()}
@@ -237,12 +269,12 @@ export default function AdminNewsWriter() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              Bezig met research...
+              Research en artikel genereren...
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              <span>🔍</span>
-              Start Research
+              <span>🚀</span>
+              Genereer Nieuwsartikel
             </span>
           )}
         </button>
@@ -251,30 +283,110 @@ export default function AdminNewsWriter() {
       {/* Results Section */}
       {result && (
         <div className="space-y-6">
-          {/* Analysis */}
-          <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-xl p-6 border border-blue-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                <span>📊</span> Analyse
-              </h3>
-              <button
-                onClick={() => copyToClipboard(result.analysis)}
-                className="text-sm text-gray-400 hover:text-white transition-colors"
-                title="Kopieer analyse"
-              >
-                📋 Kopieer
-              </button>
+          {/* Generated Article */}
+          {result.article && (
+            <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-xl border border-green-700/50 overflow-hidden">
+              {/* Featured Image */}
+              {result.featuredImage && (
+                <div className="relative">
+                  <img
+                    src={result.featuredImage.url}
+                    alt={result.featuredImage.alt}
+                    className="w-full h-64 object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-300">
+                        Foto: {result.featuredImage.photographer || 'Onbekend'}
+                        {result.featuredImage.source && ` via ${result.featuredImage.source}`}
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(result.featuredImage!.url, 'image')}
+                        className="text-white/80 hover:text-white transition-colors"
+                      >
+                        {copiedField === 'image' ? '✓ Gekopieerd' : '📋 Kopieer URL'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-6">
+                {/* Category Badge */}
+                <div className="mb-4">
+                  <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">
+                    {result.article.category}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h2 className="text-2xl font-bold text-white mb-4">
+                  {result.article.title}
+                </h2>
+
+                {/* Excerpt */}
+                <p className="text-gray-300 text-lg mb-6 italic border-l-4 border-green-500 pl-4">
+                  {result.article.excerpt}
+                </p>
+
+                {/* Article Content */}
+                <div
+                  className="prose prose-invert prose-lg max-w-none mb-6"
+                  dangerouslySetInnerHTML={{ __html: result.article.content }}
+                />
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-700">
+                  <button
+                    onClick={copyFullArticle}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      copiedField === 'article'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {copiedField === 'article' ? '✓ Gekopieerd!' : '📝 Kopieer als Tekst'}
+                  </button>
+                  <button
+                    onClick={copyHtmlArticle}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      copiedField === 'html'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {copiedField === 'html' ? '✓ Gekopieerd!' : '🔗 Kopieer als HTML'}
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(result.article!.title, 'title')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      copiedField === 'title'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {copiedField === 'title' ? '✓ Gekopieerd!' : '📰 Kopieer Titel'}
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(result.article!.excerpt, 'excerpt')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      copiedField === 'excerpt'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {copiedField === 'excerpt' ? '✓ Gekopieerd!' : '💬 Kopieer Excerpt'}
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
-              {result.analysis}
-            </div>
-          </div>
+          )}
 
           {/* Suggested Topics */}
           {result.suggestedTopics && result.suggestedTopics.length > 0 && (
             <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <span>💡</span> Voorgestelde Topics
+                <span>💡</span> Gerelateerde Onderwerpen
               </h3>
               <div className="flex flex-wrap gap-2">
                 {result.suggestedTopics.map((topic, index) => (
@@ -293,73 +405,47 @@ export default function AdminNewsWriter() {
             </div>
           )}
 
-          {/* News Articles */}
-          {result.articles && result.articles.length > 0 && (
+          {/* Sources */}
+          {result.sources && result.sources.length > 0 && (
             <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-                <span>📰</span> Nieuwsartikelen ({result.articles.length})
+                <span>📚</span> Bronnen ({result.sources.length})
               </h3>
               <div className="space-y-4">
-                {result.articles.map((article, index) => (
+                {result.sources.map((source, index) => (
                   <div
                     key={index}
-                    className="bg-gray-900/50 rounded-lg p-5 border border-gray-700 hover:border-orange-500/50 transition-all"
+                    className="bg-gray-900/50 rounded-lg p-4 border border-gray-700"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              article.relevanceScore >= 80
-                                ? 'bg-green-500/20 text-green-400'
-                                : article.relevanceScore >= 60
-                                ? 'bg-yellow-500/20 text-yellow-400'
-                                : 'bg-gray-500/20 text-gray-400'
-                            }`}
-                          >
-                            {article.relevanceScore}% relevant
-                          </span>
-                          {article.publishedDate && (
-                            <span className="text-xs text-gray-500">
-                              {article.publishedDate}
-                            </span>
-                          )}
-                        </div>
                         <h4 className="text-lg font-medium text-white mb-2">
-                          {article.title}
+                          {source.title}
                         </h4>
                         <p className="text-gray-400 text-sm mb-3">
-                          {article.summary}
+                          {source.summary}
                         </p>
                         <div className="flex items-center gap-4 text-sm">
                           <span className="text-gray-500">
-                            Bron: <span className="text-gray-400">{article.source}</span>
+                            {source.source}
                           </span>
-                          {article.url && (
+                          {source.publishedDate && (
+                            <span className="text-gray-500">
+                              {source.publishedDate}
+                            </span>
+                          )}
+                          {source.url && (
                             <a
-                              href={article.url}
+                              href={source.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-orange-400 hover:text-orange-300 transition-colors"
                             >
-                              Bekijk artikel →
+                              Bekijk bron →
                             </a>
                           )}
                         </div>
                       </div>
-                      <button
-                        onClick={() =>
-                          copyToClipboard(
-                            `${article.title}\n\n${article.summary}\n\nBron: ${article.source}${
-                              article.url ? `\nURL: ${article.url}` : ''
-                            }`
-                          )
-                        }
-                        className="text-gray-500 hover:text-white transition-colors"
-                        title="Kopieer artikel"
-                      >
-                        📋
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -370,11 +456,6 @@ export default function AdminNewsWriter() {
           {/* Generated At */}
           <div className="text-center text-sm text-gray-500">
             Gegenereerd op: {new Date(result.generatedAt).toLocaleString('nl-NL')}
-            {result.parseError && (
-              <span className="ml-2 text-yellow-500">
-                (Raw response - parsing failed)
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -382,14 +463,18 @@ export default function AdminNewsWriter() {
       {/* Empty State */}
       {!loading && !result && !error && (
         <div className="bg-gray-800/30 rounded-xl p-12 border border-gray-700/50 text-center">
-          <div className="text-6xl mb-4">🔍</div>
+          <div className="text-6xl mb-4">📰</div>
           <h3 className="text-xl font-semibold text-white mb-2">
-            Klaar om nieuws te researchen
+            Klaar om een nieuwsartikel te genereren
           </h3>
-          <p className="text-gray-400 max-w-md mx-auto">
-            Kies een research type, voer je zoekopdracht in en ontdek het meest
-            actuele en relevante nieuws voor jouw content.
+          <p className="text-gray-400 max-w-md mx-auto mb-4">
+            Voer een website, onderwerp of custom opdracht in. De News Writer
+            doet research met Perplexity en schrijft een professioneel artikel
+            zoals je zou zien op NU.nl of RTL Nieuws.
           </p>
+          <div className="text-sm text-gray-500">
+            Inclusief passende featured image van Pixabay, Pexels of Unsplash
+          </div>
         </div>
       )}
     </div>
