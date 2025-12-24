@@ -2,25 +2,53 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-client';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // Check if we have the required token in the URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
+    const setupSession = async () => {
+      // Check if we have the required tokens in the URL hash
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
 
-    if (!accessToken) {
-      setError('Ongeldige of verlopen reset link. Vraag een nieuwe aan.');
-    }
+      if (!accessToken || type !== 'recovery') {
+        setError('Ongeldige of verlopen reset link. Vraag een nieuwe aan.');
+        return;
+      }
+
+      try {
+        // Set the session with the recovery tokens
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        });
+
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          setError('Ongeldige of verlopen reset link. Vraag een nieuwe aan.');
+          return;
+        }
+
+        // Session is ready, user can now reset password
+        setSessionReady(true);
+      } catch (err) {
+        console.error('Setup session error:', err);
+        setError('Er ging iets mis. Probeer het opnieuw.');
+      }
+    };
+
+    setupSession();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,6 +110,14 @@ export default function ResetPasswordPage() {
           Kies een nieuw wachtwoord voor je account.
         </p>
 
+        {/* Loading state while setting up session */}
+        {!sessionReady && !error && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mb-4"></div>
+            <p className="text-gray-400">Reset link verifiëren...</p>
+          </div>
+        )}
+
         {error && (
           <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded text-red-500 text-sm">
             {error}
@@ -102,7 +138,7 @@ export default function ResetPasswordPage() {
               </div>
             </div>
           </div>
-        ) : (
+        ) : sessionReady ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-gray-300 mb-2">Nieuw Wachtwoord</label>
@@ -141,15 +177,26 @@ export default function ResetPasswordPage() {
               {loading ? 'Bezig met opslaan...' : 'Wachtwoord Opslaan'}
             </button>
           </form>
-        )}
+        ) : null}
 
-        {!success && (
+        {!success && sessionReady && (
           <div className="mt-6 text-center space-y-3">
             <Link
               href="/login"
               className="block text-gray-500 hover:text-gray-400 text-sm"
             >
               ← Terug naar login
+            </Link>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-6 text-center">
+            <Link
+              href="/forgot-password"
+              className="text-orange-500 hover:text-orange-400 text-sm"
+            >
+              Nieuwe reset link aanvragen →
             </Link>
           </div>
         )}
