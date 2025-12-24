@@ -98,7 +98,8 @@ ${description ? `Context: ${description}` : ''}
 ${keyword ? `Focus keyword: ${keyword}` : ''}
 
 Vereisten:
-- Minimaal ${word_count} woorden
+- STRIKT ${word_count} woorden (maximaal ${Math.round(word_count * 1.1)} woorden, NIET meer!)
+- Dit is een HARDE LIMIET - schrijf NIET meer dan ${Math.round(word_count * 1.1)} woorden
 - Gebruik HTML formatting (h2, h3, p, ul, li, strong, em)
 - Maak het informatief, engaging en SEO-vriendelijk
 - Gebruik de focus keyword natuurlijk door het artikel
@@ -107,6 +108,7 @@ Vereisten:
 - Structureer met duidelijke headers en paragrafen
 - Begin direct met de content (geen intro zoals "Hier is het artikel")
 - Sluit af met een sterke conclusie
+- BELANGRIJK: Houd je STRIKT aan de woordlimiet van ${word_count} woorden!
 
 Schrijf het artikel in HTML formaat:`;
 
@@ -123,15 +125,18 @@ Schrijf het artikel in HTML formaat:`;
           let chunkCount = 0;
 
           // Stream from Claude via AIML API
+          // Calculate max tokens based on word count (roughly 1.3 tokens per word for English/Dutch)
+          const estimatedTokens = Math.min(Math.round(word_count * 1.5) + 500, 8000);
+
           const completion = await openai.chat.completions.create({
             model: 'anthropic/claude-sonnet-4.5',
-            max_tokens: 8000,
+            max_tokens: estimatedTokens,
             temperature: 0.7,
             stream: true,
             messages: [
               {
                 role: 'system',
-                content: langInstructions.systemPrompt,
+                content: `${langInstructions.systemPrompt} BELANGRIJK: Houd je STRIKT aan de opgegeven woordlimiet. Schrijf NOOIT meer dan de maximale woordlimiet.`,
               },
               {
                 role: 'user',

@@ -235,7 +235,7 @@ async function processArticle(jobId: string, params: {
     const outlinePrompt = `Maak een gedetailleerde outline voor een ${contentType} over: "${title}"
 Focus keyword: ${keyword}
 ${description ? `Context: ${description}` : ''}
-Doellengte: ${wordCount} woorden
+Doellengte: STRIKT ${wordCount} woorden (maximaal ${Math.round(wordCount * 1.1)} woorden, NIET meer!)
 
 ${langConfig.writingStyle}
 ${contextPrompt ? `\n${contextPrompt}\n` : ''}
@@ -256,7 +256,7 @@ Geef een JSON outline:
     try {
       const outlineResponse = await generateAICompletion({
         task: 'content',
-        systemPrompt: `${langConfig.systemPrompt} Output alleen JSON.`,
+        systemPrompt: `${langConfig.systemPrompt} Output alleen JSON. BELANGRIJK: Plan voor STRIKT ${wordCount} woorden totaal - niet meer!`,
         userPrompt: outlinePrompt,
         maxTokens: 2000,
         temperature: 0.6,
@@ -333,7 +333,7 @@ ${langConfig.writingStyle}
 ${CONTENT_PROMPT_RULES}
 ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
-- Ongeveer ${wordsPerSection} woorden
+- STRIKT ${wordsPerSection} woorden (NIET meer dan ${Math.round(wordsPerSection * 1.15)} woorden!)
 - Start met <h2>${section.heading}</h2>
 - Gebruik <h3> voor subsecties
 - Voeg waar relevant interne links toe naar gerelateerde artikelen
@@ -341,11 +341,13 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 - Output als HTML`;
 
       try {
+        // Calculate max tokens for section (roughly 1.5 tokens per word)
+        const sectionMaxTokens = Math.min(Math.round(wordsPerSection * 2) + 200, 3000);
         const sectionContent = await generateAICompletion({
           task: 'content',
-          systemPrompt: `${langConfig.systemPrompt} Output alleen HTML.`,
+          systemPrompt: `${langConfig.systemPrompt} Output alleen HTML. STRIKT maximaal ${wordsPerSection} woorden voor deze sectie!`,
           userPrompt: sectionPrompt,
-          maxTokens: 3000,
+          maxTokens: sectionMaxTokens,
           temperature: 0.7,
         });
         mainContent += '\n\n' + cleanHtmlContent(sectionContent);
@@ -397,8 +399,8 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
     let featuredImage = '';
     try {
-      const imagePrompt = `Professional blog header image for article about ${keyword}. Clean, modern design with subtle ${keyword} theme. No text overlay.`;
-      featuredImage = await generateFeaturedImage(imagePrompt, keyword) || '';
+      // Pass the title and keyword as description for better topic extraction
+      featuredImage = await generateFeaturedImage(title, keyword) || '';
     } catch (e) {
       console.warn('Image generation failed:', e);
     }
