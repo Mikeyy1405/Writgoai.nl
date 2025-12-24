@@ -47,8 +47,6 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-type GenerationMode = 'background' | 'streaming';
-
 // Constants
 const WRITGO_DOMAIN = 'writgo.nl';
 
@@ -64,18 +62,7 @@ export default function WriterPage() {
   const [wordCount, setWordCount] = useState(2000);
   const [language, setLanguage] = useState('nl');
   const [viewMode, setViewMode] = useState<'preview' | 'html'>('preview');
-  const [generationMode, setGenerationMode] = useState<GenerationMode>('streaming');
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Streaming state
-  const [streaming, setStreaming] = useState(false);
-  const [streamedContent, setStreamedContent] = useState('');
-  const [fullContent, setFullContent] = useState('');
-  const [streamWordCount, setStreamWordCount] = useState(0);
-  const [articleId, setArticleId] = useState<string | null>(null);
-  const [streamProgress, setStreamProgress] = useState(0);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
@@ -90,18 +77,8 @@ export default function WriterPage() {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
     };
   }, [searchParams]);
-
-  useEffect(() => {
-    // Auto-scroll content as it streams
-    if (contentRef.current && streaming) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight;
-    }
-  }, [streamedContent, streaming]);
 
   useEffect(() => {
     // Auto-scroll chat
@@ -232,11 +209,7 @@ export default function WriterPage() {
       return;
     }
 
-    if (generationMode === 'streaming') {
-      await startStreamingGeneration();
-    } else {
-      await startBackgroundGeneration();
-    }
+    await startBackgroundGeneration();
   }
 
   async function startBackgroundGeneration() {
@@ -278,132 +251,8 @@ export default function WriterPage() {
     }
   }
 
-  async function startStreamingGeneration() {
-    setStreaming(true);
-    setStreamedContent('');
-    setFullContent('');
-    setStreamWordCount(0);
-    setStreamProgress(0);
-    setStarting(false);
-
-    // Create abort controller for stop functionality
-    abortControllerRef.current = new AbortController();
-
-    try {
-      const response = await fetch('/api/generate/article-stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: project!.id,
-          title: idea!.title,
-          keyword: idea!.keywords[0] || idea!.title,
-          description: idea!.description,
-          word_count: wordCount,
-          language,
-        }),
-        signal: abortControllerRef.current.signal,
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error('Streaming failed');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulatedContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          // Skip empty lines (SSE protocol requirement)
-          if (!line.trim()) continue;
-          
-          // Handle proper SSE format
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              if (data.type === 'start') {
-                console.log('Starting generation:', data.title);
-              } else if (data.type === 'chunk') {
-                accumulatedContent += data.content;
-                setStreamedContent(accumulatedContent);
-                
-                // Estimate progress based on word count
-                const currentWords = getWordCount(accumulatedContent);
-                const estimatedProgress = Math.min(95, (currentWords / wordCount) * 100);
-                setStreamProgress(Math.round(estimatedProgress));
-              } else if (data.type === 'complete') {
-                setFullContent(data.content);
-                setStreamWordCount(data.wordCount);
-                setArticleId(data.articleId);
-                setStreaming(false);
-                setStreamProgress(100);
-              } else if (data.type === 'error') {
-                alert('Fout: ' + data.error);
-                setStreaming(false);
-              }
-            } catch (e) {
-              console.error('Failed to parse SSE data:', line.slice(0, 100), e);
-            }
-          } 
-          // Handle raw JSON (fallback)
-          else if (line.startsWith('{')) {
-            try {
-              const data = JSON.parse(line);
-              if (data.type === 'chunk' && data.content) {
-                accumulatedContent += data.content;
-                setStreamedContent(accumulatedContent);
-                
-                const currentWords = getWordCount(accumulatedContent);
-                const estimatedProgress = Math.min(95, (currentWords / wordCount) * 100);
-                setStreamProgress(Math.round(estimatedProgress));
-              } else if (data.type === 'complete') {
-                setFullContent(data.content);
-                setStreamWordCount(data.wordCount);
-                setArticleId(data.articleId);
-                setStreaming(false);
-                setStreamProgress(100);
-              }
-            } catch (e) {
-              console.error('Failed to parse raw JSON:', line.slice(0, 100), e);
-            }
-          }
-        }
-      }
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Generation stopped by user');
-        // Keep the partially generated content
-        setFullContent(streamedContent);
-        setStreamWordCount(getWordCount(streamedContent));
-      } else {
-        console.error('Streaming error:', error);
-        // Preserve partial content even on error
-        if (streamedContent) {
-          setFullContent(streamedContent);
-          setStreamWordCount(getWordCount(streamedContent));
-        }
-        alert('Fout bij streamen: ' + error.message);
-      }
-      setStreaming(false);
-    }
-  }
-
-  function stopGeneration() {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-  }
-
   async function sendChatMessage() {
-    if (!chatInput.trim() || (!fullContent && !streamedContent)) return;
+    if (!chatInput.trim() || !currentJob?.article_content) return;
 
     const userMessage: ChatMessage = {
       role: 'user',
@@ -446,9 +295,9 @@ export default function WriterPage() {
   }
 
   async function publishToWordPress() {
-    // Handle both streaming and background generation modes
-    const hasContent = !!(fullContent || streamedContent || currentJob?.article_content);
-    const articleIdToPublish = articleId || currentJob?.article_id;
+    // Handle background generation mode only
+    const hasContent = !!currentJob?.article_content;
+    const articleIdToPublish = currentJob?.article_id;
     
     if (!hasContent || !project) {
       alert('Geen artikel of project beschikbaar');
@@ -491,7 +340,7 @@ export default function WriterPage() {
             project_id: project.id,
             article_id: articleIdToPublish,
             title: currentJob?.title,
-            content: currentJob?.article_content || fullContent || streamedContent,
+            content: currentJob?.article_content,
             featured_image: currentJob?.featured_image,
             slug: currentJob?.slug,
             meta_description: currentJob?.meta_description,
@@ -525,7 +374,7 @@ export default function WriterPage() {
   }
 
   function copyToClipboard() {
-    const content = fullContent || streamedContent || currentJob?.article_content;
+    const content = currentJob?.article_content;
     if (content) {
       navigator.clipboard.writeText(content);
       alert('Artikel gekopieerd naar klembord!');
@@ -533,7 +382,7 @@ export default function WriterPage() {
   }
 
   function downloadAsHTML() {
-    const content = fullContent || streamedContent || currentJob?.article_content;
+    const content = currentJob?.article_content;
     const fileName = getFileName(idea?.title || currentJob?.title || 'artikel', currentJob?.slug);
     
     if (content) {
@@ -640,22 +489,11 @@ export default function WriterPage() {
             )}
 
             {/* Generation Settings */}
-            {!currentJob && !streaming && !fullContent && idea && (
+            {!currentJob && idea && (
               <div className="bg-gray-800 rounded-xl p-6">
                 <h2 className="text-lg font-semibold text-white mb-4">⚙️ Instellingen</h2>
                 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-gray-400 text-sm mb-2">Generatie Modus</label>
-                    <select
-                      value={generationMode}
-                      onChange={(e) => setGenerationMode(e.target.value as GenerationMode)}
-                      className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-orange-500 focus:outline-none"
-                    >
-                      <option value="streaming">🔴 Live Streaming (zie tekst verschijnen)</option>
-                      <option value="background">⏳ Op Achtergrond (kan pagina verlaten)</option>
-                    </select>
-                  </div>
                   <div>
                     <label className="block text-gray-400 text-sm mb-2">Aantal woorden</label>
                     <select
@@ -689,7 +527,7 @@ export default function WriterPage() {
                   disabled={starting || !project}
                   className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg hover:shadow-orange-500/50 transition disabled:opacity-50"
                 >
-                  {starting ? '⏳ Starten...' : (generationMode === 'streaming' ? '🚀 Start Live Generatie' : '🚀 Genereer Artikel')}
+                  {starting ? '⏳ Starten...' : '🚀 Genereer Artikel'}
                 </button>
               </div>
             )}
@@ -739,47 +577,6 @@ export default function WriterPage() {
 
           {/* Right Column - Article Content */}
           <div className="lg:col-span-2">
-            {/* Streaming Progress Bar */}
-            {(streaming || (fullContent && generationMode === 'streaming')) && (
-              <div className="bg-gray-800 rounded-xl p-4 mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    {streaming && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                        <span className="text-white font-medium">Live aan het schrijven...</span>
-                      </div>
-                    )}
-                    {!streaming && fullContent && (
-                      <span className="text-green-400 font-medium">✅ Artikel voltooid!</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-orange-400 font-semibold">
-                      {streaming ? getWordCount(streamedContent) : streamWordCount} woorden
-                    </span>
-                    <span className="text-gray-400 text-sm">{streamProgress}%</span>
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300"
-                    style={{ width: `${streamProgress}%` }}
-                  />
-                </div>
-                {streaming && (
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      onClick={stopGeneration}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-                    >
-                      ⏹️ Stop Generatie
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Background Job Processing State */}
             {currentJob && (currentJob.status === 'processing' || currentJob.status === 'pending') && (
               <div className="bg-gray-800 rounded-xl p-6 mb-6">
@@ -798,70 +595,6 @@ export default function WriterPage() {
                 <p className="text-gray-400 text-sm">
                   Je kunt deze pagina verlaten. Het artikel wordt op de achtergrond gegenereerd.
                 </p>
-              </div>
-            )}
-
-            {/* Streaming Content Display */}
-            {(streaming || fullContent) && generationMode === 'streaming' && (
-              <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl">
-                <div
-                  ref={contentRef}
-                  className="p-8 overflow-y-auto bg-gray-900"
-                  style={{ maxHeight: '70vh', minHeight: '500px' }}
-                >
-                  {/* 
-                    Security Note: Content is from server-controlled AI (Claude) via authenticated API.
-                    The API endpoint validates user authentication and project ownership.
-                    Content is generated by Claude AI, not user input.
-                    For additional security, consider using DOMPurify in production.
-                  */}
-                  <div
-                    className="prose prose-invert prose-lg max-w-none text-white
-                               [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white
-                               [&_p]:text-gray-100 [&_li]:text-gray-100
-                               [&_strong]:text-white [&_a]:text-orange-400"
-                    dangerouslySetInnerHTML={{ __html: streaming ? streamedContent : fullContent }}
-                  />
-                  {streaming && (
-                    <div className="inline-block w-2 h-5 bg-orange-500 animate-pulse ml-1"></div>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                {!streaming && fullContent && (
-                  <div className="bg-gray-800 border-t border-gray-700 px-6 py-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={copyToClipboard}
-                          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition"
-                        >
-                          📋 Kopiëren
-                        </button>
-                        <button
-                          onClick={downloadAsHTML}
-                          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition"
-                        >
-                          ⬇️ Download
-                        </button>
-                        {articleId && (
-                          <button
-                            onClick={() => router.push(`/dashboard/wordpress-editor/${articleId}`)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                          >
-                            ✏️ Bewerken
-                          </button>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => setChatOpen(!chatOpen)}
-                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition"
-                      >
-                        💬 {chatOpen ? 'Verberg' : 'Open'} Chat
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
@@ -885,7 +618,7 @@ export default function WriterPage() {
             )}
 
             {/* Completed Background Job Article */}
-            {currentJob?.status === 'completed' && currentJob.article_content && generationMode === 'background' && (
+            {currentJob?.status === 'completed' && currentJob.article_content && (
               <div className="bg-gray-800 rounded-xl overflow-hidden">
                 {/* Article Header */}
                 <div className="p-6 border-b border-gray-700">
@@ -991,14 +724,12 @@ export default function WriterPage() {
             )}
 
             {/* Ready to Generate State */}
-            {!currentJob && !streaming && !fullContent && idea && (
+            {!currentJob && idea && (
               <div className="bg-gray-800/30 border-2 border-dashed border-gray-700 rounded-xl p-12 text-center">
                 <div className="text-6xl mb-4">🚀</div>
                 <h3 className="text-2xl font-bold text-white mb-2">Klaar om te genereren</h3>
                 <p className="text-gray-400 mb-6">
-                  {generationMode === 'streaming' 
-                    ? 'Klik op "Start Live Generatie" om de tekst real-time te zien verschijnen.'
-                    : 'Klik op "Genereer Artikel" om te beginnen. Je kunt de pagina verlaten terwijl het artikel wordt geschreven.'}
+                  Klik op "Genereer Artikel" om te beginnen. Je kunt de pagina verlaten terwijl het artikel wordt geschreven.
                 </p>
               </div>
             )}
@@ -1006,8 +737,8 @@ export default function WriterPage() {
         </div>
       </div>
 
-      {/* Chat Sidebar */}
-      {chatOpen && (fullContent || streamedContent) && (
+      {/* Chat Sidebar - Only show for completed articles */}
+      {chatOpen && currentJob?.article_content && (
         <div className="fixed right-0 top-0 h-full w-96 bg-gray-800 border-l border-gray-700 flex flex-col shadow-2xl z-50">
           {/* Chat Header */}
           <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
