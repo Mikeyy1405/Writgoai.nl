@@ -20,14 +20,19 @@ export interface FetchOptions extends RequestInit {
  * This wrapper resolves DNS issues with Node.js fetch by pre-resolving
  * the hostname using system DNS before making the request. This ensures
  * reliable connections for multi-site WordPress setups across different
- * geographic regions and TLDs. Also increases connection timeout from
- * default 10s to 30s for slow hosts.
+ * geographic regions and TLDs.
+ *
+ * Timeouts optimized for international connectivity:
+ * - Connection timeout: 60s (default undici is 10s)
+ * - Request timeout: 45s (default is 15s)
  */
 export async function fetchWithDnsFallback(
   url: string | URL,
   options: FetchOptions = {}
 ): Promise<Response> {
-  const { timeout = 15000, connectTimeout = 30000, ...fetchOptions } = options;
+  // Increased timeouts for international WordPress sites
+  // 45s request timeout, 60s connection timeout (was 15s/30s)
+  const { timeout = 45000, connectTimeout = 60000, ...fetchOptions } = options;
 
   // Parse URL
   const urlObj = typeof url === 'string' ? new URL(url) : url;
