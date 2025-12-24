@@ -2,16 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { VIDEO_MODELS, VIDEO_STYLES, VideoModelId } from '@/lib/aiml-api-client';
+import { Database } from '@/lib/database.types';
 
 // Lazy initialization to prevent build-time errors
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: ReturnType<typeof createClient<Database>> | null = null;
 let openaiClient: OpenAI | null = null;
 
 function getSupabase() {
   if (!supabase) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    supabase = createClient(supabaseUrl, supabaseServiceKey);
+    supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
   }
   return supabase;
 }
@@ -88,7 +89,7 @@ export async function GET(req: NextRequest) {
         scenes:video_scenes(*)
       `)
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }) as { data: any; error: any };
 
     if (error) {
       console.error('Error fetching projects:', error);
@@ -148,8 +149,8 @@ export async function POST(req: NextRequest) {
     );
 
     // Create the project
-    const { data: project, error: projectError } = await getSupabase()
-      .from('video_projects')
+    const { data: project, error: projectError } = await (getSupabase()
+      .from('video_projects') as any)
       .insert({
         user_id: user.id,
         title,
@@ -180,14 +181,14 @@ export async function POST(req: NextRequest) {
       status: 'pending',
     }));
 
-    const { data: scenes, error: scenesError } = await getSupabase()
-      .from('video_scenes')
+    const { data: scenes, error: scenesError } = await (getSupabase()
+      .from('video_scenes') as any)
       .insert(scenesData)
       .select();
 
     if (scenesError) {
       console.error('Error creating scenes:', scenesError);
-      await getSupabase().from('video_projects').delete().eq('id', project.id);
+      await (getSupabase().from('video_projects') as any).delete().eq('id', project.id);
       return NextResponse.json({ error: 'Failed to create scenes' }, { status: 500 });
     }
 

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/lib/database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
 /**
  * GET /api/video-studio/projects/[id]
@@ -36,7 +37,7 @@ export async function GET(
       `)
       .eq('id', id)
       .eq('user_id', user.id)
-      .single();
+      .single() as { data: any; error: any };
 
     if (error || !project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -87,8 +88,8 @@ export async function PUT(
     if (aspectRatio) updateData.aspect_ratio = aspectRatio;
     if (status) updateData.status = status;
 
-    const { data: project, error } = await supabase
-      .from('video_projects')
+    const { data: project, error } = await (supabase
+      .from('video_projects') as any)
       .update(updateData)
       .eq('id', id)
       .eq('user_id', user.id)
