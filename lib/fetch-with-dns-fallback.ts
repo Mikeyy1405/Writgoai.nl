@@ -87,7 +87,14 @@ export async function fetchWithDnsFallback(
     clearTimeout(timeoutId);
     agent.destroy();
 
-    // If we get EAI_AGAIN, add more context to the error
+    // Enhanced error diagnostics for better debugging
+    console.error(`[Fetch Error] Failed to fetch ${hostname}`);
+    console.error(`[Fetch Error] Error name: ${error.name}`);
+    console.error(`[Fetch Error] Error message: ${error.message}`);
+    console.error(`[Fetch Error] Error code: ${error.code || 'N/A'}`);
+    console.error(`[Fetch Error] Error cause:`, error.cause);
+
+    // Categorize and enhance error messages
     if (error.cause?.code === 'EAI_AGAIN') {
       const enhancedError = new Error(
         `DNS resolution failed for ${hostname}. This can occur when the Node.js DNS resolver cannot reach the domain ` +
@@ -99,7 +106,62 @@ export async function fetchWithDnsFallback(
       throw enhancedError;
     }
 
-    throw error;
+    if (error.cause?.code === 'ENOTFOUND') {
+      const enhancedError = new Error(
+        `DNS lookup failed for ${hostname}. The domain could not be found. ` +
+        `This may indicate: 1) Domain does not exist, 2) DNS server cannot resolve it, or 3) Network connectivity issue.`
+      );
+      enhancedError.cause = error.cause;
+      (enhancedError as any).code = 'ENOTFOUND';
+      throw enhancedError;
+    }
+
+    if (error.cause?.code === 'ECONNREFUSED') {
+      const enhancedError = new Error(
+        `Connection refused by ${hostname}. The server actively rejected the connection. ` +
+        `This may indicate: 1) Firewall blocking, 2) Server offline, or 3) Wrong port.`
+      );
+      enhancedError.cause = error.cause;
+      (enhancedError as any).code = 'ECONNREFUSED';
+      throw enhancedError;
+    }
+
+    if (error.cause?.code === 'ETIMEDOUT' || error.cause?.code === 'ECONNRESET') {
+      const enhancedError = new Error(
+        `Connection timeout to ${hostname}. The server did not respond in time. ` +
+        `This may indicate: 1) Server is slow, 2) Network issue, or 3) Firewall dropping packets.`
+      );
+      enhancedError.cause = error.cause;
+      (enhancedError as any).code = error.cause.code;
+      throw enhancedError;
+    }
+
+    if (error.name === 'AbortError') {
+      const enhancedError = new Error(
+        `Request timeout (${timeout}ms) for ${hostname}. The request took too long to complete.`
+      );
+      (enhancedError as any).code = 'TIMEOUT';
+      throw enhancedError;
+    }
+
+    if (error.cause?.code?.includes('CERT') || error.cause?.code?.includes('SSL')) {
+      const enhancedError = new Error(
+        `SSL/TLS certificate error for ${hostname}: ${error.cause.code}. ` +
+        `The server's SSL certificate is invalid, expired, or cannot be verified.`
+      );
+      enhancedError.cause = error.cause;
+      (enhancedError as any).code = error.cause.code;
+      throw enhancedError;
+    }
+
+    // If we don't recognize the error, add generic context
+    const enhancedError = new Error(
+      `Failed to fetch ${hostname}: ${error.message}. ` +
+      `Error type: ${error.name}${error.code ? `, Code: ${error.code}` : ''}${error.cause ? `, Cause: ${error.cause.code || error.cause.message}` : ''}`
+    );
+    enhancedError.cause = error.cause;
+    (enhancedError as any).code = error.code || error.cause?.code || 'FETCH_FAILED';
+    throw enhancedError;
   }
 }
 
