@@ -261,11 +261,10 @@ class LateClient {
     return mimeTypes[ext] || 'application/octet-stream';
   }
 
-  // Media Upload
+  // Media Upload using presigned URL flow
   async uploadMedia(file: Buffer | Blob, filename: string): Promise<MediaItem> {
     console.log('📤 Uploading media file:', filename);
 
-    const formData = new FormData();
     const mimeType = this.getMimeType(filename);
 
     // Create proper Blob with MIME type
@@ -275,32 +274,51 @@ class LateClient {
 
     console.log(`📎 File details: ${filename}, MIME type: ${mimeType}, size: ${blob.size} bytes`);
 
-    // Create a proper File object instead of just appending blob
-    const fileObject = new File([blob], filename, { type: mimeType });
-    formData.append('file', fileObject);
-
-    const response = await fetch(`${LATE_API_BASE}/media`, {
+    // Step 1: Request presigned URL
+    console.log('🔄 Requesting presigned URL...');
+    const presignResponse = await this.request<{
+      uploadUrl: string;
+      publicUrl: string;
+      key: string;
+      type: string;
+    }>('/media/presign', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-      },
-      body: formData,
+      body: JSON.stringify({
+        filename,
+        contentType: mimeType,
+        size: blob.size,
+      }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to upload media: ${response.status} - ${errorText}`);
+    console.log('✅ Presigned URL received:', {
+      publicUrl: presignResponse.publicUrl,
+      type: presignResponse.type,
+    });
+
+    // Step 2: Upload file to presigned URL
+    console.log('🔄 Uploading file to presigned URL...');
+    const uploadResponse = await fetch(presignResponse.uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': mimeType,
+      },
+      body: blob,
+    });
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      throw new Error(`Failed to upload to presigned URL: ${uploadResponse.status} - ${errorText}`);
     }
 
-    const result = await response.json();
-    console.log('✅ Media uploaded successfully:', result._id);
+    console.log('✅ Media uploaded successfully to:', presignResponse.publicUrl);
 
-    // Determine media type from filename or result
-    const isVideo = !!filename.toLowerCase().match(/\.(mp4|mov|avi|webm|mkv)$/);
+    // Determine media type from response or filename
+    const isVideo = presignResponse.type === 'video' ||
+                    !!filename.toLowerCase().match(/\.(mp4|mov|avi|webm|mkv)$/);
 
     return {
-      mediaId: result._id,
-      url: result.url,
+      mediaId: presignResponse.key,
+      url: presignResponse.publicUrl,
       type: isVideo ? 'video' : 'image',
     };
   }
