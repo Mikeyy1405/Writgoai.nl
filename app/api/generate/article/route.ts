@@ -127,8 +127,8 @@ VEREISTEN:
 - Actualiteit: Focus op ${currentYear}-${nextYear} informatie
 
 STRUCTUUR:
-1. Pakkende introductie die de lezer direct aanspreekt
-2. Duidelijke H2 en H3 headers voor structuur
+1. Pakkende introductie die de lezer direct aanspreekt (GEEN 'Inleiding:' heading - begin direct met de tekst)
+2. Duidelijke H2 en H3 headers voor hoofdsecties
 3. Praktische tips en actionable advies
 4. Voorbeelden en concrete use cases
 5. FAQ sectie met 3-5 veelgestelde vragen
@@ -153,12 +153,13 @@ BELANGRIJK:
 - Geef ALLEEN de HTML content terug
 - GEEN markdown code blocks (\`\`\`html of \`\`\`)
 - GEEN uitleg of inleiding
-- Begin direct met de eerste <h2> of <p> tag
+- Begin direct met de introductie tekst in <p> tags (GEEN 'Inleiding:' of 'Introductie:' heading)
+- De eerste H2 heading moet over het eerste inhoudelijke onderwerp gaan
 - Schrijf originele, waardevolle content in het Nederlands`;
 
     const content = await generateAICompletion({
       task: 'content',
-      systemPrompt: 'Je bent een expert SEO content writer. Je schrijft alleen clean HTML content zonder markdown formatting, code blocks, of uitleg. Je begint direct met de HTML tags.',
+      systemPrompt: 'Je bent een expert SEO content writer. Je schrijft alleen clean HTML content zonder markdown formatting, code blocks, of uitleg. BELANGRIJK: Begin NOOIT met een "Inleiding:" of "Introductie:" heading. Start direct met de introductie tekst in <p> tags.',
       userPrompt: prompt,
       temperature: 0.7,
       maxTokens: 4000,

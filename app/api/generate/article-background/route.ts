@@ -286,13 +286,14 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 - Vermeld het keyword in de eerste 100 woorden
 - Ongeveer 150-200 woorden
 - Voeg waar relevant interne links toe
-- Output als HTML met <p> tags`;
+- BELANGRIJK: GEEN "Inleiding:" of "Introductie:" heading - begin direct met de tekst
+- Output als HTML met alleen <p> tags (GEEN headings voor de intro)`;
 
     let introContent = '';
     try {
       introContent = await generateAICompletion({
         task: 'content',
-        systemPrompt: `${langConfig.systemPrompt} Output alleen HTML.`,
+        systemPrompt: `${langConfig.systemPrompt} Output alleen HTML. BELANGRIJK: Gebruik GEEN "Inleiding:" of "Introductie:" heading. Start direct met <p> tags.`,
         userPrompt: introPrompt,
         maxTokens: 1000,
         temperature: 0.7,
