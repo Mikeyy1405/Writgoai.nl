@@ -212,6 +212,7 @@ export async function GET(request: Request) {
               .map(a => a.id);
 
             if (accountIds.length > 0) {
+              console.log(`📤 Publishing/scheduling post to ${accountIds.length} account(s)...`);
               const publishResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/social/publish`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

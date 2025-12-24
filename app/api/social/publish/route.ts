@@ -72,24 +72,32 @@ export async function POST(request: Request) {
       try {
         const media = await lateClient.uploadMediaFromUrl(post.image_url);
         mediaItems.push(media);
-        console.log('✅ Media uploaded successfully:', media.mediaId);
+        console.log('✅ Media uploaded successfully:', {
+          mediaId: media.mediaId,
+          url: media.url,
+          type: media.type,
+        });
       } catch (e: any) {
         console.error('❌ Media upload failed:', e.message);
+        console.error('📸 Failed image URL:', post.image_url);
 
         // Provide helpful error message
         const errorDetails = e.message.includes('403') || e.message.includes('404')
           ? '\n\nDe afbeelding URL is mogelijk verlopen of niet toegankelijk. Probeer de post opnieuw te genereren met een nieuwe afbeelding.'
           : '\n\nControleer of de afbeelding URL correct en toegankelijk is.';
 
-        // Check if Instagram is in the platforms
+        // Check if Instagram or TikTok is in the platforms (they require media)
         const hasInstagram = accounts.some(acc => acc.platform === 'instagram');
-        if (hasInstagram) {
+        const hasTikTok = accounts.some(acc => acc.platform === 'tiktok');
+
+        if (hasInstagram || hasTikTok) {
+          const platform = hasInstagram ? 'Instagram' : 'TikTok';
           return NextResponse.json({
-            error: 'Instagram posts vereisen altijd een afbeelding of video. Media upload is mislukt: ' + e.message + errorDetails
+            error: `${platform} posts vereisen altijd een afbeelding of video. Media upload is mislukt: ` + e.message + errorDetails
           }, { status: 400 });
         }
         // For other platforms, continue without media but log warning
-        console.warn('⚠️ Continuing without media for non-Instagram platforms');
+        console.warn('⚠️ Continuing without media for platforms that don\'t require it');
       }
     }
 
@@ -102,10 +110,17 @@ export async function POST(request: Request) {
     // Validate Instagram requires media
     const hasInstagram = platforms.some(p => p.platform === 'instagram');
     if (hasInstagram && mediaItems.length === 0) {
-      return NextResponse.json({ 
-        error: 'Instagram posts vereisen altijd een afbeelding of video. Voeg eerst media toe aan je post.' 
+      return NextResponse.json({
+        error: 'Instagram posts vereisen altijd een afbeelding of video. Voeg eerst media toe aan je post.'
       }, { status: 400 });
     }
+
+    console.log('📤 Creating post on Late with:', {
+      platforms: platforms.map(p => p.platform),
+      mediaCount: mediaItems.length,
+      hasSchedule: !!scheduled_for,
+      publishNow: publish_now,
+    });
 
     const latePost = await lateClient.createPost({
       content: post.content,
@@ -115,6 +130,11 @@ export async function POST(request: Request) {
       timezone: 'Europe/Amsterdam',
       publishNow: publish_now,
       isDraft: !publish_now && !scheduled_for,
+    });
+
+    console.log('✅ Late post created:', {
+      latePostId: latePost._id,
+      status: latePost.status,
     });
 
     // Update our post
