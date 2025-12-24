@@ -36,6 +36,7 @@ export async function POST(request: Request) {
         data: {
           name,
         },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://writgo.nl'}/dashboard`,
       },
     });
 
@@ -46,8 +47,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // If email confirmation is disabled in Supabase, user will be auto-logged in
+    // If session exists, user is logged in automatically
+    // If no session, user needs to confirm email first
+    const sessionExists = data.session !== null;
+
     return NextResponse.json(
-      { success: true, user: data.user },
+      {
+        success: true,
+        user: data.user,
+        needsEmailConfirmation: !sessionExists,
+        session: data.session
+      },
       { status: 200 }
     );
   } catch (error: any) {
