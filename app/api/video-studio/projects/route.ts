@@ -277,7 +277,7 @@ Zorg voor een logische verhaallijn en varieer de visuele stijlen.`,
     return scenes.slice(0, numberOfScenes).map((scene, index) => ({
       visualPrompt: scene.visualPrompt || `Scene ${index + 1} of ${title}`,
       narration: scene.narration || '',
-      style: styleIds.includes(scene.style) ? scene.style : styleIds[index % styleIds.length],
+      style: (styleIds as string[]).includes(scene.style) ? scene.style : styleIds[index % styleIds.length],
     }));
 
   } catch (error) {
