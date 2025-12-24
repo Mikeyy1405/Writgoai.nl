@@ -7,12 +7,15 @@
  */
 
 import { lookup } from 'dns/promises';
-import { Agent, fetch as undiciFetch } from 'undici';
+import { Agent, fetch as undiciFetch, Response as UndiciResponse } from 'undici';
 
 export interface FetchOptions extends RequestInit {
   timeout?: number;
   connectTimeout?: number;
 }
+
+// Type alias to handle undici Response compatibility with standard Response
+type CompatibleResponse = Response | UndiciResponse;
 
 /**
  * Enhanced fetch with DNS fallback for all domains
@@ -81,7 +84,10 @@ export async function fetchWithDnsFallback(
 
     clearTimeout(timeoutId);
     agent.destroy();
-    // Cast undici Response to standard Response type - they're compatible for our use case
+    // Cast undici Response to standard Response type using double-cast
+    // undici's Response is functionally compatible with standard Response for all methods we use,
+    // but TypeScript requires explicit casting due to minor type differences (e.g., bytes() method)
+    // The double-cast (unknown -> Response) safely bridges the type incompatibility
     return response as unknown as Response;
   } catch (error: any) {
     clearTimeout(timeoutId);
