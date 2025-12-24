@@ -323,7 +323,7 @@ export default function VideoStudioPage() {
       </div>
 
       {projects.length === 0 ? (
-        <div className="text-center py-16 bg-gray-800/50 rounded-lg border border-gray-700 border-dashed">
+        <div className="text-center py-16 bg-gray-900/90 rounded-lg border border-gray-700 border-dashed">
           <div className="text-6xl mb-4">🎬</div>
           <h3 className="text-2xl font-bold mb-2">Nog geen projecten</h3>
           <p className="text-gray-400 mb-6">
@@ -341,7 +341,7 @@ export default function VideoStudioPage() {
           {projects.map((project) => (
             <div
               key={project.id}
-              className="bg-gray-800/50 rounded-lg border border-gray-700 p-4 hover:border-orange-500 transition-colors cursor-pointer"
+              className="bg-gray-900/90 rounded-lg border border-gray-700 p-4 hover:border-orange-500 transition-colors cursor-pointer"
               onClick={() => openProject(project)}
             >
               <div className="flex items-start justify-between mb-3">
@@ -392,7 +392,7 @@ export default function VideoStudioPage() {
         <h2 className="text-2xl font-bold">Nieuw Video Project</h2>
       </div>
 
-      <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 space-y-6">
+      <div className="bg-gray-900/90 rounded-lg border border-gray-700 p-6 space-y-6">
         {/* Title */}
         <div>
           <label className="block text-sm font-medium mb-2">Video Titel</label>
@@ -413,7 +413,7 @@ export default function VideoStudioPage() {
             onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
             placeholder="Beschrijf je video inhoud. Dit wordt gebruikt om scenes en voice-over automatisch te genereren..."
             rows={5}
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500 resize-none"
+            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-orange-500 resize-none"
           />
         </div>
 
@@ -614,7 +614,7 @@ export default function VideoStudioPage() {
 
         {/* Generation Progress */}
         {isGenerating && (
-          <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6">
+          <div className="bg-gray-900/90 rounded-lg border border-gray-700 p-6">
             <div className="flex items-center justify-between mb-3">
               <span className="font-medium">{generationStatus}</span>
               <span className="text-orange-400">{generationProgress}%</span>
@@ -630,19 +630,19 @@ export default function VideoStudioPage() {
 
         {/* Project Info */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+          <div className="bg-gray-900/90 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold">{totalScenes}</div>
             <div className="text-sm text-gray-400">Scenes</div>
           </div>
-          <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+          <div className="bg-gray-900/90 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold">{currentProject.total_duration}s</div>
             <div className="text-sm text-gray-400">Duur</div>
           </div>
-          <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+          <div className="bg-gray-900/90 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold">{currentProject.aspect_ratio}</div>
             <div className="text-sm text-gray-400">Formaat</div>
           </div>
-          <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+          <div className="bg-gray-900/90 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-green-400">{completedScenes}/{totalScenes}</div>
             <div className="text-sm text-gray-400">Compleet</div>
           </div>
@@ -655,7 +655,7 @@ export default function VideoStudioPage() {
             {currentProject.scenes?.map((scene) => (
               <div
                 key={scene.id}
-                className={`bg-gray-800/50 rounded-lg border p-4 ${
+                className={`bg-gray-900/90 rounded-lg border p-4 ${
                   scene.status === 'completed' ? 'border-green-500/50' :
                   scene.status === 'generating' ? 'border-yellow-500/50' :
                   scene.status === 'failed' ? 'border-red-500/50' :
@@ -722,7 +722,7 @@ export default function VideoStudioPage() {
 
         {/* Music Section */}
         {currentProject.music_url && (
-          <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+          <div className="bg-gray-900/90 rounded-lg border border-gray-700 p-4">
             <h3 className="font-bold mb-3">Achtergrondmuziek</h3>
             <audio src={currentProject.music_url} controls className="w-full" />
           </div>
@@ -744,7 +744,7 @@ export default function VideoStudioPage() {
           </p>
 
           <div className="mt-4 flex items-center gap-4">
-            <div className="px-4 py-2 bg-gray-800 rounded-lg">
+            <div className="px-4 py-2 bg-gray-900/90 border border-gray-700 rounded-lg">
               <span className="text-gray-400">Credits: </span>
               <span className="text-orange-500 font-bold">{creditBalance}</span>
             </div>
