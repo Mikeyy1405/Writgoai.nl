@@ -88,8 +88,8 @@ export async function PUT(
     if (aspectRatio) updateData.aspect_ratio = aspectRatio;
     if (status) updateData.status = status;
 
-    const { data: project, error } = await (supabase
-      .from('video_projects') as any)
+    const { data: project, error } = await supabase
+      .from('video_projects')
       .update(updateData)
       .eq('id', id)
       .eq('user_id', user.id)

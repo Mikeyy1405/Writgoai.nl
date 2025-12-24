@@ -55,6 +55,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       video_scenes: {
         Row: {
@@ -105,11 +106,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
-      }
-      [key: string]: {
-        Row: { [key: string]: any }
-        Insert: { [key: string]: any }
-        Update: { [key: string]: any }
+        Relationships: []
       }
     }
     Views: {
@@ -119,6 +116,9 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }

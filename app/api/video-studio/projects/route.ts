@@ -149,8 +149,8 @@ export async function POST(req: NextRequest) {
     );
 
     // Create the project
-    const { data: project, error: projectError } = await (getSupabase()
-      .from('video_projects') as any)
+    const { data: project, error: projectError } = await getSupabase()
+      .from('video_projects')
       .insert({
         user_id: user.id,
         title,
@@ -181,14 +181,14 @@ export async function POST(req: NextRequest) {
       status: 'pending',
     }));
 
-    const { data: scenes, error: scenesError } = await (getSupabase()
-      .from('video_scenes') as any)
+    const { data: scenes, error: scenesError } = await getSupabase()
+      .from('video_scenes')
       .insert(scenesData)
       .select();
 
     if (scenesError) {
       console.error('Error creating scenes:', scenesError);
-      await (getSupabase().from('video_projects') as any).delete().eq('id', project.id);
+      await getSupabase().from('video_projects').delete().eq('id', project.id);
       return NextResponse.json({ error: 'Failed to create scenes' }, { status: 500 });
     }
 
