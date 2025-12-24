@@ -108,23 +108,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user has enough credits
-    if (!balance.subscription_active && !balance.is_admin) {
-      return NextResponse.json(
-        { error: 'Subscription not active' },
-        { status: 402 }
-      );
-    }
+    // Admin users have unlimited credits, skip checks for them
+    if (!balance.is_admin) {
+      // Check if subscription is active
+      if (!balance.subscription_active) {
+        return NextResponse.json(
+          { error: 'Subscription not active' },
+          { status: 402 }
+        );
+      }
 
-    if (!balance.is_admin && balance.credits_remaining < totalCredits) {
-      return NextResponse.json(
-        {
-          error: 'Insufficient credits for requested number of images',
-          required: totalCredits,
-          available: balance.credits_remaining
-        },
-        { status: 402 }
-      );
+      // Check if user has enough credits
+      if (balance.credits_remaining < totalCredits) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient credits for requested number of images',
+            required: totalCredits,
+            available: balance.credits_remaining
+          },
+          { status: 402 }
+        );
+      }
     }
 
     // Calculate dimensions from aspect ratio if not provided
