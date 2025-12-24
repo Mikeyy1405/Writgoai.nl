@@ -84,6 +84,7 @@ export const MUSIC_MODELS = {
 
 // Visual styles for video generation
 export const VIDEO_STYLES = [
+  { id: 'writgo_brand', name: 'WritGO Brand Style', prompt: 'modern professional design, black background, vibrant orange accents (#FF6B00), white text, clean typography, high contrast, sleek and sophisticated, corporate branding, premium feel' },
   { id: 'ultra_realistic', name: 'Ultra Realistic', prompt: 'ultra realistic, photorealistic, 8K quality, cinematic lighting' },
   { id: 'vintage_comic', name: 'Vintage Comic', prompt: 'vintage comic book style, halftone dots, bold outlines, retro colors' },
   { id: '3d_pixar', name: '3D Pixar Style', prompt: '3D Pixar animation style, smooth rendering, vibrant colors, family friendly' },
@@ -227,7 +228,7 @@ export async function generateVoiceOver(
   voice: string = 'Rachel',
   model: string = 'elevenlabs/eleven_multilingual_v2'
 ): Promise<{ generationId: string }> {
-  const response = await fetch(`${AIML_API_URL}/v2/generate/audio/elevenlabs/text-to-speech`, {
+  const response = await fetch(`${AIML_API_URL}/v1/audio/speech`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${AIML_API_KEY}`,
@@ -235,7 +236,7 @@ export async function generateVoiceOver(
     },
     body: JSON.stringify({
       model: model,
-      text: text,
+      input: text,
       voice: voice,
     }),
   });
@@ -257,7 +258,7 @@ export async function getVoiceOverStatus(
   generationId: string
 ): Promise<{ status: 'queued' | 'processing' | 'completed' | 'failed'; url?: string; error?: string }> {
   const response = await fetch(
-    `${AIML_API_URL}/v2/generate/audio/elevenlabs/text-to-speech?generation_id=${generationId}`,
+    `${AIML_API_URL}/v1/audio/speech?generation_id=${generationId}`,
     {
       method: 'GET',
       headers: {
