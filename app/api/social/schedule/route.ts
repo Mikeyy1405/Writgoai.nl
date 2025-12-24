@@ -20,6 +20,10 @@ interface ScheduleConfig {
   target_platforms: string[];
   auto_publish: boolean;
   schedule_posts: boolean;
+  // Auto-populate calendar settings
+  auto_populate_calendar?: boolean;
+  include_holidays?: boolean;
+  days_ahead?: number;
 }
 
 // Get schedule for a project
@@ -80,6 +84,10 @@ export async function POST(request: Request) {
       target_platforms: body.target_platforms || ['instagram'],
       auto_publish: body.auto_publish ?? false,
       schedule_posts: body.schedule_posts ?? true,
+      // Auto-populate calendar settings
+      auto_populate_calendar: body.auto_populate_calendar ?? true,
+      include_holidays: body.include_holidays ?? true,
+      days_ahead: body.days_ahead ?? 14,
     };
 
     // Check if schedule exists for this project
@@ -110,6 +118,26 @@ export async function POST(request: Request) {
 
       if (error) throw error;
       result = data;
+    }
+
+    // If auto_populate_calendar is enabled, trigger auto-population
+    if (result.auto_populate_calendar && result.enabled) {
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        await fetch(`${appUrl}/api/social/auto-populate-calendar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id,
+            days_ahead: result.days_ahead || 14,
+            include_holidays: result.include_holidays ?? true,
+            platforms: result.target_platforms || ['instagram'],
+          }),
+        });
+      } catch (autoPopulateError) {
+        console.error('Auto-populate calendar error:', autoPopulateError);
+        // Don't fail the schedule save if auto-populate fails
+      }
     }
 
     return NextResponse.json({

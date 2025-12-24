@@ -165,6 +165,10 @@ export default function SocialMediaPage() {
   const [schedulePostTimes, setSchedulePostTimes] = useState<string[]>(['09:00']);
   const [schedulePostTypes, setSchedulePostTypes] = useState<string[]>(['educational', 'storytelling', 'engagement']);
   const [scheduleAutoPublish, setScheduleAutoPublish] = useState(false);
+  const [autoPopulateCalendar, setAutoPopulateCalendar] = useState(true);
+  const [includeHolidays, setIncludeHolidays] = useState(true);
+  const [daysAhead, setDaysAhead] = useState(14);
+  const [populatingCalendar, setPopulatingCalendar] = useState(false);
 
   // Post generation form
   const [topic, setTopic] = useState('');
@@ -323,6 +327,9 @@ export default function SocialMediaPage() {
         setSchedulePostTimes(data.schedule.post_times || ['09:00']);
         setSchedulePostTypes(data.schedule.post_types || ['educational', 'storytelling', 'engagement']);
         setScheduleAutoPublish(data.schedule.auto_publish || false);
+        setAutoPopulateCalendar(data.schedule.auto_populate_calendar ?? true);
+        setIncludeHolidays(data.schedule.include_holidays ?? true);
+        setDaysAhead(data.schedule.days_ahead || 14);
       } else {
         setSchedule(null);
       }
@@ -505,13 +512,20 @@ export default function SocialMediaPage() {
           use_content_ideas: true,
           target_platforms: selectedPlatforms,
           schedule_posts: !scheduleAutoPublish,
+          auto_populate_calendar: autoPopulateCalendar,
+          include_holidays: includeHolidays,
+          days_ahead: daysAhead,
         }),
       });
 
       const data = await response.json();
       if (data.success) {
         setSchedule(data.schedule);
-        alert('✅ Automatisering opgeslagen!');
+        // Reload the calendar to show newly populated items
+        if (autoPopulateCalendar) {
+          await loadContentCalendar(selectedProject.id);
+        }
+        alert('✅ Automatisering opgeslagen! De kalender wordt automatisch gevuld.');
       } else {
         alert('❌ ' + (data.error || 'Er ging iets mis'));
       }
@@ -520,6 +534,37 @@ export default function SocialMediaPage() {
       alert('❌ Er ging iets mis bij het opslaan');
     } finally {
       setSavingSchedule(false);
+    }
+  }
+
+  async function manualPopulateCalendar() {
+    if (!selectedProject) return;
+
+    setPopulatingCalendar(true);
+    try {
+      const response = await fetch('/api/social/auto-populate-calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: selectedProject.id,
+          days_ahead: daysAhead,
+          include_holidays: includeHolidays,
+          platforms: selectedPlatforms,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        await loadContentCalendar(selectedProject.id);
+        alert(`✅ Kalender gevuld! ${data.items_created} items toegevoegd.`);
+      } else {
+        alert('❌ ' + (data.error || 'Er ging iets mis'));
+      }
+    } catch (error) {
+      console.error('Failed to populate calendar:', error);
+      alert('❌ Er ging iets mis bij het vullen van de kalender');
+    } finally {
+      setPopulatingCalendar(false);
     }
   }
 
@@ -1572,6 +1617,97 @@ export default function SocialMediaPage() {
               </div>
             </div>
 
+            {/* Auto-populate Calendar Settings */}
+            <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/30 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4">📅 Automatisch Kalender Vullen</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Laat het systeem automatisch je publicatiekalender vullen op basis van je frequentie-instellingen
+              </p>
+
+              <div className="space-y-4">
+                {/* Enable auto-populate */}
+                <label className="flex items-center gap-3 p-4 bg-gray-700/50 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoPopulateCalendar}
+                    onChange={(e) => setAutoPopulateCalendar(e.target.checked)}
+                    className="w-5 h-5"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">Automatisch kalender vullen</div>
+                    <div className="text-sm text-gray-400">
+                      De kalender wordt automatisch gevuld volgens je frequentie-instellingen
+                    </div>
+                  </div>
+                </label>
+
+                {autoPopulateCalendar && (
+                  <>
+                    {/* Include holidays */}
+                    <label className="flex items-center gap-3 p-4 bg-gray-700/50 rounded-lg cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={includeHolidays}
+                        onChange={(e) => setIncludeHolidays(e.target.checked)}
+                        className="w-5 h-5"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium flex items-center gap-2">
+                          🎉 Nederlandse feestdagen
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          Automatisch content plannen rond Koningsdag, Kerst, Pasen, etc.
+                        </div>
+                      </div>
+                    </label>
+
+                    {/* Days ahead selector */}
+                    <div className="p-4 bg-gray-700/50 rounded-lg">
+                      <div className="font-medium mb-2">Dagen vooruit plannen</div>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="7"
+                          max="30"
+                          value={daysAhead}
+                          onChange={(e) => setDaysAhead(parseInt(e.target.value))}
+                          className="flex-1"
+                        />
+                        <span className="text-orange-400 font-mono w-16 text-right">{daysAhead} dagen</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        De kalender wordt {daysAhead} dagen vooruit automatisch gevuld
+                      </div>
+                    </div>
+
+                    {/* Manual populate button */}
+                    <button
+                      onClick={manualPopulateCalendar}
+                      disabled={populatingCalendar}
+                      className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-medium px-4 py-3 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                      {populatingCalendar ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                          Kalender vullen...
+                        </>
+                      ) : (
+                        <>📅 Nu kalender vullen</>
+                      )}
+                    </button>
+                  </>
+                )}
+
+                {autoPopulateCalendar && includeHolidays && (
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p className="text-sm text-blue-400">
+                      🇳🇱 AI genereert automatisch feestdag-gerelateerde content voor Nederlandse feestdagen zoals Koningsdag, Sinterklaas, Kerst en meer!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Publishing Settings */}
             <div className="bg-gray-800 rounded-xl p-6">
               <h3 className="text-lg font-semibold mb-4">📤 Publishing Instellingen</h3>
@@ -1639,31 +1775,31 @@ export default function SocialMediaPage() {
                 <div className="flex gap-3">
                   <span className="text-orange-400">1.</span>
                   <p>
-                    Stel je gewenste frequentie en tijden in (bijv. 2x per dag om 09:00 en 15:00)
+                    Stel je gewenste frequentie en tijden in (bijv. dagelijks om 09:00)
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-orange-400">2.</span>
                   <p>
-                    Kies welke post types moeten worden gegenereerd (rotatie tussen types)
+                    De kalender wordt automatisch gevuld met content items op basis van je frequentie
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-orange-400">3.</span>
                   <p>
-                    Het systeem gebruikt je strategie en content ideeën voor unieke posts
+                    🎉 Nederlandse feestdagen worden automatisch meegenomen (Koningsdag, Kerst, Pasen, etc.)
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-orange-400">4.</span>
                   <p>
-                    Posts worden automatisch gegenereerd en kunnen direct gepubliceerd of als concept opgeslagen worden
+                    Op de geplande tijden genereert AI automatisch de content en afbeeldingen
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-orange-400">5.</span>
                   <p>
-                    Elke post is uniek door geavanceerde AI variatie - geen duplicaten!
+                    Je kunt altijd handmatig items toevoegen, bewerken of verwijderen in de kalender
                   </p>
                 </div>
               </div>
