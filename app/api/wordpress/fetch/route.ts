@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader, getWordPressEndpoint, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
+import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -69,8 +70,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Prepare WordPress credentials
-    const wpUrl = project.wp_url.replace(/\/$/, ''); // Remove trailing slash
+    // Prepare WordPress credentials and normalize URL
+    // Remove trailing slash AND any /wp-json paths that might have been incorrectly saved
+    let wpUrl = project.wp_url.replace(/\/$/, ''); // Remove trailing slash
+    wpUrl = wpUrl.replace(/\/wp-json.*$/, ''); // Remove any /wp-json paths to ensure clean base URL
+
     const username = project.wp_username || '';
     const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
 
@@ -98,20 +102,15 @@ export async function GET(request: NextRequest) {
     const restApiTestUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.base);
     console.log(`Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
     try {
-      const apiTestController = new AbortController();
-      const apiTestTimeoutId = setTimeout(() => apiTestController.abort(), 15000); // 15 second timeout
-
-      const apiTestResponse = await fetch(restApiTestUrl, {
+      const apiTestResponse = await fetchWithDnsFallback(restApiTestUrl, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        signal: apiTestController.signal,
+        timeout: 60000, // Increased to 60s for slow .nl/.be domains
       });
-
-      clearTimeout(apiTestTimeoutId);
 
       if (!apiTestResponse.ok) {
         const errorDetails = classifyWordPressError(
@@ -175,16 +174,13 @@ export async function GET(request: NextRequest) {
     let wpResponse: Response | null = null;
     let lastError: any = null;
     const maxRetries = 3;
-    const timeoutMs = 15000; // 15 second timeout
+    const timeoutMs = 60000; // Increased to 60s for slow .nl/.be domains
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-        wpResponse = await fetch(wpApiUrl, {
+        wpResponse = await fetchWithDnsFallback(wpApiUrl, {
           method: 'GET',
           headers: {
             'Authorization': authHeader,
@@ -192,10 +188,8 @@ export async function GET(request: NextRequest) {
             'Accept': 'application/json',
             'User-Agent': WORDPRESS_USER_AGENT,
           },
-          signal: controller.signal,
+          timeout: timeoutMs,
         });
-
-        clearTimeout(timeoutId);
 
         // If request succeeded, break out of retry loop
         if (wpResponse.ok) {
