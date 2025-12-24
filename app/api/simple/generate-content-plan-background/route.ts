@@ -415,14 +415,32 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
         const ogDescMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
         const ogDesc = ogDescMatch ? ogDescMatch[1].trim() : '';
         
-        // Extract headings
+        // Extract headings (prioritize article/post titles for better niche detection)
         const h1Matches = html.match(/<h1[^>]*>([^<]+)<\/h1>/gi) || [];
         const h2Matches = html.match(/<h2[^>]*>([^<]+)<\/h2>/gi) || [];
         const h3Matches = html.match(/<h3[^>]*>([^<]+)<\/h3>/gi) || [];
+
+        // Extract more article titles (common blog patterns)
+        const articleTitlePatterns = [
+          /<h2[^>]*class=["'][^"']*entry-title[^"']*["'][^>]*>.*?<a[^>]*>([^<]+)<\/a>.*?<\/h2>/gi,
+          /<h2[^>]*class=["'][^"']*post-title[^"']*["'][^>]*>.*?<a[^>]*>([^<]+)<\/a>.*?<\/h2>/gi,
+          /<h3[^>]*class=["'][^"']*entry-title[^"']*["'][^>]*>.*?<a[^>]*>([^<]+)<\/a>.*?<\/h3>/gi,
+        ];
+
+        const articleTitles: string[] = [];
+        articleTitlePatterns.forEach(pattern => {
+          const matches = Array.from(html.matchAll(pattern));
+          for (const match of matches) {
+            if (match[1] && match[1].trim().length > 5) {
+              articleTitles.push(match[1].trim());
+            }
+          }
+        });
+
         const headings = [...h1Matches, ...h2Matches, ...h3Matches]
           .map(h => h.replace(/<[^>]+>/g, '').trim())
           .filter(h => h.length > 3)
-          .slice(0, 30);
+          .slice(0, 40); // Increased from 30 to 40 for better context
         
         // Extract product titles (common e-commerce patterns)
         const productTitlePatterns = [
@@ -512,7 +530,8 @@ Meta beschrijving: ${metaDesc}
 ${metaKeywords ? `Meta keywords: ${metaKeywords}` : ''}
 ${ogTitle ? `OG titel: ${ogTitle}` : ''}
 ${ogDesc ? `OG beschrijving: ${ogDesc}` : ''}
-Koppen: ${headings.slice(0, 15).join(', ')}
+${articleTitles.length > 0 ? `\nARTIKEL TITELS (belangrijkste content op de site):\n${articleTitles.slice(0, 15).join('\n- ')}` : ''}
+Koppen: ${headings.slice(0, 20).join(', ')}
 ${contentSignals.products.length > 0 ? `\nProducten: ${contentSignals.products.join(', ')}` : ''}
 ${contentSignals.categories.length > 0 ? `\nCategorieën: ${contentSignals.categories.join(', ')}` : ''}
 ${contentSignals.keywords.length > 0 ? `\nVeelvoorkomende woorden: ${contentSignals.keywords.join(', ')}` : ''}
@@ -538,28 +557,26 @@ ${websiteContent ? `\nHier is extra context die ik heb verzameld van de website:
 
 ${languageInstructions[language]}
 
-KRITIEKE INSTRUCTIES: 
+KRITIEKE INSTRUCTIES:
+- Kijk naar ALLE artikel titels en de VOLLEDIGE RANGE van onderwerpen op de website
+- Bepaal de OVERKOEPELENDE niche op basis van ALLE content, niet alleen het eerste artikel
 - Focus op WAT de website verkoopt of over schrijft (producten, diensten, hoofdonderwerpen)
-- Als de website shampoo, haarverzorging of cosmetica verkoopt, is de niche "Haarverzorging", "Shampoo" of "Cosmetica"
-- Als de website yoga producten of yoga lessen aanbiedt, is de niche "Yoga"
-- Als de website recepten deelt, is de niche "Koken" of "Recepten"
-- Als de website software verkoopt, is de niche "Software" of de specifieke software categorie
+- Als de website MEERDERE gerelateerde onderwerpen behandelt, kies de BREDE niche
+- NOOIT een enkel subtopic kiezen als niche (bijv. "Virusscanner" terwijl site over alle computer onderwerpen gaat)
 - NOOIT generieke termen zoals "Content Marketing", "E-commerce" of "Online Shop" gebruiken
 - Bepaal de niche op basis van de PRODUCTEN/DIENSTEN/CONTENT, niet op basis van de technologie of het platform
-- Bij twijfel: kijk naar de productnamen, categorieën en veelvoorkomende woorden in de content
 
-VOORBEELDEN van GOEDE niches:
-- "Natuurlijke Haarverzorging" (als site shampoos verkoopt)
-- "Biologische Cosmetica" (als site natuurlijke cosmetica verkoopt)  
-- "Yoga & Meditatie" (als site over yoga gaat)
-- "Veganistische Recepten" (als site vegan recepten deelt)
-- "Project Management Software" (als site PM tools verkoopt)
+VOORBEELDEN van GOEDE niche analyse:
+- Als site artikelen heeft over: RAM, SSD, virusscanners, wachtwoordmanagers, PC bouwen → niche is "Computer Tutorials" of "Computer Hardware & Software", NIET "Virusscanner"
+- Als site artikelen heeft over: yoga poses, meditatie, mindfulness, yoga kleding → niche is "Yoga & Welzijn", NIET alleen "Yoga Poses"
+- Als site shampoos, conditioners, haarmaskers verkoopt → niche is "Haarverzorging", NIET alleen "Shampoo"
+- Als site recepten deelt voor: vlees, vis, vegetarisch, desserts → niche is "Koken & Recepten", NIET alleen "Vleesgerechten"
 
 VOORBEELDEN van SLECHTE niches (NOOIT gebruiken):
+- "Virusscanner" (als site over algemene computer onderwerpen gaat)
 - "E-commerce" (te generiek)
 - "Online Shop" (te generiek)
-- "Content Marketing" (tenzij de site echt over marketing gaat)
-- "Web Development" (tenzij de site echt over webdev gaat)
+- "Content Marketing" (tenzij de site SPECIFIEK over marketing gaat)
 - "Digital Products" (te generiek)
 
 Output als JSON (ALLEEN JSON, geen markdown):
@@ -598,22 +615,23 @@ Output als JSON (ALLEEN JSON, geen markdown):
         const fallbackPrompt = `Analyseer deze website en bepaal de EXACTE niche op basis van producten, diensten en content:
 
 Website URL: ${websiteUrl}
-${websiteContent ? `\n--- WEBSITE CONTENT (producten, categorieën, keywords) ---\n${websiteContent}\n--- EINDE CONTENT ---\n` : ''}
+${websiteContent ? `\n--- WEBSITE CONTENT (producten, categorieën, keywords, artikel titels) ---\n${websiteContent}\n--- EINDE CONTENT ---\n` : ''}
 
 ${languageInstructions[language]}
 
-KRITIEKE INSTRUCTIES: 
+KRITIEKE INSTRUCTIES:
+- Kijk naar ALLE artikel titels en de VOLLEDIGE RANGE van onderwerpen
+- Bepaal de OVERKOEPELENDE niche op basis van ALLE content, niet alleen het eerste artikel
 - Focus op WAT de website verkoopt of over schrijft (producten, diensten, hoofdonderwerpen)
-- Als je SHAMPOO, HAARVERZORGING of COSMETICA producten ziet → niche is "Haarverzorging", "Shampoo" of "Cosmetica"
-- Als je YOGA producten of lessen ziet → niche is "Yoga"
-- Als je RECEPTEN ziet → niche is "Koken" of "Recepten"
+- Als de website MEERDERE gerelateerde onderwerpen behandelt, kies de BREDE niche
+- NOOIT een enkel subtopic kiezen als niche
 - NOOIT generieke termen zoals "E-commerce", "Online Shop" of "Content Marketing"
-- Gebruik de productnamen, categorieën en veelvoorkomende woorden als bewijs
+- Gebruik de artikel titels, productnamen, categorieën en veelvoorkomende woorden als bewijs
 
-VOORBEELDEN van GOEDE niches:
-- "Natuurlijke Haarverzorging" (site met shampoos)
-- "Biologische Cosmetica" (site met natuurlijke cosmetica)
-- "Yoga & Meditatie" (site over yoga)
+VOORBEELDEN van GOEDE niche analyse:
+- Als je artikelen ziet over: RAM, SSD, virusscanners, wachtwoordmanagers, PC bouwen → niche is "Computer Tutorials" of "Computer Hardware & Software", NIET "Virusscanner"
+- Als je artikelen ziet over: yoga poses, meditatie, mindfulness → niche is "Yoga & Welzijn", NIET alleen "Yoga Poses"
+- Als je shampoos, conditioners, haarmaskers ziet → niche is "Haarverzorging", NIET alleen "Shampoo"
 
 Output als JSON (ALLEEN JSON, geen tekst ervoor of erna):
 {
@@ -626,7 +644,7 @@ Output als JSON (ALLEEN JSON, geen tekst ervoor of erna):
 
         const nicheResponse = await generateAICompletion({
           task: 'content',
-          systemPrompt: `Je bent een SEO expert die websites analyseert op basis van hun PRODUCTEN en DIENSTEN, niet op basis van technologie. ${languageInstructions[language]} Output ALLEEN valide JSON.`,
+          systemPrompt: `Je bent een SEO expert die websites analyseert op basis van hun PRODUCTEN en DIENSTEN. Je kijkt naar ALLE content op een website om de OVERKOEPELENDE niche te bepalen, niet alleen het eerste artikel. ${languageInstructions[language]} Output ALLEEN valide JSON.`,
           userPrompt: fallbackPrompt,
           maxTokens: 2000,
           temperature: 0.3,

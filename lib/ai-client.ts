@@ -260,7 +260,7 @@ export async function analyzeWithPerplexity(prompt: string, timeout: number = 90
       messages: [
         {
           role: 'system',
-          content: 'Je bent een expert in het analyseren van websites en het identificeren van hun niche op basis van PRODUCTEN, DIENSTEN en CONTENT. Je hebt toegang tot het internet en kunt websites live bekijken. Focus altijd op: (1) Welke producten worden verkocht, (2) Welke diensten worden aangeboden, (3) Waar gaat de content over. Geef specifieke niches zoals "Natuurlijke Haarverzorging", "Yoga", "Recepten" - NOOIT generieke termen zoals "E-commerce" of "Online Shop".',
+          content: 'Je bent een expert in het analyseren van websites en het identificeren van hun niche op basis van PRODUCTEN, DIENSTEN en CONTENT. Je hebt toegang tot het internet en kunt websites live bekijken. BELANGRIJK: Kijk naar MEERDERE pagina\'s en ALLE artikel titels om de OVERKOEPELENDE niche te bepalen - niet alleen het eerste artikel. Focus op: (1) Welke producten worden verkocht, (2) Welke diensten worden aangeboden, (3) De volledige range van content onderwerpen. Als een site over meerdere gerelateerde onderwerpen gaat (bijv. RAM, SSD, virusscanners, PC bouwen), kies dan de BREDE niche (bijv. "Computer Tutorials"), NIET een enkel subtopic (bijv. "Virusscanner"). Geef specifieke maar brede niches - NOOIT generieke termen zoals "E-commerce" of "Online Shop".',
         },
         {
           role: 'user',
