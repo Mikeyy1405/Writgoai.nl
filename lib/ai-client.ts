@@ -11,9 +11,12 @@ const getApiKey = () => {
 const apiKey = getApiKey();
 
 // OpenAI-compatible client via AIML API (for all models including Claude)
+// With 60 second default timeout to prevent hanging requests
 export const openaiClient = new OpenAI({
   apiKey: apiKey,
   baseURL: process.env.OPENAI_BASE_URL || 'https://api.aimlapi.com/v1',
+  timeout: 60000, // 60 second default timeout
+  maxRetries: 2,
 });
 
 // For backwards compatibility
@@ -39,6 +42,7 @@ interface GenerateOptions {
   userPrompt: string;
   temperature?: number;
   maxTokens?: number;
+  timeout?: number; // Custom timeout in milliseconds (default: 60000)
 }
 
 export async function generateAICompletion(options: GenerateOptions): Promise<string> {
@@ -49,6 +53,7 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
     userPrompt,
     temperature = 0.7,
     maxTokens = 4000,
+    timeout = 60000, // Default 60 second timeout
   } = options;
 
   const modelMap = {
@@ -67,8 +72,8 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
   }
 
   try {
-    // Use OpenAI-compatible API for all models (including Claude via AIML)
-    const completion = await openaiClient.chat.completions.create({
+    // Wrap API call with timeout
+    const completionPromise = openaiClient.chat.completions.create({
       model: selectedModel,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -78,10 +83,21 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
       max_tokens: maxTokens,
     });
 
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`AI request timed out after ${timeout}ms`)), timeout);
+    });
+
+    const completion = await Promise.race([completionPromise, timeoutPromise]);
+
     return completion.choices[0]?.message?.content || '';
   } catch (error: any) {
     console.error('AI completion error:', error);
-    
+
+    // Handle timeout errors
+    if (error.message?.includes('timed out')) {
+      throw new Error(`AI request timed out after ${timeout}ms. The request took too long to complete.`);
+    }
+
     // Provide more helpful error messages
     if (error.status === 401) {
       throw new Error('AI API authentication failed. Please check your API key.');
@@ -92,7 +108,7 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
     if (error.status === 500) {
       throw new Error('AI API server error. Please try again later.');
     }
-    
+
     throw new Error(`AI generation failed: ${error.message}`);
   }
 }
@@ -232,13 +248,14 @@ export async function generateJSONCompletion<T>(options: GenerateOptions): Promi
 }
 
 // Perplexity Sonar Pro for website/niche analysis with real-time web access
-export async function analyzeWithPerplexity(prompt: string): Promise<string> {
+export async function analyzeWithPerplexity(prompt: string, timeout: number = 90000): Promise<string> {
   if (!apiKey) {
     throw new Error('AI API key not configured');
   }
 
   try {
-    const completion = await openaiClient.chat.completions.create({
+    // Perplexity with web access can take longer, so default timeout is 90s
+    const completionPromise = openaiClient.chat.completions.create({
       model: BEST_MODELS.PERPLEXITY,
       messages: [
         {
@@ -254,16 +271,28 @@ export async function analyzeWithPerplexity(prompt: string): Promise<string> {
       max_tokens: 2000,
     });
 
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`Perplexity request timed out after ${timeout}ms`)), timeout);
+    });
+
+    const completion = await Promise.race([completionPromise, timeoutPromise]);
+
     return completion.choices[0]?.message?.content || '';
   } catch (error: any) {
     console.error('Perplexity analysis error:', error);
+
+    // Handle timeout errors specifically
+    if (error.message?.includes('timed out')) {
+      throw new Error(`Perplexity analysis timed out after ${timeout}ms. The website analysis took too long.`);
+    }
+
     throw new Error(`Perplexity analysis failed: ${error.message}`);
   }
 }
 
 // Perplexity for JSON responses - uses same robust parsing as generateJSONCompletion
-export async function analyzeWithPerplexityJSON<T>(prompt: string): Promise<T> {
-  const content = await analyzeWithPerplexity(prompt);
+export async function analyzeWithPerplexityJSON<T>(prompt: string, timeout: number = 90000): Promise<T> {
+  const content = await analyzeWithPerplexity(prompt, timeout);
   
   // Multiple parsing strategies (same as generateJSONCompletion)
   const strategies = [
