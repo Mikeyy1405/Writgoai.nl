@@ -146,8 +146,11 @@ export default function SocialMediaPage() {
   const [socialActivated, setSocialActivated] = useState<boolean>(false);
   const [activating, setActivating] = useState(false);
 
-  // Tabs
-  const [activeTab, setActiveTab] = useState<'posts' | 'strategy' | 'calendar' | 'automation'>('calendar');
+  // Collapsible sections state
+  const [strategyExpanded, setStrategyExpanded] = useState(true);
+  const [automationExpanded, setAutomationExpanded] = useState(true);
+  const [postsExpanded, setPostsExpanded] = useState(true);
+  const [calendarExpanded, setCalendarExpanded] = useState(true);
 
   // Strategy state
   const [strategy, setStrategy] = useState<Strategy | null>(null);
@@ -736,7 +739,6 @@ export default function SocialMediaPage() {
       if (data.success) {
         setTopic('');
         loadPosts(selectedProject.id);
-        setActiveTab('posts');
       } else {
         alert(data.error || 'Er ging iets mis');
       }
@@ -923,62 +925,31 @@ export default function SocialMediaPage() {
           </select>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 flex-wrap">
-          <button
-            onClick={() => setActiveTab('calendar')}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              activeTab === 'calendar'
-                ? 'bg-orange-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            📅 Publicatiekalender
-            {scheduledContent.length > 0 && (
-              <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">
-                {scheduledContent.filter(s => s.status === 'scheduled').length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('strategy')}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              activeTab === 'strategy'
-                ? 'bg-orange-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            📊 Strategie
-          </button>
-          <button
-            onClick={() => setActiveTab('automation')}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              activeTab === 'automation'
-                ? 'bg-orange-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            🤖 Automatisering
-            {schedule?.enabled && (
-              <span className="ml-2 text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
-                Actief
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('posts')}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              activeTab === 'posts'
-                ? 'bg-orange-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            ✨ Posts ({posts.length})
-          </button>
-        </div>
+        {/* Streamlined sections - all visible in logical flow */}
+        <div className="space-y-6">
 
-        {/* Publicatiekalender Tab */}
-        {activeTab === 'calendar' && (
+        {/* 1. Calendar Section */}
+        <div className="border-t border-gray-700/50 pt-6">
+          <button
+            onClick={() => setCalendarExpanded(!calendarExpanded)}
+            className="w-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4 hover:from-purple-500/20 hover:to-pink-500/20 transition flex items-center justify-between mb-4"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📅</span>
+              <div className="text-left">
+                <h2 className="text-xl font-bold">Publicatiekalender</h2>
+                <p className="text-gray-400 text-sm">Plan je content in en laat AI automatisch schrijven</p>
+              </div>
+              {scheduledContent.length > 0 && (
+                <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                  {scheduledContent.filter(s => s.status === 'scheduled').length}
+                </span>
+              )}
+            </div>
+            <span className="text-2xl text-gray-400">{calendarExpanded ? '−' : '+'}</span>
+          </button>
+
+        {calendarExpanded && (
           <div className="space-y-6">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-6">
@@ -1180,10 +1151,26 @@ export default function SocialMediaPage() {
             </div>
           </div>
         )}
+        </div> {/* End Calendar Section */}
 
-        {/* Strategy Tab */}
-        {activeTab === 'strategy' && (
-          <div className="space-y-6">
+        {/* 2. Strategy Section */}
+        <div className="border-t border-gray-700/50 pt-6">
+          <button
+            onClick={() => setStrategyExpanded(!strategyExpanded)}
+            className="w-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-4 hover:from-blue-500/20 hover:to-purple-500/20 transition flex items-center justify-between mb-4"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📊</span>
+              <div className="text-left">
+                <h2 className="text-xl font-bold">Strategie</h2>
+                <p className="text-gray-400 text-sm">AI-gegenereerde social media strategie</p>
+              </div>
+            </div>
+            <span className="text-2xl text-gray-400">{strategyExpanded ? '−' : '+'}</span>
+          </button>
+
+        {strategyExpanded && (
+          <div className="space-y-6 mb-6">
             {/* Generate Strategy Button */}
             {!strategy && !generatingStrategy && (
               <div className="bg-gray-800 rounded-xl p-8 text-center">
@@ -1450,10 +1437,32 @@ export default function SocialMediaPage() {
             )}
           </div>
         )}
+        </div> {/* End Strategy Section */}
 
-        {/* Automation Tab */}
-        {activeTab === 'automation' && (
-          <div className="space-y-6">
+        {/* 3. Automation Section */}
+        <div className="border-t border-gray-700/50 pt-6">
+          <button
+            onClick={() => setAutomationExpanded(!automationExpanded)}
+            className="w-full bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4 hover:from-green-500/20 hover:to-emerald-500/20 transition flex items-center justify-between mb-4"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🤖</span>
+              <div className="text-left">
+                <h2 className="text-xl font-bold">Automatisering</h2>
+                <p className="text-gray-400 text-sm">Configureer automatische post generatie</p>
+              </div>
+              {schedule?.enabled && (
+                <span className="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded-full">
+                  Actief
+                </span>
+              )}
+            </div>
+            <span className="text-2xl text-gray-400">{automationExpanded ? '−' : '+'}</span>
+          </button>
+        </div>
+
+        {automationExpanded && (
+          <div className="space-y-6 mb-6">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
@@ -1806,10 +1815,31 @@ export default function SocialMediaPage() {
             </div>
           </div>
         )}
+        </div> {/* End Automation Section */}
 
-        {/* Posts Tab */}
-        {activeTab === 'posts' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 4. Posts Section */}
+        <div className="border-t border-gray-700/50 pt-6">
+          <button
+            onClick={() => setPostsExpanded(!postsExpanded)}
+            className="w-full bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-xl p-4 hover:from-orange-500/20 hover:to-red-500/20 transition flex items-center justify-between mb-4"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✨</span>
+              <div className="text-left">
+                <h2 className="text-xl font-bold">Content Genereren</h2>
+                <p className="text-gray-400 text-sm">Maak handmatig posts met AI</p>
+              </div>
+              {posts.length > 0 && (
+                <span className="ml-2 text-xs bg-orange-500 text-white px-2 py-1 rounded-full">
+                  {posts.length}
+                </span>
+              )}
+            </div>
+            <span className="text-2xl text-gray-400">{postsExpanded ? '−' : '+'}</span>
+          </button>
+
+        {postsExpanded && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Left column - Generate post */}
             <div className="lg:col-span-1 space-y-6">
               {/* Connected accounts */}
@@ -2103,7 +2133,9 @@ export default function SocialMediaPage() {
             </div>
           </div>
         )}
-      </div>
+        </div> {/* End Posts Section */}
+
+      </div> {/* End of streamlined sections wrapper */}
 
       {/* Edit Modal */}
       {editingPost && (
