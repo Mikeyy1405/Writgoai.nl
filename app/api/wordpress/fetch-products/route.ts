@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader, getWordPressEndpoint, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
-import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -102,14 +101,14 @@ export async function GET(request: NextRequest) {
     const wooApiTestUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.woocommerce.base);
     console.log(`Testing WooCommerce API availability at: ${sanitizeUrl(wooApiTestUrl)}`);
     try {
-      const apiTestResponse = await fetchWithDnsFallback(wooApiTestUrl, {
+      const apiTestResponse = await fetch(wooApiTestUrl, {
         method: 'GET',
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
           'User-Agent': WORDPRESS_USER_AGENT,
         },
-        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+        signal: AbortSignal.timeout(120000),
       });
 
       if (!apiTestResponse.ok) {
@@ -179,7 +178,7 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`Attempt ${attempt}/${maxRetries} to fetch WooCommerce products`);
 
-        wooResponse = await fetchWithDnsFallback(wooApiUrl, {
+        wooResponse = await fetch(wooApiUrl, {
           method: 'GET',
           headers: {
             'Authorization': authHeader,
@@ -187,7 +186,7 @@ export async function GET(request: NextRequest) {
             'Accept': 'application/json',
             'User-Agent': WORDPRESS_USER_AGENT,
           },
-          timeout: timeoutMs,
+          signal: AbortSignal.timeout(timeoutMs),
         });
 
         // If request succeeded, break out of retry loop

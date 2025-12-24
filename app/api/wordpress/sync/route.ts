@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { buildAuthHeader, getPostsEndpoint } from '@/lib/wordpress-endpoints';
-import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -102,13 +101,13 @@ async function syncSinglePost(
     // Fetch single post with _embed for featured image
     const wpApiUrl = `${getPostsEndpoint(wpUrl, wordpressId)}?_embed`;
 
-    const wpResponse = await fetchWithDnsFallback(wpApiUrl, {
+    const wpResponse = await fetch(wpApiUrl, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
-      timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+      signal: AbortSignal.timeout(120000),
     });
 
     if (!wpResponse.ok) {
@@ -228,13 +227,13 @@ async function syncAllPosts(
 
         const wpApiUrl = `${getPostsEndpoint(wpUrl)}?page=${page}&per_page=50&_embed`;
 
-        const wpResponse = await fetchWithDnsFallback(wpApiUrl, {
+        const wpResponse = await fetch(wpApiUrl, {
           method: 'GET',
           headers: {
             'Authorization': authHeader,
             'Content-Type': 'application/json',
           },
-          timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+          signal: AbortSignal.timeout(120000),
         });
 
         if (!wpResponse.ok) {

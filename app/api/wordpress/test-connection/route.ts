@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
-import { fetchWithDnsFallback, testDnsResolution } from '@/lib/fetch-with-dns-fallback';
 import { getAdvancedBrowserHeaders, getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
 
 // Force dynamic rendering since we use cookies for authentication
@@ -133,34 +132,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    // Pre-flight DNS test for .nl and .be domains (known to have DNS issues)
-    if (parsedUrl.hostname.endsWith('.nl') || parsedUrl.hostname.endsWith('.be')) {
-      console.log(`[DNS Test] Checking DNS resolution for ${parsedUrl.hostname}...`);
-      const dnsTest = await testDnsResolution(parsedUrl.hostname);
-
-      if (!dnsTest.success) {
-        result.checks.siteReachable = {
-          passed: false,
-          message: 'DNS resolutie mislukt - domein kan niet worden gevonden',
-          details: `DNS lookup failed: ${dnsTest.error}\n\nDit is een bekend probleem met Node.js DNS resolver voor sommige Nederlandse hosting providers. Het domein bestaat mogelijk wel, maar de server kan het niet oplossen.`,
-        };
-        console.error(`[DNS Test] ✗ Failed:`, dnsTest.error);
-        return NextResponse.json(result);
-      }
-
-      console.log(`[DNS Test] ✓ Resolved to:`, dnsTest.addresses?.map(a => a.address).join(', '));
-    }
-
     // Test 1: Check if site is reachable
     console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
     try {
       console.log(`Attempting HEAD request to ${sanitizeUrl(wpUrl)}...`);
       // Use advanced browser-like headers to avoid WAF/firewall blocking
-      const siteResponse = await fetchWithDnsFallback(wpUrl, {
+      const siteResponse = await fetch(wpUrl, {
         method: 'HEAD',
         headers: getAdvancedBrowserHeaders(wpUrl),
-        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
-        enableDiagnostics: true,
+        signal: AbortSignal.timeout(120000),
       });
 
       if (siteResponse.ok || siteResponse.status === 301 || siteResponse.status === 302) {
@@ -261,14 +241,13 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(restApiEndpoint);
     console.log(`Testing REST API availability: ${sanitizeUrl(restApiEndpoint)}`);
     try {
-      const apiResponse = await fetchWithDnsFallback(restApiEndpoint, {
+      const apiResponse = await fetch(restApiEndpoint, {
         method: 'GET',
         headers: {
           ...getAdvancedBrowserHeaders(wpUrl),
           'Accept': 'application/json',
         },
-        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
-        enableDiagnostics: true,
+        signal: AbortSignal.timeout(120000),
       });
 
       if (apiResponse.ok) {
@@ -313,14 +292,13 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(wpV2Endpoint);
     console.log(`Testing WordPress v2 API: ${sanitizeUrl(wpV2Endpoint)}`);
     try {
-      const wpV2Response = await fetchWithDnsFallback(wpV2Endpoint, {
+      const wpV2Response = await fetch(wpV2Endpoint, {
         method: 'GET',
         headers: {
           ...getAdvancedBrowserHeaders(wpUrl),
           'Accept': 'application/json',
         },
-        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
-        enableDiagnostics: true,
+        signal: AbortSignal.timeout(120000),
       });
 
       if (wpV2Response.ok) {
@@ -353,11 +331,10 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(`${postsEndpoint}?per_page=1`);
     console.log(`Testing posts endpoint: ${sanitizeUrl(postsEndpoint)}?per_page=1`);
     try {
-      const postsResponse = await fetchWithDnsFallback(`${postsEndpoint}?per_page=1`, {
+      const postsResponse = await fetch(`${postsEndpoint}?per_page=1`, {
         method: 'GET',
         headers: getWordPressApiHeaders(authHeader, wpUrl),
-        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
-        enableDiagnostics: true,
+        signal: AbortSignal.timeout(120000),
       });
 
       if (postsResponse.ok) {
@@ -390,11 +367,10 @@ export async function POST(request: NextRequest) {
     result.testedEndpoints.push(usersEndpoint);
     console.log(`Testing authentication with ${sanitizeUrl(usersEndpoint)}`);
     try {
-      const authResponse = await fetchWithDnsFallback(usersEndpoint, {
+      const authResponse = await fetch(usersEndpoint, {
         method: 'GET',
         headers: getWordPressApiHeaders(authHeader, wpUrl),
-        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
-        enableDiagnostics: true,
+        signal: AbortSignal.timeout(120000),
       });
 
       if (authResponse.ok) {
