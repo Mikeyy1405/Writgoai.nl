@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { checkCredits, deductCredits } from '@/lib/credit-manager';
+import { getCreditBalance, deductCredits } from '@/lib/credit-manager';
 import { getModelById } from '@/lib/image-models';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -99,16 +99,36 @@ export async function POST(req: NextRequest) {
     // Calculate total credits needed (credits per image × number of images)
     const totalCredits = modelConfig.credits * numImages;
 
-    // Check credits
-    const hasCredits = await checkCredits(user.id, modelId as any);
-    if (!hasCredits) {
+    // Get user's credit balance
+    const balance = await getCreditBalance(user.id);
+    if (!balance) {
       return NextResponse.json(
-        {
-          error: 'Insufficient credits',
-          required: totalCredits,
-        },
-        { status: 402 }
+        { error: 'Unable to fetch credit balance' },
+        { status: 500 }
       );
+    }
+
+    // Admin users have unlimited credits, skip checks for them
+    if (!balance.is_admin) {
+      // Check if subscription is active
+      if (!balance.subscription_active) {
+        return NextResponse.json(
+          { error: 'Subscription not active' },
+          { status: 402 }
+        );
+      }
+
+      // Check if user has enough credits
+      if (balance.credits_remaining < totalCredits) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient credits for requested number of images',
+            required: totalCredits,
+            available: balance.credits_remaining
+          },
+          { status: 402 }
+        );
+      }
     }
 
     // Calculate dimensions from aspect ratio if not provided
