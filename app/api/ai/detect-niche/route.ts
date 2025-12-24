@@ -48,8 +48,8 @@ export async function POST(request: Request) {
     // Use Perplexity Sonar Pro to analyze the website with real-time web access
     const analysisPrompt = `Analyseer de website ${project.website_url} grondig.
 
-Bezoek de website en analyseer:
-1. Wat is de EXACTE primaire niche? (bijv. "Yoga", "Fitness", "E-commerce", "Tandheelkunde")
+Bezoek de website en analyseer MEERDERE artikelen en pagina's om de OVERALL niche te bepalen:
+1. Wat is de EXACTE primaire niche? (bijv. "Yoga", "Fitness", "Computer Tutorials", "Tandheelkunde")
 2. Wat zijn de sub-niches of specialisaties?
 3. Wie is de doelgroep?
 4. Wat is de content stijl?
@@ -58,12 +58,21 @@ Bezoek de website en analyseer:
 7. In welke taal is de website?
 8. Welke keywords zijn relevant voor deze website?
 
-BELANGRIJK: Baseer je analyse op de DAADWERKELIJKE inhoud van de website, niet op aannames.
-De niche moet SPECIFIEK zijn voor wat de website daadwerkelijk aanbiedt.
+KRITIEKE INSTRUCTIES:
+- Baseer je analyse op de DAADWERKELIJKE inhoud van de website, niet op aannames
+- Kijk naar MEERDERE artikelen en de VOLLEDIGE RANGE van onderwerpen, niet alleen het eerste artikel
+- Als de website over MEERDERE gerelateerde onderwerpen gaat (bijv. hardware, software, tutorials), kies dan de OVERKOEPELENDE niche
+- Kies NIET een enkel subtopic als de niche (bijv. "Virusscanner" als de site over alle computer onderwerpen gaat)
+- De niche moet SPECIFIEK zijn voor wat de website BREED aanbiedt, niet het eerste artikel dat je ziet
+
+VOORBEELDEN:
+- Als site artikelen heeft over RAM, SSD, virusscanners, wachtwoordmanagers, PC bouwen → niche is "Computer Tutorials" of "Computers", NIET "Virusscanner"
+- Als site artikelen heeft over yoga poses, meditatie, mindfulness → niche is "Yoga & Meditatie", NIET alleen "Yoga Poses"
+- Als site producten verkoopt: shampoo, conditioner, haarmaskers → niche is "Haarverzorging", NIET alleen "Shampoo"
 
 Antwoord in JSON formaat:
 {
-  "niche": "De exacte primaire niche (bijv. Yoga, Fitness, Software, Tandarts)",
+  "niche": "De exacte OVERKOEPELENDE primaire niche (bijv. Computer Tutorials, Yoga & Meditatie, Haarverzorging)",
   "sub_niches": ["sub-niche 1", "sub-niche 2", "sub-niche 3"],
   "target_audience": "Beschrijving van de doelgroep",
   "content_style": "Stijl van de content (professioneel, casual, technisch, etc.)",
