@@ -325,7 +325,7 @@ export default function WordPressPostsManagement() {
                 ))}
               </select>
             </div>
-            <div className="md:col-span-2 flex items-end justify-end gap-4">
+            <div className="md:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-end justify-end gap-3">
               <button
                 onClick={testConnection}
                 disabled={testingConnection || !selectedProject}
@@ -618,6 +618,7 @@ export default function WordPressPostsManagement() {
 
         {/* Posts Table */}
         <div className="bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-700">
+          <div className="overflow-x-auto">
           {loading ? (
             <div className="p-12 text-center text-gray-400">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
@@ -757,6 +758,7 @@ export default function WordPressPostsManagement() {
               )}
             </>
           )}
+          </div>
         </div>
 
         {/* Help Text */}

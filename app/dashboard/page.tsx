@@ -136,15 +136,15 @@ export default async function DashboardPage() {
                   key={project.id}
                   className="bg-black/50 border border-gray-800 rounded-lg p-6 hover:border-orange-500/50 transition-all"
                 >
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex-1 min-w-[200px]">
-                      <h3 className="text-lg font-semibold text-white mb-1">
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0 w-full lg:w-auto">
+                      <h3 className="text-lg font-semibold text-white mb-1 break-words">
                         {project.name}
                       </h3>
-                      <p className="text-gray-400 text-sm mb-3">
+                      <p className="text-gray-400 text-sm mb-3 break-words">
                         {project.website_url}
                       </p>
-                      <div className="flex items-center space-x-4 text-sm">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                         <span className="text-gray-500">
                           📄 {project.articleCount} artikelen
                         </span>
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                       <Link 
                         href="/dashboard/library"
                         className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all"
