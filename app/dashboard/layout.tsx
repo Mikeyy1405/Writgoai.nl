@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 
+// Disable caching for this layout to ensure fresh admin status
+export const dynamic = 'force-dynamic';
+
 export default async function Layout({
   children,
 }: {
@@ -17,11 +20,17 @@ export default async function Layout({
   }
 
   // Check if user is admin
-  const { data: subscriber } = await supabase
+  const { data: subscriber, error: subscriberError } = await supabase
     .from('subscribers')
     .select('is_admin')
     .eq('user_id', user.id)
     .single();
+
+  // Log for debugging (can be removed later)
+  if (subscriberError) {
+    console.error('Error fetching subscriber:', subscriberError);
+  }
+  console.log('Subscriber data:', subscriber, 'User ID:', user.id);
 
   const isAdmin = subscriber?.is_admin || false;
 
