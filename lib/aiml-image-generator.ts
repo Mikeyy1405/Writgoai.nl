@@ -9,7 +9,8 @@ interface ImageGenerationOptions {
   prompt: string;
   style?: 'photorealistic' | 'illustration' | 'abstract' | 'minimalist' | 'artistic';
   aspectRatio?: '16:9' | '4:3' | '1:1' | '3:4' | '9:16';
-  model?: 'flux-pro' | 'flux-pro/v1.1' | 'flux-pro/v1.1-ultra' | 'flux-realism';
+  model?: 'flux-pro' | 'flux-pro/v1.1' | 'flux-pro/v1.1-ultra' | 'flux-realism' | 'flux/schnell';
+  timeout?: number; // Timeout in milliseconds
 }
 
 interface ImageGenerationResult {
@@ -32,13 +33,13 @@ export async function generateImage(options: ImageGenerationOptions): Promise<Im
   }
 
   try {
-    const { prompt, style = 'photorealistic', aspectRatio = '16:9', model = 'flux-pro/v1.1' } = options;
+    const { prompt, style = 'photorealistic', aspectRatio = '16:9', model = 'flux-pro/v1.1', timeout = 30000 } = options;
     
     // Build enhanced prompt based on style
     const enhancedPrompt = buildEnhancedPrompt(prompt, style);
     const imageSize = getImageSize(aspectRatio);
 
-    console.log('Generating image with Flux Pro:', { model, prompt: enhancedPrompt.substring(0, 100) });
+    console.log('Generating image with Flux:', { model, prompt: enhancedPrompt.substring(0, 100), timeout });
 
     // Build request body based on model type
     const requestBody: Record<string, any> = {
@@ -51,47 +52,64 @@ export async function generateImage(options: ImageGenerationOptions): Promise<Im
       requestBody.size = `${imageSize.width}x${imageSize.height}`;
     }
 
-    const response = await fetch(AIML_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${AIML_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody)
-    });
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AIML API error:', response.status, errorText);
-      throw new Error(`API error: ${response.status} - ${errorText}`);
+    try {
+      const response = await fetch(AIML_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${AIML_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AIML API error:', response.status, errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('AIML response:', JSON.stringify(data).substring(0, 500));
+
+      // Handle response format per AIML API documentation
+      // Response: { images: [{ url: "...", width: ..., height: ..., content_type: "..." }], ... }
+      let imageUrl = '';
+      
+      if (data.images && data.images.length > 0) {
+        imageUrl = data.images[0].url || data.images[0];
+      } else if (data.data && data.data.length > 0) {
+        // OpenAI-compatible format fallback
+        imageUrl = data.data[0].url || data.data[0].b64_json;
+      } else if (data.output && data.output.length > 0) {
+        imageUrl = data.output[0];
+      } else if (data.url) {
+        imageUrl = data.url;
+      } else if (data.image_url) {
+        imageUrl = data.image_url;
+      }
+
+      if (!imageUrl) {
+        console.error('No image URL in response:', JSON.stringify(data));
+        throw new Error('No image URL in response');
+      }
+
+      return { url: imageUrl, success: true };
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error('Image generation timeout after', timeout, 'ms');
+        throw new Error(`Image generation timeout after ${timeout}ms`);
+      }
+      throw fetchError;
     }
-
-    const data = await response.json();
-    console.log('AIML response:', JSON.stringify(data).substring(0, 500));
-
-    // Handle response format per AIML API documentation
-    // Response: { images: [{ url: "...", width: ..., height: ..., content_type: "..." }], ... }
-    let imageUrl = '';
-    
-    if (data.images && data.images.length > 0) {
-      imageUrl = data.images[0].url || data.images[0];
-    } else if (data.data && data.data.length > 0) {
-      // OpenAI-compatible format fallback
-      imageUrl = data.data[0].url || data.data[0].b64_json;
-    } else if (data.output && data.output.length > 0) {
-      imageUrl = data.output[0];
-    } else if (data.url) {
-      imageUrl = data.url;
-    } else if (data.image_url) {
-      imageUrl = data.image_url;
-    }
-
-    if (!imageUrl) {
-      console.error('No image URL in response:', JSON.stringify(data));
-      throw new Error('No image URL in response');
-    }
-
-    return { url: imageUrl, success: true };
 
   } catch (error: any) {
     console.error('Image generation error:', error);
@@ -105,6 +123,7 @@ export async function generateImage(options: ImageGenerationOptions): Promise<Im
 
 /**
  * Generate featured image for article
+ * Uses faster flux/schnell model with timeout for better performance (< 30 seconds)
  */
 export async function generateFeaturedImage(
   title: string,
@@ -122,24 +141,27 @@ export async function generateFeaturedImage(
 
   console.log('Generating featured image for:', { title, keyword, topic, prompt: prompt.substring(0, 100) });
 
+  // Use flux/schnell for faster generation (typically 5-15 seconds vs 30-60+ seconds for flux-pro)
   const result = await generateImage({
     prompt,
     style: 'photorealistic',
     aspectRatio: '16:9',
-    model: 'flux-pro/v1.1'
+    model: 'flux/schnell', // Faster model for featured images
+    timeout: 25000, // 25 second timeout to ensure < 30 second total time
   });
 
   if (result.success) {
     return result.url;
   }
 
-  console.warn('Flux Pro failed, falling back to Unsplash:', result.error);
-  // Fallback to Unsplash - use keyword for better relevance
-  return fallbackToUnsplash(keyword || title);
+  console.warn('Flux Schnell failed, falling back to Unsplash:', result.error);
+  // Fallback to Unsplash
+  return fallbackToUnsplash(title);
 }
 
 /**
  * Generate social media image - optimized for social platforms
+ * Uses faster model for quicker generation
  */
 export async function generateSocialImage(
   prompt: string,
@@ -149,7 +171,8 @@ export async function generateSocialImage(
     prompt: `${prompt}, vibrant colors, eye-catching, social media optimized, no text`,
     style: 'photorealistic',
     aspectRatio,
-    model: 'flux-pro/v1.1'
+    model: 'flux/schnell', // Faster model
+    timeout: 20000, // 20 second timeout
   });
 
   if (result.success) {
@@ -162,6 +185,7 @@ export async function generateSocialImage(
 
 /**
  * Generate in-article image
+ * Uses faster model for quicker generation
  */
 export async function generateArticleImage(
   prompt: string,
@@ -171,7 +195,8 @@ export async function generateArticleImage(
     prompt,
     style,
     aspectRatio: '16:9',
-    model: 'flux-pro/v1.1'
+    model: 'flux/schnell', // Faster model
+    timeout: 20000, // 20 second timeout
   });
 
   if (result.success) {

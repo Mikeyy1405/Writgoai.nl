@@ -30,8 +30,29 @@ interface GenerationResult {
   metadata: any;
 }
 
+interface StockPhoto {
+  id: string;
+  url: string;
+  thumbnailUrl: string;
+  largeUrl: string;
+  width: number;
+  height: number;
+  photographer: string;
+  photographerUrl: string;
+  source: 'pixabay' | 'pexels' | 'unsplash';
+  alt: string;
+  tags?: string;
+  likes?: number;
+  downloads?: number;
+}
+
+type TabType = 'generate' | 'stock';
+
 export default function ImageStudioPage() {
-  // State
+  // Tab state
+  const [activeTab, setActiveTab] = useState<TabType>('generate');
+
+  // AI Generation State
   const [selectedModel, setSelectedModel] = useState<string>('image_flux_pro_v11');
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
@@ -55,6 +76,17 @@ export default function ImageStudioPage() {
   const [filterTier, setFilterTier] = useState<string>('all');
   const [filterProvider, setFilterProvider] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Stock Photo State
+  const [stockSearchQuery, setStockSearchQuery] = useState('');
+  const [stockSource, setStockSource] = useState<'all' | 'pixabay' | 'pexels' | 'unsplash'>('all');
+  const [stockPhotos, setStockPhotos] = useState<StockPhoto[]>([]);
+  const [stockLoading, setStockLoading] = useState(false);
+  const [stockError, setStockError] = useState<string | null>(null);
+  const [stockPage, setStockPage] = useState(1);
+  const [stockTotalResults, setStockTotalResults] = useState(0);
+  const [selectedPhoto, setSelectedPhoto] = useState<StockPhoto | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   // Load credit balance
   useEffect(() => {
@@ -202,6 +234,87 @@ export default function ImageStudioPage() {
     }
   };
 
+  // Stock Photo Search
+  const searchStockPhotos = async (page: number = 1) => {
+    if (!stockSearchQuery.trim()) {
+      setStockError('Voer een zoekopdracht in');
+      return;
+    }
+
+    setStockLoading(true);
+    setStockError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setStockError('Je moet ingelogd zijn');
+        return;
+      }
+
+      const params = new URLSearchParams({
+        query: stockSearchQuery.trim(),
+        source: stockSource,
+        page: page.toString(),
+        per_page: '20',
+      });
+
+      const response = await fetch(`/api/image-studio/stock-photos?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setStockError(data.error || 'Zoeken mislukt');
+        return;
+      }
+
+      setStockPhotos(data.photos);
+      setStockTotalResults(data.totalResults);
+      setStockPage(page);
+    } catch (err: any) {
+      setStockError(err.message || 'Er is een fout opgetreden');
+    } finally {
+      setStockLoading(false);
+    }
+  };
+
+  // Copy stock photo URL
+  const copyStockPhotoUrl = async (url: string) => {
+    await navigator.clipboard.writeText(url);
+    setCopiedUrl(url);
+    setTimeout(() => setCopiedUrl(null), 2000);
+  };
+
+  // Download stock photo
+  const downloadStockPhoto = async (photo: StockPhoto) => {
+    try {
+      const response = await fetch(photo.largeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${photo.source}-${photo.id.split('-')[1]}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download error:', error);
+    }
+  };
+
+  const getSourceBadgeColor = (source: string) => {
+    switch (source) {
+      case 'pixabay': return 'bg-green-500';
+      case 'pexels': return 'bg-teal-500';
+      case 'unsplash': return 'bg-purple-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
   const filteredModels = getFilteredModels();
   const providers = Array.from(new Set(getAllModels().map(m => m.provider))).sort();
 
@@ -214,20 +327,301 @@ export default function ImageStudioPage() {
             🎨 Image Studio
           </h1>
           <p className="text-gray-400">
-            Generate professional images with 50+ AI models from leading providers
+            Genereer AI afbeeldingen of zoek gratis stock foto's
           </p>
-          <div className="mt-4 flex items-center gap-4">
-            <div className="px-4 py-2 bg-gray-800 rounded-lg">
-              <span className="text-gray-400">Credits: </span>
-              <span className="text-orange-500 font-bold">{creditBalance}</span>
-            </div>
-            <div className="px-4 py-2 bg-gray-800 rounded-lg">
-              <span className="text-gray-400">Cost: </span>
-              <span className="text-green-500 font-bold">{estimatedCredits} credits</span>
-            </div>
+
+          {/* Tabs */}
+          <div className="mt-6 flex gap-2">
+            <button
+              onClick={() => setActiveTab('generate')}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'generate'
+                  ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              🤖 AI Generatie
+            </button>
+            <button
+              onClick={() => setActiveTab('stock')}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'stock'
+                  ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              📷 Stock Foto's (Gratis)
+            </button>
           </div>
+
+          {activeTab === 'generate' && (
+            <div className="mt-4 flex items-center gap-4">
+              <div className="px-4 py-2 bg-gray-800 rounded-lg">
+                <span className="text-gray-400">Credits: </span>
+                <span className="text-orange-500 font-bold">{creditBalance}</span>
+              </div>
+              <div className="px-4 py-2 bg-gray-800 rounded-lg">
+                <span className="text-gray-400">Cost: </span>
+                <span className="text-green-500 font-bold">{estimatedCredits} credits</span>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Stock Photos Tab */}
+        {activeTab === 'stock' && (
+          <div className="space-y-6">
+            {/* Search Bar */}
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={stockSearchQuery}
+                    onChange={(e) => setStockSearchQuery(e.target.value)}
+                    placeholder="Zoek stock foto's... (bijv. technologie, natuur, kantoor)"
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-green-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') searchStockPhotos(1);
+                    }}
+                  />
+                </div>
+                <div>
+                  <select
+                    value={stockSource}
+                    onChange={(e) => setStockSource(e.target.value as any)}
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-green-500"
+                  >
+                    <option value="all">Alle bronnen</option>
+                    <option value="pixabay">Pixabay</option>
+                    <option value="pexels">Pexels</option>
+                    <option value="unsplash">Unsplash</option>
+                  </select>
+                </div>
+                <button
+                  onClick={() => searchStockPhotos(1)}
+                  disabled={stockLoading}
+                  className="px-8 py-3 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 rounded-lg font-medium disabled:opacity-50"
+                >
+                  {stockLoading ? 'Zoeken...' : '🔍 Zoeken'}
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {['technologie', 'natuur', 'kantoor', 'mensen', 'stad', 'eten', 'sport', 'abstract'].map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      setStockSearchQuery(tag);
+                      setTimeout(() => searchStockPhotos(1), 100);
+                    }}
+                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm text-gray-300"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Error */}
+            {stockError && (
+              <div className="bg-red-900/50 border border-red-700 rounded-lg p-4">
+                <p className="text-red-200">{stockError}</p>
+              </div>
+            )}
+
+            {/* Results */}
+            {stockPhotos.length > 0 ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-gray-400">
+                    {stockTotalResults.toLocaleString()} foto's gevonden
+                  </p>
+                  <div className="flex gap-2">
+                    <a href="https://pixabay.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-gray-300">
+                      Pixabay
+                    </a>
+                    <span className="text-gray-600">•</span>
+                    <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-gray-300">
+                      Pexels
+                    </a>
+                    <span className="text-gray-600">•</span>
+                    <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-gray-300">
+                      Unsplash
+                    </a>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {stockPhotos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className="group relative bg-gray-800 rounded-lg overflow-hidden cursor-pointer"
+                      onClick={() => setSelectedPhoto(photo)}
+                    >
+                      <img
+                        src={photo.thumbnailUrl}
+                        alt={photo.alt}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute top-2 left-2">
+                        <span className={`px-2 py-1 ${getSourceBadgeColor(photo.source)} rounded text-xs font-medium text-white`}>
+                          {photo.source}
+                        </span>
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <span className="text-white font-medium">Bekijken</span>
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs text-gray-400 truncate">{photo.photographer}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {stockTotalResults > 20 && (
+                  <div className="mt-6 flex justify-center gap-2">
+                    <button
+                      onClick={() => searchStockPhotos(stockPage - 1)}
+                      disabled={stockPage <= 1 || stockLoading}
+                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg disabled:opacity-50"
+                    >
+                      Vorige
+                    </button>
+                    <span className="px-4 py-2 bg-gray-800 rounded-lg">
+                      Pagina {stockPage}
+                    </span>
+                    <button
+                      onClick={() => searchStockPhotos(stockPage + 1)}
+                      disabled={stockLoading}
+                      className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg disabled:opacity-50"
+                    >
+                      Volgende
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : !stockLoading && stockSearchQuery && (
+              <div className="text-center py-12 text-gray-400">
+                Geen foto's gevonden voor "{stockSearchQuery}"
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!stockLoading && stockPhotos.length === 0 && !stockSearchQuery && (
+              <div className="bg-gray-800/50 rounded-lg p-12 border border-gray-700 border-dashed text-center">
+                <div className="text-6xl mb-4">📷</div>
+                <h3 className="text-2xl font-bold mb-2">Gratis Stock Foto's</h3>
+                <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                  Zoek in miljoenen gratis te gebruiken foto's van Pixabay, Pexels en Unsplash.
+                  Perfect voor nieuwsartikelen, blogs en social media.
+                </p>
+                <div className="grid grid-cols-3 gap-4 max-w-md mx-auto text-center">
+                  <div className="p-4 bg-gray-900 rounded-lg">
+                    <div className="text-xl mb-1 text-green-400">Pixabay</div>
+                    <div className="text-xs text-gray-500">2.5M+ foto's</div>
+                  </div>
+                  <div className="p-4 bg-gray-900 rounded-lg">
+                    <div className="text-xl mb-1 text-teal-400">Pexels</div>
+                    <div className="text-xs text-gray-500">3M+ foto's</div>
+                  </div>
+                  <div className="p-4 bg-gray-900 rounded-lg">
+                    <div className="text-xl mb-1 text-purple-400">Unsplash</div>
+                    <div className="text-xs text-gray-500">4M+ foto's</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Photo Detail Modal */}
+            {selectedPhoto && (
+              <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPhoto(null)}>
+                <div className="bg-gray-900 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative">
+                    <img
+                      src={selectedPhoto.largeUrl}
+                      alt={selectedPhoto.alt}
+                      className="w-full max-h-[60vh] object-contain bg-gray-800"
+                    />
+                    <button
+                      onClick={() => setSelectedPhoto(null)}
+                      className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center"
+                    >
+                      ✕
+                    </button>
+                    <div className="absolute top-4 left-4">
+                      <span className={`px-3 py-1 ${getSourceBadgeColor(selectedPhoto.source)} rounded-full text-sm font-medium text-white`}>
+                        {selectedPhoto.source}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-lg font-medium">
+                          Foto door{' '}
+                          <a
+                            href={selectedPhoto.photographerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-orange-400 hover:underline"
+                          >
+                            {selectedPhoto.photographer}
+                          </a>
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {selectedPhoto.width} × {selectedPhoto.height} pixels
+                          {selectedPhoto.likes && ` • ${selectedPhoto.likes} likes`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={() => downloadStockPhoto(selectedPhoto)}
+                        className="px-6 py-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg font-medium"
+                      >
+                        📥 Download
+                      </button>
+                      <button
+                        onClick={() => copyStockPhotoUrl(selectedPhoto.largeUrl)}
+                        className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                          copiedUrl === selectedPhoto.largeUrl
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-700 hover:bg-gray-600'
+                        }`}
+                      >
+                        {copiedUrl === selectedPhoto.largeUrl ? '✓ Gekopieerd!' : '📋 Kopieer URL'}
+                      </button>
+                      <a
+                        href={selectedPhoto.photographerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium"
+                      >
+                        👤 Bekijk fotograaf
+                      </a>
+                    </div>
+
+                    {selectedPhoto.tags && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {selectedPhoto.tags.split(', ').map((tag, i) => (
+                          <span key={i} className="px-3 py-1 bg-gray-800 rounded-full text-sm text-gray-300">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* AI Generation Tab */}
+        {activeTab === 'generate' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel - Controls */}
           <div className="lg:col-span-1 space-y-6">
@@ -613,6 +1007,7 @@ export default function ImageStudioPage() {
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

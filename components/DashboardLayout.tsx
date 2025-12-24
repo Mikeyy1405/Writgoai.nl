@@ -7,6 +7,13 @@ import { supabase } from '@/lib/supabase-client';
 import CreditBalance from './CreditBalance';
 import Logo from './Logo';
 
+interface MenuItem {
+  icon: string;
+  label: string;
+  href: string;
+  subItems?: { icon: string; label: string; href: string }[];
+}
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
   user: {
@@ -21,6 +28,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, user, isAdmin = false }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -56,11 +64,12 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
     };
   }, [router]);
 
-  const baseMenuItems = [
+  const baseMenuItems: MenuItem[] = [
     { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
     { icon: '📝', label: 'Projecten', href: '/dashboard/projects' },
     { icon: '📋', label: 'Content Plan', href: '/dashboard/content-plan' },
     { icon: '✍️', label: 'Content Writer', href: '/dashboard/writer' },
+    { icon: '📰', label: 'News Writer', href: '/dashboard/news-writer' },
     { icon: '🎨', label: 'Image Studio', href: '/dashboard/image-studio' },
     { icon: '📑', label: 'Writgo Blog', href: '/dashboard/writgo-blog' },
     { icon: '🔄', label: 'WordPress Posts', href: '/dashboard/wordpress-posts' },
@@ -68,17 +77,34 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
     { icon: '📱', label: 'Social Media', href: '/dashboard/social' },
   ];
 
+  // Admin menu with sub-items
+  const adminMenuItem: MenuItem = {
+    icon: '👑',
+    label: 'Admin',
+    href: '/dashboard/admin',
+    subItems: [
+      { icon: '👥', label: 'Gebruikers', href: '/dashboard/admin' },
+    ],
+  };
+
   // Add admin menu item if user is admin
-  const menuItems = isAdmin
+  const menuItems: MenuItem[] = isAdmin
     ? [
         ...baseMenuItems,
-        { icon: '👑', label: 'Admin', href: '/dashboard/admin' },
+        adminMenuItem,
         { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
       ]
     : [
         ...baseMenuItems,
         { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
       ];
+
+  // Auto-expand admin menu if on admin page
+  useEffect(() => {
+    if (pathname?.startsWith('/dashboard/admin')) {
+      setAdminMenuOpen(true);
+    }
+  }, [pathname]);
 
   const handleLogout = async () => {
     const form = document.createElement('form');
@@ -130,6 +156,66 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto mt-16 lg:mt-0">
             {menuItems.map((item) => {
               const isActive = pathname === item.href;
+              const hasSubItems = item.subItems && item.subItems.length > 0;
+              const isAdminSection = pathname?.startsWith('/dashboard/admin');
+
+              // Render item with sub-menu
+              if (hasSubItems) {
+                return (
+                  <div key={item.href}>
+                    <button
+                      onClick={() => setAdminMenuOpen(!adminMenuOpen)}
+                      className={`
+                        w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all
+                        ${isAdminSection
+                          ? 'bg-orange-500/20 text-orange-400'
+                          : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xl">{item.icon}</span>
+                        <span className="font-medium">{item.label}</span>
+                      </div>
+                      <svg
+                        className={`w-4 h-4 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {/* Sub Items */}
+                    {adminMenuOpen && (
+                      <div className="ml-4 mt-1 space-y-1">
+                        {item.subItems!.map((subItem) => {
+                          const isSubActive = pathname === subItem.href;
+                          return (
+                            <Link
+                              key={subItem.href}
+                              href={subItem.href}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`
+                                flex items-center space-x-3 px-4 py-2 rounded-lg transition-all text-sm
+                                ${isSubActive
+                                  ? 'bg-orange-500 text-white'
+                                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                }
+                              `}
+                            >
+                              <span className="text-lg">{subItem.icon}</span>
+                              <span className="font-medium">{subItem.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Regular menu item
               return (
                 <Link
                   key={item.href}
@@ -137,8 +223,8 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
                   onClick={() => setSidebarOpen(false)}
                   className={`
                     flex items-center space-x-3 px-4 py-3 rounded-lg transition-all
-                    ${isActive 
-                      ? 'bg-orange-500 text-white' 
+                    ${isActive
+                      ? 'bg-orange-500 text-white'
                       : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                     }
                   `}
