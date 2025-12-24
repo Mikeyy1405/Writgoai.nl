@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // Improved timeouts for slow WordPress servers
-const CONNECT_TIMEOUT = 30000; // 30 seconds for initial connection
+const CONNECT_TIMEOUT = 30000; // 30 seconds for initial connection (was 10s default)
 const PUBLISH_TIMEOUT = 90000; // 90 seconds for publishing (increased from 60s)
 const TEST_TIMEOUT = 45000; // 45 seconds for connection tests (increased from 30s)
 const MEDIA_TIMEOUT = 120000; // 120 seconds for media uploads (increased from 90s)
@@ -32,10 +32,13 @@ async function fetchWithRetry(
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
-        // Node.js undici-specific options to override default connection timeout
+        // Node.js undici-specific options to override default connection timeout (10s -> 30s+)
         // TypeScript doesn't have types for these, but they're required for proper timeout handling
-        // @ts-ignore
+        // @ts-ignore - undici-specific option
+        connectTimeout: CONNECT_TIMEOUT,
+        // @ts-ignore - undici-specific option
         headersTimeout: timeout,
+        // @ts-ignore - undici-specific option
         bodyTimeout: timeout,
       });
       

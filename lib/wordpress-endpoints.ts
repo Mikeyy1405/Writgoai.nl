@@ -205,6 +205,6 @@ export function buildAuthHeader(username: string, password: string): string {
 
 /**
  * Standard User-Agent header for WordPress API requests
- * Uses a browser-like User-Agent to avoid being blocked by security plugins
+ * Uses a realistic browser-like User-Agent to avoid being blocked by security plugins and firewalls
  */
-export const WORDPRESS_USER_AGENT = 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)';
+export const WORDPRESS_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Writgo/1.0';
