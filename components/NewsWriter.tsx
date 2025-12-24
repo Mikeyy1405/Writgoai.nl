@@ -331,7 +331,7 @@ export default function NewsWriter() {
 
                 {/* Article Content */}
                 <div
-                  className="prose prose-invert prose-lg max-w-none mb-6"
+                  className="prose prose-invert prose-lg max-w-none mb-6 prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-4 prose-headings:text-white prose-headings:font-bold prose-headings:mt-8 prose-headings:mb-4 prose-h2:text-xl prose-h3:text-lg prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-400 prose-strong:text-white prose-a:text-orange-400 prose-a:no-underline hover:prose-a:underline"
                   dangerouslySetInnerHTML={{ __html: result.article.content }}
                 />
 
