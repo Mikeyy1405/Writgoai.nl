@@ -1,5 +1,5 @@
 import { generateAICompletion } from '@/lib/ai-client';
-import { getProjectContext, buildContextPrompt, generateProductCardHTML } from '@/lib/project-context';
+import { getProjectContext, buildContextPrompt } from '@/lib/project-context';
 import { BolClient, createBolClientFromConfig } from '@/lib/bol-client';
 
 interface ContentOpportunity {
