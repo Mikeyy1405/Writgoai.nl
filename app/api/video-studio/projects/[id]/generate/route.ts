@@ -9,10 +9,11 @@ import {
   generateVoiceOverWithPolling,
   generateMusicWithPolling,
 } from '@/lib/aiml-api-client';
+import { Database } from '@/lib/database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
 interface VideoScene {
   id: string;
@@ -64,7 +65,7 @@ export async function POST(
       `)
       .eq('id', projectId)
       .eq('user_id', user.id)
-      .single();
+      .single() as { data: any; error: any };
 
     if (projectError || !project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -115,8 +116,8 @@ export async function POST(
     }
 
     // Update project status to processing
-    await supabase
-      .from('video_projects')
+    await (supabase
+      .from('video_projects') as any)
       .update({ status: 'processing' })
       .eq('id', projectId);
 
@@ -144,8 +145,8 @@ export async function POST(
       }
 
       // Update scene status to generating
-      await supabase
-        .from('video_scenes')
+      await (supabase
+        .from('video_scenes') as any)
         .update({ status: 'generating' })
         .eq('id', scene.id);
 
@@ -189,8 +190,8 @@ export async function POST(
         }
 
         // Update scene with video and voice URLs
-        await supabase
-          .from('video_scenes')
+        await (supabase
+          .from('video_scenes') as any)
           .update({
             video_url: videoUrl,
             voice_url: voiceUrl || null,
@@ -213,8 +214,8 @@ export async function POST(
       } catch (error: any) {
         console.error(`Error generating scene ${scene.scene_number}:`, error);
 
-        await supabase
-          .from('video_scenes')
+        await (supabase
+          .from('video_scenes') as any)
           .update({
             status: 'failed',
             error_message: error.message,
@@ -268,8 +269,8 @@ export async function POST(
     // In a production environment, you'd use a service like Shotstack or Creatomate
     // to stitch the videos together server-side
 
-    await supabase
-      .from('video_projects')
+    await (supabase
+      .from('video_projects') as any)
       .update(projectUpdate)
       .eq('id', projectId);
 
@@ -281,7 +282,7 @@ export async function POST(
         scenes:video_scenes(*)
       `)
       .eq('id', projectId)
-      .single();
+      .single() as { data: any };
 
     // Sort scenes in updated project
     if (updatedProject?.scenes) {
@@ -336,7 +337,7 @@ export async function GET(
       `)
       .eq('id', projectId)
       .eq('user_id', user.id)
-      .single();
+      .single() as { data: any; error: any };
 
     if (error || !project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
