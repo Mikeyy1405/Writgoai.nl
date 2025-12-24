@@ -1,0 +1,20 @@
+# AI Video Generator - Dependencies
+# ==================================
+# Installeer met: pip install -r requirements.txt
+
+# HTTP requests voor API communicatie
+requests>=2.31.0
+
+# Video editing en assembly
+moviepy>=1.0.3
+
+# MoviePy dependencies (worden meestal automatisch geïnstalleerd)
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.8
+numpy>=1.24.0
+
+# Optioneel: voor betere font ondersteuning
+# pillow>=10.0.0
+
+# Optioneel: voor audio processing
+# pydub>=0.25.1
