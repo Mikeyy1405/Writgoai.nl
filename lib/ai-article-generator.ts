@@ -82,7 +82,7 @@ export async function generateArticle(
       messages: [
         {
           role: 'system',
-          content: 'Je bent een expert SEO content writer voor WritGo.nl, een Nederlandse SEO blog. Je schrijft uitgebreide, goed gestructureerde artikelen die geoptimaliseerd zijn voor Google AI Overview.'
+          content: 'Je bent een expert SEO content writer voor WritGo.nl, een Nederlandse SEO blog. Je schrijft uitgebreide, goed gestructureerde artikelen die geoptimaliseerd zijn voor Google AI Overview. BELANGRIJK: Begin NOOIT met een "Inleiding:" of "Introductie:" heading - start direct met de introductie tekst.'
         },
         {
           role: 'user',
@@ -144,8 +144,8 @@ ${keywords.length > 0 ? `**Related Keywords:** ${keywords.join(', ')}` : ''}
 
 2. **SEO Structuur:**
    - H1: ${title}
-   - Intro (150-200 woorden) met focus keyword
-   - Minimaal 5 H2 secties
+   - Intro (150-200 woorden) met focus keyword - GEEN "Inleiding:" heading, begin direct met tekst
+   - Minimaal 5 H2 secties voor de hoofdinhoud
    - H3 subsecties waar nodig
    - Conclusie met call-to-action
 
