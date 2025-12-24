@@ -12,9 +12,12 @@ export async function GET() {
       .eq('key', 'logo_url')
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       // PGRST116 is "not found" error, which is ok
-      console.error('Error fetching logo:', error);
+      // PGRST205 is "table not found" error, which means the migration hasn't been run yet
+      if (error.code !== 'PGRST116' && error.code !== 'PGRST205') {
+        console.error('Error fetching logo:', error);
+      }
       return NextResponse.json({ logoUrl: null });
     }
 
@@ -49,6 +52,13 @@ export async function POST(request: NextRequest) {
       });
 
     if (error) {
+      // PGRST205 is "table not found" error
+      if (error.code === 'PGRST205') {
+        console.error('Error updating logo: app_settings table does not exist. Please run the migration.');
+        return NextResponse.json({
+          error: 'Database migration required. Please contact support.'
+        }, { status: 500 });
+      }
       console.error('Error updating logo:', error);
       return NextResponse.json({ error: 'Failed to update logo' }, { status: 500 });
     }
