@@ -273,7 +273,6 @@ export async function fetchWithDnsFallback(
     enhancedError.cause = error.cause;
     (enhancedError as any).code = error.code || error.cause?.code || 'FETCH_FAILED';
     throw enhancedError;
-  }
 }
 
 /**
