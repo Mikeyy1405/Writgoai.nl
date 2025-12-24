@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
+import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -81,20 +82,15 @@ export async function PATCH(request: Request) {
       // Test WordPress connection (unless skipped)
       if (!shouldSkipTest) {
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 30000);
-
           const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
-          const testResponse = await fetch(testUrl, {
+          const testResponse = await fetchWithDnsFallback(testUrl, {
             headers: {
               'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
               'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
               'Accept': 'application/json',
             },
-            signal: controller.signal,
+            timeout: 60000, // Increased to 60s for slow .nl/.be domains
           });
-          
-          clearTimeout(timeoutId);
 
           if (testResponse.ok) {
             wordpressConnected = true;
@@ -110,8 +106,8 @@ export async function PATCH(request: Request) {
             }
           }
         } catch (wpError: any) {
-          if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT') {
-            wordpressWarning = 'WordPress test timeout - de server reageert traag (>30s).';
+          if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT' || wpError.code === 'TIMEOUT') {
+            wordpressWarning = 'WordPress test timeout - de server reageert traag (>60s).';
           } else if (wpError.code === 'ENOTFOUND') {
             wordpressWarning = 'Website niet gevonden. Controleer de URL.';
           } else if (wpError.code === 'ECONNREFUSED') {

@@ -93,7 +93,7 @@ export async function POST(request: Request) {
               'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
               'Accept': 'application/json',
             },
-            timeout: 30000, // 30 second timeout with DNS fallback for .nl domains
+            timeout: 60000, // Increased to 60s for slow .nl/.be domains
           });
 
           console.log('WordPress test response status:', testResponse.status);
@@ -122,8 +122,8 @@ export async function POST(request: Request) {
           console.error('Error cause:', wpError.cause?.message || 'N/A');
           
           // Don't block project creation on timeout or connection errors
-          if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT') {
-            wordpressWarning = 'WordPress test timeout - de server reageert traag (>30s). Credentials zijn opgeslagen.';
+          if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT' || wpError.code === 'TIMEOUT') {
+            wordpressWarning = 'WordPress test timeout - de server reageert traag (>60s). Credentials zijn opgeslagen.';
           } else if (wpError.code === 'ENOTFOUND') {
             wordpressWarning = 'Website niet gevonden. Controleer de URL.';
           } else if (wpError.code === 'ECONNREFUSED') {
