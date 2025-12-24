@@ -1,6 +1,16 @@
 import { createClient } from '@/lib/supabase-server';
 import { getProjectContext, buildContextPrompt } from '@/lib/project-context';
 import OpenAI from 'openai';
+import { generateFeaturedImage, generateArticleImage } from '@/lib/aiml-image-generator';
+import {
+  searchYouTubeVideo,
+  scrapeSitemap,
+  formatSitemapLinksForPrompt,
+  createInArticleImageHtml,
+  findIntroEndPosition,
+  findMiddlePosition,
+  insertContentAtPosition,
+} from '@/lib/content-enrichment';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -83,7 +93,20 @@ export async function POST(request: Request) {
 
     // Get project context (knowledge base, affiliates, internal links)
     const projectContext = await getProjectContext(project_id);
-    const contextPrompt = buildContextPrompt(projectContext);
+    let contextPrompt = buildContextPrompt(projectContext);
+
+    // If no internal links from database, try sitemap scraping as fallback
+    if (projectContext.internalLinks.length === 0 && project.website_url) {
+      try {
+        const sitemapLinks = await scrapeSitemap(project.website_url);
+        if (sitemapLinks.length > 0) {
+          console.log(`Found ${sitemapLinks.length} links from sitemap`);
+          contextPrompt = contextPrompt + '\n\n' + formatSitemapLinksForPrompt(sitemapLinks);
+        }
+      } catch (e) {
+        console.warn('Sitemap scraping failed:', e);
+      }
+    }
 
     const langInstructions = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.nl;
 
@@ -98,7 +121,8 @@ ${description ? `Context: ${description}` : ''}
 ${keyword ? `Focus keyword: ${keyword}` : ''}
 
 Vereisten:
-- Minimaal ${word_count} woorden
+- STRIKT ${word_count} woorden (maximaal ${Math.round(word_count * 1.1)} woorden, NIET meer!)
+- Dit is een HARDE LIMIET - schrijf NIET meer dan ${Math.round(word_count * 1.1)} woorden
 - Gebruik HTML formatting (h2, h3, p, ul, li, strong, em)
 - Maak het informatief, engaging en SEO-vriendelijk
 - Gebruik de focus keyword natuurlijk door het artikel
@@ -107,6 +131,7 @@ Vereisten:
 - Structureer met duidelijke headers en paragrafen
 - Begin direct met de content (geen intro zoals "Hier is het artikel")
 - Sluit af met een sterke conclusie
+- BELANGRIJK: Houd je STRIKT aan de woordlimiet van ${word_count} woorden!
 
 Schrijf het artikel in HTML formaat:`;
 
@@ -123,15 +148,18 @@ Schrijf het artikel in HTML formaat:`;
           let chunkCount = 0;
 
           // Stream from Claude via AIML API
+          // Calculate max tokens based on word count (roughly 1.3 tokens per word for English/Dutch)
+          const estimatedTokens = Math.min(Math.round(word_count * 1.5) + 500, 8000);
+
           const completion = await openai.chat.completions.create({
             model: 'anthropic/claude-sonnet-4.5',
-            max_tokens: 8000,
+            max_tokens: estimatedTokens,
             temperature: 0.7,
             stream: true,
             messages: [
               {
                 role: 'system',
-                content: langInstructions.systemPrompt,
+                content: `${langInstructions.systemPrompt} BELANGRIJK: Houd je STRIKT aan de opgegeven woordlimiet. Schrijf NOOIT meer dan de maximale woordlimiet.`,
               },
               {
                 role: 'user',
@@ -189,6 +217,46 @@ Schrijf het artikel in HTML formaat:`;
           cleaned = cleaned.replace(/```\s*$/g, '');
           cleaned = cleaned.replace(/^(Here is|Here's|Below is|Hier is|Hieronder)[^<]*</i, '<');
 
+          // Send progress update for media enrichment
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: 'progress', step: 'Verrijken met media (YouTube, afbeeldingen)...' })}\n\n`)
+          );
+
+          // Enrich content with YouTube video and images (in parallel)
+          console.log('Enriching content with media...');
+          const [youtubeResult, featuredImageResult, inArticleImageResult] = await Promise.allSettled([
+            searchYouTubeVideo(keyword || title, language),
+            generateFeaturedImage(title, keyword),
+            generateArticleImage(`${keyword || title} illustration, informative diagram`, 'photorealistic'),
+          ]);
+
+          // Insert YouTube video after intro
+          if (youtubeResult.status === 'fulfilled' && youtubeResult.value) {
+            const video = youtubeResult.value;
+            const introEndPos = findIntroEndPosition(cleaned);
+            if (introEndPos > 0) {
+              cleaned = insertContentAtPosition(cleaned, video.embedHtml, introEndPos);
+              console.log('YouTube video inserted:', video.title);
+            }
+          }
+
+          // Insert in-article image in middle
+          if (inArticleImageResult.status === 'fulfilled' && inArticleImageResult.value) {
+            const middlePos = findMiddlePosition(cleaned);
+            if (middlePos > 0) {
+              const imageHtml = createInArticleImageHtml(
+                inArticleImageResult.value,
+                `Illustratie over ${keyword || title}`,
+                `Visuele uitleg van ${keyword || title}`
+              );
+              cleaned = insertContentAtPosition(cleaned, imageHtml, middlePos);
+              console.log('In-article image inserted');
+            }
+          }
+
+          // Get featured image URL
+          const featuredImage = featuredImageResult.status === 'fulfilled' ? featuredImageResult.value : null;
+
           // Calculate word count
           const wordCount = cleaned.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length;
 
@@ -217,6 +285,7 @@ Schrijf het artikel in HTML formaat:`;
               meta_title: title,
               focus_keyword: keyword || '',
               word_count: wordCount,
+              featured_image: featuredImage || null,
               status: 'draft',
               author_id: user.id,
               created_at: new Date().toISOString(),
@@ -238,6 +307,7 @@ Schrijf het artikel in HTML formaat:`;
                 wordCount,
                 slug,
                 metaDescription,
+                featuredImage: featuredImage || null,
                 articleId: article?.id,
               })}\n\n`
             )

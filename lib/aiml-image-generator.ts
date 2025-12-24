@@ -127,12 +127,19 @@ export async function generateImage(options: ImageGenerationOptions): Promise<Im
  */
 export async function generateFeaturedImage(
   title: string,
-  description?: string
+  keyword?: string
 ): Promise<string | null> {
-  const topic = extractTopic(title);
-  const prompt = description 
-    ? `${topic}, ${description}`
-    : `${topic}, professional blog header image, modern design`;
+  // Use keyword if provided for more accurate topic extraction
+  const topic = extractTopic(keyword || title);
+
+  // Build a detailed prompt that focuses on the actual subject matter
+  const subjectKeywords = keyword
+    ? keyword.split(' ').filter(w => w.length > 2).join(', ')
+    : title.split(' ').filter(w => w.length > 3).slice(0, 4).join(', ');
+
+  const prompt = `${topic}, related to ${subjectKeywords}, professional blog header image, modern design, relevant to the topic`;
+
+  console.log('Generating featured image for:', { title, keyword, topic, prompt: prompt.substring(0, 100) });
 
   // Use flux/schnell for faster generation (typically 5-15 seconds vs 30-60+ seconds for flux-pro)
   const result = await generateImage({
@@ -218,51 +225,53 @@ function buildEnhancedPrompt(prompt: string, style: string): string {
 }
 
 /**
- * Extract main topic from article title
+ * Extract main topic from article title/keyword for image generation
  */
 function extractTopic(title: string): string {
   const cleanTitle = title
     .toLowerCase()
-    .replace(/complete guide|ultimate guide|how to|what is|waarom|hoe|wat is|beste|top \d+/gi, '')
+    .replace(/complete guide|ultimate guide|how to|what is|waarom|hoe|wat is|beste|top \d+|tips|voor|beginners|gids|handleiding/gi, '')
     .trim();
 
-  const keywords = cleanTitle.split(/[\s:]+/).filter(word => word.length > 3);
+  const keywords = cleanTitle.split(/[\s:]+/).filter(word => word.length > 2);
 
-  // Topic mapping for common subjects
-  if (keywords.some(k => ['google', 'seo', 'zoekmachine'].includes(k))) {
-    return 'modern SEO analytics dashboard, search engine optimization concept, digital marketing';
-  }
-  
-  if (keywords.some(k => ['ai', 'chatgpt', 'openai', 'kunstmatige', 'intelligentie'].includes(k))) {
-    return 'futuristic AI technology, neural network visualization, artificial intelligence concept';
-  }
-  
-  if (keywords.some(k => ['wordpress', 'website', 'blog'].includes(k))) {
-    return 'modern website development, WordPress dashboard, web design workspace';
-  }
-  
-  if (keywords.some(k => ['content', 'marketing', 'strategie'].includes(k))) {
-    return 'content creation workspace, digital marketing concept, creative office setup';
+  // Topic mapping for common subjects - expanded list
+  const topicMappings: Array<{ keywords: string[]; prompt: string }> = [
+    { keywords: ['google', 'seo', 'zoekmachine', 'ranking', 'zoekresultaten'], prompt: 'modern SEO analytics dashboard, search engine optimization concept, digital marketing' },
+    { keywords: ['ai', 'chatgpt', 'openai', 'kunstmatige', 'intelligentie', 'machine', 'learning'], prompt: 'futuristic AI technology, neural network visualization, artificial intelligence concept' },
+    { keywords: ['wordpress', 'website', 'blog', 'webdesign'], prompt: 'modern website development, WordPress dashboard, web design workspace' },
+    { keywords: ['content', 'marketing', 'strategie', 'campagne'], prompt: 'content creation workspace, digital marketing concept, creative office setup' },
+    { keywords: ['code', 'programmeren', 'developer', 'software', 'javascript', 'python'], prompt: 'modern coding workspace, software development, programming concept' },
+    { keywords: ['yoga', 'meditatie', 'mindfulness', 'wellness', 'ontspanning'], prompt: 'peaceful yoga practice, serene meditation space, wellness and mindfulness' },
+    { keywords: ['fitness', 'sport', 'training', 'gym', 'workout', 'sporten'], prompt: 'modern fitness training, gym workout, healthy lifestyle' },
+    { keywords: ['food', 'eten', 'koken', 'recept', 'gezond', 'voeding', 'maaltijd'], prompt: 'delicious healthy food, beautiful food photography, culinary art' },
+    { keywords: ['reizen', 'travel', 'vakantie', 'bestemming', 'hotel'], prompt: 'beautiful travel destination, vacation scenery, adventure photography' },
+    { keywords: ['financieel', 'geld', 'beleggen', 'investeren', 'sparen', 'budget'], prompt: 'financial planning concept, money management, professional finance workspace' },
+    { keywords: ['ondernemen', 'startup', 'business', 'bedrijf', 'ondernemer'], prompt: 'modern startup office, entrepreneurship concept, business workspace' },
+    { keywords: ['gezondheid', 'medisch', 'dokter', 'ziekenhuis', 'behandeling'], prompt: 'modern healthcare concept, medical professional, health and wellness' },
+    { keywords: ['tuinieren', 'tuin', 'planten', 'bloemen', 'groen'], prompt: 'beautiful garden landscape, gardening concept, plants and flowers' },
+    { keywords: ['huis', 'wonen', 'interieur', 'decoratie', 'meubels'], prompt: 'modern interior design, beautiful home decor, living space' },
+    { keywords: ['auto', 'rijden', 'voertuig', 'elektrisch', 'motor'], prompt: 'modern automotive concept, sleek car design, transportation' },
+    { keywords: ['kinderen', 'baby', 'opvoeding', 'ouderschap', 'gezin'], prompt: 'happy family moment, parenting concept, children and family' },
+    { keywords: ['huisdier', 'hond', 'kat', 'dieren', 'pet'], prompt: 'cute pet photography, adorable animals, pet care concept' },
+    { keywords: ['mode', 'kleding', 'fashion', 'stijl', 'outfit'], prompt: 'modern fashion concept, stylish clothing, fashion photography' },
+    { keywords: ['muziek', 'concert', 'instrument', 'band', 'zingen'], prompt: 'music performance concept, musical instruments, concert atmosphere' },
+    { keywords: ['fotografie', 'camera', 'foto', 'beeld', 'bewerken'], prompt: 'professional photography setup, camera equipment, creative photography' },
+    { keywords: ['social', 'media', 'instagram', 'tiktok', 'facebook', 'linkedin'], prompt: 'social media marketing concept, digital engagement, online presence' },
+    { keywords: ['e-commerce', 'webshop', 'verkopen', 'producten', 'winkel'], prompt: 'modern e-commerce concept, online shopping, digital store' },
+    { keywords: ['email', 'nieuwsbrief', 'marketing', 'automation'], prompt: 'email marketing concept, digital communication, marketing automation' },
+  ];
+
+  // Find matching topic
+  for (const mapping of topicMappings) {
+    if (keywords.some(k => mapping.keywords.includes(k))) {
+      return mapping.prompt;
+    }
   }
 
-  if (keywords.some(k => ['code', 'programmeren', 'developer', 'software'].includes(k))) {
-    return 'modern coding workspace, software development, programming concept';
-  }
-
-  if (keywords.some(k => ['yoga', 'meditatie', 'mindfulness', 'wellness'].includes(k))) {
-    return 'peaceful yoga practice, serene meditation space, wellness and mindfulness';
-  }
-
-  if (keywords.some(k => ['fitness', 'sport', 'training', 'gym'].includes(k))) {
-    return 'modern fitness training, gym workout, healthy lifestyle';
-  }
-
-  if (keywords.some(k => ['food', 'eten', 'koken', 'recept', 'gezond'].includes(k))) {
-    return 'delicious healthy food, beautiful food photography, culinary art';
-  }
-
-  // Default: use cleaned title as base
-  return `${cleanTitle}, modern professional concept, high quality`;
+  // Default: create a prompt from the actual keywords
+  const mainKeywords = keywords.slice(0, 3).join(' ');
+  return `${mainKeywords} concept, modern professional design, high quality, relevant to ${cleanTitle}`;
 }
 
 /**
