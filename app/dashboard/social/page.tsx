@@ -1123,29 +1123,66 @@ export default function SocialMediaPage() {
             </div>
 
             {/* Info box */}
-            <div className="bg-gray-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-3">Hoe werkt de publicatiekalender?</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-300">
-                <div className="flex gap-3">
-                  <span className="text-2xl">1️⃣</span>
-                  <div>
-                    <p className="font-medium text-white mb-1">Plan in</p>
-                    <p>Kies een onderwerp en stel de publicatiedatum in</p>
+            <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span className="text-2xl">💡</span>
+                Wat zie je in de publicatiekalender?
+              </h3>
+
+              <div className="space-y-4 text-sm">
+                <div className="bg-gray-800/70 rounded-lg p-4 border-l-4 border-blue-500">
+                  <div className="font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                    <span>📅</span>
+                    Automatisch toegevoegde posts
                   </div>
+                  <p className="text-gray-300">
+                    Als je <span className="text-blue-400 font-semibold">Automatisering</span> hebt ingeschakeld,
+                    zie je hier automatisch nieuwe content items verschijnen op basis van je frequentie-instellingen.
+                    Deze hebben status "<span className="text-yellow-400">Scheduled</span>" tot AI de content genereert.
+                  </p>
                 </div>
-                <div className="flex gap-3">
-                  <span className="text-2xl">2️⃣</span>
-                  <div>
-                    <p className="font-medium text-white mb-1">AI schrijft</p>
-                    <p>Op de geplande tijd genereert AI automatisch de content</p>
+
+                <div className="bg-gray-800/70 rounded-lg p-4 border-l-4 border-purple-500">
+                  <div className="font-semibold text-purple-400 mb-2 flex items-center gap-2">
+                    <span>✍️</span>
+                    Handmatig toegevoegde posts
                   </div>
+                  <p className="text-gray-300">
+                    Je kunt ook zelf content items toevoegen via de knop "<span className="text-purple-400">+ Nieuw item inplannen</span>"
+                    of door een content idee uit de strategie te selecteren.
+                  </p>
                 </div>
-                <div className="flex gap-3">
-                  <span className="text-2xl">3️⃣</span>
-                  <div>
-                    <p className="font-medium text-white mb-1">Publiceren</p>
-                    <p>Content wordt automatisch gepubliceerd naar je accounts</p>
+
+                <div className="bg-gray-800/70 rounded-lg p-4 border-l-4 border-green-500">
+                  <div className="font-semibold text-green-400 mb-2 flex items-center gap-2">
+                    <span>🎉</span>
+                    Feestdagen
                   </div>
+                  <p className="text-gray-300">
+                    Bij ingeschakelde feestdagen-optie worden automatisch speciale posts toegevoegd voor
+                    Nederlandse feestdagen zoals Koningsdag, Sinterklaas en Kerst.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-700">
+                <div className="text-xs text-gray-400 space-y-2">
+                  <p className="flex items-start gap-2">
+                    <span className="text-yellow-400">📌</span>
+                    <span><span className="font-semibold text-yellow-400">Status "Scheduled"</span> = Content idee is ingepland, AI moet nog de post schrijven</span>
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <span className="text-blue-400">📌</span>
+                    <span><span className="font-semibold text-blue-400">Status "Generating"</span> = AI is nu bezig met het schrijven van de post</span>
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <span className="text-green-400">📌</span>
+                    <span><span className="font-semibold text-green-400">Status "Generated"</span> = Post is klaar en kan worden gepubliceerd</span>
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <span className="text-purple-400">📌</span>
+                    <span><span className="font-semibold text-purple-400">Status "Published"</span> = Post is gepubliceerd naar je social media accounts</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -1486,6 +1523,106 @@ export default function SocialMediaPage() {
               </div>
             </div>
 
+            {/* HOE WERKT HET - Visual Flow */}
+            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-6">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                💡 Hoe werkt automatisch posten?
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-gray-800/50 rounded-lg p-4 relative">
+                  <div className="text-3xl mb-3">📅</div>
+                  <div className="font-semibold text-white mb-2">Stap 1: Kalender Vullen</div>
+                  <div className="text-sm text-gray-300">
+                    Kalender wordt automatisch gevuld met content ideeën op basis van je frequentie (bijv. dagelijks om 09:00)
+                  </div>
+                  <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-2xl text-blue-400 hidden md:block">→</div>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg p-4 relative">
+                  <div className="text-3xl mb-3">🤖</div>
+                  <div className="font-semibold text-white mb-2">Stap 2: AI Genereert</div>
+                  <div className="text-sm text-gray-300">
+                    Op de geplande tijd genereert AI automatisch de post tekst + afbeelding
+                  </div>
+                  <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-2xl text-blue-400 hidden md:block">→</div>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg p-4 relative">
+                  <div className="text-3xl mb-3">✅</div>
+                  <div className="font-semibold text-white mb-2">Stap 3: Concept Klaar</div>
+                  <div className="text-sm text-gray-300">
+                    Post staat klaar als concept in je planning. Je kunt deze bekijken en bewerken.
+                  </div>
+                  <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-2xl text-blue-400 hidden md:block">→</div>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-3xl mb-3">🚀</div>
+                  <div className="font-semibold text-white mb-2">Stap 4: Publiceren</div>
+                  <div className="text-sm text-gray-300">
+                    {scheduleAutoPublish ? 'Post wordt automatisch gepubliceerd naar je accounts' : 'Je kunt de post handmatig publiceren of bewerken'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Status */}
+              <div className="bg-gray-800/70 rounded-lg p-4 border-l-4 border-blue-500">
+                <div className="font-semibold text-white mb-3 flex items-center gap-2">
+                  <span className="text-xl">📊</span>
+                  Huidige Status
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <div className="text-gray-400 mb-1">Automatisering</div>
+                    <div className={`font-semibold ${schedule?.enabled ? 'text-green-400' : 'text-gray-400'}`}>
+                      {schedule?.enabled ? '✅ Actief' : '⏸️ Uitgeschakeld'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400 mb-1">Kalender Auto-vullen</div>
+                    <div className={`font-semibold ${autoPopulateCalendar ? 'text-green-400' : 'text-gray-400'}`}>
+                      {autoPopulateCalendar ? `✅ Ja (${daysAhead} dagen vooruit)` : '❌ Nee'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400 mb-1">Auto-publiceren</div>
+                    <div className={`font-semibold ${scheduleAutoPublish ? 'text-yellow-400' : 'text-blue-400'}`}>
+                      {scheduleAutoPublish ? '⚠️ Direct publiceren' : '📝 Als concept'}
+                    </div>
+                  </div>
+                </div>
+                {schedule?.next_run_at && schedule.enabled && (
+                  <div className="mt-4 pt-4 border-t border-gray-700">
+                    <div className="text-gray-400 text-sm mb-1">Volgende automatische actie</div>
+                    <div className="text-blue-400 font-mono text-sm">
+                      {new Date(schedule.next_run_at).toLocaleString('nl-NL', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Tips */}
+              <div className="mt-4 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <div className="text-sm text-blue-300">
+                  <div className="font-semibold mb-2">💡 Belangrijk om te weten:</div>
+                  <ul className="space-y-1 ml-4">
+                    <li>• Nieuwe posts worden <span className="text-blue-400 font-semibold">automatisch toegevoegd</span> aan je publicatiekalender</li>
+                    <li>• Je hoeft <span className="text-blue-400 font-semibold">NIETS handmatig te doen</span> - alles gebeurt automatisch</li>
+                    <li>• Posts verschijnen eerst als "Scheduled" in de kalender, daarna genereert AI de content</li>
+                    <li>• Je kunt altijd nog bewerken voordat ze gepubliceerd worden</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             {/* Enable/Disable */}
             <div className="bg-gray-800 rounded-xl p-6">
               <div className="flex items-center justify-between mb-6">
@@ -1777,38 +1914,64 @@ export default function SocialMediaPage() {
               </button>
             </div>
 
-            {/* Info Box */}
+            {/* Uitgebreide Info Box */}
             <div className="bg-gray-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-3">ℹ️ Hoe werkt het?</h3>
-              <div className="space-y-3 text-sm text-gray-300">
-                <div className="flex gap-3">
-                  <span className="text-orange-400">1.</span>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span className="text-2xl">⚙️</span>
+                Configuratie Uitleg
+              </h3>
+              <div className="space-y-4 text-sm text-gray-300">
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-400 font-bold">Frequentie</span>
+                  </div>
                   <p>
-                    Stel je gewenste frequentie en tijden in (bijv. dagelijks om 09:00)
+                    Bepaalt <span className="text-white font-semibold">hoe vaak</span> er automatisch nieuwe posts aan je kalender worden toegevoegd.
+                    Kies bijv. "Dagelijks" en posts worden elke dag automatisch ingepland.
                   </p>
                 </div>
-                <div className="flex gap-3">
-                  <span className="text-orange-400">2.</span>
+
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-400 font-bold">Post Tijden</span>
+                  </div>
                   <p>
-                    De kalender wordt automatisch gevuld met content items op basis van je frequentie
+                    De <span className="text-white font-semibold">tijdstippen</span> waarop posts automatisch worden ingepland.
+                    Stel je in op "09:00" in, dan wordt elke dag om 09:00 een nieuwe post toegevoegd aan je kalender.
                   </p>
                 </div>
-                <div className="flex gap-3">
-                  <span className="text-orange-400">3.</span>
+
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-400 font-bold">Automatisch Kalender Vullen</span>
+                  </div>
                   <p>
-                    🎉 Nederlandse feestdagen worden automatisch meegenomen (Koningsdag, Kerst, Pasen, etc.)
+                    Als deze aan staat, wordt je publicatiekalender <span className="text-white font-semibold">automatisch gevuld</span> met nieuwe content items
+                    tot {daysAhead} dagen vooruit. Je hoeft NIETS handmatig te doen!
+                    {includeHolidays && (
+                      <span className="block mt-2 text-blue-300">
+                        🎉 Inclusief Nederlandse feestdagen zoals Koningsdag, Sinterklaas, Kerst, en Pasen!
+                      </span>
+                    )}
                   </p>
                 </div>
-                <div className="flex gap-3">
-                  <span className="text-orange-400">4.</span>
+
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-400 font-bold">Direct Publiceren vs Concept</span>
+                  </div>
                   <p>
-                    Op de geplande tijden genereert AI automatisch de content en afbeeldingen
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="text-orange-400">5.</span>
-                  <p>
-                    Je kunt altijd handmatig items toevoegen, bewerken of verwijderen in de kalender
+                    {scheduleAutoPublish ? (
+                      <span>
+                        <span className="text-yellow-400 font-semibold">⚠️ Direct Publiceren</span> is ingeschakeld.
+                        Posts worden automatisch naar je social media accounts gepubliceerd zonder handmatige review.
+                      </span>
+                    ) : (
+                      <span>
+                        <span className="text-blue-400 font-semibold">📝 Als Concept</span> is ingeschakeld.
+                        Posts worden gegenereerd maar niet automatisch gepubliceerd. Je kunt ze eerst bekijken en bewerken.
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
