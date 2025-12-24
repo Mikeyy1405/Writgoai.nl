@@ -17,6 +17,7 @@ export interface CreditBalance {
   monthly_credits: number;
   subscription_tier: string | null;
   subscription_active: boolean;
+  is_admin?: boolean;
 }
 
 /**
@@ -34,6 +35,11 @@ export async function checkCredits(
   const balance = await getCreditBalance(userId);
   if (!balance) {
     return false;
+  }
+
+  // Admin users have unlimited credits
+  if (balance.is_admin) {
+    return true;
   }
 
   const requiredCredits = CREDIT_COSTS[action];
@@ -63,7 +69,7 @@ export async function deductCredits(
     // Get current balance
     const { data: subscriber, error: fetchError } = await supabaseAdmin
       .from('subscribers')
-      .select('credits_remaining, subscription_active')
+      .select('credits_remaining, subscription_active, is_admin')
       .eq('user_id', userId)
       .single();
 
@@ -72,6 +78,15 @@ export async function deductCredits(
         success: false,
         remaining: 0,
         error: 'Subscriber not found',
+      };
+    }
+
+    // Admin users don't deduct credits
+    if (subscriber.is_admin) {
+      await logCreditUsage(userId, action, amount);
+      return {
+        success: true,
+        remaining: 999999, // Admin always shows unlimited
       };
     }
 
@@ -132,7 +147,7 @@ export async function getCreditBalance(userId: string): Promise<CreditBalance | 
   try {
     const { data, error } = await supabaseAdmin
       .from('subscribers')
-      .select('credits_remaining, monthly_credits, subscription_tier, subscription_active')
+      .select('credits_remaining, monthly_credits, subscription_tier, subscription_active, is_admin')
       .eq('user_id', userId)
       .single();
 

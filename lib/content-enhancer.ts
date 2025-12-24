@@ -225,7 +225,7 @@ OUTPUT (JSON array):
 Als er GEEN specifieke producten worden genoemd, return: []`;
 
     const result = await generateAICompletion({
-      task: 'analysis',
+      task: 'quick',
       systemPrompt: 'Je bent een expert in het identificeren van specifieke producten in artikelen. Je geeft ALLEEN JSON terug.',
       userPrompt: prompt,
       maxTokens: 1000,

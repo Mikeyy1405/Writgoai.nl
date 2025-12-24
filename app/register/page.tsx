@@ -35,7 +35,15 @@ export default function RegisterPage() {
         return;
       }
 
-      // Success - redirect
+      // Check if email confirmation is needed
+      if (data.needsEmailConfirmation) {
+        setError('');
+        alert('Account aangemaakt! Check je email om je account te bevestigen.');
+        router.push('/login');
+        return;
+      }
+
+      // Success - user is logged in, redirect to dashboard
       window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message || 'Er ging iets mis');

@@ -60,7 +60,6 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     { icon: '📝', label: 'Projecten', href: '/dashboard/projects' },
     { icon: '📋', label: 'Content Plan', href: '/dashboard/content-plan' },
     { icon: '✍️', label: 'Content Writer', href: '/dashboard/writer' },
-    { icon: '📝', label: 'Editor', href: '/dashboard/editor' },
     { icon: '📑', label: 'Writgo Blog', href: '/dashboard/writgo-blog' },
     { icon: '🔄', label: 'WordPress Posts', href: '/dashboard/wordpress-posts' },
     { icon: '📚', label: 'Bibliotheek', href: '/dashboard/library' },
