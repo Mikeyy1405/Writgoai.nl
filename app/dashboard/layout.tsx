@@ -8,13 +8,22 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const supabase = createClient();
-  
+
   // Check authentication
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+
   if (authError || !user) {
     redirect('/login');
   }
 
-  return <DashboardLayout user={user}>{children}</DashboardLayout>;
+  // Check if user is admin
+  const { data: subscriber } = await supabase
+    .from('subscribers')
+    .select('is_admin')
+    .eq('user_id', user.id)
+    .single();
+
+  const isAdmin = subscriber?.is_admin || false;
+
+  return <DashboardLayout user={user} isAdmin={isAdmin}>{children}</DashboardLayout>;
 }

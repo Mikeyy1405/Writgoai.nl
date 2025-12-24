@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import DashboardLayout from "@/components/DashboardLayout";
 import AdminUserList from "@/components/AdminUserList";
 
 export default async function AdminPage() {
@@ -24,17 +23,15 @@ export default async function AdminPage() {
   }
 
   return (
-    <DashboardLayout user={user} isAdmin={true}>
-      <div className="p-6 lg:p-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Admin Dashboard</h1>
-          <p className="text-gray-400 text-lg">
-            Beheer gebruikers en credits
-          </p>
-        </div>
-
-        <AdminUserList />
+    <div className="p-6 lg:p-12">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-white mb-2">Admin Dashboard</h1>
+        <p className="text-gray-400 text-lg">
+          Beheer gebruikers en credits
+        </p>
       </div>
-    </DashboardLayout>
+
+      <AdminUserList />
+    </div>
   );
 }
