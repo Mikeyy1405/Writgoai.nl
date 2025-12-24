@@ -198,8 +198,8 @@ export default function VideoStudioPage() {
         return;
       }
 
-      // Start generation
-      const response = await fetch(`/api/video-studio/projects/${currentProject.id}/generate`, {
+      // Start generation (non-blocking)
+      fetch(`/api/video-studio/projects/${currentProject.id}/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -209,28 +209,59 @@ export default function VideoStudioPage() {
           voiceId: currentProject.voice_id,
           generateMusic: true,
         }),
+      }).catch((err) => {
+        console.error('Generation error:', err);
       });
 
-      const data = await response.json();
+      // Poll for status updates
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`/api/video-studio/projects/${currentProject.id}/generate`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
 
-      if (!response.ok) {
-        setError(data.error || 'Video generatie mislukt');
-        return;
-      }
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            const { project, progress, completedScenes, totalScenes } = statusData;
 
-      // Update project with results
-      setCurrentProject(data.project);
-      setGenerationProgress(100);
-      setGenerationStatus('Alle scenes gegenereerd!');
-      await loadCreditBalance();
-      await loadProjects();
+            // Update progress
+            setGenerationProgress(progress);
 
-      // Switch to view mode after generation
-      setViewMode('edit');
+            // Update status message
+            if (progress === 100) {
+              setGenerationStatus('✅ Alle scenes zijn gegenereerd!');
+              setCurrentProject(project);
+              clearInterval(pollInterval);
+              setIsGenerating(false);
+              await loadCreditBalance();
+              await loadProjects();
+            } else if (progress > 0) {
+              setGenerationStatus(`🎬 Bezig met genereren: ${completedScenes}/${totalScenes} scenes klaar...`);
+              // Update the current project to show real-time scene updates
+              setCurrentProject(project);
+            } else {
+              setGenerationStatus('⏳ Video generatie is gestart, even geduld...');
+            }
+          }
+        } catch (err) {
+          console.error('Poll error:', err);
+        }
+      }, 5000); // Poll every 5 seconds
+
+      // Cleanup polling after 10 minutes (safety measure)
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (isGenerating) {
+          setIsGenerating(false);
+          setError('Generatie timeout - controleer de project status');
+        }
+      }, 600000); // 10 minutes
 
     } catch (err: any) {
       setError(err.message || 'Er is een fout opgetreden');
-    } finally {
       setIsGenerating(false);
     }
   };
@@ -285,7 +316,7 @@ export default function VideoStudioPage() {
         </div>
         <button
           onClick={() => setViewMode('create')}
-          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-bold"
+          className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg font-bold"
         >
           + Nieuw Project
         </button>
@@ -300,7 +331,7 @@ export default function VideoStudioPage() {
           </p>
           <button
             onClick={() => setViewMode('create')}
-            className="px-6 py-3 bg-purple-500 hover:bg-purple-600 rounded-lg font-bold"
+            className="px-6 py-3 bg-orange-500 hover:bg-orange-600 rounded-lg font-bold"
           >
             Start je eerste video
           </button>
@@ -310,7 +341,7 @@ export default function VideoStudioPage() {
           {projects.map((project) => (
             <div
               key={project.id}
-              className="bg-gray-800/50 rounded-lg border border-gray-700 p-4 hover:border-purple-500 transition-colors cursor-pointer"
+              className="bg-gray-800/50 rounded-lg border border-gray-700 p-4 hover:border-orange-500 transition-colors cursor-pointer"
               onClick={() => openProject(project)}
             >
               <div className="flex items-start justify-between mb-3">
@@ -370,7 +401,7 @@ export default function VideoStudioPage() {
             value={newProject.title}
             onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
             placeholder="bijv. 5 Tips voor Productiviteit"
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
+            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-orange-500"
           />
         </div>
 
@@ -396,7 +427,7 @@ export default function VideoStudioPage() {
                 onClick={() => setNewProject({ ...newProject, aspectRatio: ratio.id })}
                 className={`p-4 rounded-lg text-center transition-all ${
                   newProject.aspectRatio === ratio.id
-                    ? 'bg-purple-500/20 border-2 border-purple-500'
+                    ? 'bg-orange-500/20 border-2 border-orange-500'
                     : 'bg-gray-900 border border-gray-700 hover:border-gray-600'
                 }`}
               >
@@ -418,7 +449,7 @@ export default function VideoStudioPage() {
             max="12"
             value={newProject.numberOfScenes}
             onChange={(e) => setNewProject({ ...newProject, numberOfScenes: parseInt(e.target.value) })}
-            className="w-full accent-purple-500"
+            className="w-full accent-orange-500"
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>3 scenes (kort)</span>
@@ -437,7 +468,7 @@ export default function VideoStudioPage() {
             max="10"
             value={newProject.sceneDuration}
             onChange={(e) => setNewProject({ ...newProject, sceneDuration: parseInt(e.target.value) })}
-            className="w-full accent-purple-500"
+            className="w-full accent-orange-500"
           />
         </div>
 
@@ -451,13 +482,13 @@ export default function VideoStudioPage() {
                 onClick={() => setNewProject({ ...newProject, model: model.id })}
                 className={`p-4 rounded-lg text-left transition-all ${
                   newProject.model === model.id
-                    ? 'bg-purple-500/20 border-2 border-purple-500'
+                    ? 'bg-orange-500/20 border-2 border-orange-500'
                     : 'bg-gray-900 border border-gray-700 hover:border-gray-600'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold">{model.name}</span>
-                  <span className="text-purple-400 text-sm">{model.credits} credits/scene</span>
+                  <span className="text-orange-400 text-sm">{model.credits} credits/scene</span>
                 </div>
                 <div className="text-sm text-gray-400">{model.description}</div>
               </button>
@@ -471,7 +502,7 @@ export default function VideoStudioPage() {
           <select
             value={newProject.voiceId}
             onChange={(e) => setNewProject({ ...newProject, voiceId: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
+            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-orange-500"
           >
             {availableVoices.map((voice) => (
               <option key={voice} value={voice}>{voice}</option>
@@ -487,7 +518,7 @@ export default function VideoStudioPage() {
             value={newProject.musicPrompt}
             onChange={(e) => setNewProject({ ...newProject, musicPrompt: e.target.value })}
             placeholder="bijv. Upbeat electronic music, motivational"
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
+            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-orange-500"
           />
         </div>
 
@@ -495,7 +526,7 @@ export default function VideoStudioPage() {
         <div className="bg-gray-900 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <span className="text-gray-400">Geschatte kosten:</span>
-            <span className="text-2xl font-bold text-purple-400">
+            <span className="text-2xl font-bold text-orange-400">
               {calculateEstimatedCredits()} credits
             </span>
           </div>
@@ -513,7 +544,7 @@ export default function VideoStudioPage() {
         <button
           onClick={createProject}
           disabled={isLoading || !newProject.title.trim() || !newProject.description.trim()}
-          className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-700 rounded-lg font-bold text-lg transition-all disabled:cursor-not-allowed"
+          className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 rounded-lg font-bold text-lg transition-all disabled:cursor-not-allowed"
         >
           {isLoading ? 'Project aanmaken...' : 'Maak Project & Genereer Scenes'}
         </button>
@@ -564,7 +595,7 @@ export default function VideoStudioPage() {
                   // Download all scenes as a zip or play sequentially
                   alert('Download functie komt binnenkort!');
                 }}
-                className="px-6 py-3 bg-purple-500 hover:bg-purple-600 rounded-lg font-bold"
+                className="px-6 py-3 bg-orange-500 hover:bg-orange-600 rounded-lg font-bold"
               >
                 Download Video's
               </button>
@@ -573,7 +604,7 @@ export default function VideoStudioPage() {
                   // Publish to social media via Getlate
                   alert('Social media publicatie via Later komt binnenkort!');
                 }}
-                className="px-6 py-3 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 rounded-lg font-bold"
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg font-bold"
               >
                 Publiceer naar Social Media
               </button>
@@ -586,11 +617,11 @@ export default function VideoStudioPage() {
           <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6">
             <div className="flex items-center justify-between mb-3">
               <span className="font-medium">{generationStatus}</span>
-              <span className="text-purple-400">{generationProgress}%</span>
+              <span className="text-orange-400">{generationProgress}%</span>
             </div>
             <div className="w-full bg-gray-700 rounded-full h-3">
               <div
-                className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full transition-all duration-500"
                 style={{ width: `${generationProgress}%` }}
               />
             </div>
@@ -661,7 +692,7 @@ export default function VideoStudioPage() {
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-400">Stijl: </span>
-                    <span className="text-purple-400">{getStyleName(scene.style)}</span>
+                    <span className="text-orange-400">{getStyleName(scene.style)}</span>
                   </div>
                   <div>
                     <span className="text-gray-400">Prompt: </span>
@@ -705,7 +736,7 @@ export default function VideoStudioPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
             Video Studio
           </h1>
           <p className="text-gray-400">
@@ -715,7 +746,7 @@ export default function VideoStudioPage() {
           <div className="mt-4 flex items-center gap-4">
             <div className="px-4 py-2 bg-gray-800 rounded-lg">
               <span className="text-gray-400">Credits: </span>
-              <span className="text-purple-500 font-bold">{creditBalance}</span>
+              <span className="text-orange-500 font-bold">{creditBalance}</span>
             </div>
           </div>
         </div>
