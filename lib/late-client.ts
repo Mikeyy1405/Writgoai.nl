@@ -171,23 +171,32 @@ class LateClient {
 
   // Post Management
   async createPost(options: CreatePostOptions): Promise<LatePost> {
-    // Convert mediaItems to array of media IDs for Late.dev API
-    const mediaItems = options.mediaItems?.map(item => item.mediaId);
+    // Format mediaItems for Late.dev API
+    // Late API expects: [{ url, type, thumbnail? }] - NOT just mediaIds
+    const mediaItems = options.mediaItems?.map(item => ({
+      url: item.url,
+      type: item.type,
+      ...(item.thumbnail && { thumbnail: item.thumbnail }),
+    }));
+
+    const body = {
+      content: options.content,
+      platforms: options.platforms,
+      timezone: options.timezone || 'Europe/Amsterdam',
+      publishNow: options.publishNow,
+      isDraft: options.isDraft,
+      ...(options.title && { title: options.title }),
+      ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
+      ...(options.hashtags && options.hashtags.length > 0 && { hashtags: options.hashtags }),
+      ...(options.scheduledFor && { scheduledFor: options.scheduledFor }),
+      ...(mediaItems && mediaItems.length > 0 && { mediaItems }),
+    };
+
+    console.log('📤 Creating Late post with body:', JSON.stringify(body, null, 2));
 
     return this.request<LatePost>('/posts', {
       method: 'POST',
-      body: JSON.stringify({
-        content: options.content,
-        mediaItems: mediaItems && mediaItems.length > 0 ? mediaItems : undefined,
-        platforms: options.platforms,
-        scheduledFor: options.scheduledFor,
-        timezone: options.timezone || 'Europe/Amsterdam',
-        publishNow: options.publishNow,
-        isDraft: options.isDraft,
-        title: options.title,
-        tags: options.tags,
-        hashtags: options.hashtags,
-      }),
+      body: JSON.stringify(body),
     });
   }
 
