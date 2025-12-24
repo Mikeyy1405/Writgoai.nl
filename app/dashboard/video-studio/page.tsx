@@ -49,9 +49,10 @@ interface VideoStyle {
 
 // Default models and voices (will be overwritten by API)
 const DEFAULT_MODELS: VideoModel[] = [
-  { id: 'luma/ray-2', name: 'Luma Ray 2', description: 'High-quality cinematic video', credits: 15, maxDuration: 10 },
-  { id: 'luma/ray-flash-2', name: 'Luma Ray Flash 2', description: 'Fast video generation', credits: 8, maxDuration: 10 },
-  { id: 'kling-video/v1.6/standard/text-to-video', name: 'Kling 1.6', description: 'Excellent quality', credits: 12, maxDuration: 10 },
+  { id: 'minimax/hailuo-2.3', name: 'MiniMax Hailuo 2.3', description: 'Latest MiniMax with improved quality', credits: 12, maxDuration: 10 },
+  { id: 'video-01', name: 'Video 01', description: 'Fast and reliable video generation', credits: 8, maxDuration: 10 },
+  { id: 'kling-video/v1.6/standard/text-to-video', name: 'Kling 1.6 Standard', description: 'Excellent quality with smooth motion', credits: 12, maxDuration: 10 },
+  { id: 'runway/gen4_turbo', name: 'Runway Gen-4 Turbo', description: 'State-of-the-art video generation', credits: 20, maxDuration: 10 },
 ];
 
 const DEFAULT_VOICES = ['Rachel', 'Drew', 'Clyde', 'Paul', 'Sarah', 'Emily'];
@@ -83,7 +84,7 @@ export default function VideoStudioPage() {
     aspectRatio: '9:16',
     numberOfScenes: 6,
     sceneDuration: 5,
-    model: 'luma/ray-2',
+    model: 'minimax/hailuo-2.3',
     voiceId: 'Rachel',
     musicPrompt: '',
   });
