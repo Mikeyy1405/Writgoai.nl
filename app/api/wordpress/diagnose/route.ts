@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
-import { fetchWithDnsFallback, testDnsResolution } from '@/lib/fetch-with-dns-fallback';
 import {
   createDiagnosticReport,
   formatDiagnosticReport,
@@ -26,12 +25,6 @@ interface DiagnoseResult {
     hostname: string;
     tld: string;
     isDutchDomain: boolean;
-  };
-  dnsTest: {
-    success: boolean;
-    addresses?: string[];
-    error?: string;
-    resolvedIn?: number;
   };
   connectivityTests: {
     headRequest: TestResult;
@@ -132,9 +125,6 @@ export async function POST(request: NextRequest) {
         tld,
         isDutchDomain,
       },
-      dnsTest: {
-        success: false,
-      },
       connectivityTests: {
         headRequest: { success: false },
         restApiRequest: { success: false },
@@ -159,42 +149,14 @@ export async function POST(request: NextRequest) {
       console.log(`[WP-DIAGNOSE-${requestId}] ⚠️ Could not get server IP: ${e.message}`);
     }
 
-    // Step 2: DNS Resolution Test
-    console.log(`[WP-DIAGNOSE-${requestId}] 🔍 Testing DNS resolution for ${hostname}...`);
-    const dnsStart = Date.now();
-    const dnsResult = await testDnsResolution(hostname);
-    const dnsTime = Date.now() - dnsStart;
-
-    result.dnsTest = {
-      success: dnsResult.success,
-      addresses: dnsResult.addresses?.map(a => a.address),
-      error: dnsResult.error,
-      resolvedIn: dnsTime,
-    };
-
-    if (!dnsResult.success) {
-      console.log(`[WP-DIAGNOSE-${requestId}] ❌ DNS resolution failed: ${dnsResult.error}`);
-      result.recommendations.push(
-        'DNS resolution failed - the domain cannot be resolved from Render servers',
-        'This could indicate:',
-        '  1. Domain does not exist or is misconfigured',
-        '  2. DNS propagation is in progress',
-        '  3. Geographic DNS restrictions',
-      );
-      return NextResponse.json(result);
-    }
-
-    console.log(`[WP-DIAGNOSE-${requestId}] ✓ DNS resolved in ${dnsTime}ms: ${dnsResult.addresses?.map(a => a.address).join(', ')}`);
-
-    // Step 3: HEAD request test (basic connectivity)
+    // Step 2: HEAD request test (basic connectivity)
     console.log(`[WP-DIAGNOSE-${requestId}] 🔍 Testing HEAD request to ${sanitizeUrl(wpUrl)}...`);
     const headStart = Date.now();
     try {
-      const headResponse = await fetchWithDnsFallback(wpUrl, {
+      const headResponse = await fetch(wpUrl, {
         method: 'HEAD',
         headers: getAdvancedBrowserHeaders(wpUrl),
-        timeout: 30000,
-        maxRetries: 1,
+        signal: AbortSignal.timeout(30000),
       });
 
       const headTime = Date.now() - headStart;
@@ -232,19 +194,18 @@ export async function POST(request: NextRequest) {
       console.log(`[WP-DIAGNOSE-${requestId}] ❌ HEAD request failed: ${e.message}`);
     }
 
-    // Step 4: REST API test (without auth)
+    // Step 3: REST API test (without auth)
     const restApiUrl = `${wpUrl}/wp-json`;
     console.log(`[WP-DIAGNOSE-${requestId}] 🔍 Testing REST API at ${sanitizeUrl(restApiUrl)}...`);
     const restStart = Date.now();
     try {
-      const restResponse = await fetchWithDnsFallback(restApiUrl, {
+      const restResponse = await fetch(restApiUrl, {
         method: 'GET',
         headers: {
           ...getAdvancedBrowserHeaders(wpUrl),
           'Accept': 'application/json',
         },
-        timeout: 30000,
-        maxRetries: 1,
+        signal: AbortSignal.timeout(30000),
       });
 
       const restTime = Date.now() - restStart;
@@ -314,17 +275,16 @@ export async function POST(request: NextRequest) {
       console.log(formatDiagnosticReport(result.diagnosticReport));
     }
 
-    // Step 5: Authenticated posts endpoint test
+    // Step 4: Authenticated posts endpoint test
     if (authHeader) {
       const postsUrl = `${wpUrl}/wp-json/wp/v2/posts?per_page=1`;
       console.log(`[WP-DIAGNOSE-${requestId}] 🔍 Testing posts endpoint with auth...`);
       const postsStart = Date.now();
       try {
-        const postsResponse = await fetchWithDnsFallback(postsUrl, {
+        const postsResponse = await fetch(postsUrl, {
           method: 'GET',
           headers: getWordPressApiHeaders(authHeader, wpUrl),
-          timeout: 30000,
-          maxRetries: 1,
+          signal: AbortSignal.timeout(30000),
         });
 
         const postsTime = Date.now() - postsStart;

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader, getWordPressEndpoint, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
-import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 import { getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
 
 // Force dynamic rendering since we use cookies for authentication
@@ -132,11 +131,10 @@ export async function GET(request: NextRequest) {
     console.log(`[WP-FETCH-${requestId}] 🔌 Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
     try {
       // Use advanced browser-like headers to avoid WAF/firewall blocking
-      const apiTestResponse = await fetchWithDnsFallback(restApiTestUrl, {
+      const apiTestResponse = await fetch(restApiTestUrl, {
         method: 'GET',
         headers: getWordPressApiHeaders(authHeader, wpUrl),
-        timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
-        enableDiagnostics: true, // Enable detailed logging for blocked requests
+        signal: AbortSignal.timeout(120000),
       });
 
       if (!apiTestResponse.ok) {
@@ -209,11 +207,10 @@ export async function GET(request: NextRequest) {
         console.log(`[WP-FETCH-${requestId}] 🔄 Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
 
         // Use advanced browser-like headers to avoid WAF/firewall blocking
-        wpResponse = await fetchWithDnsFallback(wpApiUrl, {
+        wpResponse = await fetch(wpApiUrl, {
           method: 'GET',
           headers: getWordPressApiHeaders(authHeader, wpUrl),
-          timeout: timeoutMs,
-          enableDiagnostics: true, // Enable detailed logging for blocked requests
+          signal: AbortSignal.timeout(timeoutMs),
         });
 
         // If request succeeded, break out of retry loop

@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
-import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -83,13 +82,13 @@ export async function PATCH(request: Request) {
       if (!shouldSkipTest) {
         try {
           const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
-          const testResponse = await fetchWithDnsFallback(testUrl, {
+          const testResponse = await fetch(testUrl, {
             headers: {
               'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
               'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
               'Accept': 'application/json',
             },
-            timeout: 120000, // Increased to 120s for slow .nl/.be domains with poor routing from Render.com
+            signal: AbortSignal.timeout(120000),
           });
 
           if (testResponse.ok) {
