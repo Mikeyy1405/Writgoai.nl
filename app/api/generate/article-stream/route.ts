@@ -162,6 +162,7 @@ Schrijf het artikel in HTML formaat:`;
 
             // Object chunks - try all possible formats
             const content =
+              (chunk as any).event?.choices?.[0]?.delta?.content || // AIML API event wrapper format
               chunk.choices?.[0]?.delta?.content || // OpenAI standard
               (chunk as any).delta?.content || // Alternative format
               (chunk as any).content || // Direct content
