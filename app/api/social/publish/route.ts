@@ -75,12 +75,17 @@ export async function POST(request: Request) {
         console.log('✅ Media uploaded successfully:', media.mediaId);
       } catch (e: any) {
         console.error('❌ Media upload failed:', e.message);
-        
+
+        // Provide helpful error message
+        const errorDetails = e.message.includes('403') || e.message.includes('404')
+          ? '\n\nDe afbeelding URL is mogelijk verlopen of niet toegankelijk. Probeer de post opnieuw te genereren met een nieuwe afbeelding.'
+          : '\n\nControleer of de afbeelding URL correct en toegankelijk is.';
+
         // Check if Instagram is in the platforms
         const hasInstagram = accounts.some(acc => acc.platform === 'instagram');
         if (hasInstagram) {
-          return NextResponse.json({ 
-            error: 'Instagram posts vereisen altijd een afbeelding of video. Media upload is mislukt: ' + e.message 
+          return NextResponse.json({
+            error: 'Instagram posts vereisen altijd een afbeelding of video. Media upload is mislukt: ' + e.message + errorDetails
           }, { status: 400 });
         }
         // For other platforms, continue without media but log warning
