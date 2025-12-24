@@ -126,10 +126,10 @@ export async function POST(req: NextRequest) {
     const {
       title,
       description,
-      aspectRatio = '9:16', // Default to TikTok/Shorts format
+      aspectRatio = '16:9', // Default to landscape format (most compatible)
       numberOfScenes = 6,
-      sceneDuration = 5,
-      model = 'luma/ray-2',
+      sceneDuration = 5, // 5 or 10 seconds for AIML API compatibility
+      model = 'minimax/hailuo-02', // Valid AIML API model
       voiceId = 'Rachel',
       musicPrompt,
     } = body;
