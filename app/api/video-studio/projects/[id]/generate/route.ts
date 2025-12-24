@@ -116,8 +116,8 @@ export async function POST(
     }
 
     // Update project status to processing
-    await (supabase
-      .from('video_projects') as any)
+    await supabase
+      .from('video_projects')
       .update({ status: 'processing' })
       .eq('id', projectId);
 
@@ -145,8 +145,8 @@ export async function POST(
       }
 
       // Update scene status to generating
-      await (supabase
-        .from('video_scenes') as any)
+      await supabase
+        .from('video_scenes')
         .update({ status: 'generating' })
         .eq('id', scene.id);
 
@@ -190,8 +190,8 @@ export async function POST(
         }
 
         // Update scene with video and voice URLs
-        await (supabase
-          .from('video_scenes') as any)
+        await supabase
+          .from('video_scenes')
           .update({
             video_url: videoUrl,
             voice_url: voiceUrl || null,
@@ -214,8 +214,8 @@ export async function POST(
       } catch (error: any) {
         console.error(`Error generating scene ${scene.scene_number}:`, error);
 
-        await (supabase
-          .from('video_scenes') as any)
+        await supabase
+          .from('video_scenes')
           .update({
             status: 'failed',
             error_message: error.message,
@@ -269,8 +269,8 @@ export async function POST(
     // In a production environment, you'd use a service like Shotstack or Creatomate
     // to stitch the videos together server-side
 
-    await (supabase
-      .from('video_projects') as any)
+    await supabase
+      .from('video_projects')
       .update(projectUpdate)
       .eq('id', projectId);
 
