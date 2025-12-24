@@ -1,54 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function ResetPasswordPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    // Check if we have the required token in the URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-
-    if (!accessToken) {
-      setError('Ongeldige of verlopen reset link. Vraag een nieuwe aan.');
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
-
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError('Wachtwoorden komen niet overeen');
-      return;
-    }
-
-    // Validate password length
-    if (password.length < 6) {
-      setError('Wachtwoord moet minimaal 6 karakters zijn');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
+      const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
@@ -62,13 +35,8 @@ export default function ResetPasswordPage() {
       // Success
       setSuccess(true);
       setLoading(false);
-
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
     } catch (err) {
-      console.error('Reset password error:', err);
+      console.error('Forgot password error:', err);
       setError('Er ging iets mis. Probeer het opnieuw.');
       setLoading(false);
     }
@@ -77,9 +45,9 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl p-8">
-        <h1 className="text-3xl font-bold text-white mb-2 text-center">Nieuw Wachtwoord Instellen</h1>
+        <h1 className="text-3xl font-bold text-white mb-2 text-center">Wachtwoord Vergeten</h1>
         <p className="text-gray-400 text-sm text-center mb-6">
-          Kies een nieuw wachtwoord voor je account.
+          Voer je email adres in en we sturen je een link om je wachtwoord te resetten.
         </p>
 
         {error && (
@@ -94,42 +62,36 @@ export default function ResetPasswordPage() {
               <div className="flex items-start">
                 <span className="text-2xl mr-3">✅</span>
                 <div>
-                  <p className="font-semibold mb-1">Wachtwoord Gereset!</p>
+                  <p className="font-semibold mb-1">Email Verzonden!</p>
                   <p className="text-sm text-gray-300">
-                    Je wachtwoord is succesvol gewijzigd. Je wordt doorgestuurd naar de login pagina...
+                    We hebben een wachtwoord reset link gestuurd naar <strong>{email}</strong>.
+                    Check je inbox (en spam folder) en klik op de link om je wachtwoord te resetten.
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="text-center space-y-3 pt-4">
+              <Link
+                href="/login"
+                className="block text-orange-500 hover:text-orange-400 text-sm"
+              >
+                ← Terug naar login
+              </Link>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-gray-300 mb-2">Nieuw Wachtwoord</label>
+              <label className="block text-gray-300 mb-2">Email</label>
               <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                minLength={6}
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50"
-                placeholder="••••••••"
-              />
-              <p className="text-xs text-gray-500 mt-1">Minimaal 6 karakters</p>
-            </div>
-
-            <div>
-              <label className="block text-gray-300 mb-2">Bevestig Wachtwoord</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50"
-                placeholder="••••••••"
+                placeholder="jouw@email.nl"
               />
             </div>
 
@@ -138,7 +100,7 @@ export default function ResetPasswordPage() {
               disabled={loading}
               className="w-full bg-orange-500 text-white py-3 rounded font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Bezig met opslaan...' : 'Wachtwoord Opslaan'}
+              {loading ? 'Bezig met verzenden...' : 'Verstuur Reset Link'}
             </button>
           </form>
         )}
