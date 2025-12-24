@@ -128,7 +128,7 @@ export default function SocialMediaPage() {
   const [activating, setActivating] = useState(false);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'posts' | 'strategy'>('strategy');
+  const [activeTab, setActiveTab] = useState<'posts' | 'strategy' | 'automation'>('strategy');
 
   // Strategy state
   const [strategy, setStrategy] = useState<Strategy | null>(null);
@@ -137,6 +137,15 @@ export default function SocialMediaPage() {
   const [generatingStrategy, setGeneratingStrategy] = useState(false);
   const [strategyProgress, setStrategyProgress] = useState(0);
   const [strategyStatus, setStrategyStatus] = useState('');
+
+  // Automation state
+  const [schedule, setSchedule] = useState<any>(null);
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState(true);
+  const [scheduleFrequency, setScheduleFrequency] = useState<'daily' | 'twice_daily' | 'three_times_daily' | 'weekdays' | 'weekly' | 'custom'>('daily');
+  const [schedulePostTimes, setSchedulePostTimes] = useState<string[]>(['09:00']);
+  const [schedulePostTypes, setSchedulePostTypes] = useState<string[]>(['educational', 'storytelling', 'engagement']);
+  const [scheduleAutoPublish, setScheduleAutoPublish] = useState(false);
 
   // Post generation form
   const [topic, setTopic] = useState('');
@@ -174,6 +183,7 @@ export default function SocialMediaPage() {
     if (selectedProject) {
       loadPosts(selectedProject.id);
       loadStrategy(selectedProject.id);
+      loadSchedule(selectedProject.id);
       syncAccounts(selectedProject.id);
       checkActivation(selectedProject.id);
     }
@@ -264,6 +274,62 @@ export default function SocialMediaPage() {
       }
     } catch (error) {
       console.error('Failed to load strategy:', error);
+    }
+  }
+
+  async function loadSchedule(projectId: string) {
+    try {
+      const response = await fetch(`/api/social/schedule?project_id=${projectId}`);
+      const data = await response.json();
+      if (data.schedule) {
+        setSchedule(data.schedule);
+        setScheduleEnabled(data.schedule.enabled);
+        setScheduleFrequency(data.schedule.frequency);
+        setSchedulePostTimes(data.schedule.post_times || ['09:00']);
+        setSchedulePostTypes(data.schedule.post_types || ['educational', 'storytelling', 'engagement']);
+        setScheduleAutoPublish(data.schedule.auto_publish || false);
+      } else {
+        setSchedule(null);
+      }
+    } catch (error) {
+      console.error('Failed to load schedule:', error);
+    }
+  }
+
+  async function saveSchedule() {
+    if (!selectedProject) return;
+
+    setSavingSchedule(true);
+    try {
+      const response = await fetch('/api/social/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: selectedProject.id,
+          enabled: scheduleEnabled,
+          frequency: scheduleFrequency,
+          post_times: schedulePostTimes,
+          post_types: schedulePostTypes,
+          auto_publish: scheduleAutoPublish,
+          auto_generate_content: true,
+          use_content_ideas: true,
+          target_platforms: selectedPlatforms,
+          schedule_posts: !scheduleAutoPublish,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSchedule(data.schedule);
+        alert('✅ Automatisering opgeslagen!');
+      } else {
+        alert('❌ ' + (data.error || 'Er ging iets mis'));
+      }
+    } catch (error) {
+      console.error('Failed to save schedule:', error);
+      alert('❌ Er ging iets mis bij het opslaan');
+    } finally {
+      setSavingSchedule(false);
     }
   }
 
@@ -635,6 +701,21 @@ export default function SocialMediaPage() {
             📊 Strategie
           </button>
           <button
+            onClick={() => setActiveTab('automation')}
+            className={`px-6 py-3 rounded-lg font-medium transition ${
+              activeTab === 'automation'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            🤖 Automatisering
+            {schedule?.enabled && (
+              <span className="ml-2 text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
+                Actief
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setActiveTab('posts')}
             className={`px-6 py-3 rounded-lg font-medium transition ${
               activeTab === 'posts'
@@ -913,6 +994,271 @@ export default function SocialMediaPage() {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {/* Automation Tab */}
+        {activeTab === 'automation' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    🤖 Automatische Post Scheduling
+                  </h2>
+                  <p className="text-gray-400 mt-1">
+                    Laat het systeem automatisch posts genereren en plannen
+                  </p>
+                </div>
+                {schedule && (
+                  <div className={`px-4 py-2 rounded-lg font-medium ${
+                    schedule.enabled
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-gray-700 text-gray-400'
+                  }`}>
+                    {schedule.enabled ? '✅ Actief' : '⏸️ Gepauzeerd'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Enable/Disable */}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Automatisering aan/uit</h3>
+                  <p className="text-sm text-gray-400">
+                    Schakel automatische post generatie in of uit
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={scheduleEnabled}
+                    onChange={(e) => setScheduleEnabled(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-14 h-8 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+              </div>
+
+              {scheduleEnabled && (
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <p className="text-sm text-green-400">
+                    ✅ Automatisering is ingeschakeld. Het systeem zal posts genereren volgens onderstaande schema.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Frequency Selection */}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4">📅 Post Frequentie</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { id: 'daily', name: 'Dagelijks', description: '1x per dag', icon: '📆' },
+                  { id: 'twice_daily', name: '2x per dag', description: 'Ochtend & middag', icon: '📅📅' },
+                  { id: 'three_times_daily', name: '3x per dag', description: 'Ochtend, middag & avond', icon: '📅📅📅' },
+                  { id: 'weekdays', name: 'Werkdagen', description: 'Ma-Vr', icon: '💼' },
+                  { id: 'weekly', name: 'Wekelijks', description: '1x per week', icon: '📖' },
+                ].map(freq => (
+                  <button
+                    key={freq.id}
+                    onClick={() => setScheduleFrequency(freq.id as any)}
+                    className={`p-4 rounded-lg text-left transition ${
+                      scheduleFrequency === freq.id
+                        ? 'bg-orange-500/20 border-2 border-orange-500'
+                        : 'bg-gray-700 border-2 border-transparent hover:bg-gray-600'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{freq.icon}</div>
+                    <div className="font-medium">{freq.name}</div>
+                    <div className="text-sm text-gray-400">{freq.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Post Times */}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4">🕐 Post Tijden</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Kies op welke tijdstippen posts automatisch moeten worden gegenereerd/gepland
+              </p>
+              <div className="space-y-3">
+                {schedulePostTimes.map((time, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={(e) => {
+                        const newTimes = [...schedulePostTimes];
+                        newTimes[index] = e.target.value;
+                        setSchedulePostTimes(newTimes);
+                      }}
+                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white"
+                    />
+                    {schedulePostTimes.length > 1 && (
+                      <button
+                        onClick={() => {
+                          const newTimes = schedulePostTimes.filter((_, i) => i !== index);
+                          setSchedulePostTimes(newTimes);
+                        }}
+                        className="text-red-400 hover:text-red-300 px-3 py-2"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {scheduleFrequency !== 'daily' && scheduleFrequency !== 'weekdays' && scheduleFrequency !== 'weekly' && schedulePostTimes.length < 3 && (
+                  <button
+                    onClick={() => setSchedulePostTimes([...schedulePostTimes, '12:00'])}
+                    className="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition"
+                  >
+                    + Tijd toevoegen
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Post Types */}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4">📝 Post Types</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Selecteer welke type posts automatisch moeten worden gegenereerd (rotatie)
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {POST_TYPES.map(type => (
+                  <label
+                    key={type.id}
+                    className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition ${
+                      schedulePostTypes.includes(type.id)
+                        ? 'bg-orange-500/20 border-2 border-orange-500'
+                        : 'bg-gray-700 border-2 border-transparent hover:bg-gray-600'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={schedulePostTypes.includes(type.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSchedulePostTypes([...schedulePostTypes, type.id]);
+                        } else {
+                          setSchedulePostTypes(schedulePostTypes.filter(t => t !== type.id));
+                        }
+                      }}
+                      className="w-4 h-4"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{type.icon}</span>
+                        <span className="font-medium">{type.name}</span>
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">{type.description}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Publishing Settings */}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4">📤 Publishing Instellingen</h3>
+              <div className="space-y-4">
+                <label className="flex items-center gap-3 p-4 bg-gray-700 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={scheduleAutoPublish}
+                    onChange={(e) => setScheduleAutoPublish(e.target.checked)}
+                    className="w-5 h-5"
+                  />
+                  <div>
+                    <div className="font-medium">Direct publiceren</div>
+                    <div className="text-sm text-gray-400">
+                      Posts worden automatisch gepubliceerd naar verbonden accounts (anders als concept opgeslagen)
+                    </div>
+                  </div>
+                </label>
+
+                {scheduleAutoPublish && (
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-sm text-yellow-400 flex items-center gap-2">
+                      ⚠️ Let op: Posts worden automatisch gepubliceerd zonder handmatige review!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Next Run Info */}
+            {schedule?.next_run_at && (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-2">⏰ Volgende Run</h3>
+                <p className="text-gray-300">
+                  Volgende post wordt gegenereerd op:{' '}
+                  <span className="font-mono text-blue-400">
+                    {new Date(schedule.next_run_at).toLocaleString('nl-NL')}
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {/* Save Button */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={saveSchedule}
+                disabled={savingSchedule || schedulePostTypes.length === 0}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-xl transition flex items-center gap-2"
+              >
+                {savingSchedule ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                    Opslaan...
+                  </>
+                ) : (
+                  <>💾 Automatisering Opslaan</>
+                )}
+              </button>
+            </div>
+
+            {/* Info Box */}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-3">ℹ️ Hoe werkt het?</h3>
+              <div className="space-y-3 text-sm text-gray-300">
+                <div className="flex gap-3">
+                  <span className="text-orange-400">1.</span>
+                  <p>
+                    Stel je gewenste frequentie en tijden in (bijv. 2x per dag om 09:00 en 15:00)
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-400">2.</span>
+                  <p>
+                    Kies welke post types moeten worden gegenereerd (rotatie tussen types)
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-400">3.</span>
+                  <p>
+                    Het systeem gebruikt je strategie en content ideeën voor unieke posts
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-400">4.</span>
+                  <p>
+                    Posts worden automatisch gegenereerd en kunnen direct gepubliceerd of als concept opgeslagen worden
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-400">5.</span>
+                  <p>
+                    Elke post is uniek door geavanceerde AI variatie - geen duplicaten!
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
