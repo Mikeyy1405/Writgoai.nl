@@ -154,8 +154,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Enhance content with images and YouTube video
-    console.log('Enhancing content with images and video...');
+    // Get bol.com affiliate config for product CTAs
+    const { data: bolAffiliate } = await supabase
+      .from('project_affiliates')
+      .select('client_id, client_secret, site_code')
+      .eq('project_id', project_id)
+      .eq('platform', 'bol.com')
+      .single();
+
+    const bolConfig = bolAffiliate ? {
+      clientId: bolAffiliate.client_id,
+      clientSecret: bolAffiliate.client_secret,
+      siteCode: bolAffiliate.site_code,
+    } : undefined;
+
+    // Enhance content with images, video, and product CTAs
+    console.log('Enhancing content with images, video, and product CTAs...');
     try {
       const enhancementResult = await enhanceArticleContent({
         content: articleContent,
@@ -163,11 +177,13 @@ export async function POST(request: Request) {
         focusKeyword: articleTitle.split(' ').slice(0, 3).join(' '),
         addImages: true,
         addYouTubeVideo: true,
-        imageInterval: 500
+        addProductCTAs: !!bolConfig,
+        imageInterval: 500,
+        bolConfig,
       });
 
       articleContent = enhancementResult.content;
-      console.log(`✓ Content enhanced: ${enhancementResult.imagesAdded} images, video: ${enhancementResult.videoAdded}`);
+      console.log(`✓ Content enhanced: ${enhancementResult.imagesAdded} images, video: ${enhancementResult.videoAdded}, product CTAs: ${enhancementResult.productCTAsAdded}`);
     } catch (enhanceError) {
       console.warn('Content enhancement failed (non-blocking):', enhanceError);
       // Continue with original content if enhancement fails
