@@ -620,7 +620,7 @@ export default function ContentPlanPage() {
   const getStatusBadgeClass = (status: ContentIdea['status']) => {
     switch (status) {
       case 'in_progress':
-        return 'bg-blue-900/50 text-blue-300';
+        return 'bg-blue-900/50 text-blue-300 animate-pulse ring-1 ring-blue-400/30';
       case 'review':
         return 'bg-yellow-900/50 text-yellow-300';
       case 'published':
@@ -1049,7 +1049,7 @@ export default function ContentPlanPage() {
                         onClick={() => handleWriteArticle(idea, safeIndex)}
                         className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all whitespace-nowrap"
                       >
-                        Schrijven
+                        {idea.status === 'in_progress' ? '↗️ Verder schrijven' : 'Schrijven'}
                       </button>
                       <button
                         onClick={() => deleteContentPlanItem(safeIndex)}
