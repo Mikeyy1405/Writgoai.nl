@@ -300,11 +300,11 @@ def request_audio(
     print(f"  🎤 Voice-over generatie gestart...")
     print(f"     Tekst: {text[:50]}..." if len(text) > 50 else f"     Tekst: {text}")
 
-    endpoint = "v1/audio/speech"
+    endpoint = "v1/tts"
     request_data = {
         "model": voice_model,
         "voice": voice_id,
-        "input": text,
+        "text": text,
         "response_format": "mp3"
     }
 

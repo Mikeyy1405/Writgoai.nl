@@ -484,76 +484,114 @@ export async function generateVideoWithPolling(
 }
 
 /**
- * Generate voice-over using ElevenLabs via AIML API
+ * Generate voice-over using ElevenLabs via AIML API with retry logic
  */
 export async function generateVoiceOver(
   text: string,
   voice: string = 'Rachel',
   model: string = 'elevenlabs/eleven_multilingual_v2'
 ): Promise<{ generationId: string }> {
-  const response = await fetch(`${AIML_API_URL}/v1/audio/speech`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${AIML_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: model,
-      input: text,
-      voice: voice,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('AIML API voice generation error:', errorText);
-    throw new Error(`Voice generation failed: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return { generationId: data.generation_id || data.id };
-}
-
-/**
- * Get voice-over status
- */
-export async function getVoiceOverStatus(
-  generationId: string
-): Promise<{ status: 'queued' | 'processing' | 'completed' | 'failed'; url?: string; error?: string }> {
-  const response = await fetch(
-    `${AIML_API_URL}/v1/audio/speech?generation_id=${generationId}`,
-    {
-      method: 'GET',
+  return retryWithBackoff(async () => {
+    const response = await fetch(`${AIML_API_URL}/v1/tts`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${AIML_API_KEY}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        model: model,
+        text: text,
+        voice: voice,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        errorDetails = { message: errorText };
+      }
+
+      console.error('AIML API voice generation error:', errorDetails);
+
+      // Check for backend connectivity issues
+      if (errorDetails.meta?.errno || errorDetails.meta?.syscall) {
+        const backendError = errorDetails.meta;
+        throw new Error(
+          `AIML API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
+        );
+      }
+
+      throw new Error(
+        `Voice generation failed (${response.status}): ${errorDetails.message || errorDetails || 'Unknown error'}`
+      );
     }
-  );
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('AIML API voice status error:', errorText);
-    throw new Error(`Voice status check failed: ${response.status}`);
-  }
+    const data = await response.json();
+    return { generationId: data.generation_id || data.id };
+  });
+}
 
-  const data = await response.json();
+/**
+ * Get voice-over status with retry logic
+ */
+export async function getVoiceOverStatus(
+  generationId: string
+): Promise<{ status: 'queued' | 'processing' | 'completed' | 'failed'; url?: string; error?: string }> {
+  return retryWithBackoff(async () => {
+    const response = await fetch(
+      `${AIML_API_URL}/v1/tts?generation_id=${generationId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${AIML_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-  if (data.status === 'completed' || data.status === 'done') {
-    return {
-      status: 'completed',
-      url: data.audio_file?.url || data.audio?.url || data.url,
-    };
-  } else if (data.status === 'failed' || data.status === 'error') {
-    return {
-      status: 'failed',
-      error: data.error || 'Voice generation failed',
-    };
-  } else {
-    return {
-      status: data.status === 'queued' ? 'queued' : 'processing',
-    };
-  }
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        errorDetails = { message: errorText };
+      }
+
+      console.error('AIML API voice status error:', errorDetails);
+
+      // Check for backend connectivity issues
+      if (errorDetails.meta?.errno || errorDetails.meta?.syscall) {
+        const backendError = errorDetails.meta;
+        throw new Error(
+          `AIML API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
+        );
+      }
+
+      throw new Error(`Voice status check failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.status === 'completed' || data.status === 'done') {
+      return {
+        status: 'completed',
+        url: data.audio_file?.url || data.audio?.url || data.url,
+      };
+    } else if (data.status === 'failed' || data.status === 'error') {
+      return {
+        status: 'failed',
+        error: data.error || 'Voice generation failed',
+      };
+    } else {
+      return {
+        status: data.status === 'queued' ? 'queued' : 'processing',
+      };
+    }
+  });
 }
 
 /**
