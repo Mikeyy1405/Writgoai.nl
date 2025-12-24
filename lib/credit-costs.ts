@@ -92,6 +92,7 @@ export const CREDIT_COSTS = {
   keyword_research: 1,     // Single query (~€0.029 API cost)
   competitor_analysis: 2,  // Deep dive research (~€0.058 API cost)
   content_plan: 5,         // Full content plan with research (~€0.145 API cost)
+  news_research: 2,        // News research with Perplexity (~€0.058 API cost)
   
   // SEO Tools (lightweight, minimal API cost)
   seo_analysis: 1,         // SEO analysis (~€0.005 API cost)
@@ -197,6 +198,7 @@ export const API_COSTS_EUR: Record<CreditAction, number> = {
   keyword_research: 0.029,
   competitor_analysis: 0.058,
   content_plan: 0.145,
+  news_research: 0.058,
   seo_analysis: 0.005,
   internal_linking: 0.0,
   wp_publish: 0.0,
