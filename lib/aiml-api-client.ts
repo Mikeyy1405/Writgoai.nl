@@ -8,15 +8,7 @@ const AIML_API_KEY = process.env.AIML_API_KEY!;
 
 // Video model configurations
 export const VIDEO_MODELS = {
-  'runway/gen4_turbo': {
-    id: 'runway/gen4_turbo',
-    name: 'Runway Gen-4 Turbo',
-    description: 'State-of-the-art video generation',
-    credits: 20,
-    maxDuration: 10,
-    defaultDuration: 5,
-    endpoint: '/v2/video/generations',
-  },
+  // MiniMax Models
   'minimax/hailuo-02': {
     id: 'minimax/hailuo-02',
     name: 'MiniMax Hailuo 02',
@@ -35,6 +27,149 @@ export const VIDEO_MODELS = {
     defaultDuration: 5,
     endpoint: '/v2/video/generations',
   },
+  'video-01': {
+    id: 'video-01',
+    name: 'Video 01',
+    description: 'Fast and reliable video generation',
+    credits: 8,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'video-01-live2d': {
+    id: 'video-01-live2d',
+    name: 'Video 01 Live2D',
+    description: 'Animated character generation',
+    credits: 10,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+
+  // OpenAI Sora Models
+  'openai/sora-2-t2v': {
+    id: 'openai/sora-2-t2v',
+    name: 'Sora 2 Text-to-Video',
+    description: 'OpenAI Sora text-to-video generation',
+    credits: 25,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'openai/sora-2-i2v': {
+    id: 'openai/sora-2-i2v',
+    name: 'Sora 2 Image-to-Video',
+    description: 'OpenAI Sora image-to-video generation',
+    credits: 25,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'openai/sora-2-pro-t2v': {
+    id: 'openai/sora-2-pro-t2v',
+    name: 'Sora 2 Pro Text-to-Video',
+    description: 'OpenAI Sora Pro text-to-video generation',
+    credits: 35,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'openai/sora-2-pro-i2v': {
+    id: 'openai/sora-2-pro-i2v',
+    name: 'Sora 2 Pro Image-to-Video',
+    description: 'OpenAI Sora Pro image-to-video generation',
+    credits: 35,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+
+  // PixVerse Models
+  'pixverse/v5/text-to-video': {
+    id: 'pixverse/v5/text-to-video',
+    name: 'PixVerse v5 Text-to-Video',
+    description: 'PixVerse v5 text-to-video generation',
+    credits: 12,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'pixverse/v5/image-to-video': {
+    id: 'pixverse/v5/image-to-video',
+    name: 'PixVerse v5 Image-to-Video',
+    description: 'PixVerse v5 image-to-video generation',
+    credits: 12,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'pixverse/v5/transition': {
+    id: 'pixverse/v5/transition',
+    name: 'PixVerse v5 Transition',
+    description: 'PixVerse v5 transition effects',
+    credits: 12,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'pixverse/v5-5-text-to-video': {
+    id: 'pixverse/v5-5-text-to-video',
+    name: 'PixVerse v5.5 Text-to-Video',
+    description: 'PixVerse v5.5 text-to-video (coming soon)',
+    credits: 14,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'pixverse/v5-5-image-to-video': {
+    id: 'pixverse/v5-5-image-to-video',
+    name: 'PixVerse v5.5 Image-to-Video',
+    description: 'PixVerse v5.5 image-to-video (coming soon)',
+    credits: 14,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+
+  // Runway Models
+  'gen3a_turbo': {
+    id: 'gen3a_turbo',
+    name: 'Runway Gen-3 Turbo',
+    description: 'Runway Gen-3 turbo video generation',
+    credits: 15,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'runway/gen4_turbo': {
+    id: 'runway/gen4_turbo',
+    name: 'Runway Gen-4 Turbo',
+    description: 'State-of-the-art video generation',
+    credits: 20,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'runway/gen4_aleph': {
+    id: 'runway/gen4_aleph',
+    name: 'Runway Gen-4 Aleph',
+    description: 'Runway Gen-4 Aleph high quality',
+    credits: 25,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'runway/act_two': {
+    id: 'runway/act_two',
+    name: 'Runway Act Two',
+    description: 'Runway Act Two character animation',
+    credits: 20,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+
+  // Kling Models
   'kling-video/v1.6/standard/text-to-video': {
     id: 'kling-video/v1.6/standard/text-to-video',
     name: 'Kling 1.6 Standard',
@@ -44,10 +179,41 @@ export const VIDEO_MODELS = {
     defaultDuration: 5,
     endpoint: '/v2/video/generations',
   },
-  'video-01': {
-    id: 'video-01',
-    name: 'Video 01',
-    description: 'Fast and reliable video generation',
+
+  // Sber AI Models
+  'sber-ai/kandinsky5-t2v': {
+    id: 'sber-ai/kandinsky5-t2v',
+    name: 'Kandinsky 5 Standard',
+    description: 'Sber AI Kandinsky 5 standard quality',
+    credits: 10,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'sber-ai/kandinsky5-distill-t2v': {
+    id: 'sber-ai/kandinsky5-distill-t2v',
+    name: 'Kandinsky 5 Distill',
+    description: 'Sber AI Kandinsky 5 fast distilled version',
+    credits: 8,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+
+  // Veed Models
+  'veed/fabric-1.0': {
+    id: 'veed/fabric-1.0',
+    name: 'Veed Fabric 1.0',
+    description: 'Veed Fabric 1.0 video generation',
+    credits: 12,
+    maxDuration: 10,
+    defaultDuration: 5,
+    endpoint: '/v2/video/generations',
+  },
+  'veed/fabric-1.0-fast': {
+    id: 'veed/fabric-1.0-fast',
+    name: 'Veed Fabric 1.0 Fast',
+    description: 'Veed Fabric 1.0 fast generation',
     credits: 8,
     maxDuration: 10,
     defaultDuration: 5,
