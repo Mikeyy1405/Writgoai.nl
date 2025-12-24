@@ -1,4 +1,6 @@
 import { generateAICompletion } from '@/lib/ai-client';
+import { getProjectContext, buildContextPrompt, generateProductCardHTML } from '@/lib/project-context';
+import { BolClient, createBolClientFromConfig } from '@/lib/bol-client';
 
 interface ContentOpportunity {
   title: string;
@@ -87,13 +89,40 @@ function generateSlugFromKeyword(keyword: string): string {
 
 export async function generateAdvancedContent(
   opportunity: ContentOpportunity,
-  relatedArticles: Array<{ title: string; slug: string }> = []
+  relatedArticles: Array<{ title: string; slug: string }> = [],
+  projectId?: string
 ): Promise<GeneratedContent> {
   const dateInfo = getCurrentDateInfo();
-  
+
+  // Get project context for internal links, backlinks, and affiliate links
+  let contextPrompt = '';
+  let bolProducts: any[] = [];
+
+  if (projectId) {
+    try {
+      const context = await getProjectContext(projectId);
+      contextPrompt = buildContextPrompt(context);
+
+      // Search for relevant Bol.com products if affiliate is configured
+      if (context.affiliateConfig?.isActive && context.affiliateConfig.clientId && context.affiliateConfig.clientSecret) {
+        const bolClient = createBolClientFromConfig({
+          clientId: context.affiliateConfig.clientId,
+          clientSecret: context.affiliateConfig.clientSecret
+        });
+
+        // Extract keywords from title for product search
+        const searchKeywords = opportunity.title.split(' ').slice(0, 3).join(' ');
+        const productResults = await bolClient.searchProducts(searchKeywords, { pageSize: 3 });
+        bolProducts = productResults.products || [];
+      }
+    } catch (error) {
+      console.error('Error fetching project context:', error);
+    }
+  }
+
   // Build internal links section
   const internalLinksHtml = relatedArticles.length > 0
-    ? `\n<h3>Gerelateerde artikelen</h3>\n<ul>\n${relatedArticles.slice(0, 3).map(a => 
+    ? `\n<h3>Gerelateerde artikelen</h3>\n<ul>\n${relatedArticles.slice(0, 3).map(a =>
         `  <li><a href="/blog/${a.slug}">${a.title}</a></li>`
       ).join('\n')}\n</ul>\n`
     : '';
@@ -184,7 +213,8 @@ STRUCTUUR (AI OVERVIEW OPTIMIZED):
    </table>
    - AI Overview loves tables!
 
-9. **Conclusie (150 woorden)**
+9. **Slotgedachten (150 woorden)** - met inhoudelijke H2 heading (NIET "Conclusie", "Tot slot", "Ten slotte" of "Afsluiting")
+   - Gebruik een inhoudelijke heading zoals "Aan de slag met [onderwerp]" of "Jouw volgende stappen"
    - Samenvatting in 3 bullets
    - Key takeaway
    - CTA naar WritGo
@@ -206,16 +236,17 @@ HTML OPMAAK - GEBRUIK ALLEEN DEZE TAGS:
 - <table>, <tr>, <th>, <td> voor tabellen
 - <a href="..."> voor links
 
-⚠️ VERPLICHTE CONTENT VARIATIE - ZEER BELANGRIJK:
-- ✓ Gebruik MINIMAAL 4 <ul> of <ol> lijsten in het artikel
-- ✓ Voeg MINIMAAL 2 tabellen toe met <table> (vergelijkingen, voor/na, statistieken)
-- ✓ Gebruik MINIMAAL 3 <blockquote> voor belangrijke quotes, highlights of kernpunten
+⚠️ VERPLICHTE CONTENT VARIATIE - ABSOLUUT KRITIEK - DIT MOET JE DOEN:
+- ✓ Gebruik MINIMAAL 5 <ul> of <ol> lijsten in het artikel (verplicht!)
+- ✓ Voeg MINIMAAL 3 tabellen toe met <table> (vergelijkingen, voor/na, statistieken, features) (verplicht!)
+- ✓ Gebruik MINIMAAL 4 <blockquote> voor belangrijke quotes, highlights of kernpunten (verplicht!)
 - ✓ Wissel CONSTANT af: paragraaf → lijst → paragraaf → tabel → paragraaf → blockquote
-- ✓ NOOIT meer dan 3-4 paragrafen achter elkaar zonder lijst, tabel of quote
+- ✓ NOOIT meer dan 2-3 paragrafen achter elkaar zonder lijst, tabel of quote
 - ✓ Maak het VISUEEL AANTREKKELIJK en makkelijk scanbaar
-- ✓ Elke sectie moet minstens 1 lijst, tabel OF blockquote bevatten
+- ✓ ELKE H2 sectie moet MINIMAAL 1 lijst, tabel OF blockquote bevatten
+- ✓ Als je dit niet doet, is het artikel ONACCEPTABEL
 
-INTERNE LINKS:
+INTERNE LINKS & BACKLINKS (VERPLICHT!):
 Voeg deze links natuurlijk toe in de content:
 - <a href="/">WritGo</a> (homepage)
 - <a href="/dashboard">WritGo dashboard</a>
@@ -223,9 +254,46 @@ Voeg deze links natuurlijk toe in de content:
 - <a href="/blog">WritGo blog</a>
 ${internalLinksHtml}
 
+${contextPrompt ? `\n${contextPrompt}\n` : ''}
+
 EXTERNE LINKS (met bronvermelding):
 - Link naar origineel artikel: <a href="${opportunity.source_url}" target="_blank" rel="noopener">${opportunity.title}</a>
 - Voeg 2-3 relevante externe bronnen toe (officiële documentatie, studies)
+
+${bolProducts.length > 0 ? `
+BOL.COM AFFILIATE LINKS (VERPLICHT - Voeg minimaal 1 product toe!):
+Gebruik deze mooie CTA box structuur voor elk product:
+
+<div class="bol-product-cta" style="border: 2px solid #0000a4; border-radius: 12px; padding: 20px; margin: 30px 0; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+  <h4 style="color: #0000a4; margin-top: 0;">📦 ${bolProducts[0].title}</h4>
+  <p><strong>Titel:</strong> [Product naam]</p>
+  <p><strong>Omschrijving:</strong> [Korte omschrijving waarom dit product relevant is]</p>
+  <div style="margin: 15px 0;">
+    <p><strong>✅ Voordelen:</strong></p>
+    <ul>
+      <li>[Voordeel 1]</li>
+      <li>[Voordeel 2]</li>
+      <li>[Voordeel 3]</li>
+    </ul>
+  </div>
+  <div style="margin: 15px 0;">
+    <p><strong>❌ Nadelen:</strong></p>
+    <ul>
+      <li>[Nadeel 1]</li>
+      <li>[Nadeel 2]</li>
+    </ul>
+  </div>
+  <a href="[BOL.COM AFFILIATE LINK]" target="_blank" rel="noopener sponsored" style="display: inline-block; background: #0000a4; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px;">
+    Bekijk meer en bestel →
+  </a>
+</div>
+
+BELANGRIJK:
+- Voeg MINIMAAL 1 en MAXIMAAL 3 van deze CTA boxes toe
+- Plaats ze op strategische momenten in het artikel (na relevante secties)
+- Vul de voordelen en nadelen in op basis van het product
+- Gebruik de Bol.com partner link format
+` : ''}
 
 E-E-A-T SIGNALEN:
 - Vermeld bronnen en data
@@ -251,7 +319,7 @@ SEO OPTIMALISATIE:
 - Gebruik LSI keywords (semantisch gerelateerd)
 - Internal links naar pillar pages
 
-BELANGRIJK:
+BELANGRIJK - LEES DIT ZORGVULDIG:
 - Schrijf ORIGINELE content, geen vertaling!
 - Gebruik Nederlandse SEO best practices
 - Maak het actionable en praktisch
@@ -259,6 +327,9 @@ BELANGRIJK:
 - GEEN markdown code blocks (\`\`\`html of \`\`\`)
 - Begin DIRECT met de eerste <h2> of <p> tag
 - GEEN uitleg of inleiding voor de HTML
+- ⚠️ VERBODEN HEADINGS: "Conclusie", "Tot slot", "Ten slotte", "Afsluiting", "Samenvattend"
+- ✓ WEL TOEGESTAAN: Inhoudelijke headings zoals "Aan de slag met [onderwerp]", "Jouw volgende stappen", "De toekomst van [onderwerp]"
+- NOOIT hetzelfde woord of dezelfde frase meer dan 1x gebruiken in headings
 
 OUTPUT:
 Genereer ALLEEN de HTML content. Begin direct met de eerste <h2> of <p>.`;

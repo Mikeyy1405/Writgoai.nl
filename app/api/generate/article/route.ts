@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
 import { requireCredits, deductCreditsAfterAction } from '@/lib/credit-middleware';
 import type { CreditAction } from '@/lib/credit-costs';
+import { getProjectContext, buildContextPrompt } from '@/lib/project-context';
+import { BolClient, createBolClientFromConfig } from '@/lib/bol-client';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -113,6 +115,43 @@ export async function POST(request: Request) {
     const currentYear = now.getFullYear();
     const nextYear = currentYear + 1;
 
+    // Get project context for backlinks and affiliate links
+    let contextPrompt = '';
+    let bolAffiliateInstructions = '';
+
+    if (project_id) {
+      try {
+        const context = await getProjectContext(project_id);
+        contextPrompt = buildContextPrompt(context);
+
+        // Add Bol.com product CTA box instructions if affiliate is configured
+        if (context.affiliateConfig?.isActive && context.affiliateConfig.siteCode) {
+          bolAffiliateInstructions = `
+
+BOL.COM AFFILIATE LINKS (VERPLICHT indien relevant!):
+Als je producten noemt, voeg dan een mooie CTA box toe:
+
+<div class="bol-product-cta" style="border: 2px solid #0000a4; border-radius: 12px; padding: 20px; margin: 30px 0; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+  <h4 style="color: #0000a4; margin-top: 0;">📦 [Product Naam]</h4>
+  <p><strong>Omschrijving:</strong> [Korte omschrijving]</p>
+  <div style="margin: 15px 0;">
+    <p><strong>✅ Voordelen:</strong></p>
+    <ul><li>[Voordeel 1]</li><li>[Voordeel 2]</li><li>[Voordeel 3]</li></ul>
+  </div>
+  <div style="margin: 15px 0;">
+    <p><strong>❌ Nadelen:</strong></p>
+    <ul><li>[Nadeel 1]</li><li>[Nadeel 2]</li></ul>
+  </div>
+  <a href="https://partner.bol.com/click/click?p=2&t=url&s=${context.affiliateConfig.siteCode}&f=TXL&url=[ENCODED_BOL_URL]&name=[PRODUCT]" target="_blank" rel="noopener sponsored" style="display: inline-block; background: #0000a4; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px;">
+    Bekijk meer en bestel →
+  </a>
+</div>`;
+        }
+      } catch (error) {
+        console.error('Error fetching project context:', error);
+      }
+    }
+
     // Generate content with AI
     const prompt = `Huidige datum: ${now.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
 
@@ -132,12 +171,15 @@ STRUCTUUR:
 3. Praktische tips en actionable advies
 4. Voorbeelden en concrete use cases
 5. FAQ sectie met 3-5 veelgestelde vragen
-6. Sterke conclusie met call-to-action
+6. Sterke afsluiting met inhoudelijke heading (NIET "Conclusie", "Tot slot", "Ten slotte" - gebruik een inhoudelijke heading zoals "Aan de slag" of "Jouw volgende stappen")
 
-SEO OPTIMALISATIE:
+SEO OPTIMALISATIE & CONTENT VARIATIE (VERPLICHT!):
 - Gebruik het focus keyword in de eerste 100 woorden
 - Verwerk keywords natuurlijk door de tekst
-- Gebruik bullet points en genummerde lijsten
+- ⚠️ VERPLICHT: Gebruik MINIMAAL 4 <ul> of <ol> lijsten
+- ⚠️ VERPLICHT: Voeg MINIMAAL 2 tabellen toe met <table> (vergelijkingen, statistieken)
+- ⚠️ VERPLICHT: Gebruik MINIMAAL 3 <blockquote> voor belangrijke punten
+- Wissel af: paragraaf → lijst → tabel → blockquote (NOOIT meer dan 3 paragrafen achter elkaar!)
 
 HTML FORMATTING - GEBRUIK ALLEEN DEZE TAGS:
 - <h2> voor hoofdsecties
@@ -155,7 +197,10 @@ BELANGRIJK:
 - GEEN uitleg of inleiding
 - Begin direct met de introductie tekst in <p> tags (GEEN 'Inleiding:' of 'Introductie:' heading)
 - De eerste H2 heading moet over het eerste inhoudelijke onderwerp gaan
-- Schrijf originele, waardevolle content in het Nederlands`;
+- Schrijf originele, waardevolle content in het Nederlands
+
+${contextPrompt}
+${bolAffiliateInstructions}`;
 
     const content = await generateAICompletion({
       task: 'content',

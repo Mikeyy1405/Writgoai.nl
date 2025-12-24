@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { generateAICompletion, BEST_MODELS } from '@/lib/ai-client';
+import { getProjectContext, buildContextPrompt } from '@/lib/project-context';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // Try to get project context (use first project if available)
+    let contextPrompt = '';
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      try {
+        const { data: projects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+
+        if (projects && projects.length > 0) {
+          const context = await getProjectContext(projects[0].id);
+          contextPrompt = buildContextPrompt(context);
+        }
+      } catch (error) {
+        console.error('Error fetching project context:', error);
+      }
+    }
+
     // Generate article content using AI
     const prompt = `Je bent een professionele SEO content writer voor WritGo.nl, een platform voor WordPress SEO automatisering.
 
@@ -63,6 +84,7 @@ ${outline ? `**Outline:**\n${JSON.stringify(outline, null, 2)}` : ''}
    - Link "WritGo" naar <a href="/">WritGo</a>
    - Link "dashboard" naar <a href="/dashboard">dashboard</a>
    - Link "AI content" naar <a href="/blog">AI content</a>
+   - Link "AutoPilot" naar <a href="/dashboard/writgo-autopilot">WritGo AutoPilot</a>
    - Voeg 5-7 interne links toe door het artikel
    - Gebruik descriptieve anchor tekst
 
@@ -71,13 +93,18 @@ ${outline ? `**Outline:**\n${JSON.stringify(outline, null, 2)}` : ''}
    - <img src="/api/placeholder/800/400" alt="Beschrijvende alt text" class="w-full rounded-lg my-6" />
    - Plaats images na belangrijke secties
 
-4. **Content Structuur:**
-   - Intro (150 woorden)
+4. **Content Structuur & Variatie (VERPLICHT!):**
+   - Intro (150 woorden) - GEEN "Inleiding:" heading!
    - 4-6 hoofdsecties met H2
    - Elk met 2-3 subsecties (H3)
    - Minimaal 1500 woorden totaal
    - Korte paragrafen (3-4 zinnen max)
-   - Bullet points waar relevant
+   - ⚠️ VERPLICHT: MINIMAAL 4 <ul> of <ol> lijsten
+   - ⚠️ VERPLICHT: MINIMAAL 2 tabellen met <table> (vergelijkingen, features, voor/na)
+   - ⚠️ VERPLICHT: MINIMAAL 3 <blockquote> voor belangrijke punten/quotes
+   - Wissel af: paragraaf → lijst → tabel → quote (NOOIT meer dan 3 paragrafen achter elkaar!)
+   - ⚠️ VERBODEN headings: "Conclusie", "Tot slot", "Ten slotte", "Afsluiting"
+   - ✓ Gebruik inhoudelijke headings zoals "Aan de slag met WritGo", "Jouw volgende stappen"
 
 5. **SEO:**
    - Focus keyword in eerste paragraaf
@@ -90,6 +117,8 @@ ${outline ? `**Outline:**\n${JSON.stringify(outline, null, 2)}` : ''}
    - Link naar <a href="/dashboard">WritGo proberen</a>
 
 **BELANGRIJK:** Output ALLEEN de HTML content, GEEN markdown code blocks, GEEN extra tekst!
+
+${contextPrompt}
 
 Schrijf nu het volledige artikel:`;
 

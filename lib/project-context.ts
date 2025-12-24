@@ -55,10 +55,19 @@ export interface CustomAffiliateLink {
  * Get full project context for content generation
  */
 export async function getProjectContext(projectId: string): Promise<ProjectContext & { customAffiliateLinks: CustomAffiliateLink[] }> {
+  // Check if backlinks are enabled for this project
+  const { data: project } = await supabaseAdmin
+    .from('projects')
+    .select('enable_backlinks')
+    .eq('id', projectId)
+    .single();
+
+  const backlinksEnabled = project?.enable_backlinks !== false; // Default to true
+
   const [knowledgeBase, internalLinks, externalLinks, affiliateConfig, customInstructions, customAffiliateLinks] = await Promise.all([
     getKnowledgeBaseContext(projectId),
-    getInternalLinks(projectId),
-    getExternalLinks(projectId),
+    backlinksEnabled ? getInternalLinks(projectId) : Promise.resolve([]),
+    backlinksEnabled ? getExternalLinks(projectId) : Promise.resolve([]),
     getAffiliateConfig(projectId),
     getCustomInstructions(projectId),
     getCustomAffiliateLinks(projectId),
