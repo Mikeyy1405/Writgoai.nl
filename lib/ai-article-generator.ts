@@ -156,17 +156,25 @@ ${keywords.length > 0 ? `**Related Keywords:** ${keywords.join(', ')}` : ''}
    - Nederlandse markt focus
    - E-E-A-T principes (Expertise, Experience, Authoritativeness, Trustworthiness)
 
-4. **Internal Linking:**
+4. **VERPLICHTE Content Variatie - ZEER BELANGRIJK:**
+   - ✓ Gebruik MINIMAAL 3 <ul> of <ol> lijsten in het artikel
+   - ✓ Voeg MINIMAAL 1 tabel toe met <table> (voor vergelijkingen, voor/na, features)
+   - ✓ Gebruik MINIMAAL 2 <blockquote> voor belangrijke quotes of highlights
+   - ✓ Wissel af tussen paragrafen, lijsten, tabellen en quotes
+   - ✓ GEEN lange blokken tekst - elke 3-4 paragrafen moet een lijst, tabel of quote komen
+   - ✓ Maak het visueel aantrekkelijk en scanbaar
+
+5. **Internal Linking:**
 ${relatedArticles.length > 0 ? `   - Link naar deze gerelateerde artikelen:
 ${relatedArticles.map(a => `     * "${a.title}" (${a.url})`).join('\n')}` : '   - Geen gerelateerde artikelen beschikbaar'}
 
-5. **FAQ Sectie:**
+6. **FAQ Sectie:**
    - Minimaal 5 veelgestelde vragen
    - Korte, directe antwoorden (50-100 woorden)
    - Gebruik <h3> voor vragen
    - Optimaliseer voor featured snippets
 
-6. **Schema Markup:**
+7. **Schema Markup:**
    - Genereer FAQ schema JSON-LD
    - Voeg HowTo schema toe indien relevant
 

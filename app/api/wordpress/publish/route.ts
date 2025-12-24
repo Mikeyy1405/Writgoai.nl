@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, getPostsEndpoint, getMediaEndpoint, buildWordPressUrl, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
 import { sanitizeUrl } from '@/lib/wordpress-errors';
+import { enhanceArticleContent } from '@/lib/content-enhancer';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -151,6 +152,25 @@ export async function POST(request: Request) {
         { error: 'Title and content are required' },
         { status: 400 }
       );
+    }
+
+    // Enhance content with images and YouTube video
+    console.log('Enhancing content with images and video...');
+    try {
+      const enhancementResult = await enhanceArticleContent({
+        content: articleContent,
+        title: articleTitle,
+        focusKeyword: articleTitle.split(' ').slice(0, 3).join(' '),
+        addImages: true,
+        addYouTubeVideo: true,
+        imageInterval: 500
+      });
+
+      articleContent = enhancementResult.content;
+      console.log(`✓ Content enhanced: ${enhancementResult.imagesAdded} images, video: ${enhancementResult.videoAdded}`);
+    } catch (enhanceError) {
+      console.warn('Content enhancement failed (non-blocking):', enhanceError);
+      // Continue with original content if enhancement fails
     }
 
     // Prepare WordPress API URL and credentials

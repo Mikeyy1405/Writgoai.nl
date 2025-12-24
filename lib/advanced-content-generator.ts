@@ -206,6 +206,15 @@ HTML OPMAAK - GEBRUIK ALLEEN DEZE TAGS:
 - <table>, <tr>, <th>, <td> voor tabellen
 - <a href="..."> voor links
 
+⚠️ VERPLICHTE CONTENT VARIATIE - ZEER BELANGRIJK:
+- ✓ Gebruik MINIMAAL 4 <ul> of <ol> lijsten in het artikel
+- ✓ Voeg MINIMAAL 2 tabellen toe met <table> (vergelijkingen, voor/na, statistieken)
+- ✓ Gebruik MINIMAAL 3 <blockquote> voor belangrijke quotes, highlights of kernpunten
+- ✓ Wissel CONSTANT af: paragraaf → lijst → paragraaf → tabel → paragraaf → blockquote
+- ✓ NOOIT meer dan 3-4 paragrafen achter elkaar zonder lijst, tabel of quote
+- ✓ Maak het VISUEEL AANTREKKELIJK en makkelijk scanbaar
+- ✓ Elke sectie moet minstens 1 lijst, tabel OF blockquote bevatten
+
 INTERNE LINKS:
 Voeg deze links natuurlijk toe in de content:
 - <a href="/">WritGo</a> (homepage)
