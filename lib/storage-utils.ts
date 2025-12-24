@@ -17,13 +17,19 @@ const STORAGE_BUCKET = 'social-media-images';
  */
 export async function saveImageFromUrl(
   imageUrl: string,
-  filename: string
+  filename: string,
+  folder: string = 'social'
 ): Promise<string> {
-  try {
-    console.log('📥 Downloading image from:', imageUrl);
+  console.log('📥 Downloading image from:', imageUrl);
 
+  try {
     // Download image from URL
-    const response = await fetch(imageUrl);
+    const response = await fetch(imageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; WritgoBot/1.0)',
+      },
+    });
+
     if (!response.ok) {
       throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
     }
@@ -37,10 +43,12 @@ export async function saveImageFromUrl(
     // Ensure bucket exists
     await ensureBucketExists();
 
-    // Generate unique filename
+    // Generate unique filename with organized folder structure
     const timestamp = Date.now();
     const sanitizedFilename = filename.replace(/[^a-z0-9.-]/gi, '_');
-    const storagePath = `${timestamp}_${sanitizedFilename}`;
+    const year = new Date().getFullYear();
+    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+    const storagePath = `${folder}/${year}/${month}/${timestamp}_${sanitizedFilename}`;
 
     console.log('📤 Uploading to Supabase Storage:', storagePath);
 
@@ -49,7 +57,7 @@ export async function saveImageFromUrl(
       .from(STORAGE_BUCKET)
       .upload(storagePath, buffer, {
         contentType: blob.type || 'image/png',
-        cacheControl: '3600',
+        cacheControl: '31536000', // 1 year cache
         upsert: false
       });
 
@@ -67,13 +75,21 @@ export async function saveImageFromUrl(
 
     console.log('🔗 Public URL:', publicUrl);
 
+    // Verify the URL is accessible
+    const verifyResponse = await fetch(publicUrl, { method: 'HEAD' });
+    if (!verifyResponse.ok) {
+      throw new Error(`Uploaded image not accessible: ${verifyResponse.status}`);
+    }
+
     return publicUrl;
   } catch (error: any) {
-    console.error('❌ Failed to save image:', error.message);
-    // If saving fails, return original URL as fallback
-    // (better than failing completely)
-    console.warn('⚠️ Falling back to original URL');
-    return imageUrl;
+    console.error('❌ CRITICAL: Failed to save image permanently:', error.message);
+    console.error('❌ Original URL:', imageUrl);
+    console.error('❌ This will cause publishing to fail when the temporary URL expires!');
+
+    // IMPORTANT: Don't fall back to temporary URL - this causes publishing to fail later
+    // Instead, throw the error so the caller knows something is wrong
+    throw new Error(`Failed to save image to permanent storage: ${error.message}`);
   }
 }
 

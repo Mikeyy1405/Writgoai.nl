@@ -284,23 +284,40 @@ ${isNL ? 'GEEN tekst in de afbeelding!' : 'NO text in the image!'}`;
 
     // Generate the image
     let imageUrl = '';
+    let imageError = '';
     try {
-      console.log('🎨 Generating image...');
+      console.log('🎨 Generating image with AIML...');
       const tempImageUrl = await generateFeaturedImage(
         topic || articleTitle || cleanedPost.slice(0, 50),
         imagePrompt.slice(0, 500)
       );
 
       if (tempImageUrl) {
-        console.log('📥 Temporary image URL received, saving to permanent storage...');
+        console.log('📥 Temporary image URL received:', tempImageUrl);
+        console.log('💾 Saving to permanent storage...');
+
         // Save image to Supabase Storage for permanent access
         // This ensures Getlate can always access the image when posting
         const filename = `social-${Date.now()}.png`;
-        imageUrl = await saveImageFromUrl(tempImageUrl, filename);
-        console.log('✅ Image saved permanently:', imageUrl);
+
+        try {
+          imageUrl = await saveImageFromUrl(tempImageUrl, filename, 'social');
+          console.log('✅ Image saved permanently:', imageUrl);
+        } catch (storageError: any) {
+          console.error('❌ Storage failed:', storageError);
+          imageError = `Storage failed: ${storageError.message}`;
+
+          // Try to use temp URL as last resort, but log warning
+          console.warn('⚠️ WARNING: Using temporary URL - this may expire and cause publishing to fail!');
+          imageUrl = tempImageUrl;
+        }
+      } else {
+        console.warn('⚠️ No image URL returned from generator');
+        imageError = 'Image generation returned no URL';
       }
-    } catch (e) {
-      console.warn('Image generation failed:', e);
+    } catch (e: any) {
+      console.error('❌ Image generation failed:', e);
+      imageError = e.message || 'Unknown error';
     }
 
     // Save to database
@@ -309,7 +326,7 @@ ${isNL ? 'GEEN tekst in de afbeelding!' : 'NO text in the image!'}`;
       .insert({
         project_id,
         content: cleanedPost,
-        image_url: imageUrl,
+        image_url: imageUrl || null,
         image_prompt: imagePrompt,
         post_type,
         platforms: platforms.map(p => ({ platform: p })),
@@ -324,20 +341,29 @@ ${isNL ? 'GEEN tekst in de afbeelding!' : 'NO text in the image!'}`;
 
     if (saveError) {
       console.error('Failed to save post:', saveError);
+      throw new Error(`Failed to save post: ${saveError.message}`);
     }
 
-    return NextResponse.json({
+    const response: any = {
       success: true,
       post: {
         id: savedPost?.id,
         content: cleanedPost,
-        image_url: imageUrl,
+        image_url: imageUrl || null,
         image_prompt: imagePrompt,
         post_type,
         platforms,
         status: 'draft',
       },
-    });
+    };
+
+    // Include image error if present
+    if (imageError) {
+      response.warning = `Post created but image generation had issues: ${imageError}`;
+      response.image_error = imageError;
+    }
+
+    return NextResponse.json(response);
   } catch (error: any) {
     console.error('Generate post error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
