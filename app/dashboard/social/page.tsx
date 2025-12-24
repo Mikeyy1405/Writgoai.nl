@@ -70,6 +70,25 @@ interface ContentIdea {
   cta: string;
 }
 
+interface ScheduledContent {
+  id: string;
+  project_id: string;
+  title: string;
+  type: string;
+  pillar: string | null;
+  hook: string | null;
+  cta: string | null;
+  scheduled_for: string;
+  platforms: string[];
+  auto_generate: boolean;
+  status: 'scheduled' | 'generating' | 'generated' | 'published' | 'failed';
+  generated_content: string | null;
+  generated_image_url: string | null;
+  generated_post_id: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
 interface DetectedInfo {
   niche: string;
   audience: string;
@@ -128,7 +147,7 @@ export default function SocialMediaPage() {
   const [activating, setActivating] = useState(false);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'posts' | 'strategy' | 'automation'>('strategy');
+  const [activeTab, setActiveTab] = useState<'posts' | 'strategy' | 'calendar' | 'automation'>('calendar');
 
   // Strategy state
   const [strategy, setStrategy] = useState<Strategy | null>(null);
@@ -164,6 +183,21 @@ export default function SocialMediaPage() {
   const [scheduledTime, setScheduledTime] = useState('');
   const [publishing, setPublishing] = useState(false);
 
+  // Content Calendar state
+  const [scheduledContent, setScheduledContent] = useState<ScheduledContent[]>([]);
+  const [loadingCalendar, setLoadingCalendar] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleIdeaTitle, setScheduleIdeaTitle] = useState('');
+  const [scheduleIdeaType, setScheduleIdeaType] = useState('educational');
+  const [scheduleIdeaPillar, setScheduleIdeaPillar] = useState('');
+  const [scheduleIdeaHook, setScheduleIdeaHook] = useState('');
+  const [scheduleIdeaCta, setScheduleIdeaCta] = useState('');
+  const [scheduleIdeaDate, setScheduleIdeaDate] = useState('');
+  const [scheduleIdeaTime, setScheduleIdeaTime] = useState('09:00');
+  const [scheduleIdeaPlatforms, setScheduleIdeaPlatforms] = useState<string[]>(['instagram']);
+  const [savingScheduledContent, setSavingScheduledContent] = useState(false);
+  const [editingScheduledItem, setEditingScheduledItem] = useState<ScheduledContent | null>(null);
+
   // Load projects
   useEffect(() => {
     loadProjects();
@@ -184,6 +218,7 @@ export default function SocialMediaPage() {
       loadPosts(selectedProject.id);
       loadStrategy(selectedProject.id);
       loadSchedule(selectedProject.id);
+      loadContentCalendar(selectedProject.id);
       syncAccounts(selectedProject.id);
       checkActivation(selectedProject.id);
     }
@@ -293,6 +328,161 @@ export default function SocialMediaPage() {
       }
     } catch (error) {
       console.error('Failed to load schedule:', error);
+    }
+  }
+
+  async function loadContentCalendar(projectId: string) {
+    setLoadingCalendar(true);
+    try {
+      const response = await fetch(`/api/social/content-calendar?project_id=${projectId}`);
+      const data = await response.json();
+      if (data.items) {
+        setScheduledContent(data.items);
+      } else {
+        setScheduledContent([]);
+      }
+    } catch (error) {
+      console.error('Failed to load content calendar:', error);
+      setScheduledContent([]);
+    } finally {
+      setLoadingCalendar(false);
+    }
+  }
+
+  async function saveScheduledContent() {
+    if (!selectedProject || !scheduleIdeaTitle.trim() || !scheduleIdeaDate) {
+      alert('Vul een titel en datum in');
+      return;
+    }
+
+    setSavingScheduledContent(true);
+    try {
+      const scheduledFor = `${scheduleIdeaDate}T${scheduleIdeaTime}:00`;
+
+      const response = await fetch('/api/social/content-calendar', {
+        method: editingScheduledItem ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingScheduledItem?.id,
+          project_id: selectedProject.id,
+          title: scheduleIdeaTitle.trim(),
+          type: scheduleIdeaType,
+          pillar: scheduleIdeaPillar || null,
+          hook: scheduleIdeaHook || null,
+          cta: scheduleIdeaCta || null,
+          scheduled_for: scheduledFor,
+          platforms: scheduleIdeaPlatforms,
+          auto_generate: true,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Reload the calendar
+        await loadContentCalendar(selectedProject.id);
+        // Reset form
+        resetScheduleForm();
+        setShowScheduleModal(false);
+      } else {
+        alert(data.error || 'Er ging iets mis');
+      }
+    } catch (error) {
+      console.error('Failed to save scheduled content:', error);
+      alert('Er ging iets mis bij het opslaan');
+    } finally {
+      setSavingScheduledContent(false);
+    }
+  }
+
+  async function deleteScheduledContent(id: string) {
+    if (!confirm('Weet je zeker dat je dit item wilt verwijderen?')) return;
+    if (!selectedProject) return;
+
+    try {
+      const response = await fetch(`/api/social/content-calendar?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await loadContentCalendar(selectedProject.id);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Verwijderen mislukt');
+      }
+    } catch (error) {
+      console.error('Failed to delete scheduled content:', error);
+      alert('Er ging iets mis');
+    }
+  }
+
+  function resetScheduleForm() {
+    setScheduleIdeaTitle('');
+    setScheduleIdeaType('educational');
+    setScheduleIdeaPillar('');
+    setScheduleIdeaHook('');
+    setScheduleIdeaCta('');
+    setScheduleIdeaDate('');
+    setScheduleIdeaTime('09:00');
+    setScheduleIdeaPlatforms(['instagram']);
+    setEditingScheduledItem(null);
+  }
+
+  function openScheduleModal(idea?: ContentIdea) {
+    if (idea) {
+      setScheduleIdeaTitle(idea.title);
+      setScheduleIdeaType(idea.type.toLowerCase());
+      setScheduleIdeaPillar(idea.pillar);
+      setScheduleIdeaHook(idea.hook);
+      setScheduleIdeaCta(idea.cta);
+    } else {
+      resetScheduleForm();
+    }
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setScheduleIdeaDate(tomorrow.toISOString().split('T')[0]);
+    setShowScheduleModal(true);
+  }
+
+  function editScheduledItem(item: ScheduledContent) {
+    setEditingScheduledItem(item);
+    setScheduleIdeaTitle(item.title);
+    setScheduleIdeaType(item.type);
+    setScheduleIdeaPillar(item.pillar || '');
+    setScheduleIdeaHook(item.hook || '');
+    setScheduleIdeaCta(item.cta || '');
+    const date = new Date(item.scheduled_for);
+    setScheduleIdeaDate(date.toISOString().split('T')[0]);
+    setScheduleIdeaTime(date.toTimeString().slice(0, 5));
+    setScheduleIdeaPlatforms(item.platforms || ['instagram']);
+    setShowScheduleModal(true);
+  }
+
+  function formatScheduledDate(dateString: string) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('nl-NL', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  function getStatusBadge(status: string) {
+    switch (status) {
+      case 'scheduled':
+        return { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Gepland' };
+      case 'generating':
+        return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Bezig...' };
+      case 'generated':
+        return { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Gegenereerd' };
+      case 'published':
+        return { bg: 'bg-purple-500/20', text: 'text-purple-400', label: 'Gepubliceerd' };
+      case 'failed':
+        return { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Mislukt' };
+      default:
+        return { bg: 'bg-gray-500/20', text: 'text-gray-400', label: status };
     }
   }
 
@@ -689,7 +879,22 @@ export default function SocialMediaPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={`px-6 py-3 rounded-lg font-medium transition ${
+              activeTab === 'calendar'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            📅 Publicatiekalender
+            {scheduledContent.length > 0 && (
+              <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">
+                {scheduledContent.filter(s => s.status === 'scheduled').length}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setActiveTab('strategy')}
             className={`px-6 py-3 rounded-lg font-medium transition ${
@@ -726,6 +931,210 @@ export default function SocialMediaPage() {
             ✨ Posts ({posts.length})
           </button>
         </div>
+
+        {/* Publicatiekalender Tab */}
+        {activeTab === 'calendar' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    📅 Publicatiekalender
+                  </h2>
+                  <p className="text-gray-400 mt-1">
+                    Plan je content in en laat AI automatisch schrijven en publiceren
+                  </p>
+                </div>
+                <button
+                  onClick={() => openScheduleModal()}
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold px-6 py-3 rounded-xl transition flex items-center gap-2"
+                >
+                  + Nieuw item inplannen
+                </button>
+              </div>
+            </div>
+
+            {/* Quick add from content ideas */}
+            {contentIdeas.length > 0 && (
+              <div className="bg-gray-800 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  💡 Snel inplannen vanuit ideeën
+                  <span className="text-sm font-normal text-gray-400">({contentIdeas.length} beschikbaar)</span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {contentIdeas.slice(0, 8).map((idea, index) => (
+                    <button
+                      key={index}
+                      onClick={() => openScheduleModal(idea)}
+                      className="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition flex items-center gap-2"
+                    >
+                      <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded">
+                        {idea.type}
+                      </span>
+                      <span className="truncate max-w-[200px]">{idea.title}</span>
+                      <span className="text-orange-400">+</span>
+                    </button>
+                  ))}
+                  {contentIdeas.length > 8 && (
+                    <span className="text-sm text-gray-400 flex items-center px-3">
+                      +{contentIdeas.length - 8} meer...
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Calendar List */}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold">Geplande Content</h3>
+                {loadingCalendar && (
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-orange-500"></div>
+                )}
+              </div>
+
+              {scheduledContent.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <p className="text-4xl mb-4">📭</p>
+                  <p className="font-medium mb-2">Nog geen content ingepland</p>
+                  <p className="text-sm">
+                    Klik op "Nieuw item inplannen" of selecteer een idee hierboven om te beginnen
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-sm text-gray-400 border-b border-gray-700">
+                        <th className="pb-3 font-medium">Datum/Tijd</th>
+                        <th className="pb-3 font-medium">Titel</th>
+                        <th className="pb-3 font-medium">Type</th>
+                        <th className="pb-3 font-medium">Platform</th>
+                        <th className="pb-3 font-medium">Status</th>
+                        <th className="pb-3 font-medium text-right">Acties</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {scheduledContent.map((item) => {
+                        const statusBadge = getStatusBadge(item.status);
+                        const isPast = new Date(item.scheduled_for) < new Date();
+                        return (
+                          <tr key={item.id} className={`hover:bg-gray-700/50 ${isPast && item.status === 'scheduled' ? 'opacity-60' : ''}`}>
+                            <td className="py-4 pr-4">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm font-mono ${isPast ? 'text-gray-500' : 'text-white'}`}>
+                                  {formatScheduledDate(item.scheduled_for)}
+                                </span>
+                                {isPast && item.status === 'scheduled' && (
+                                  <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">
+                                    Verlopen
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 pr-4">
+                              <div className="max-w-[250px]">
+                                <p className="font-medium truncate">{item.title}</p>
+                                {item.hook && (
+                                  <p className="text-xs text-gray-400 truncate mt-1">
+                                    Hook: {item.hook}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 pr-4">
+                              <span className="text-sm">
+                                {POST_TYPES.find(t => t.id === item.type)?.icon || '📝'}{' '}
+                                {POST_TYPES.find(t => t.id === item.type)?.name || item.type}
+                              </span>
+                            </td>
+                            <td className="py-4 pr-4">
+                              <div className="flex gap-1">
+                                {item.platforms?.map((p) => (
+                                  <span key={p} className="text-lg" title={p}>
+                                    {PLATFORMS.find(pl => pl.id === p)?.icon || '📱'}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="py-4 pr-4">
+                              <span className={`text-xs px-2 py-1 rounded ${statusBadge.bg} ${statusBadge.text}`}>
+                                {statusBadge.label}
+                              </span>
+                              {item.error_message && (
+                                <p className="text-xs text-red-400 mt-1 max-w-[150px] truncate" title={item.error_message}>
+                                  {item.error_message}
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {item.status === 'scheduled' && (
+                                  <button
+                                    onClick={() => editScheduledItem(item)}
+                                    className="text-xs bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded transition"
+                                  >
+                                    Bewerken
+                                  </button>
+                                )}
+                                {item.generated_content && (
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(item.generated_content!);
+                                      alert('Gekopieerd!');
+                                    }}
+                                    className="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1.5 rounded transition"
+                                  >
+                                    Kopiëren
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => deleteScheduledContent(item.id)}
+                                  className="text-xs bg-red-600/50 hover:bg-red-600 px-3 py-1.5 rounded transition"
+                                >
+                                  Verwijderen
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Info box */}
+            <div className="bg-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-3">Hoe werkt de publicatiekalender?</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-300">
+                <div className="flex gap-3">
+                  <span className="text-2xl">1️⃣</span>
+                  <div>
+                    <p className="font-medium text-white mb-1">Plan in</p>
+                    <p>Kies een onderwerp en stel de publicatiedatum in</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-2xl">2️⃣</span>
+                  <div>
+                    <p className="font-medium text-white mb-1">AI schrijft</p>
+                    <p>Op de geplande tijd genereert AI automatisch de content</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-2xl">3️⃣</span>
+                  <div>
+                    <p className="font-medium text-white mb-1">Publiceren</p>
+                    <p>Content wordt automatisch gepubliceerd naar je accounts</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Strategy Tab */}
         {activeTab === 'strategy' && (
@@ -1790,6 +2199,186 @@ export default function SocialMediaPage() {
                 ) : (
                   <>
                     📤 Publiceren
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Content Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+              📅 {editingScheduledItem ? 'Content bewerken' : 'Content inplannen'}
+            </h3>
+
+            <div className="space-y-5">
+              {/* Title */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  Titel / Onderwerp *
+                </label>
+                <input
+                  type="text"
+                  value={scheduleIdeaTitle}
+                  onChange={(e) => setScheduleIdeaTitle(e.target.value)}
+                  placeholder="Bijv. 5 tips voor beginners"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500"
+                />
+              </div>
+
+              {/* Date and Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    Publicatiedatum *
+                  </label>
+                  <input
+                    type="date"
+                    value={scheduleIdeaDate}
+                    onChange={(e) => setScheduleIdeaDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    Tijd *
+                  </label>
+                  <input
+                    type="time"
+                    value={scheduleIdeaTime}
+                    onChange={(e) => setScheduleIdeaTime(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Post Type */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Post Type</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {POST_TYPES.map(type => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => setScheduleIdeaType(type.id)}
+                      className={`flex items-center gap-2 p-3 rounded-lg transition text-left ${
+                        scheduleIdeaType === type.id
+                          ? 'bg-orange-500/20 border border-orange-500/50'
+                          : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    >
+                      <span className="text-xl">{type.icon}</span>
+                      <span className="text-sm">{type.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Platforms */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Platforms</label>
+                <div className="flex flex-wrap gap-2">
+                  {PLATFORMS.slice(0, 6).map(platform => (
+                    <button
+                      key={platform.id}
+                      type="button"
+                      onClick={() => {
+                        if (scheduleIdeaPlatforms.includes(platform.id)) {
+                          setScheduleIdeaPlatforms(scheduleIdeaPlatforms.filter(p => p !== platform.id));
+                        } else {
+                          setScheduleIdeaPlatforms([...scheduleIdeaPlatforms, platform.id]);
+                        }
+                      }}
+                      className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition ${
+                        scheduleIdeaPlatforms.includes(platform.id)
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    >
+                      {platform.icon} {platform.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hook (optional) */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  Hook (optioneel)
+                </label>
+                <input
+                  type="text"
+                  value={scheduleIdeaHook}
+                  onChange={(e) => setScheduleIdeaHook(e.target.value)}
+                  placeholder="Bijv. Stop met scrollen! Dit moet je weten..."
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500"
+                />
+              </div>
+
+              {/* CTA (optional) */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  Call-to-Action (optioneel)
+                </label>
+                <input
+                  type="text"
+                  value={scheduleIdeaCta}
+                  onChange={(e) => setScheduleIdeaCta(e.target.value)}
+                  placeholder="Bijv. Sla dit op voor later!"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500"
+                />
+              </div>
+
+              {/* Pillar (optional) */}
+              {strategy?.content_pillars && strategy.content_pillars.length > 0 && (
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    Content Pillar (optioneel)
+                  </label>
+                  <select
+                    value={scheduleIdeaPillar}
+                    onChange={(e) => setScheduleIdeaPillar(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  >
+                    <option value="">Geen specifieke pillar</option>
+                    {strategy.content_pillars.map((pillar, i) => (
+                      <option key={i} value={pillar.name}>{pillar.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-700">
+              <button
+                onClick={() => {
+                  setShowScheduleModal(false);
+                  resetScheduleForm();
+                }}
+                disabled={savingScheduledContent}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 rounded-lg transition"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={saveScheduledContent}
+                disabled={savingScheduledContent || !scheduleIdeaTitle.trim() || !scheduleIdeaDate}
+                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition flex items-center gap-2"
+              >
+                {savingScheduledContent ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    Opslaan...
+                  </>
+                ) : (
+                  <>
+                    📅 {editingScheduledItem ? 'Bijwerken' : 'Inplannen'}
                   </>
                 )}
               </button>
