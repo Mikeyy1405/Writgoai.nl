@@ -189,8 +189,8 @@ export async function POST(req: NextRequest) {
       },
       estimatedCredits,
       availableModels: Object.entries(VIDEO_MODELS).map(([id, config]) => ({
-        id,
         ...config,
+        id,
       })),
       availableVoices: AVAILABLE_VOICES,
       availableStyles: VIDEO_STYLES,
