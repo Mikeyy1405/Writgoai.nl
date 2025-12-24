@@ -96,53 +96,74 @@ const LANGUAGE_CONFIG: Record<string, {
 
 // Detect website language
 async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: string; languageName: string }> {
+  // Helper function to detect language from TLD
+  const detectFromTLD = (url: URL): { language: string; languageName: string } | null => {
+    const hostname = url.hostname.toLowerCase();
+    const tld = hostname.split('.').pop()?.toLowerCase();
+
+    // Strong TLD signals - these should be prioritized
+    if (hostname.endsWith('.nl') || tld === 'nl') {
+      return { language: 'nl', languageName: 'Nederlands' };
+    }
+    if (hostname.endsWith('.de') || tld === 'de' || tld === 'at' || hostname.endsWith('.at')) {
+      return { language: 'de', languageName: 'Deutsch' };
+    }
+    if (hostname.endsWith('.fr') || tld === 'fr') {
+      return { language: 'fr', languageName: 'Français' };
+    }
+    if (hostname.endsWith('.es') || tld === 'es') {
+      return { language: 'es', languageName: 'Español' };
+    }
+
+    return null;
+  };
+
   try {
-    const response = await fetchWithDnsFallback(websiteUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
-      timeout: 15000,
-    });
-    
-    if (response.ok) {
-      const html = await response.text();
-      
-      const langMatch = html.match(/<html[^>]*lang=["']([a-z]{2})/i);
-      if (langMatch) {
-        const lang = langMatch[1].toLowerCase();
-        if (LANGUAGE_CONFIG[lang]) {
-          return { language: lang, languageName: LANGUAGE_CONFIG[lang].name };
+    const url = new URL(websiteUrl);
+
+    // First, check TLD (most reliable signal)
+    const tldLanguage = detectFromTLD(url);
+
+    // Try to fetch HTML for additional validation
+    try {
+      const response = await fetchWithDnsFallback(websiteUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
+        timeout: 15000,
+      });
+
+      if (response.ok) {
+        const html = await response.text();
+        const langMatch = html.match(/<html[^>]*lang=["']([a-z]{2})/i);
+
+        if (langMatch) {
+          const htmlLang = langMatch[1].toLowerCase();
+
+          // If TLD indicates a specific language, prioritize that over HTML lang
+          // (e.g., purepflege.de should be German even if HTML says lang="en")
+          if (tldLanguage) {
+            console.log(`TLD language (${tldLanguage.language}) takes priority over HTML lang (${htmlLang}) for ${websiteUrl}`);
+            return tldLanguage;
+          }
+
+          // No strong TLD signal, use HTML lang attribute
+          if (LANGUAGE_CONFIG[htmlLang]) {
+            return { language: htmlLang, languageName: LANGUAGE_CONFIG[htmlLang].name };
+          }
         }
       }
-      
-      const url = new URL(websiteUrl);
-      const tld = url.hostname.split('.').pop()?.toLowerCase();
-      if (tld === 'nl') return { language: 'nl', languageName: 'Nederlands' };
-      if (tld === 'de' || tld === 'at' || tld === 'ch') return { language: 'de', languageName: 'Deutsch' };
-      if (tld === 'fr') return { language: 'fr', languageName: 'Français' };
-      if (tld === 'es') return { language: 'es', languageName: 'Español' };
+    } catch (fetchError) {
+      console.warn('HTML fetch failed during language detection:', fetchError);
+    }
+
+    // If we have TLD signal, use it
+    if (tldLanguage) {
+      return tldLanguage;
     }
   } catch (e) {
     console.warn('Language detection failed:', e);
   }
-  
-  // Fallback: check TLD if HTML fetch failed
-  try {
-    const url = new URL(websiteUrl);
-    const hostname = url.hostname.toLowerCase();
 
-    if (hostname.endsWith('.nl')) {
-      return { language: 'nl', languageName: 'Nederlands' };
-    }
-    if (hostname.endsWith('.de')) {
-      return { language: 'de', languageName: 'Deutsch' };
-    }
-    if (hostname.endsWith('.fr')) {
-      return { language: 'fr', languageName: 'Français' };
-    }
-    if (hostname.endsWith('.es')) {
-      return { language: 'es', languageName: 'Español' };
-    }
-  } catch {}
-
+  // Default to English if no language detected
   return { language: 'en', languageName: 'English' };
 }
 
