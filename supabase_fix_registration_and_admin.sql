@@ -17,7 +17,7 @@ BEGIN
   END IF;
 END $$;
 
--- Set info@writgo.nl as admin with unlimited credits
+-- Set info@writgo.nl as admin with unlimited credits (case-insensitive)
 UPDATE subscribers
 SET
   is_admin = true,
@@ -26,10 +26,10 @@ SET
   credits_remaining = 999999,
   monthly_credits = 999999
 WHERE user_id IN (
-  SELECT id FROM auth.users WHERE email = 'info@writgo.nl'
+  SELECT id FROM auth.users WHERE LOWER(email) = LOWER('info@writgo.nl')
 );
 
--- If info@writgo.nl doesn't have a subscriber record yet, create one
+-- If info@writgo.nl doesn't have a subscriber record yet, create one (case-insensitive)
 INSERT INTO subscribers (
   user_id,
   is_admin,
@@ -46,7 +46,7 @@ SELECT
   999999,
   999999
 FROM auth.users
-WHERE email = 'info@writgo.nl'
+WHERE LOWER(email) = LOWER('info@writgo.nl')
 AND id NOT IN (SELECT user_id FROM subscribers)
 ON CONFLICT (user_id) DO NOTHING;
 
