@@ -14,7 +14,7 @@ export const VIDEO_MODELS = {
     description: 'High-quality cinematic video generation',
     credits: 15,
     maxDuration: 10,
-    endpoint: '/v2/generate/video/luma/generation',
+    endpoint: '/v2/video/generations',
   },
   'luma/ray-flash-2': {
     id: 'luma/ray-flash-2',
@@ -22,7 +22,7 @@ export const VIDEO_MODELS = {
     description: 'Fast video generation with good quality',
     credits: 8,
     maxDuration: 10,
-    endpoint: '/v2/generate/video/luma/generation',
+    endpoint: '/v2/video/generations',
   },
   'kling-video/v1.6/standard/text-to-video': {
     id: 'kling-video/v1.6/standard/text-to-video',
