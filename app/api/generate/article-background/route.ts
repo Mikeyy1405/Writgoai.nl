@@ -1,10 +1,19 @@
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
-import { generateFeaturedImage } from '@/lib/aiml-image-generator';
+import { generateFeaturedImage, generateArticleImage } from '@/lib/aiml-image-generator';
 import { CONTENT_PROMPT_RULES, cleanForbiddenWords } from '@/lib/writing-rules';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase-server';
 import { getProjectContext, buildContextPrompt, ProjectContext } from '@/lib/project-context';
+import {
+  searchYouTubeVideo,
+  scrapeSitemap,
+  formatSitemapLinksForPrompt as formatSitemapLinks,
+  createInArticleImageHtml,
+  findIntroEndPosition,
+  findMiddlePosition,
+  insertContentAtPosition,
+} from '@/lib/content-enrichment';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -210,6 +219,8 @@ async function processArticle(jobId: string, params: {
     // Get project context (knowledge base, internal links, affiliates)
     let projectContext: ProjectContext | null = null;
     let contextPrompt = '';
+    let sitemapLinksPrompt = '';
+
     if (projectId) {
       try {
         projectContext = await getProjectContext(projectId);
@@ -220,9 +231,41 @@ async function processArticle(jobId: string, params: {
           externalLinksCount: projectContext.externalLinks.length,
           hasAffiliate: !!projectContext.affiliateConfig,
         });
+
+        // If no internal links from database, try sitemap scraping as fallback
+        if (projectContext.internalLinks.length === 0 && websiteUrl) {
+          console.log('No internal links from database, trying sitemap scraping...');
+          try {
+            const sitemapLinks = await scrapeSitemap(websiteUrl);
+            if (sitemapLinks.length > 0) {
+              console.log(`Found ${sitemapLinks.length} links from sitemap`);
+              sitemapLinksPrompt = formatSitemapLinks(sitemapLinks);
+            }
+          } catch (e) {
+            console.warn('Sitemap scraping failed:', e);
+          }
+        }
       } catch (e) {
         console.warn('Failed to load project context:', e);
       }
+    }
+
+    // If we still don't have internal links but have a website URL, try sitemap
+    if (!sitemapLinksPrompt && websiteUrl && (!projectContext || projectContext.internalLinks.length === 0)) {
+      try {
+        const sitemapLinks = await scrapeSitemap(websiteUrl);
+        if (sitemapLinks.length > 0) {
+          console.log(`Fallback: Found ${sitemapLinks.length} links from sitemap`);
+          sitemapLinksPrompt = formatSitemapLinks(sitemapLinks);
+        }
+      } catch (e) {
+        console.warn('Fallback sitemap scraping failed:', e);
+      }
+    }
+
+    // Add sitemap links to context if available
+    if (sitemapLinksPrompt) {
+      contextPrompt = contextPrompt + '\n\n' + sitemapLinksPrompt;
     }
     const langConfig = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS['nl'];
     const localeMap: Record<string, string> = { nl: 'nl-NL', en: 'en-US', de: 'de-DE' };
@@ -394,24 +437,70 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
     await updateJob(jobId, { progress: 80, current_step: '✅ Conclusie klaar' });
 
-    // STEP 5: Generate Featured Image (80-95%)
-    await updateJob(jobId, { progress: 85, current_step: '🎨 Featured image genereren...' });
+    // STEP 5: Search for relevant YouTube video
+    await updateJob(jobId, { progress: 82, current_step: '🎬 YouTube video zoeken...' });
+
+    let youtubeEmbed = '';
+    try {
+      const video = await searchYouTubeVideo(keyword, language);
+      if (video) {
+        youtubeEmbed = video.embedHtml;
+        console.log('Found YouTube video:', video.title);
+      }
+    } catch (e) {
+      console.warn('YouTube search failed:', e);
+    }
+
+    // STEP 6: Generate Featured Image and In-Article Image
+    await updateJob(jobId, { progress: 85, current_step: '🎨 Afbeeldingen genereren...' });
 
     let featuredImage = '';
+    let inArticleImage = '';
     try {
-      // Pass the title and keyword as description for better topic extraction
-      featuredImage = await generateFeaturedImage(title, keyword) || '';
+      // Generate both images in parallel
+      const [featuredResult, inArticleResult] = await Promise.all([
+        generateFeaturedImage(title, keyword),
+        generateArticleImage(`${keyword} illustration, informative diagram`, 'photorealistic'),
+      ]);
+
+      featuredImage = featuredResult || '';
+      inArticleImage = inArticleResult || '';
+
+      console.log('Images generated:', { hasFeatured: !!featuredImage, hasInArticle: !!inArticleImage });
     } catch (e) {
       console.warn('Image generation failed:', e);
     }
 
-    await updateJob(jobId, { progress: 95, current_step: '🎨 Featured image klaar' });
+    await updateJob(jobId, { progress: 95, current_step: '🎨 Afbeeldingen klaar' });
 
-    // STEP 6: Finalize (95-100%)
+    // STEP 7: Finalize and enrich content
     await updateJob(jobId, { progress: 98, current_step: '✨ Artikel afronden...' });
 
-    // Combine all content
-    const fullContent = `${introContent}\n\n${mainContent}\n\n${conclusionContent}`;
+    // Combine base content
+    let fullContent = `${introContent}\n\n${mainContent}\n\n${conclusionContent}`;
+
+    // Insert YouTube video after intro (before first H2)
+    if (youtubeEmbed) {
+      const introEndPos = findIntroEndPosition(fullContent);
+      if (introEndPos > 0) {
+        fullContent = insertContentAtPosition(fullContent, youtubeEmbed, introEndPos);
+        console.log('YouTube video inserted after intro');
+      }
+    }
+
+    // Insert in-article image in the middle of the content
+    if (inArticleImage) {
+      const middlePos = findMiddlePosition(fullContent);
+      if (middlePos > 0) {
+        const imageHtml = createInArticleImageHtml(
+          inArticleImage,
+          `Illustratie over ${keyword}`,
+          `Visuele uitleg van ${keyword}`
+        );
+        fullContent = insertContentAtPosition(fullContent, imageHtml, middlePos);
+        console.log('In-article image inserted in middle');
+      }
+    }
     const wordCountActual = fullContent.split(/\s+/).length;
     const slug = generateSlug(title);
     const metaDescription = outline?.metaDescription || `${title} - Lees alles over ${keyword} in dit uitgebreide artikel.`;
