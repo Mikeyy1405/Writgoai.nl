@@ -25,10 +25,9 @@ Video generatie faalde met deze errors:
 - ✅ Voorkomt API validation errors
 
 ### 4. Database Migratie Tools Toegevoegd
-Drie opties om bestaande database records te fixen:
+Twee opties om bestaande database records te fixen:
 - ✅ **Admin API**: `GET/POST /api/admin/fix-video-models`
 - ✅ **SQL Script**: `fix_video_models.sql`
-- ✅ **TypeScript Script**: `scripts/fix-video-models.ts`
 - ✅ **Documentatie**: `DATABASE_MIGRATION_README.md`
 
 ## 📦 Nieuwe Video Modellen (25+)
@@ -78,11 +77,6 @@ curl -X POST https://writgoai.nl/api/admin/fix-video-models
 2. Kopieer en run `fix_video_models.sql`
 3. Verificatie queries worden automatisch uitgevoerd
 
-#### Optie 3: Via TypeScript Script (lokaal)
-```bash
-npx tsx scripts/fix-video-models.ts
-```
-
 ### Model Mapping
 De migratie update automatisch:
 - `luma/ray-2` → `minimax/hailuo-02` (gelijke kwaliteit/prijs)
@@ -98,7 +92,6 @@ De migratie update automatisch:
 ### Migration Tools (NEW)
 - 🆕 `app/api/admin/fix-video-models/route.ts` - Admin API endpoint
 - 🆕 `fix_video_models.sql` - SQL migratie script
-- 🆕 `scripts/fix-video-models.ts` - TypeScript migratie script
 - 🆕 `DATABASE_MIGRATION_README.md` - Uitgebreide documentatie
 
 ## ✅ Testing Checklist

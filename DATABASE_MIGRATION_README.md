@@ -27,16 +27,6 @@ curl -X POST https://writgoai.nl/api/admin/fix-video-models
 3. Copy and paste the contents of `fix_video_models.sql`
 4. Run the query
 
-### Option 3: Via TypeScript Script (Local Development)
-
-```bash
-# Install dependencies first if needed
-npm install
-
-# Run the migration script
-npx tsx scripts/fix-video-models.ts
-```
-
 ## What Gets Updated
 
 - `luma/ray-2` → `minimax/hailuo-02` (similar quality, 10 credits)
