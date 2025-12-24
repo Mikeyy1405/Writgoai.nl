@@ -7,13 +7,22 @@ import BrandingSettings from "@/components/BrandingSettings";
 export default async function SettingsPage() {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+
   if (authError || !user) {
     redirect("/login");
   }
 
+  // Check if user is admin
+  const { data: subscriber } = await supabase
+    .from('subscribers')
+    .select('is_admin')
+    .eq('user_id', user.id)
+    .single();
+
+  const isAdmin = subscriber?.is_admin || false;
+
   return (
-    <DashboardLayout user={user}>
+    <DashboardLayout user={user} isAdmin={isAdmin}>
       <div className="p-6 lg:p-12">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Instellingen</h1>
@@ -22,10 +31,12 @@ export default async function SettingsPage() {
           </p>
         </div>
 
-        {/* Branding Section */}
-        <div className="mb-8">
-          <BrandingSettings />
-        </div>
+        {/* Branding Section - Only for admins */}
+        {isAdmin && (
+          <div className="mb-8">
+            <BrandingSettings />
+          </div>
+        )}
 
         {/* Billing Section */}
         <div className="mb-8">

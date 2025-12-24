@@ -38,6 +38,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check if user is admin
+    const { data: subscriber, error: subscriberError } = await supabase
+      .from('subscribers')
+      .select('is_admin')
+      .eq('user_id', user.id)
+      .single();
+
+    if (subscriberError || !subscriber || !subscriber.is_admin) {
+      return NextResponse.json({
+        error: 'Alleen administrators kunnen het logo wijzigen'
+      }, { status: 403 });
+    }
+
     const { logoUrl } = await request.json();
 
     // Update or insert logo URL

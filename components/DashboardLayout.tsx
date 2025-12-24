@@ -16,9 +16,10 @@ interface DashboardLayoutProps {
       name?: string;
     };
   };
+  isAdmin?: boolean;
 }
 
-export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, user, isAdmin = false }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -55,7 +56,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     };
   }, [router]);
 
-  const menuItems = [
+  const baseMenuItems = [
     { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
     { icon: '📝', label: 'Projecten', href: '/dashboard/projects' },
     { icon: '📋', label: 'Content Plan', href: '/dashboard/content-plan' },
@@ -64,8 +65,19 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     { icon: '🔄', label: 'WordPress Posts', href: '/dashboard/wordpress-posts' },
     { icon: '📚', label: 'Bibliotheek', href: '/dashboard/library' },
     { icon: '📱', label: 'Social Media', href: '/dashboard/social' },
-    { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
   ];
+
+  // Add admin menu item if user is admin
+  const menuItems = isAdmin
+    ? [
+        ...baseMenuItems,
+        { icon: '👑', label: 'Admin', href: '/dashboard/admin' },
+        { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
+      ]
+    : [
+        ...baseMenuItems,
+        { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
+      ];
 
   const handleLogout = async () => {
     const form = document.createElement('form');
