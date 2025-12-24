@@ -20,6 +20,14 @@ interface GeneratePostRequest {
   language?: string;
   niche?: string;
   website_url?: string;
+  strategy?: {
+    brand_voice?: string;
+    hashtags?: any;
+    content_pillars?: any[];
+  };
+  content_idea_index?: number;
+  auto_generated?: boolean;
+  schedule_id?: string;
 }
 
 const POST_TYPE_INSTRUCTIONS: Record<string, { nl: string; en: string }> = {
@@ -100,15 +108,19 @@ const PLATFORM_LIMITS: Record<string, { chars: number; hashtags: number }> = {
 export async function POST(request: Request) {
   try {
     const body: GeneratePostRequest = await request.json();
-    const { 
-      project_id, 
-      topic, 
-      article_id, 
-      post_type = 'storytelling', 
+    const {
+      project_id,
+      topic,
+      article_id,
+      post_type = 'storytelling',
       platforms = ['instagram'],
       language = 'nl',
       niche = '',
       website_url = '',
+      strategy,
+      content_idea_index,
+      auto_generated = false,
+      schedule_id,
     } = body;
 
     if (!project_id) {
@@ -144,16 +156,65 @@ export async function POST(request: Request) {
     const charLimit = PLATFORM_LIMITS[mainPlatform]?.chars || 2200;
     const hashtagLimit = PLATFORM_LIMITS[mainPlatform]?.hashtags || 5;
 
+    // Get recent posts to avoid repetition
+    const { data: recentPosts } = await supabaseAdmin
+      .from('social_posts')
+      .select('content, post_type')
+      .eq('project_id', project_id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    // Build variation instructions based on recent posts
+    let variationInstructions = '';
+    if (recentPosts && recentPosts.length > 0) {
+      const postTypesUsed = recentPosts.map(p => p.post_type).filter(Boolean);
+      const recentOpenings = recentPosts.map(p => {
+        const lines = p.content.split('\n');
+        return lines[0]?.substring(0, 50);
+      }).filter(Boolean);
+
+      if (isNL) {
+        variationInstructions = `
+VARIATIE INSTRUCTIES (ZEER BELANGRIJK):
+- Gebruik NIET deze openingszinnen: ${recentOpenings.join(', ')}
+- Kies een unieke aanpak, anders dan deze recente posts
+- Wissel af tussen verschillende tonen: informatief, inspirerend, persoonlijk, speels, serieus
+- Varieer je schrijfstijl: soms korte zinnen, soms langere verhalen
+- Gebruik verschillende structuren: soms lijstjes, soms verhaal, soms vraag-antwoord`;
+      } else {
+        variationInstructions = `
+VARIATION INSTRUCTIONS (VERY IMPORTANT):
+- DO NOT use these opening lines: ${recentOpenings.join(', ')}
+- Choose a unique approach, different from these recent posts
+- Alternate between different tones: informative, inspiring, personal, playful, serious
+- Vary your writing style: sometimes short sentences, sometimes longer stories
+- Use different structures: sometimes lists, sometimes stories, sometimes Q&A`;
+      }
+    }
+
+    // Build strategy context
+    let strategyContext = '';
+    if (strategy) {
+      const brandVoice = strategy.brand_voice ? `\n- Brand Voice: ${strategy.brand_voice}` : '';
+      const pillars = strategy.content_pillars && strategy.content_pillars.length > 0
+        ? `\n- Content Pillars: ${strategy.content_pillars.map((p: any) => p.name).join(', ')}`
+        : '';
+
+      strategyContext = `${brandVoice}${pillars}`;
+    }
+
     const prompt = `${isNL ? 'Schrijf' : 'Write'} een social media post ${isNL ? 'voor' : 'for'} ${mainPlatform}.
 
 ${postTypeInstructions}
 
 ${isNL ? 'CONTEXT' : 'CONTEXT'}:
 - Niche: ${niche || 'Algemeen'}
-- Website: ${website_url || 'N/A'}
+- Website: ${website_url || 'N/A'}${strategyContext}
 ${topic ? `- Topic: ${topic}` : ''}
 ${articleTitle ? `- Artikel: ${articleTitle}` : ''}
 ${articleContent ? `- Artikel samenvatting: ${articleContent.slice(0, 500)}...` : ''}
+
+${variationInstructions}
 
 ${isNL ? 'REGELS' : 'RULES'}:
 - ${isNL ? 'Maximaal' : 'Maximum'} ${charLimit} ${isNL ? 'karakters' : 'characters'}
@@ -164,18 +225,22 @@ ${isNL ? 'REGELS' : 'RULES'}:
 - ${isNL ? 'Schrijf in het Nederlands, informeel (je/jij)' : 'Write in English'}
 - ${isNL ? 'GEEN markdown formatting zoals **bold** of *italic* - gebruik gewoon plain text' : 'NO markdown formatting like **bold** or *italic* - use plain text only'}
 
-${isNL ? 'VERBODEN WOORDEN' : 'FORBIDDEN WORDS'}: cruciaal, essentieel, kortom, duiken, jungle, gids, onmisbaar, onthullen, geheim, ultieme
+${isNL ? 'VERBODEN WOORDEN' : 'FORBIDDEN WORDS'}: cruciaal, essentieel, kortom, duiken, jungle, gids, onmisbaar, onthullen, geheim, ultieme, revolutionair, game-changer
+
+${isNL ? 'Wees creatief en uniek! Elke post moet anders voelen.' : 'Be creative and unique! Each post should feel different.'}
 
 Output ALLEEN de post tekst als plain text, geen markdown, geen uitleg of extra tekst.`;
 
+    // Use higher temperature for more variety, and add variation seed
+    const variationSeed = Date.now().toString() + Math.random().toString();
     const postContent = await generateAICompletion({
       task: 'content',
-      systemPrompt: isNL 
-        ? 'Je bent een social media expert. Schrijf engaging posts in het Nederlands.'
-        : 'You are a social media expert. Write engaging posts.',
+      systemPrompt: isNL
+        ? 'Je bent een creatieve social media expert. Schrijf unieke, engaging posts in het Nederlands. Elke post moet origineel zijn met een eigen persoonlijkheid.'
+        : 'You are a creative social media expert. Write unique, engaging posts. Each post should be original with its own personality.',
       userPrompt: prompt,
       maxTokens: 1000,
-      temperature: 0.8,
+      temperature: 0.9, // Higher temperature for more creativity
     });
 
     // Clean up the response - remove markdown and formatting
@@ -250,6 +315,9 @@ ${isNL ? 'GEEN tekst in de afbeelding!' : 'NO text in the image!'}`;
         platforms: platforms.map(p => ({ platform: p })),
         status: 'draft',
         article_id: article_id || null,
+        auto_generated: auto_generated,
+        schedule_id: schedule_id || null,
+        variation_seed: variationSeed,
       })
       .select()
       .single();
