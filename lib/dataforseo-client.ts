@@ -67,64 +67,82 @@ function getAuthHeader(config: DataForSEOConfig): string {
 
 /**
  * Get related keywords with search volume and competition data
- * 
+ *
  * @param keywords - Array of seed keywords (max 20)
  * @param locationCode - Location code (default: 2528 for Netherlands)
  * @param languageCode - Language code (default: "nl" for Dutch)
+ * @param timeout - Request timeout in milliseconds (default: 30000)
  * @returns Array of keyword data with metrics
  */
 export async function getRelatedKeywords(
   keywords: string[],
   locationCode: number = 2528, // Netherlands
-  languageCode: string = 'nl'
+  languageCode: string = 'nl',
+  timeout: number = 30000 // 30 second default timeout
 ): Promise<KeywordData[]> {
   const config = getCredentials();
-  
+
   // Limit to 20 keywords per request
   const limitedKeywords = keywords.slice(0, 20);
-  
+
   try {
-    const response = await fetch(
-      'https://api.dataforseo.com/v3/keywords_data/google_ads/keywords_for_keywords/live',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': getAuthHeader(config),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([{
-          keywords: limitedKeywords,
-          location_code: locationCode,
-          language_code: languageCode,
-          sort_by: 'search_volume',
-        }]),
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(
+        'https://api.dataforseo.com/v3/keywords_data/google_ads/keywords_for_keywords/live',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': getAuthHeader(config),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([{
+            keywords: limitedKeywords,
+            location_code: locationCode,
+            language_code: languageCode,
+            sort_by: 'search_volume',
+          }]),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`DataForSEO API error: ${response.status} ${response.statusText}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`DataForSEO API error: ${response.status} ${response.statusText}`);
+      const data: KeywordsForKeywordsResponse = await response.json();
+
+      if (!data.tasks?.[0]?.result) {
+        return [];
+      }
+
+      return data.tasks[0].result.map(item => ({
+        keyword: item.keyword,
+        searchVolume: item.search_volume,
+        competition: item.competition as KeywordData['competition'],
+        competitionIndex: item.competition_index,
+        cpc: item.cpc,
+        lowTopOfPageBid: item.low_top_of_page_bid,
+        highTopOfPageBid: item.high_top_of_page_bid,
+        monthlySearches: item.monthly_searches?.map(ms => ({
+          year: ms.year,
+          month: ms.month,
+          searchVolume: ms.search_volume,
+        })) || null,
+      }));
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      // Handle abort errors (timeout)
+      if (fetchError.name === 'AbortError') {
+        throw new Error(`DataForSEO request timed out after ${timeout}ms`);
+      }
+      throw fetchError;
     }
-
-    const data: KeywordsForKeywordsResponse = await response.json();
-    
-    if (!data.tasks?.[0]?.result) {
-      return [];
-    }
-
-    return data.tasks[0].result.map(item => ({
-      keyword: item.keyword,
-      searchVolume: item.search_volume,
-      competition: item.competition as KeywordData['competition'],
-      competitionIndex: item.competition_index,
-      cpc: item.cpc,
-      lowTopOfPageBid: item.low_top_of_page_bid,
-      highTopOfPageBid: item.high_top_of_page_bid,
-      monthlySearches: item.monthly_searches?.map(ms => ({
-        year: ms.year,
-        month: ms.month,
-        searchVolume: ms.search_volume,
-      })) || null,
-    }));
   } catch (error) {
     console.error('DataForSEO API error:', error);
     throw error;

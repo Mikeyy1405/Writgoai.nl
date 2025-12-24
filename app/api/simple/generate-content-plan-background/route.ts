@@ -7,7 +7,7 @@ import { fetchWithDnsFallback } from '@/lib/fetch-with-dns-fallback';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-export const maxDuration = 300; // 5 minutes max
+export const maxDuration = 480; // 8 minutes max (increased for better reliability with timeouts)
 
 // Content extraction configuration
 const CONTENT_EXTRACTION_CONFIG = {
@@ -586,14 +586,14 @@ Output als JSON (ALLEEN JSON, geen markdown):
     };
 
     try {
-      // Use Perplexity Sonar Pro for real-time website analysis
+      // Use Perplexity Sonar Pro for real-time website analysis (with 60s timeout)
       console.log('Analyzing website with Perplexity:', websiteUrl);
-      nicheData = await analyzeWithPerplexityJSON<any>(nichePrompt);
+      nicheData = await analyzeWithPerplexityJSON<any>(nichePrompt, 60000); // 60s timeout
       console.log('Perplexity niche result:', nicheData.niche);
-    } catch (e) {
-      console.warn('Perplexity niche detection failed, using fallback:', e);
-      
-      // Fallback to Claude if Perplexity fails - with same improved instructions
+    } catch (e: any) {
+      console.warn('Perplexity niche detection failed, using Claude fallback:', e.message);
+
+      // Fallback to Claude if Perplexity fails/times out - with same improved instructions
       try {
         const fallbackPrompt = `Analyseer deze website en bepaal de EXACTE niche op basis van producten, diensten en content:
 
@@ -630,6 +630,7 @@ Output als JSON (ALLEEN JSON, geen tekst ervoor of erna):
           userPrompt: fallbackPrompt,
           maxTokens: 2000,
           temperature: 0.3,
+          timeout: 45000, // 45s timeout for fallback
         });
 
         const jsonMatch = nicheResponse.match(/\{[\s\S]*\}/);
@@ -670,6 +671,7 @@ Output als JSON array:
           userPrompt: topicsPrompt,
           maxTokens: 3000,
           temperature: 0.7,
+          timeout: 60000, // 60s timeout for topics generation
         });
 
         const jsonMatch = topicsResponse.match(/\[[\s\S]*\]/);
@@ -698,34 +700,44 @@ Output als JSON array:
 
     await updateJob(jobId, { progress: 35, current_step: `✅ ${nicheData.pillarTopics?.length || 0} pillar topics` });
 
-    // Step 4: Generate content clusters
+    // Step 4: Generate content clusters IN PARALLEL (massive speed improvement)
     await updateJob(jobId, { progress: 38, current_step: '📝 Content clusters voorbereiden...' });
-    
+
     const clusters: any[] = [];
     const allArticles: any[] = [];
     const pillarCount = nicheData.pillarTopics.length;
 
-    for (let i = 0; i < pillarCount; i++) {
+    // Generate clusters in parallel batches of 5 for better performance
+    const BATCH_SIZE = 5;
+    const batches = [];
+    for (let i = 0; i < pillarCount; i += BATCH_SIZE) {
+      batches.push(nicheData.pillarTopics.slice(i, i + BATCH_SIZE));
+    }
+
+    let completedClusters = 0;
+
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       // Check if job was cancelled
       if (await isJobCancelled(jobId)) {
         console.log(`Job ${jobId} was cancelled during cluster generation`);
         return;
       }
 
-      const pillarData = nicheData.pillarTopics[i];
-      const pillarTopic = typeof pillarData === 'string' ? pillarData : pillarData.topic;
-      const subtopics = typeof pillarData === 'object' ? pillarData.subtopics : [];
-      const estimatedArticles = typeof pillarData === 'object' ? pillarData.estimatedArticles : Math.ceil(targetCount / pillarCount);
-      
-      // More granular progress: 40-75% for clusters
-      const progress = 40 + Math.round((i / pillarCount) * 35);
-      await updateJob(jobId, { 
-        progress, 
-        current_step: `📝 Cluster ${i + 1}/${pillarCount}: ${pillarTopic.substring(0, 30)}${pillarTopic.length > 30 ? '...' : ''}` 
+      const batch = batches[batchIndex];
+      const batchProgress = 40 + Math.round((completedClusters / pillarCount) * 35);
+      await updateJob(jobId, {
+        progress: batchProgress,
+        current_step: `📝 Clusters genereren (${completedClusters}/${pillarCount})...`
       });
 
-      try {
-        const clusterPrompt = `Genereer content cluster voor: "${pillarTopic}"
+      // Generate all clusters in this batch in parallel
+      const batchPromises = batch.map(async (pillarData) => {
+        const pillarTopic = typeof pillarData === 'string' ? pillarData : pillarData.topic;
+        const subtopics = typeof pillarData === 'object' ? pillarData.subtopics : [];
+        const estimatedArticles = typeof pillarData === 'object' ? pillarData.estimatedArticles : Math.ceil(targetCount / pillarCount);
+
+        try {
+          const clusterPrompt = `Genereer content cluster voor: "${pillarTopic}"
 Niche: ${nicheData.niche}
 Subtopics: ${subtopics.join(', ')}
 Aantal: ${estimatedArticles}
@@ -741,68 +753,80 @@ Output als JSON:
   ]
 }`;
 
-        const clusterResponse = await generateAICompletion({
-          task: 'content',
-          systemPrompt: `SEO content strategist. ${languageInstructions[language]} Output JSON.`,
-          userPrompt: clusterPrompt,
-          maxTokens: 8000,
-          temperature: 0.8,
-        });
-
-        const jsonMatch = clusterResponse.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const cluster = JSON.parse(jsonMatch[0]);
-
-          clusters.push({
-            pillarTopic,
-            pillarTitle: cluster.pillarTitle,
-            articleCount: (cluster.supportingContent?.length || 0) + 1,
+          const clusterResponse = await generateAICompletion({
+            task: 'content',
+            systemPrompt: `SEO content strategist. ${languageInstructions[language]} Output JSON.`,
+            userPrompt: clusterPrompt,
+            maxTokens: 8000,
+            temperature: 0.8,
+            timeout: 90000, // 90 second timeout per cluster
           });
 
-          allArticles.push({
-            title: cluster.pillarTitle,
-            category: pillarTopic,
-            description: cluster.pillarDescription,
-            keywords: cluster.pillarKeywords || [],
-            contentType: 'pillar',
-            cluster: pillarTopic,
-            priority: 'high',
-          });
+          const jsonMatch = clusterResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const cluster = JSON.parse(jsonMatch[0]);
 
-          for (const article of (cluster.supportingContent || [])) {
-            allArticles.push({
-              title: article.title,
-              category: pillarTopic,
-              description: article.description,
-              keywords: article.keywords || [],
-              contentType: article.contentType || 'guide',
-              cluster: pillarTopic,
-              priority: article.contentType === 'how-to' ? 'high' : 'medium',
-              difficulty: article.difficulty || 'intermediate',
-              searchIntent: article.searchIntent || 'informational',
-            });
+            const clusterResult = {
+              pillarTopic,
+              pillarTitle: cluster.pillarTitle,
+              articleCount: (cluster.supportingContent?.length || 0) + 1,
+            };
+
+            const articles = [
+              {
+                title: cluster.pillarTitle,
+                category: pillarTopic,
+                description: cluster.pillarDescription,
+                keywords: cluster.pillarKeywords || [],
+                contentType: 'pillar',
+                cluster: pillarTopic,
+                priority: 'high',
+              },
+              ...(cluster.supportingContent || []).map((article: any) => ({
+                title: article.title,
+                category: pillarTopic,
+                description: article.description,
+                keywords: article.keywords || [],
+                contentType: article.contentType || 'guide',
+                cluster: pillarTopic,
+                priority: article.contentType === 'how-to' ? 'high' : 'medium',
+                difficulty: article.difficulty || 'intermediate',
+                searchIntent: article.searchIntent || 'informational',
+              }))
+            ];
+
+            return { success: true, cluster: clusterResult, articles };
           }
+          return { success: false, error: 'No JSON match' };
+        } catch (e: any) {
+          console.error(`Cluster generation error for ${pillarTopic}:`, e.message);
+          return { success: false, error: e.message };
         }
-      } catch (e) {
-        console.error('Cluster generation error:', e);
-      }
-
-      // Update progress after each cluster
-      const clusterProgress = 40 + Math.round(((i + 1) / pillarCount) * 35);
-      await updateJob(jobId, { 
-        progress: clusterProgress, 
-        current_step: `✅ Cluster ${i + 1}/${pillarCount} voltooid (${allArticles.length} artikelen)` 
       });
 
-      // Check cancellation immediately after update
-      if (await isJobCancelled(jobId)) {
-        console.log(`Job ${jobId} was cancelled after cluster ${i + 1}`);
-        return;
+      // Wait for all clusters in this batch to complete
+      const batchResults = await Promise.allSettled(batchPromises);
+
+      // Process results
+      for (const result of batchResults) {
+        if (result.status === 'fulfilled' && result.value.success) {
+          clusters.push(result.value.cluster);
+          allArticles.push(...result.value.articles);
+        }
+        completedClusters++;
       }
 
-      // Small delay between clusters
-      if (i < pillarCount - 1) {
-        await new Promise(resolve => setTimeout(resolve, 300));
+      // Update progress after batch
+      const progress = 40 + Math.round((completedClusters / pillarCount) * 35);
+      await updateJob(jobId, {
+        progress,
+        current_step: `✅ ${completedClusters}/${pillarCount} clusters voltooid (${allArticles.length} artikelen)`
+      });
+
+      // Check cancellation after each batch
+      if (await isJobCancelled(jobId)) {
+        console.log(`Job ${jobId} was cancelled after batch ${batchIndex + 1}`);
+        return;
       }
     }
 
@@ -866,7 +890,8 @@ Output als JSON:
         const dataForSEOResults = await getRelatedKeywords(
           seedKeywords,
           langConfig.locationCode,
-          language
+          language,
+          45000 // 45 second timeout for DataForSEO
         );
 
         if (dataForSEOResults && dataForSEOResults.length > 0) {
