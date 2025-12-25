@@ -473,7 +473,50 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
     await updateJob(jobId, { progress: 95, current_step: '🎨 Afbeeldingen klaar' });
 
-    // STEP 7: Finalize and enrich content
+    // STEP 7: Generate Social Media Post
+    await updateJob(jobId, { progress: 90, current_step: '📱 Social media post genereren...' });
+
+    let socialMediaPost = '';
+    try {
+      const socialPrompt = `Schrijf een pakkende social media post om dit artikel te promoten:
+
+Titel: ${title}
+Keyword: ${keyword}
+Samenvatting: ${metaDescription || description || ''}
+
+${langConfig.writingStyle}
+
+Maak een social media post die:
+- Begint met een hook die aandacht trekt
+- De belangrijkste voordelen/inzichten uit het artikel benadrukt
+- Een call-to-action bevat om het artikel te lezen
+- 150-280 karakters lang is (geschikt voor Twitter/X en andere platforms)
+- Emoji's gebruikt om visuele aandacht te trekken (maar niet overdrijven)
+- Een pakkende hashtag bevat
+
+Output alleen de social media post tekst, geen extra uitleg.`;
+
+      socialMediaPost = await generateAICompletion({
+        task: 'content',
+        systemPrompt: `${langConfig.systemPrompt} Je bent een social media expert. Output alleen de post tekst.`,
+        userPrompt: socialPrompt,
+        maxTokens: 500,
+        temperature: 0.8,
+      });
+
+      // Clean up the social media post
+      socialMediaPost = socialMediaPost
+        .trim()
+        .replace(/^["']|["']$/g, '') // Remove quotes
+        .replace(/^(Here is|Here's|Below is|Hier is)/i, '') // Remove intro phrases
+        .trim();
+
+      console.log('Social media post generated:', socialMediaPost.substring(0, 100));
+    } catch (e) {
+      console.warn('Social media post generation failed:', e);
+    }
+
+    // STEP 8: Finalize and enrich content
     await updateJob(jobId, { progress: 98, current_step: '✨ Artikel afronden...' });
 
     // Combine base content
@@ -573,6 +616,7 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
       featured_image: featuredImage,
       slug,
       meta_description: metaDescription,
+      social_media_post: socialMediaPost, // Include generated social media post
       article_id: savedArticleId, // Include article_id here to avoid race conditions
     });
 

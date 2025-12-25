@@ -27,6 +27,7 @@ interface ArticleJob {
   featured_image?: string;
   slug?: string;
   meta_description?: string;
+  social_media_post?: string; // AI-generated social media post
   error?: string;
   created_at: string;
   article_id?: string; // ID of article saved in database
@@ -696,11 +697,75 @@ export default function WriterPage() {
                 {currentJob.featured_image && (
                   <div className="p-6 border-t border-gray-700">
                     <h3 className="text-lg font-semibold text-white mb-4">🖼️ Featured Image</h3>
-                    <img 
-                      src={currentJob.featured_image} 
+                    <img
+                      src={currentJob.featured_image}
                       alt={currentJob.title}
                       className="max-w-md rounded-lg"
                     />
+                  </div>
+                )}
+
+                {/* SEO Metadata */}
+                <div className="p-6 border-t border-gray-700">
+                  <h3 className="text-lg font-semibold text-white mb-4">🔍 SEO Metadata</h3>
+                  <div className="space-y-3">
+                    <div className="bg-gray-700/50 rounded-lg p-4">
+                      <div className="text-xs text-gray-400 mb-1">SEO Titel</div>
+                      <div className="text-white font-medium">{currentJob.title}</div>
+                    </div>
+                    {currentJob.meta_description && (
+                      <div className="bg-gray-700/50 rounded-lg p-4">
+                        <div className="text-xs text-gray-400 mb-1">Meta Omschrijving</div>
+                        <div className="text-white text-sm">{currentJob.meta_description}</div>
+                      </div>
+                    )}
+                    {currentJob.keyword && (
+                      <div className="bg-gray-700/50 rounded-lg p-4">
+                        <div className="text-xs text-gray-400 mb-1">Focus Keyword</div>
+                        <div className="text-white font-medium">{currentJob.keyword}</div>
+                      </div>
+                    )}
+                    {currentJob.slug && (
+                      <div className="bg-gray-700/50 rounded-lg p-4">
+                        <div className="text-xs text-gray-400 mb-1">URL Slug</div>
+                        <div className="text-white font-mono text-sm">/{currentJob.slug}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Social Media Post */}
+                {currentJob.social_media_post && (
+                  <div className="p-6 border-t border-gray-700">
+                    <h3 className="text-lg font-semibold text-white mb-4">📱 Social Media Post</h3>
+                    <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-lg p-6">
+                      <p className="text-white leading-relaxed whitespace-pre-wrap mb-4">
+                        {currentJob.social_media_post}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(currentJob.social_media_post || '');
+                            alert('Social media post gekopieerd!');
+                          }}
+                          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                        >
+                          📋 Kopieer Post
+                        </button>
+                        <button
+                          onClick={() => {
+                            const postUrl = `https://getlate.dev/share?text=${encodeURIComponent(currentJob.social_media_post || '')}`;
+                            window.open(postUrl, '_blank');
+                          }}
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm transition font-semibold"
+                        >
+                          🚀 Delen via Getlate
+                        </button>
+                      </div>
+                      <p className="text-gray-400 text-xs mt-3">
+                        💡 Tip: Gebruik Getlate.dev om deze post direct te delen op al je sociale media
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
