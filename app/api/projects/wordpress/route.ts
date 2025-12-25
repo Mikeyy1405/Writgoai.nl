@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
 import { classifyWordPressError, sanitizeUrl } from '@/lib/wordpress-errors';
 import { getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
+import { getProxyFetchOptions, isProxyConfigured, getProxyInfo } from '@/lib/wordpress-proxy';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -37,12 +38,20 @@ async function fetchWithRetry(
 ): Promise<Response> {
   let lastError: any;
 
+  // Log proxy configuration on first attempt
+  if (isProxyConfigured()) {
+    console.log(`[WP-TEST] Proxy configured: ${getProxyInfo()}`);
+  }
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const startTime = Date.now();
       console.log(`[WP-TEST] [Attempt ${attempt + 1}/${maxRetries + 1}] Fetching ${sanitizeUrl(url)}...`);
 
-      const response = await fetch(url, options);
+      // Apply proxy configuration to fetch options
+      const fetchOptions = getProxyFetchOptions(options);
+
+      const response = await fetch(url, fetchOptions);
       const duration = Date.now() - startTime;
 
       console.log(`[WP-TEST] ✓ Request completed in ${duration}ms with status ${response.status}`);
