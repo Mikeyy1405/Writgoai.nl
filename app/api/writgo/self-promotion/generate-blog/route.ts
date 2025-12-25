@@ -110,8 +110,9 @@ Geef je antwoord in JSON format:
 
     console.log('🤖 Generating AI content...');
     const aiResponse = await generateAICompletion({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'claude-sonnet-4',
+      systemPrompt: 'Je bent een expert content writer voor WritGo.',
+      userPrompt: prompt,
+      model: 'anthropic/claude-sonnet-4.5',
       temperature: 0.8,
     });
 
