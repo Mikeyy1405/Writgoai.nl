@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
 import { classifyWordPressError, sanitizeUrl } from '@/lib/wordpress-errors';
+import { getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -85,12 +86,12 @@ export async function PATCH(request: Request) {
           console.log(`[WP-TEST] Testing WordPress connection to: ${sanitizeUrl(wp_url)}`);
           const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
 
+          // Use advanced browser-like headers to avoid WAF/firewall blocking
+          const authHeader = 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64');
+          const headers = getWordPressApiHeaders(authHeader, wp_url);
+
           const testResponse = await fetch(testUrl, {
-            headers: {
-              'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
-              'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
-              'Accept': 'application/json',
-            },
+            headers,
             signal: AbortSignal.timeout(120000),
           });
 
