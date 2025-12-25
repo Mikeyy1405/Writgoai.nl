@@ -158,8 +158,9 @@ Geef je antwoord in dit EXACTE format (geen extra tekst):
 
     console.log('🤖 Generating AI content...');
     const aiResponse = await generateAICompletion({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'claude-sonnet-4',
+      systemPrompt: 'Je bent een expert social media marketeer voor WritGo.',
+      userPrompt: prompt,
+      model: 'anthropic/claude-sonnet-4',
       temperature: 0.9,
     });
 
