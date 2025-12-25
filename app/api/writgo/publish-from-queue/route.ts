@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get queue item
-    const { data: queueItem, error: queueError } = await supabase
+    const { data: queueItem, error: queueError } = await getSupabase()
       .from('writgo_content_queue')
       .select('*')
       .eq('id', queueId)
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     // Check if already published
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('articles')
       .select('id')
       .eq('title', queueItem.title)
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       .replace(/(^-|-$)/g, '');
 
     // Publish to articles table
-    const { data: article, error: publishError } = await supabase
+    const { data: article, error: publishError } = await getSupabase()
       .from('articles')
       .insert({
         title: queueItem.title,
@@ -77,13 +77,13 @@ export async function POST(request: Request) {
     }
 
     // Delete from queue
-    await supabase
+    await getSupabase()
       .from('writgo_content_queue')
       .delete()
       .eq('id', queueId);
 
     // Log activity
-    await supabase
+    await getSupabase()
       .from('writgo_activity_log')
       .insert({
         action: 'article_published',

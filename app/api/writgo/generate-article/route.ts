@@ -5,8 +5,17 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Lazy initialization to prevent build-time errors
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase as any; // Type assertion needed for tables not in generated types
+}
 
 // Helper function to generate slug from keyword
 function generateSlugFromKeyword(keyword: string): string {
@@ -30,14 +39,13 @@ function generateSlugFromKeyword(keyword: string): string {
 
 export async function POST() {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Create a placeholder queue item immediately
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(10, 0, 0, 0);
 
-    const { data: queueItem, error: queueError } = await supabase
+    const { data: queueItem, error: queueError } = await getSupabase()
       .from('writgo_content_queue')
       .insert({
         title: 'AI genereert artikel...',
@@ -59,7 +67,7 @@ export async function POST() {
     }
 
     // Log activity
-    await supabase
+    await getSupabase()
       .from('writgo_activity_log')
       .insert({
         action: 'article_queued',
@@ -101,7 +109,6 @@ async function generateArticleInBackground(queueId: string) {
   const { generateAdvancedContent } = await import('@/lib/advanced-content-generator');
   const { generateFeaturedImage } = await import('@/lib/aiml-image-generator');
   
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
     // 1. AI discovers a relevant topic
@@ -141,7 +148,7 @@ async function generateArticleInBackground(queueId: string) {
 
     if (autoPublish) {
       // Publish directly to articles table
-      await supabase
+      await getSupabase()
         .from('articles')
         .insert({
           title: content.title,
@@ -165,13 +172,13 @@ async function generateArticleInBackground(queueId: string) {
         });
 
       // Delete queue item
-      await supabase
+      await getSupabase()
         .from('writgo_content_queue')
         .delete()
         .eq('id', queueId);
     } else {
       // Update queue item with generated content
-      await supabase
+      await getSupabase()
         .from('writgo_content_queue')
         .update({
           title: content.title,
@@ -192,7 +199,7 @@ async function generateArticleInBackground(queueId: string) {
     }
 
     // 6. Log completion
-    await supabase
+    await getSupabase()
       .from('writgo_activity_log')
       .insert({
         action: 'article_generated',
@@ -212,7 +219,7 @@ async function generateArticleInBackground(queueId: string) {
     console.error('Background generation failed:', error);
     
     // Mark as failed
-    await supabase
+    await getSupabase()
       .from('writgo_content_queue')
       .update({
         status: 'failed',

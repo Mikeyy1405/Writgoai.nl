@@ -7,10 +7,17 @@ import {
   Holiday,
 } from '@/lib/dutch-holidays';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 // POST: Auto-populate the content calendar
 export async function POST(request: Request) {
@@ -28,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     // Get project and schedule settings
-    const { data: schedule, error: scheduleError } = await supabaseAdmin
+    const { data: schedule, error: scheduleError } = await getSupabaseAdmin()
       .from('social_schedules')
       .select('*, projects(id, name, website_url, niche, language)')
       .eq('project_id', project_id)
@@ -42,7 +49,7 @@ export async function POST(request: Request) {
     }
 
     // Get project strategy for content ideas
-    const { data: strategy } = await supabaseAdmin
+    const { data: strategy } = await getSupabaseAdmin()
       .from('social_strategies')
       .select('*')
       .eq('project_id', project_id)
@@ -60,7 +67,7 @@ export async function POST(request: Request) {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + days_ahead);
 
-    const { data: existingContent } = await supabaseAdmin
+    const { data: existingContent } = await getSupabaseAdmin()
       .from('scheduled_content')
       .select('scheduled_for, title')
       .eq('project_id', project_id)
@@ -68,7 +75,7 @@ export async function POST(request: Request) {
       .lte('scheduled_for', endDate.toISOString());
 
     const existingDates = new Set(
-      existingContent?.map((c) =>
+      existingContent?.map((c: any) =>
         new Date(c.scheduled_for).toISOString().split('T')[0]
       ) || []
     );
@@ -176,7 +183,7 @@ export async function POST(request: Request) {
 
     // Insert all items
     if (itemsToCreate.length > 0) {
-      const { data: created, error: insertError } = await supabaseAdmin
+      const { data: created, error: insertError } = await getSupabaseAdmin()
         .from('scheduled_content')
         .insert(itemsToCreate)
         .select();
@@ -190,7 +197,7 @@ export async function POST(request: Request) {
       }
 
       // Update schedule's auto_populate_last_run
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('social_schedules')
         .update({
           auto_populate_last_run: new Date().toISOString(),

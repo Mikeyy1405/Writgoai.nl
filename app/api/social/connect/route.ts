@@ -4,10 +4,18 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 // Get connect URL for a platform
 export async function GET(request: Request) {
@@ -36,7 +44,7 @@ export async function GET(request: Request) {
     console.log('✅ Late client configured');
 
     // Check if project has a Late profile, create one if not
-    let { data: socialProfile } = await supabaseAdmin
+    let { data: socialProfile } = await getSupabaseAdmin()
       .from('social_profiles')
       .select('*')
       .eq('project_id', projectId)
@@ -44,7 +52,7 @@ export async function GET(request: Request) {
 
     if (!socialProfile) {
       // Get project name for the profile
-      const { data: project } = await supabaseAdmin
+      const { data: project } = await getSupabaseAdmin()
         .from('projects')
         .select('name')
         .eq('id', projectId)
@@ -57,7 +65,7 @@ export async function GET(request: Request) {
       );
 
       // Save to our database
-      const { data: newProfile, error: insertError } = await supabaseAdmin
+      const { data: newProfile, error: insertError } = await getSupabaseAdmin()
         .from('social_profiles')
         .insert({
           project_id: projectId,
@@ -78,7 +86,7 @@ export async function GET(request: Request) {
     if (!socialProfile.late_profile_id) {
       // Try to create Late profile if it doesn't exist
       try {
-        const { data: project } = await supabaseAdmin
+        const { data: project } = await getSupabaseAdmin()
           .from('projects')
           .select('name')
           .eq('id', projectId)
@@ -90,7 +98,7 @@ export async function GET(request: Request) {
         );
 
         // Update the profile with the Late ID
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('social_profiles')
           .update({ late_profile_id: lateProfile._id })
           .eq('id', socialProfile.id);
@@ -102,7 +110,7 @@ export async function GET(request: Request) {
         console.error('❌ Failed to create Late profile:', createError);
         
         // CRITICAL: Return detailed error to frontend
-        const { data: project } = await supabaseAdmin
+        const { data: project } = await getSupabaseAdmin()
           .from('projects')
           .select('name')
           .eq('id', projectId)
@@ -172,7 +180,7 @@ export async function POST(request: Request) {
     console.log('✅ Late client configured, proceeding with sync');
 
     // Get project from database
-    const { data: project } = await supabaseAdmin
+    const { data: project } = await getSupabaseAdmin()
       .from('projects')
       .select('name')
       .eq('id', project_id)
@@ -183,7 +191,7 @@ export async function POST(request: Request) {
     }
 
     // Get or create social profile
-    let { data: socialProfile } = await supabaseAdmin
+    let { data: socialProfile } = await getSupabaseAdmin()
       .from('social_profiles')
       .select('*')
       .eq('project_id', project_id)
@@ -191,7 +199,7 @@ export async function POST(request: Request) {
 
     // If no social profile exists, create one
     if (!socialProfile) {
-      const { data: newProfile, error: insertError } = await supabaseAdmin
+      const { data: newProfile, error: insertError } = await getSupabaseAdmin()
         .from('social_profiles')
         .insert({
           project_id: project_id,
@@ -221,7 +229,7 @@ export async function POST(request: Request) {
         // Sync to our database
         for (const account of lateAccounts) {
           console.log(`💾 Syncing account: ${account.platform} (${account.username})`);
-          const { error } = await supabaseAdmin
+          const { error } = await getSupabaseAdmin()
             .from('social_accounts')
             .upsert({
               social_profile_id: socialProfile.id,
@@ -241,7 +249,7 @@ export async function POST(request: Request) {
         }
 
         // Get our synced accounts
-        const { data: accounts } = await supabaseAdmin
+        const { data: accounts } = await getSupabaseAdmin()
           .from('social_accounts')
           .select('*')
           .eq('social_profile_id', socialProfile.id);
@@ -278,9 +286,9 @@ export async function POST(request: Request) {
       console.log(`✅ Created Late.dev profile: ${lateProfile._id}`);
 
       // Update database with the profile ID
-      const { error: updateError } = await supabaseAdmin
+      const { error: updateError } = await getSupabaseAdmin()
         .from('social_profiles')
-        .update({ 
+        .update({
           late_profile_id: lateProfile._id,
           updated_at: new Date().toISOString()
         })
@@ -322,7 +330,7 @@ export async function POST(request: Request) {
           console.log(`Found existing Late.dev profile: ${existingProfile._id}`);
           
           // Update database with existing profile ID
-          const { error: syncError } = await supabaseAdmin
+          const { error: syncError } = await getSupabaseAdmin()
             .from('social_profiles')
             .update({ 
               late_profile_id: existingProfile._id,
@@ -345,7 +353,7 @@ export async function POST(request: Request) {
 
             // Sync to our database
             for (const account of lateAccounts) {
-              const { error } = await supabaseAdmin
+              const { error } = await getSupabaseAdmin()
                 .from('social_accounts')
                 .upsert({
                   social_profile_id: socialProfile.id,
@@ -363,7 +371,7 @@ export async function POST(request: Request) {
             }
 
             // Get our synced accounts
-            const { data: accounts } = await supabaseAdmin
+            const { data: accounts } = await getSupabaseAdmin()
               .from('social_accounts')
               .select('*')
               .eq('social_profile_id', socialProfile.id);

@@ -3,10 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 async function getAuthenticatedUser() {
   const cookieStore = await cookies();
@@ -41,7 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify project ownership
-    const { data: project } = await supabaseAdmin
+    const { data: project } = await getSupabaseAdmin()
       .from('projects')
       .select('id')
       .eq('id', projectId)
@@ -53,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch scheduled content
-    const { data: scheduledContent, error } = await supabaseAdmin
+    const { data: scheduledContent, error } = await getSupabaseAdmin()
       .from('scheduled_content')
       .select('*')
       .eq('project_id', projectId)
@@ -103,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify project ownership
-    const { data: project } = await supabaseAdmin
+    const { data: project } = await getSupabaseAdmin()
       .from('projects')
       .select('id')
       .eq('id', project_id)
@@ -115,7 +123,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create scheduled content
-    const { data: newItem, error } = await supabaseAdmin
+    const { data: newItem, error } = await getSupabaseAdmin()
       .from('scheduled_content')
       .insert({
         project_id,
@@ -175,7 +183,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get item and verify ownership through project
-    const { data: item } = await supabaseAdmin
+    const { data: item } = await getSupabaseAdmin()
       .from('scheduled_content')
       .select('id, project_id')
       .eq('id', id)
@@ -186,7 +194,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify project ownership
-    const { data: project } = await supabaseAdmin
+    const { data: project } = await getSupabaseAdmin()
       .from('projects')
       .select('id')
       .eq('id', item.project_id)
@@ -210,7 +218,7 @@ export async function PATCH(request: NextRequest) {
     if (status !== undefined) updates.status = status;
 
     // Update item
-    const { data: updatedItem, error } = await supabaseAdmin
+    const { data: updatedItem, error } = await getSupabaseAdmin()
       .from('scheduled_content')
       .update(updates)
       .eq('id', id)
@@ -249,7 +257,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get item and verify ownership through project
-    const { data: item } = await supabaseAdmin
+    const { data: item } = await getSupabaseAdmin()
       .from('scheduled_content')
       .select('id, project_id')
       .eq('id', id)
@@ -260,7 +268,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify project ownership
-    const { data: project } = await supabaseAdmin
+    const { data: project } = await getSupabaseAdmin()
       .from('projects')
       .select('id')
       .eq('id', item.project_id)
@@ -272,7 +280,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete item
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('scheduled_content')
       .delete()
       .eq('id', id);

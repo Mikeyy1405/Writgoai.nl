@@ -6,10 +6,18 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 interface GeneratePostRequest {
   project_id: string;
@@ -131,7 +139,7 @@ export async function POST(request: Request) {
     let articleContent = '';
     let articleTitle = '';
     if (article_id) {
-      const { data: article } = await supabaseAdmin
+      const { data: article } = await getSupabaseAdmin()
         .from('articles')
         .select('title, content')
         .eq('id', article_id)
@@ -157,7 +165,7 @@ export async function POST(request: Request) {
     const hashtagLimit = PLATFORM_LIMITS[mainPlatform]?.hashtags || 5;
 
     // Get recent posts to avoid repetition
-    const { data: recentPosts } = await supabaseAdmin
+    const { data: recentPosts } = await getSupabaseAdmin()
       .from('social_posts')
       .select('content, post_type')
       .eq('project_id', project_id)
@@ -167,8 +175,8 @@ export async function POST(request: Request) {
     // Build variation instructions based on recent posts
     let variationInstructions = '';
     if (recentPosts && recentPosts.length > 0) {
-      const postTypesUsed = recentPosts.map(p => p.post_type).filter(Boolean);
-      const recentOpenings = recentPosts.map(p => {
+      const postTypesUsed = recentPosts.map((p: any) => p.post_type).filter(Boolean);
+      const recentOpenings = recentPosts.map((p: any) => {
         const lines = p.content.split('\n');
         return lines[0]?.substring(0, 50);
       }).filter(Boolean);
@@ -321,7 +329,7 @@ ${isNL ? 'GEEN tekst in de afbeelding!' : 'NO text in the image!'}`;
     }
 
     // Save to database
-    const { data: savedPost, error: saveError } = await supabaseAdmin
+    const { data: savedPost, error: saveError } = await getSupabaseAdmin()
       .from('social_posts')
       .insert({
         project_id,
@@ -381,7 +389,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    let query = supabaseAdmin
+    let query = getSupabaseAdmin()
       .from('social_posts')
       .select('*')
       .eq('project_id', projectId)

@@ -10,10 +10,17 @@ import {
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 /**
  * Auto-populate Calendars Cron Job
@@ -39,7 +46,7 @@ export async function GET(request: Request) {
     };
 
     // Get all schedules with auto_populate_calendar enabled
-    const { data: schedules, error: schedulesError } = await supabaseAdmin
+    const { data: schedules, error: schedulesError } = await getSupabaseAdmin()
       .from('social_schedules')
       .select('*, projects(id, name, website_url, niche, language)')
       .eq('enabled', true)
@@ -73,7 +80,7 @@ export async function GET(request: Request) {
         const platforms = schedule.target_platforms || ['instagram'];
 
         // Get project strategy for content ideas
-        const { data: strategy } = await supabaseAdmin
+        const { data: strategy } = await getSupabaseAdmin()
           .from('social_strategies')
           .select('*')
           .eq('project_id', projectId)
@@ -91,7 +98,7 @@ export async function GET(request: Request) {
         const endDate = new Date();
         endDate.setDate(endDate.getDate() + daysAhead);
 
-        const { data: existingContent } = await supabaseAdmin
+        const { data: existingContent } = await getSupabaseAdmin()
           .from('scheduled_content')
           .select('scheduled_for, title')
           .eq('project_id', projectId)
@@ -99,7 +106,7 @@ export async function GET(request: Request) {
           .lte('scheduled_for', endDate.toISOString());
 
         const existingDates = new Set(
-          existingContent?.map((c) =>
+          existingContent?.map((c: any) =>
             new Date(c.scheduled_for).toISOString().split('T')[0]
           ) || []
         );
@@ -208,7 +215,7 @@ export async function GET(request: Request) {
 
         // Insert all items
         if (itemsToCreate.length > 0) {
-          const { data: created, error: insertError } = await supabaseAdmin
+          const { data: created, error: insertError } = await getSupabaseAdmin()
             .from('scheduled_content')
             .insert(itemsToCreate)
             .select();
@@ -243,7 +250,7 @@ export async function GET(request: Request) {
         }
 
         // Update schedule's auto_populate_last_run
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('social_schedules')
           .update({
             auto_populate_last_run: new Date().toISOString(),

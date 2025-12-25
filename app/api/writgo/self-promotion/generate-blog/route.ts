@@ -7,8 +7,17 @@ import { saveImageFromUrl } from '@/lib/storage-utils';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Lazy initialization to prevent build-time errors
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase as any; // Type assertion needed for tables not in generated types
+}
 
 // Helper function to generate slug
 function generateSlug(title: string): string {
@@ -28,14 +37,13 @@ function generateSlug(title: string): string {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const body = await req.json();
     const { template_id, auto_publish = false } = body;
 
     // Get template
     let template;
     if (template_id) {
-      const { data: templateData } = await supabase
+      const { data: templateData } = await getSupabase()
         .from('writgo_self_promotion_templates')
         .select('*')
         .eq('id', template_id)
@@ -44,7 +52,7 @@ export async function POST(req: Request) {
       template = templateData;
     } else {
       // Select random template
-      const { data: templates } = await supabase
+      const { data: templates } = await getSupabase()
         .from('writgo_self_promotion_templates')
         .select('*')
         .eq('template_type', 'blog')
@@ -166,7 +174,7 @@ Geef je antwoord in JSON format:
     };
 
     // Insert article
-    const { data: article, error: articleError } = await supabase
+    const { data: article, error: articleError } = await getSupabase()
       .from('articles')
       .insert(articlePayload)
       .select()
@@ -179,7 +187,7 @@ Geef je antwoord in JSON format:
     console.log('✅ Saved article:', article.id);
 
     // Update template usage
-    await supabase
+    await getSupabase()
       .from('writgo_self_promotion_templates')
       .update({
         times_used: (template.times_used || 0) + 1,
@@ -188,7 +196,7 @@ Geef je antwoord in JSON format:
       .eq('id', template.id);
 
     // Update config stats
-    await supabase.rpc('increment_self_promo_blog_count');
+    await getSupabase().rpc('increment_self_promo_blog_count');
 
     return NextResponse.json({
       success: true,

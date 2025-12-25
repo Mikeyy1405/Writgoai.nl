@@ -6,10 +6,17 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 interface ProductWithReview {
   ean: string;
@@ -49,7 +56,7 @@ export async function POST(request: Request) {
     }
 
     // Get Bol.com affiliate config
-    const { data: affiliate, error: affiliateError } = await supabaseAdmin
+    const { data: affiliate, error: affiliateError } = await getSupabaseAdmin()
       .from('project_affiliates')
       .select('*')
       .eq('project_id', project_id)
@@ -175,7 +182,7 @@ Regels:
       });
 
       // Cache product
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('product_cache')
         .upsert({
           ean: product.ean,

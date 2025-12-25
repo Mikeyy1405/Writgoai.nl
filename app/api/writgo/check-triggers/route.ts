@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const parser = new Parser();
 
     // Get all active triggers
-    const { data: triggers, error: triggersError } = await supabase
+    const { data: triggers, error: triggersError } = await getSupabase()
       .from('writgo_content_triggers')
       .select('*')
       .eq('is_active', true)
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Check if we've already created an opportunity for this URL
-          const { data: existing } = await supabase
+          const { data: existing } = await getSupabase()
             .from('writgo_content_opportunities')
             .select('id')
             .eq('source_url', item.link)
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Create new opportunity
-          const { data: opportunity, error: oppError } = await supabase
+          const { data: opportunity, error: oppError } = await getSupabase()
             .from('writgo_content_opportunities')
             .insert({
               trigger_id: trigger.id,
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update trigger last_checked_at
-        await supabase
+        await getSupabase()
           .from('writgo_content_triggers')
           .update({
             last_checked_at: new Date().toISOString(),
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
         results.errors.push(`Error checking ${trigger.name}: ${error.message}`);
         
         // Update last_checked_at even on error
-        await supabase
+        await getSupabase()
           .from('writgo_content_triggers')
           .update({ last_checked_at: new Date().toISOString() })
           .eq('id', trigger.id);

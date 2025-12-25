@@ -3,10 +3,17 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 function generateSlug(title: string): string {
   return title
@@ -24,7 +31,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    let query = supabaseAdmin
+    let query = getSupabaseAdmin()
       .from('articles')
       .select('id, slug, title, content, excerpt, featured_image, focus_keyword, status, meta_title, meta_description, published_at, created_at, updated_at, views')
       .is('project_id', null)
@@ -86,7 +93,7 @@ export async function POST(request: Request) {
       .replace(/^-|-$/g, '');
     
     // Check if slug exists and make unique if needed
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await getSupabaseAdmin()
       .from('articles')
       .select('slug')
       .eq('slug', slug)
@@ -96,7 +103,7 @@ export async function POST(request: Request) {
       slug = `${slug}-${Date.now()}`;
     }
 
-    const { data: post, error } = await supabaseAdmin
+    const { data: post, error } = await getSupabaseAdmin()
       .from('articles')
       .insert({
         title,
@@ -172,7 +179,7 @@ export async function PATCH(request: Request) {
         .replace(/^-|-$/g, '');
       
       // Check if slug exists (but not for the current post)
-      const { data: existing } = await supabaseAdmin
+      const { data: existing } = await getSupabaseAdmin()
         .from('articles')
         .select('id, slug')
         .eq('slug', slug)
@@ -201,7 +208,7 @@ export async function PATCH(request: Request) {
       updates.status = status;
       if (status === 'published') {
         // Check if already published
-        const { data: existing } = await supabaseAdmin
+        const { data: existing } = await getSupabaseAdmin()
           .from('articles')
           .select('published_at')
           .eq('id', id)
@@ -213,7 +220,7 @@ export async function PATCH(request: Request) {
       }
     }
 
-    const { data: post, error } = await supabaseAdmin
+    const { data: post, error } = await getSupabaseAdmin()
       .from('articles')
       .update(updates)
       .eq('id', id)
@@ -247,7 +254,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('articles')
       .delete()
       .eq('id', id)

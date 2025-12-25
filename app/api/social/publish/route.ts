@@ -4,10 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 interface PublishRequest {
   post_id: string;
@@ -26,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     // Get the post
-    const { data: post, error: postError } = await supabaseAdmin
+    const { data: post, error: postError } = await getSupabaseAdmin()
       .from('social_posts')
       .select('*')
       .eq('id', post_id)
@@ -40,7 +47,7 @@ export async function POST(request: Request) {
 
     if (!lateClient.isConfigured()) {
       // No Late API - just update status to show it's ready
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('social_posts')
         .update({
           status: 'ready',
@@ -56,7 +63,7 @@ export async function POST(request: Request) {
     }
 
     // Get accounts
-    const { data: accounts } = await supabaseAdmin
+    const { data: accounts } = await getSupabaseAdmin()
       .from('social_accounts')
       .select('*')
       .in('id', account_ids);
@@ -80,8 +87,8 @@ export async function POST(request: Request) {
       } catch (e: any) {
         console.error('❌ Image URL check failed:', e.message);
 
-        const hasInstagram = accounts.some(acc => acc.platform === 'instagram');
-        const hasTikTok = accounts.some(acc => acc.platform === 'tiktok');
+        const hasInstagram = accounts.some((acc: any) => acc.platform === 'instagram');
+        const hasTikTok = accounts.some((acc: any) => acc.platform === 'tiktok');
 
         if (hasInstagram || hasTikTok) {
           const platform = hasInstagram ? 'Instagram' : 'TikTok';
@@ -110,8 +117,8 @@ export async function POST(request: Request) {
           console.error('📸 Failed image URL:', post.image_url);
 
           // Check if Instagram or TikTok is in the platforms (they require media)
-          const hasInstagram = accounts.some(acc => acc.platform === 'instagram');
-          const hasTikTok = accounts.some(acc => acc.platform === 'tiktok');
+          const hasInstagram = accounts.some((acc: any) => acc.platform === 'instagram');
+          const hasTikTok = accounts.some((acc: any) => acc.platform === 'tiktok');
 
           if (hasInstagram || hasTikTok) {
             const platform = hasInstagram ? 'Instagram' : 'TikTok';
@@ -128,13 +135,13 @@ export async function POST(request: Request) {
     }
 
     // Create post on Late
-    const platforms = accounts.map(acc => ({
+    const platforms = accounts.map((acc: any) => ({
       platform: acc.platform,
       accountId: acc.late_account_id,
     }));
 
     // Validate Instagram requires media
-    const hasInstagram = platforms.some(p => p.platform === 'instagram');
+    const hasInstagram = platforms.some((p: any) => p.platform === 'instagram');
     if (hasInstagram && mediaItems.length === 0) {
       return NextResponse.json({
         error: 'Instagram posts vereisen altijd een afbeelding of video. Voeg eerst media toe aan je post.'
@@ -142,7 +149,7 @@ export async function POST(request: Request) {
     }
 
     console.log('📤 Creating post on Late with:', {
-      platforms: platforms.map(p => p.platform),
+      platforms: platforms.map((p: any) => p.platform),
       mediaCount: mediaItems.length,
       hasSchedule: !!scheduled_for,
       publishNow: publish_now,
@@ -164,7 +171,7 @@ export async function POST(request: Request) {
     });
 
     // Update our post
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('social_posts')
       .update({
         late_post_id: latePost._id,
@@ -197,7 +204,7 @@ export async function DELETE(request: Request) {
     }
 
     // Get the post
-    const { data: post } = await supabaseAdmin
+    const { data: post } = await getSupabaseAdmin()
       .from('social_posts')
       .select('late_post_id')
       .eq('id', postId)
@@ -216,7 +223,7 @@ export async function DELETE(request: Request) {
     }
 
     // Delete from our database
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('social_posts')
       .delete()
       .eq('id', postId);
@@ -249,7 +256,7 @@ export async function PATCH(request: Request) {
     if (content !== undefined) updates.content = content;
     if (image_url !== undefined) updates.image_url = image_url;
 
-    const { data: post, error } = await supabaseAdmin
+    const { data: post, error } = await getSupabaseAdmin()
       .from('social_posts')
       .update(updates)
       .eq('id', post_id)

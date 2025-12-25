@@ -3,9 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 import { getCreditBalance, deductCredits } from '@/lib/credit-manager';
 import { getModelById } from '@/lib/image-models';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase as any;
+}
 
 const AIML_API_KEY = process.env.AIML_API_KEY!;
 const AIML_BASE_URL = 'https://api.aimlapi.com/v1';
@@ -46,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json(
@@ -284,7 +291,7 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json(
@@ -294,7 +301,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get credit usage logs for image generation
-    const { data: logs, error: logsError } = await supabase
+    const { data: logs, error: logsError } = await getSupabase()
       .from('credit_usage_logs')
       .select('*')
       .eq('user_id', user.id)

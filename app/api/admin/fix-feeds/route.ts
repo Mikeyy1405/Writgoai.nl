@@ -8,27 +8,27 @@ export const runtime = 'nodejs';
 export async function POST() {
   try {
     const supabase = createClient();
-    
+
     // Fix Google Search Central Blog RSS URL
     const { error: googleError } = await supabase
       .from('writgo_content_triggers')
       .update({ feed_url: 'https://feeds.feedburner.com/blogspot/amDG' })
       .eq('name', 'Google Search Central Blog');
-    
+
     if (googleError) {
       console.error('Error fixing Google feed:', googleError);
     }
-    
+
     // Remove Anthropic News feed (doesn't exist)
     const { error: anthropicError } = await supabase
       .from('writgo_content_triggers')
       .delete()
       .eq('name', 'Anthropic News');
-    
+
     if (anthropicError) {
       console.error('Error removing Anthropic feed:', anthropicError);
     }
-    
+
     // Get updated feed list
     const { data: feeds, error: listError } = await supabase
       .from('writgo_content_triggers')

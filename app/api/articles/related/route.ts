@@ -5,8 +5,17 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Lazy initialization to prevent build-time errors
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase as any; // Type assertion needed for tables not in generated types
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,10 +31,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     // Strategy 1: Find articles with similar focus keyword
-    let query = supabase
+    let query = getSupabase()
       .from('articles')
       .select('id, title, slug, excerpt, published_at, focus_keyword')
       .eq('status', 'published')
@@ -48,7 +55,7 @@ export async function GET(request: NextRequest) {
     let articles = keywordMatches || [];
     
     if (articles.length < limit) {
-      const { data: recentArticles, error: recentError } = await supabase
+      const { data: recentArticles, error: recentError } = await getSupabase()
         .from('articles')
         .select('id, title, slug, excerpt, published_at, focus_keyword')
         .eq('status', 'published')
@@ -58,8 +65,8 @@ export async function GET(request: NextRequest) {
 
       if (!recentError && recentArticles) {
         // Combine and deduplicate
-        const existingIds = new Set(articles.map(a => a.id));
-        const newArticles = recentArticles.filter(a => !existingIds.has(a.id));
+        const existingIds = new Set(articles.map((a: any) => a.id));
+        const newArticles = recentArticles.filter((a: any) => !existingIds.has(a.id));
         articles = [...articles, ...newArticles];
       }
     }

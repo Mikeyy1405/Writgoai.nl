@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Step 1: Delete old RSS feeds
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await getSupabase()
       .from('writgo_content_triggers')
       .delete()
       .eq('trigger_type', 'rss_feed');
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     };
 
     for (const feed of premiumFeeds) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await getSupabase()
         .from('writgo_content_triggers')
         .insert({
           name: feed.name,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Get updated list
-    const { data: feeds, error: fetchError } = await supabase
+    const { data: feeds, error: fetchError } = await getSupabase()
       .from('writgo_content_triggers')
       .select('name, category, priority, is_active')
       .eq('trigger_type', 'rss_feed')

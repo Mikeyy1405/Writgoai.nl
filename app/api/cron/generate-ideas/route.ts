@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -26,7 +33,7 @@ export async function GET(request: NextRequest) {
     console.log('[Generate Ideas Cron] Starting weekly idea generation...');
 
     // Get all projects with social strategies
-    const { data: strategies, error: fetchError } = await supabaseAdmin
+    const { data: strategies, error: fetchError } = await getSupabaseAdmin()
       .from('social_strategies')
       .select(`
         *,
@@ -201,7 +208,7 @@ async function scheduleIdeas(projectId: string, ideas: ContentIdea[]): Promise<a
     scheduledFor.setDate(scheduledFor.getDate() + i);
 
     try {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('scheduled_content')
         .insert({
           project_id: projectId,

@@ -3,10 +3,17 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 // Get a specific content idea from the social strategy by index
 export async function GET(request: Request) {
@@ -29,7 +36,7 @@ export async function GET(request: Request) {
     }
 
     // Get the social strategy
-    const { data: strategy, error } = await supabaseAdmin
+    const { data: strategy, error } = await getSupabaseAdmin()
       .from('social_strategies')
       .select('content_ideas, niche, target_audience, brand_voice, hashtag_strategy')
       .eq('project_id', projectId)

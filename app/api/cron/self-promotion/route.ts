@@ -5,8 +5,17 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Lazy initialization to prevent build-time errors
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase as any; // Type assertion needed for tables not in generated types
+}
 
 /**
  * Cron job for WritGo self-promotion automation
@@ -16,7 +25,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  */
 export async function GET(req: Request) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify cron secret
     const authHeader = req.headers.get('authorization');
@@ -35,7 +43,7 @@ export async function GET(req: Request) {
     };
 
     // Get self-promotion config
-    const { data: config, error: configError } = await supabase
+    const { data: config, error: configError } = await getSupabase()
       .from('writgo_self_promotion_config')
       .select('*')
       .single();
@@ -95,7 +103,7 @@ export async function GET(req: Request) {
         results.blog_generated = true;
 
         // Update last run time
-        await supabase
+        await getSupabase()
           .from('writgo_self_promotion_config')
           .update({
             last_blog_generated_at: now.toISOString(),
@@ -119,7 +127,7 @@ export async function GET(req: Request) {
       try {
         // Get or create a default project_id for WritGo self-promotion
         // You might want to create a dedicated project for self-promotion
-        const { data: projects } = await supabase
+        const { data: projects } = await getSupabase()
           .from('projects')
           .select('id')
           .limit(1);
@@ -156,7 +164,7 @@ export async function GET(req: Request) {
         results.social_generated = true;
 
         // Update last run time
-        await supabase
+        await getSupabase()
           .from('writgo_self_promotion_config')
           .update({
             last_social_generated_at: now.toISOString(),

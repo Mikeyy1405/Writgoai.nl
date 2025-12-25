@@ -5,10 +5,18 @@ import { generateJSONCompletion, analyzeWithPerplexityJSON } from '@/lib/ai-clie
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 interface NicheAnalysis {
   niche: string;
@@ -32,7 +40,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const { data: strategy, error } = await supabaseAdmin
+    const { data: strategy, error } = await getSupabaseAdmin()
       .from('social_strategies')
       .select('*')
       .eq('project_id', projectId)
@@ -62,7 +70,7 @@ export async function POST(request: Request) {
     }
 
     // Get project details
-    const { data: project } = await supabaseAdmin
+    const { data: project } = await getSupabaseAdmin()
       .from('projects')
       .select('*')
       .eq('id', project_id)
@@ -255,7 +263,7 @@ Antwoord ALLEEN met het JSON object.`;
     }
 
     // Check if strategy exists for this project
-    const { data: existingStrategy } = await supabaseAdmin
+    const { data: existingStrategy } = await getSupabaseAdmin()
       .from('social_strategies')
       .select('id')
       .eq('project_id', project_id)
@@ -279,7 +287,7 @@ Antwoord ALLEEN met het JSON object.`;
     };
 
     if (existingStrategy) {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('social_strategies')
         .update(strategyRecord)
         .eq('id', existingStrategy.id)
@@ -289,7 +297,7 @@ Antwoord ALLEEN met het JSON object.`;
       if (error) throw error;
       result = data;
     } else {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('social_strategies')
         .insert(strategyRecord)
         .select()
@@ -326,7 +334,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Strategy ID is required' }, { status: 400 });
     }
 
-    const { data: strategy, error } = await supabaseAdmin
+    const { data: strategy, error } = await getSupabaseAdmin()
       .from('social_strategies')
       .update({
         ...updates,

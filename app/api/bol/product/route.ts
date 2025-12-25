@@ -4,10 +4,18 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 export async function GET(request: Request) {
   try {
@@ -25,7 +33,7 @@ export async function GET(request: Request) {
     }
 
     // Check cache first
-    const { data: cached } = await supabaseAdmin
+    const { data: cached } = await getSupabaseAdmin()
       .from('product_cache')
       .select('*')
       .eq('ean', ean)
@@ -34,7 +42,7 @@ export async function GET(request: Request) {
     // If cached and recent (less than 24 hours old), return cached data
     if (cached && new Date(cached.last_updated) > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
       // Get affiliate config for link generation
-      const { data: affiliate } = await supabaseAdmin
+      const { data: affiliate } = await getSupabaseAdmin()
         .from('project_affiliates')
         .select('site_code')
         .eq('project_id', projectId)
@@ -54,7 +62,7 @@ export async function GET(request: Request) {
     }
 
     // Get Bol.com credentials from project affiliates
-    const { data: affiliate, error: affiliateError } = await supabaseAdmin
+    const { data: affiliate, error: affiliateError } = await getSupabaseAdmin()
       .from('project_affiliates')
       .select('*')
       .eq('project_id', projectId)
@@ -99,7 +107,7 @@ export async function GET(request: Request) {
     }
 
     // Cache product
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('product_cache')
       .upsert({
         ean: product.ean,
@@ -161,7 +169,7 @@ export async function POST(request: Request) {
     }
 
     // Get product from cache or API
-    const { data: cached } = await supabaseAdmin
+    const { data: cached } = await getSupabaseAdmin()
       .from('product_cache')
       .select('*')
       .eq('ean', ean)
@@ -174,7 +182,7 @@ export async function POST(request: Request) {
     }
 
     // Get affiliate config
-    const { data: affiliate } = await supabaseAdmin
+    const { data: affiliate } = await getSupabaseAdmin()
       .from('project_affiliates')
       .select('site_code')
       .eq('project_id', project_id)

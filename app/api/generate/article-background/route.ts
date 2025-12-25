@@ -20,10 +20,17 @@ export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes max
 
 // Create admin client for background jobs
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 // Language-specific instructions
 const LANGUAGE_INSTRUCTIONS: Record<string, {
@@ -50,7 +57,7 @@ const LANGUAGE_INSTRUCTIONS: Record<string, {
 
 // Update job in database
 async function updateJob(jobId: string, updates: any) {
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('article_jobs')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', jobId);
@@ -101,7 +108,7 @@ export async function GET(request: Request) {
 
   try {
     if (jobId) {
-      const { data: job, error } = await supabaseAdmin
+      const { data: job, error } = await getSupabaseAdmin()
         .from('article_jobs')
         .select('*')
         .eq('id', jobId)
@@ -112,7 +119,7 @@ export async function GET(request: Request) {
     }
 
     if (projectId) {
-      const { data: jobs, error } = await supabaseAdmin
+      const { data: jobs, error } = await getSupabaseAdmin()
         .from('article_jobs')
         .select('*')
         .eq('project_id', projectId)
@@ -155,7 +162,7 @@ export async function POST(request: Request) {
     }
 
     // Create job in database
-    const { data: job, error: createError } = await supabaseAdmin
+    const { data: job, error: createError } = await getSupabaseAdmin()
       .from('article_jobs')
       .insert({
         project_id,
@@ -554,7 +561,7 @@ Output alleen de social media post tekst, geen extra uitleg.`;
     let savedArticleId: string | null = null;
     if (projectId) {
       try {
-        const { data: article, error: articleError } = await supabaseAdmin
+        const { data: article, error: articleError } = await getSupabaseAdmin()
           .from('articles')
           .insert({
             project_id: projectId,

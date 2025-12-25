@@ -5,10 +5,17 @@ import { createClient as createServerClient } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 // Activate social media for a project (create or find Late.dev profile)
 export async function POST(request: Request) {
@@ -36,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     // Check if profile already exists in our database
-    const { data: existingProfile } = await supabaseAdmin
+    const { data: existingProfile } = await getSupabaseAdmin()
       .from('social_profiles')
       .select('*')
       .eq('project_id', project_id)
@@ -51,7 +58,7 @@ export async function POST(request: Request) {
     }
 
     // Get project info
-    const { data: project } = await supabaseAdmin
+    const { data: project } = await getSupabaseAdmin()
       .from('projects')
       .select('name, website_url')
       .eq('id', project_id)
@@ -129,7 +136,7 @@ export async function POST(request: Request) {
     
     if (existingProfile) {
       // Update existing record
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('social_profiles')
         .update({ 
           late_profile_id: lateProfileId,
@@ -143,7 +150,7 @@ export async function POST(request: Request) {
       profileRecord = data;
     } else {
       // Create new record
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('social_profiles')
         .insert({
           project_id,
@@ -183,7 +190,7 @@ export async function GET(request: Request) {
     const lateClient = getLateClient();
     const isConfigured = lateClient.isConfigured();
 
-    const { data: profile } = await supabaseAdmin
+    const { data: profile } = await getSupabaseAdmin()
       .from('social_profiles')
       .select('*')
       .eq('project_id', projectId)
