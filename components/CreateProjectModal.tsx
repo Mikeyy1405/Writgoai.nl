@@ -19,13 +19,12 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
   const [formData, setFormData] = useState({
     name: '',
     website_url: '',
-    wp_username: '',
-    wp_password: '',
+    writgo_api_key: '',
   });
 
   const testWordPressConnection = async () => {
-    if (!formData.website_url || !formData.wp_username || !formData.wp_password) {
-      setError('Vul eerst alle WordPress velden in om te testen');
+    if (!formData.website_url || !formData.writgo_api_key) {
+      setError('Vul eerst de WordPress URL en API key in om te testen');
       return;
     }
 
@@ -35,32 +34,39 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
     setWarning('');
 
     try {
-      // Build the WordPress API URL - normalize to base URL only
+      // Build the WritGo Connector health check URL
       let baseUrl = formData.website_url.trim();
       if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
       baseUrl = baseUrl.replace(/\/wp-json.*$/, '');
-      const apiUrl = `${baseUrl}/wp-json/wp/v2/posts?per_page=1`;
+      const healthUrl = `${baseUrl}/wp-json/writgo/v1/health`;
 
-      // Clean the password (remove spaces from Application Password)
-      const cleanPassword = formData.wp_password.replace(/\s+/g, '');
-      const authHeader = 'Basic ' + btoa(`${formData.wp_username}:${cleanPassword}`);
-
-      const response = await fetch(apiUrl, {
+      const response = await fetch(healthUrl, {
         headers: {
-          'Authorization': authHeader,
+          'Accept': 'application/json',
         },
       });
 
       if (response.ok) {
-        setSuccess('✅ WordPress verbinding succesvol! Je kunt het project aanmaken.');
-      } else if (response.status === 401) {
-        setError('Authenticatie mislukt. Controleer je gebruikersnaam en applicatiewachtwoord.');
-      } else if (response.status === 403) {
-        setError('Toegang geweigerd. Controleer de gebruikersrechten.');
+        // Now test with API key
+        const testUrl = `${baseUrl}/wp-json/writgo/v1/test`;
+        const testResponse = await fetch(testUrl, {
+          headers: {
+            'X-Writgo-API-Key': formData.writgo_api_key,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (testResponse.ok) {
+          setSuccess('✅ WritGo Connector plugin verbinding succesvol! Je kunt het project aanmaken.');
+        } else if (testResponse.status === 401) {
+          setError('API key is ongeldig. Controleer je WritGo Connector plugin instellingen.');
+        } else {
+          setError(`WordPress gaf fout ${testResponse.status}. Controleer de instellingen.`);
+        }
       } else if (response.status === 404) {
-        setError('WordPress REST API niet gevonden. Is dit een WordPress website?');
+        setError('WritGo Connector plugin niet gevonden. Installeer eerst de plugin op je WordPress site.');
       } else {
-        setError(`WordPress gaf fout ${response.status}. Controleer de instellingen.`);
+        setError(`WordPress gaf fout ${response.status}. Controleer de WordPress URL.`);
       }
     } catch (err: any) {
       if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
@@ -106,8 +112,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
           setFormData({
             name: '',
             website_url: '',
-            wp_username: '',
-            wp_password: '',
+            writgo_api_key: '',
           });
           setShowWordPress(false);
           setSkipWpTest(false);
@@ -119,8 +124,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
         setFormData({
           name: '',
           website_url: '',
-          wp_username: '',
-          wp_password: '',
+          writgo_api_key: '',
         });
         setShowWordPress(false);
         setSkipWpTest(false);
@@ -236,47 +240,29 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
               </div>
 
               <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 text-sm">
-                <strong>💡 Hoe maak je een Application Password?</strong>
+                <strong>💡 Hoe vind je de API Key?</strong>
                 <ol className="mt-2 ml-4 list-decimal space-y-1 text-blue-200">
-                  <li>Installeer eerst de WritGo Connector plugin op je WordPress site</li>
-                  <li>Ga naar je WordPress admin → Gebruikers → Profiel</li>
-                  <li>Scroll naar &quot;Application Passwords&quot;</li>
-                  <li>Voer een naam in (bijv. &quot;WritGo&quot;) en klik &quot;Nieuw wachtwoord toevoegen&quot;</li>
-                  <li>Kopieer het wachtwoord (met of zonder spaties)</li>
+                  <li>Installeer de WritGo Connector plugin op je WordPress site</li>
+                  <li>Ga naar WordPress admin → Instellingen → WritGo</li>
+                  <li>De API key wordt automatisch gegenereerd en getoond</li>
+                  <li>Kopieer de API key en plak deze hieronder</li>
                 </ol>
               </div>
 
               <div>
                 <label className="block text-gray-300 mb-2 font-medium">
-                  WordPress Username
+                  WritGo Connector API Key
                 </label>
                 <input
-                  type="text"
-                  value={formData.wp_username}
-                  onChange={(e) => setFormData({ ...formData, wp_username: e.target.value })}
-                  disabled={loading}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  placeholder="admin"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Je WordPress gebruikersnaam (niet je e-mail)
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-gray-300 mb-2 font-medium">
-                  WordPress Application Password
-                </label>
-                <input
-                  type="text"
-                  value={formData.wp_password}
-                  onChange={(e) => setFormData({ ...formData, wp_password: e.target.value })}
+                  type="password"
+                  value={formData.writgo_api_key}
+                  onChange={(e) => setFormData({ ...formData, writgo_api_key: e.target.value })}
                   disabled={loading}
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white disabled:opacity-50 focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono"
-                  placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                  placeholder="wgapi_••••••••••••••••••••••••••••"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Het Application Password (spaties worden automatisch verwijderd)
+                  De API key van de WritGo Connector plugin (te vinden in WordPress admin → Instellingen → WritGo)
                 </p>
               </div>
 

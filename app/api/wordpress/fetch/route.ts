@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
-import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader, getWordPressEndpoint, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
-import { getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
+import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildWritgoHeaders, getWordPressEndpoint } from '@/lib/wordpress-endpoints';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
@@ -47,11 +46,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get project with WordPress credentials
+    // Get project with WritGo API key
     console.log(`[WP-FETCH-${requestId}] 📂 Fetching project from database...`);
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select('id, name, wp_url, wp_username, wp_password, wp_app_password')
+      .select('id, name, wp_url, writgo_api_key')
       .eq('id', projectId)
       .eq('user_id', user.id)
       .single();
@@ -66,26 +65,24 @@ export async function GET(request: NextRequest) {
 
     console.log(`[WP-FETCH-${requestId}] ✅ Project found: ${project.name}`);
 
-    // Check if WordPress credentials are configured
-    console.log(`[WP-FETCH-${requestId}] 🔧 Checking WordPress configuration...`);
+    // Check if WritGo API key is configured
+    console.log(`[WP-FETCH-${requestId}] 🔧 Checking WritGo plugin configuration...`);
     console.log(`[WP-FETCH-${requestId}] 📊 Config status:`, {
       hasWpUrl: !!project.wp_url,
-      hasUsername: !!project.wp_username,
-      hasAppPassword: !!project.wp_app_password,
-      hasPassword: !!project.wp_password
+      hasApiKey: !!project.writgo_api_key,
     });
 
-    if (!project.wp_url || (!project.wp_username && !project.wp_app_password)) {
-      console.error(`[WP-FETCH-${requestId}] ❌ WordPress configuration incomplete`);
+    if (!project.wp_url || !project.writgo_api_key) {
+      console.error(`[WP-FETCH-${requestId}] ❌ WritGo plugin configuration incomplete`);
       const errorDetails = classifyWordPressError(
-        new Error('WordPress configuratie is niet compleet. Configureer WordPress in project instellingen.'),
+        new Error('WritGo Connector plugin is niet geconfigureerd. Voeg de API key toe in project instellingen.'),
         undefined,
         project.wp_url
       );
       console.error(`[WP-FETCH-${requestId}]`, formatErrorForLogging(errorDetails));
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -93,93 +90,48 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Prepare WordPress credentials and normalize URL
-    // Remove trailing slash AND any /wp-json paths that might have been incorrectly saved
+    // Prepare WordPress URL - normalize
     let wpUrl = project.wp_url.replace(/\/$/, ''); // Remove trailing slash
     wpUrl = wpUrl.replace(/\/wp-json.*$/, ''); // Remove any /wp-json paths to ensure clean base URL
 
     console.log(`[WP-FETCH-${requestId}] 🌐 WordPress URL:`, sanitizeUrl(wpUrl));
+    console.log(`[WP-FETCH-${requestId}] ✅ WritGo API key configured`);
 
-    const username = project.wp_username || '';
-    const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
-
-    if (!password) {
-      console.error(`[WP-FETCH-${requestId}] ❌ WordPress password missing`);
-      const errorDetails = classifyWordPressError(
-        new Error('WordPress wachtwoord ontbreekt'),
-        undefined,
-        wpUrl
-      );
-      console.error(`[WP-FETCH-${requestId}]`, formatErrorForLogging(errorDetails));
-      
-      return NextResponse.json(
-        { 
-          error: errorDetails.message,
-          errorDetails,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Create Basic Auth header
-    const authHeader = buildAuthHeader(username, password);
-
-    console.log(`[WP-FETCH-${requestId}] ✅ WordPress credentials configured`);
-
-    // First, test if REST API is available
-    const restApiTestUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.base);
-    console.log(`[WP-FETCH-${requestId}] 🔌 Testing REST API availability at: ${sanitizeUrl(restApiTestUrl)}`);
+    // First, test if WritGo plugin is available
+    const healthCheckUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.writgo.health);
+    console.log(`[WP-FETCH-${requestId}] 🔌 Testing WritGo plugin at: ${sanitizeUrl(healthCheckUrl)}`);
     try {
-      // Use advanced browser-like headers to avoid WAF/firewall blocking
-      const apiTestResponse = await fetch(restApiTestUrl, {
+      const healthResponse = await fetch(healthCheckUrl, {
         method: 'GET',
-        headers: getWordPressApiHeaders(authHeader, wpUrl),
+        headers: buildWritgoHeaders(project.writgo_api_key, wpUrl),
         signal: AbortSignal.timeout(120000),
       });
 
-      if (!apiTestResponse.ok) {
+      if (!healthResponse.ok) {
         const errorDetails = classifyWordPressError(
-          new Error(`REST API test failed: ${apiTestResponse.statusText}`),
-          apiTestResponse,
+          new Error(`WritGo plugin niet gevonden. Installeer de WritGo Connector plugin.`),
+          healthResponse,
           wpUrl
         );
-        console.error('REST API test failed:', formatErrorForLogging(errorDetails));
-        
+        console.error('WritGo plugin health check failed:', formatErrorForLogging(errorDetails));
+
         return NextResponse.json(
-          { 
+          {
             error: errorDetails.message,
             errorDetails,
           },
-          { status: apiTestResponse.status }
+          { status: healthResponse.status }
         );
       }
 
-      const apiData = await apiTestResponse.json();
-      if (!apiData.namespaces || !apiData.namespaces.includes('wp/v2')) {
-        const errorDetails = classifyWordPressError(
-          new Error('WordPress REST API wp/v2 niet beschikbaar'),
-          undefined,
-          wpUrl
-        );
-        console.error('REST API wp/v2 not available:', formatErrorForLogging(errorDetails));
-        
-        return NextResponse.json(
-          { 
-            error: errorDetails.message,
-            errorDetails,
-          },
-          { status: 404 }
-        );
-      }
-
-      console.log(`[WP-FETCH-${requestId}] ✓ REST API is available and wp/v2 is enabled`);
-    } catch (apiTestError: any) {
-      console.error(`[WP-FETCH-${requestId}] ❌ REST API test failed`);
-      const errorDetails = classifyWordPressError(apiTestError, undefined, wpUrl);
+      console.log(`[WP-FETCH-${requestId}] ✓ WritGo Connector plugin is active`);
+    } catch (healthError: any) {
+      console.error(`[WP-FETCH-${requestId}] ❌ WritGo plugin health check failed`);
+      const errorDetails = classifyWordPressError(healthError, undefined, wpUrl);
       console.error(`[WP-FETCH-${requestId}]`, formatErrorForLogging(errorDetails));
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorDetails.message,
           errorDetails,
         },
@@ -187,11 +139,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch posts from WordPress with retry logic
-    const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, {
+    // Fetch posts from WritGo plugin with retry logic
+    const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.writgo.posts, {
       page,
       per_page: perPage,
-      _embed: true,
     });
 
     console.log(`[WP-FETCH-${requestId}] 📥 Fetching WordPress posts from: ${sanitizeUrl(wpApiUrl)}`);
@@ -206,10 +157,10 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`[WP-FETCH-${requestId}] 🔄 Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
 
-        // Use advanced browser-like headers to avoid WAF/firewall blocking
+        // Use WritGo plugin headers with API key
         wpResponse = await fetch(wpApiUrl, {
           method: 'GET',
-          headers: getWordPressApiHeaders(authHeader, wpUrl),
+          headers: buildWritgoHeaders(project.writgo_api_key, wpUrl),
           signal: AbortSignal.timeout(timeoutMs),
         });
 
@@ -270,54 +221,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const posts = await wpResponse.json();
+    const responseData = await wpResponse.json();
 
-    // Get total pages from header
-    const totalPages = parseInt(wpResponse.headers.get('X-WP-TotalPages') || '1');
-    const totalPosts = parseInt(wpResponse.headers.get('X-WP-Total') || '0');
+    // WritGo plugin returns: { posts: [...], total: X, pages: Y }
+    const posts = responseData.posts || [];
+    const totalPages = responseData.pages || 1;
+    const totalPosts = responseData.total || 0;
 
     console.log(`[WP-FETCH-${requestId}] ✓ Successfully fetched ${posts.length} posts (page ${page}/${totalPages}, total: ${totalPosts})`);
 
-    // Transform WordPress posts to our format
+    // Transform WritGo plugin posts to our format
     const transformedPosts = posts.map((post: any) => {
-      // Get featured image URL
-      let featuredImage = null;
-      if (post._embedded && post._embedded['wp:featuredmedia']) {
-        const media = post._embedded['wp:featuredmedia'][0];
-        featuredImage = media.source_url || null;
-      }
-
-      // Get categories
-      const categories = post._embedded?.['wp:term']?.[0] || [];
-
-      // Get tags
-      const tags = post._embedded?.['wp:term']?.[1] || [];
-
       return {
         wordpress_id: post.id,
-        title: post.title.rendered,
-        content: post.content.rendered,
-        excerpt: post.excerpt.rendered,
-        slug: post.slug,
+        title: post.title,
+        content: post.content,
+        excerpt: post.excerpt || '',
+        slug: post.slug || '',
         status: post.status,
-        featured_image: featuredImage,
-        wordpress_url: post.link,
+        featured_image: post.featured_image || null,
+        wordpress_url: post.url,
         published_at: post.date,
         modified_at: post.modified,
-        categories: categories.map((cat: any) => ({
-          id: cat.id,
-          name: cat.name,
-          slug: cat.slug,
-        })),
-        tags: tags.map((tag: any) => ({
-          id: tag.id,
-          name: tag.name,
-          slug: tag.slug,
-        })),
-        // SEO fields (if Yoast is installed)
-        meta_title: post.yoast_head_json?.title || post.title.rendered,
-        meta_description: post.yoast_head_json?.description || '',
-        focus_keyword: post.yoast_head_json?.focus_keyword || '',
+        categories: post.categories || [],
+        tags: post.tags || [],
+        // SEO fields from WritGo plugin (auto-detects Yoast/RankMath)
+        meta_title: post.seo?.title || post.title,
+        meta_description: post.seo?.description || '',
+        focus_keyword: post.seo?.focus_keyword || '',
+        seo_plugin: post.seo_plugin || 'none',
       };
     });
 
@@ -332,6 +264,7 @@ export async function GET(request: NextRequest) {
         total_pages: totalPages,
         total_posts: totalPosts,
       },
+      seo_plugin: responseData.seo_plugin || 'none', // Which SEO plugin is active
     });
 
   } catch (error: any) {

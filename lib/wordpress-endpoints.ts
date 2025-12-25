@@ -7,9 +7,25 @@
 
 /**
  * WordPress REST API Endpoints
+ *
+ * IMPORTANT: All endpoints now use the WritGo Connector Plugin
+ * The plugin provides secure API key authentication and enhanced features:
+ * - Automatic Yoast/RankMath SEO support
+ * - Wordfence whitelisting
+ * - Real-time webhooks
+ * - Better error handling
  */
 export const WORDPRESS_ENDPOINTS = {
   base: '/wp-json',
+  // WritGo Connector Plugin endpoints (v1.1.0+)
+  writgo: {
+    base: '/wp-json/writgo/v1',
+    posts: '/wp-json/writgo/v1/posts',
+    categories: '/wp-json/writgo/v1/categories',
+    test: '/wp-json/writgo/v1/test',
+    health: '/wp-json/writgo/v1/health',
+  },
+  // Legacy WordPress core endpoints (deprecated - use writgo instead)
   wp: {
     base: '/wp-json/wp/v2',
     posts: '/wp-json/wp/v2/posts',
@@ -193,6 +209,7 @@ export function buildWordPressUrl(
 
 /**
  * Helper to build WordPress authentication header
+ * @deprecated Use buildWritgoHeaders instead for WritGo Connector plugin
  * @param username - WordPress username
  * @param password - WordPress application password
  * @returns Basic auth header value
@@ -201,6 +218,28 @@ export function buildAuthHeader(username: string, password: string): string {
   // Remove any whitespace from password (WordPress app passwords often have spaces)
   const cleanPassword = password.replace(/\s+/g, '');
   return 'Basic ' + Buffer.from(`${username}:${cleanPassword}`).toString('base64');
+}
+
+/**
+ * Build headers for WritGo Connector plugin API requests
+ * @param apiKey - WritGo Connector plugin API key
+ * @param wpUrl - WordPress site URL (for Referer header)
+ * @returns Headers object for fetch requests
+ */
+export function buildWritgoHeaders(apiKey: string, wpUrl?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'X-Writgo-API-Key': apiKey,
+    'Content-Type': 'application/json',
+    'User-Agent': WORDPRESS_USER_AGENT,
+    'Accept': 'application/json',
+  };
+
+  if (wpUrl) {
+    headers['Referer'] = wpUrl;
+    headers['Origin'] = wpUrl;
+  }
+
+  return headers;
 }
 
 /**

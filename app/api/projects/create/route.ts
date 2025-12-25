@@ -1,17 +1,10 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
+import { buildWordPressUrl, WORDPRESS_ENDPOINTS, buildWritgoHeaders } from '@/lib/wordpress-endpoints';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-// Helper function to clean WordPress Application Password
-function cleanApplicationPassword(password: string): string {
-  // WordPress Application Passwords are displayed with spaces (e.g., "xxxx xxxx xxxx xxxx")
-  // Remove all whitespace for the actual API call
-  return password.replace(/\s+/g, '');
-}
 
 // Helper function to normalize WordPress base URL
 // Returns only the base website URL (e.g., "https://example.com")
@@ -43,10 +36,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, website_url, wp_username, wp_password, skip_wp_test } = body;
+    const { name, website_url, writgo_api_key, skip_wp_test } = body;
 
     // Log incoming request for debugging
-    console.log('Creating project:', { name, website_url, hasWpCredentials: !!(wp_username && wp_password), skip_wp_test });
+    console.log('Creating project:', { name, website_url, hasWritgoApiKey: !!writgo_api_key, skip_wp_test });
 
     // Validate required fields (only name and URL)
     if (!name || !website_url) {
@@ -56,25 +49,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if WordPress credentials are provided
-    const hasWordPressCredentials = wp_username && wp_password;
+    // Check if WritGo Connector API key is provided
+    const hasWritgoApiKey = !!writgo_api_key;
 
     let wp_url = null;
-    let finalWpUsername = wp_username || null;
-    let finalWpPassword = wp_password || null;
     let wordpressConnected = false;
     let wordpressWarning = null;
 
-    // Only process WordPress connection if credentials are provided
-    if (hasWordPressCredentials) {
+    // Only process WordPress connection if WritGo API key is provided
+    if (hasWritgoApiKey) {
       // Generate wp_url from website_url (base URL only)
       wp_url = normalizeWordPressBaseUrl(website_url);
 
-      // Clean the password (remove spaces from Application Password)
-      const cleanPassword = cleanApplicationPassword(wp_password);
-
-      console.log('WordPress credentials provided for:', wp_url);
-      console.log('Username:', wp_username);
+      console.log('WritGo API key provided for:', wp_url);
       console.log('Skip test:', skip_wp_test, 'Type:', typeof skip_wp_test);
 
       // ALWAYS skip test if skip_wp_test is truthy (string "true", boolean true, or any truthy value)
@@ -82,59 +69,53 @@ export async function POST(request: Request) {
 
       console.log('Should skip test:', shouldSkipTest);
 
-      // Test WordPress connection (unless skipped)
+      // Test WritGo Connector plugin connection (unless skipped)
       if (!shouldSkipTest) {
         try {
-          const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
+          const testUrl = `${wp_url}${WORDPRESS_ENDPOINTS.writgo.test}`;
           const testResponse = await fetch(testUrl, {
-            headers: {
-              'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
-              'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
-              'Accept': 'application/json',
-            },
+            headers: buildWritgoHeaders(writgo_api_key, wp_url),
             signal: AbortSignal.timeout(120000),
           });
 
-          console.log('WordPress test response status:', testResponse.status);
+          console.log('WritGo plugin test response status:', testResponse.status);
 
           if (testResponse.ok) {
             wordpressConnected = true;
-            console.log('WordPress connection successful');
+            console.log('WritGo Connector plugin connection successful');
           } else {
             const errorText = await testResponse.text();
-            console.error('WordPress connection failed:', testResponse.status, errorText);
-            
+            console.error('WritGo plugin connection failed:', testResponse.status, errorText);
+
             // Don't block project creation, just warn
             if (testResponse.status === 401) {
-              wordpressWarning = 'WordPress authenticatie mislukt. Controleer je credentials later.';
-            } else if (testResponse.status === 403) {
-              wordpressWarning = 'WordPress toegang geweigerd. Controleer gebruikersrechten.';
+              wordpressWarning = 'WritGo API key is ongeldig. Controleer je plugin instellingen later.';
             } else if (testResponse.status === 404) {
-              wordpressWarning = 'WordPress REST API niet gevonden.';
+              wordpressWarning = 'WritGo Connector plugin niet gevonden. Installeer de plugin op je WordPress site.';
             } else {
-              wordpressWarning = `WordPress test mislukt (${testResponse.status})`;
+              wordpressWarning = `WritGo plugin test mislukt (${testResponse.status})`;
             }
           }
         } catch (wpError: any) {
-          console.error('WordPress connection error:', wpError);
+          console.error('WritGo plugin connection error:', wpError);
           console.error('Error code:', wpError.code || 'N/A');
           console.error('Error cause:', wpError.cause?.message || 'N/A');
-          
+
           // Don't block project creation on timeout or connection errors
           if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT' || wpError.code === 'TIMEOUT') {
-            wordpressWarning = 'WordPress test timeout - de server reageert traag (>120s). Credentials zijn opgeslagen.';
+            wordpressWarning = 'WritGo plugin test timeout - de server reageert traag (>120s). API key is opgeslagen.';
           } else if (wpError.code === 'ENOTFOUND') {
             wordpressWarning = 'Website niet gevonden. Controleer de URL.';
           } else if (wpError.code === 'ECONNREFUSED') {
             wordpressWarning = 'Verbinding geweigerd. Website mogelijk offline.';
           } else {
-            wordpressWarning = `WordPress test mislukt: ${wpError.message || 'onbekende fout'}`;
+            wordpressWarning = `WritGo plugin test mislukt: ${wpError.message || 'onbekende fout'}`;
           }
         }
       } else {
-        // Test was skipped, assume credentials are correct
-        console.log('WordPress test skipped by user request');
-        wordpressWarning = 'WordPress test overgeslagen. Credentials opgeslagen.';
+        // Test was skipped, assume API key is correct
+        console.log('WritGo plugin test skipped by user request');
+        wordpressWarning = 'WritGo plugin test overgeslagen. API key opgeslagen.';
       }
     }
 
@@ -146,8 +127,7 @@ export async function POST(request: Request) {
         name,
         website_url,
         wp_url,
-        wp_username: finalWpUsername,
-        wp_password: finalWpPassword,
+        writgo_api_key: writgo_api_key || null,
       })
       .select()
       .single();
