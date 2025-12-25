@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
+import { classifyWordPressError, sanitizeUrl } from '@/lib/wordpress-errors';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -81,7 +82,9 @@ export async function PATCH(request: Request) {
       // Test WordPress connection (unless skipped)
       if (!shouldSkipTest) {
         try {
+          console.log(`[WP-TEST] Testing WordPress connection to: ${sanitizeUrl(wp_url)}`);
           const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
+
           const testResponse = await fetch(testUrl, {
             headers: {
               'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
@@ -93,26 +96,35 @@ export async function PATCH(request: Request) {
 
           if (testResponse.ok) {
             wordpressConnected = true;
+            console.log(`[WP-TEST] ✓ WordPress connection successful`);
           } else {
-            if (testResponse.status === 401) {
-              wordpressWarning = 'WordPress authenticatie mislukt. Controleer je credentials.';
-            } else if (testResponse.status === 403) {
-              wordpressWarning = 'WordPress toegang geweigerd. Controleer gebruikersrechten.';
-            } else if (testResponse.status === 404) {
-              wordpressWarning = 'WordPress REST API niet gevonden.';
-            } else {
-              wordpressWarning = `WordPress test mislukt (${testResponse.status})`;
-            }
+            console.log(`[WP-TEST] ✗ WordPress test failed with status: ${testResponse.status}`);
+            // Use the error classification system for consistent error messages
+            const errorDetails = classifyWordPressError(
+              new Error(`HTTP ${testResponse.status}: ${testResponse.statusText}`),
+              testResponse,
+              wp_url
+            );
+            wordpressWarning = errorDetails.message;
           }
         } catch (wpError: any) {
-          if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT' || wpError.code === 'TIMEOUT') {
-            wordpressWarning = 'WordPress test timeout - de server reageert traag (>120s).';
-          } else if (wpError.code === 'ENOTFOUND') {
-            wordpressWarning = 'Website niet gevonden. Controleer de URL.';
-          } else if (wpError.code === 'ECONNREFUSED') {
-            wordpressWarning = 'Verbinding geweigerd. Website mogelijk offline.';
-          } else {
-            wordpressWarning = `WordPress test mislukt: ${wpError.message || 'onbekende fout'}`;
+          console.error(`[WP-TEST] ✗ WordPress test error:`, wpError.message);
+          console.error(`[WP-TEST] Error details:`, {
+            name: wpError.name,
+            code: wpError.code,
+            cause: wpError.cause?.message || wpError.cause?.code,
+          });
+
+          // Use the error classification system for consistent, helpful error messages
+          const errorDetails = classifyWordPressError(wpError, undefined, wp_url);
+          wordpressWarning = errorDetails.message;
+
+          // Log troubleshooting steps for debugging
+          if (errorDetails.troubleshooting.length > 0) {
+            console.log(`[WP-TEST] Troubleshooting suggestions:`);
+            errorDetails.troubleshooting.forEach((tip, i) => {
+              console.log(`[WP-TEST]   ${i + 1}. ${tip}`);
+            });
           }
         }
       }
