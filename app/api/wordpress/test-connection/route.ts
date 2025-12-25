@@ -209,23 +209,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    // Pre-flight: DNS resolution check
+    // Pre-flight: DNS resolution check (optional - may not work in all environments)
     console.log(`\n🔍 Pre-flight DNS check for ${parsedUrl.hostname}...`);
     const dnsResult = await performDnsLookup(parsedUrl.hostname);
 
-    if (!dnsResult.success) {
-      result.checks.siteReachable = {
-        passed: false,
-        message: 'DNS resolutie mislukt - domein kan niet worden gevonden',
-        details: `${dnsResult.error}\n\nTroubleshooting:\n1. Controleer of de WordPress URL correct is gespeld\n2. Controleer of het domein actief is en DNS records correct zijn ingesteld\n3. Test de URL in een browser op een ander apparaat\n4. Probeer: ping ${parsedUrl.hostname}`,
-      };
-      console.error(`✗ DNS resolution failed: ${dnsResult.error}`);
-      return NextResponse.json(result);
+    if (dnsResult.success) {
+      console.log(`✓ DNS resolution successful:`);
+      console.log(`  IP addresses: ${dnsResult.addresses?.join(', ')}`);
+      console.log(`  Number of IPs: ${dnsResult.addresses?.length}\n`);
+    } else {
+      // DNS lookup failed - this is OK in some environments (containers, serverless, etc.)
+      // We'll continue with the connection test anyway
+      console.warn(`⚠ DNS lookup failed (${dnsResult.error}) - continuing with connection test anyway`);
+      console.warn(`  This is normal in containerized/serverless environments\n`);
     }
-
-    console.log(`✓ DNS resolution successful:`);
-    console.log(`  IP addresses: ${dnsResult.addresses?.join(', ')}`);
-    console.log(`  Number of IPs: ${dnsResult.addresses?.length}\n`);
 
     // Test 1: Check if site is reachable (with retry logic)
     console.log(`\n📡 Test 1: Checking WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
