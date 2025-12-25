@@ -2,10 +2,15 @@ import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { buildWordPressUrl, WORDPRESS_ENDPOINTS } from '@/lib/wordpress-endpoints';
 import { classifyWordPressError, sanitizeUrl } from '@/lib/wordpress-errors';
+import { getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// Improved timeouts for WordPress connection tests (especially for sites with aggressive firewalls like Imunify360)
+const CONNECT_TIMEOUT = 30000; // 30 seconds for initial connection
+const TEST_TIMEOUT = 120000; // 120 seconds for full test (to match other routes)
 
 // Helper function to clean WordPress Application Password
 function cleanApplicationPassword(password: string): string {
@@ -85,14 +90,28 @@ export async function PATCH(request: Request) {
           console.log(`[WP-TEST] Testing WordPress connection to: ${sanitizeUrl(wp_url)}`);
           const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
 
+          // Use advanced browser-like headers to avoid WAF/firewall blocking
+          const authHeader = 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64');
+          const headers = getWordPressApiHeaders(authHeader, wp_url);
+
+          // Create AbortController for timeout management
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), TEST_TIMEOUT);
+
           const testResponse = await fetch(testUrl, {
-            headers: {
-              'Authorization': 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64'),
-              'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0; +https://writgo.nl)',
-              'Accept': 'application/json',
-            },
-            signal: AbortSignal.timeout(120000),
+            headers,
+            signal: controller.signal,
+            // Node.js undici-specific options for aggressive firewalls (Imunify360, etc.)
+            // These override default connection timeout and prevent premature disconnects
+            // @ts-ignore - undici-specific option
+            connectTimeout: CONNECT_TIMEOUT,
+            // @ts-ignore - undici-specific option
+            headersTimeout: TEST_TIMEOUT,
+            // @ts-ignore - undici-specific option
+            bodyTimeout: TEST_TIMEOUT,
           });
+
+          clearTimeout(timeoutId);
 
           if (testResponse.ok) {
             wordpressConnected = true;
