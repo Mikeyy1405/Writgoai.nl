@@ -222,16 +222,38 @@ export function buildAuthHeader(username: string, password: string): string {
 
 /**
  * Build headers for WritGo Connector plugin API requests
+ * Includes advanced browser-like headers to bypass WAF/firewall detection
  * @param apiKey - WritGo Connector plugin API key
  * @param wpUrl - WordPress site URL (for Referer header)
  * @returns Headers object for fetch requests
  */
 export function buildWritgoHeaders(apiKey: string, wpUrl?: string): Record<string, string> {
   const headers: Record<string, string> = {
+    // WritGo authentication
     'X-Writgo-API-Key': apiKey,
-    'Content-Type': 'application/json',
+
+    // Core browser headers
     'User-Agent': WORDPRESS_USER_AGENT,
-    'Accept': 'application/json',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Content-Type': 'application/json',
+
+    // Modern browser security headers (Chromium-based)
+    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+
+    // Connection headers
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+
+    // DNT (Do Not Track) - makes it look like a real browser
+    'DNT': '1',
   };
 
   if (wpUrl) {
