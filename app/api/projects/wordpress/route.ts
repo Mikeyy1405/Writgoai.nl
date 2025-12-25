@@ -8,6 +8,10 @@ import { getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Improved timeouts for WordPress connection tests (especially for sites with aggressive firewalls like Imunify360)
+const CONNECT_TIMEOUT = 30000; // 30 seconds for initial connection
+const TEST_TIMEOUT = 120000; // 120 seconds for full test (to match other routes)
+
 // Helper function to clean WordPress Application Password
 function cleanApplicationPassword(password: string): string {
   return password.replace(/\s+/g, '');
@@ -90,10 +94,24 @@ export async function PATCH(request: Request) {
           const authHeader = 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64');
           const headers = getWordPressApiHeaders(authHeader, wp_url);
 
+          // Create AbortController for timeout management
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), TEST_TIMEOUT);
+
           const testResponse = await fetch(testUrl, {
             headers,
-            signal: AbortSignal.timeout(120000),
+            signal: controller.signal,
+            // Node.js undici-specific options for aggressive firewalls (Imunify360, etc.)
+            // These override default connection timeout and prevent premature disconnects
+            // @ts-ignore - undici-specific option
+            connectTimeout: CONNECT_TIMEOUT,
+            // @ts-ignore - undici-specific option
+            headersTimeout: TEST_TIMEOUT,
+            // @ts-ignore - undici-specific option
+            bodyTimeout: TEST_TIMEOUT,
           });
+
+          clearTimeout(timeoutId);
 
           if (testResponse.ok) {
             wordpressConnected = true;
