@@ -2,18 +2,82 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, WORDPRESS_USER_AGENT, buildWritgoHeaders } from '@/lib/wordpress-endpoints';
-import { getAdvancedBrowserHeaders, getWordPressApiHeaders } from '@/lib/wordpress-request-diagnostics';
+import { getAdvancedBrowserHeaders, getWordPressApiHeaders, createDiagnosticReport, formatDiagnosticReport } from '@/lib/wordpress-request-diagnostics';
+import { promises as dns } from 'dns';
 
 // Force dynamic rendering since we use cookies for authentication
 export const dynamic = 'force-dynamic';
 
 /**
+ * Perform DNS lookup for a hostname
+ */
+async function performDnsLookup(hostname: string): Promise<{ success: boolean; addresses?: string[]; error?: string }> {
+  try {
+    const addresses = await dns.resolve4(hostname);
+    return { success: true, addresses };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Fetch with retry logic and exponential backoff
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<Response> {
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const startTime = Date.now();
+      console.log(`[Attempt ${attempt + 1}/${maxRetries + 1}] Fetching ${sanitizeUrl(url)}...`);
+
+      const response = await fetch(url, options);
+      const duration = Date.now() - startTime;
+
+      console.log(`✓ Request completed in ${duration}ms with status ${response.status}`);
+      return response;
+
+    } catch (error: any) {
+      lastError = error;
+      const duration = Date.now();
+
+      console.error(`✗ Attempt ${attempt + 1} failed after ${duration}ms:`, error.message);
+
+      // Don't retry on certain errors
+      if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+        console.log('Request was aborted - not retrying');
+        throw error;
+      }
+
+      // If this was the last attempt, throw the error
+      if (attempt === maxRetries) {
+        console.log('Max retries reached - giving up');
+        throw error;
+      }
+
+      // Calculate exponential backoff delay
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`Waiting ${delay}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
+/**
  * Test WordPress connection and verify credentials
- * 
+ *
  * This endpoint performs comprehensive checks:
- * 1. Site reachability
- * 2. REST API availability
- * 3. Authentication validity
+ * 1. DNS resolution
+ * 2. Site reachability (with retry)
+ * 3. REST API availability
+ * 4. Authentication validity
  */
 export async function POST(request: NextRequest) {
   try {
@@ -145,24 +209,75 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    // Test 1: Check if site is reachable
-    console.log(`Testing WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
+    // Pre-flight: DNS resolution check
+    console.log(`\n🔍 Pre-flight DNS check for ${parsedUrl.hostname}...`);
+    const dnsResult = await performDnsLookup(parsedUrl.hostname);
+
+    if (!dnsResult.success) {
+      result.checks.siteReachable = {
+        passed: false,
+        message: 'DNS resolutie mislukt - domein kan niet worden gevonden',
+        details: `${dnsResult.error}\n\nTroubleshooting:\n1. Controleer of de WordPress URL correct is gespeld\n2. Controleer of het domein actief is en DNS records correct zijn ingesteld\n3. Test de URL in een browser op een ander apparaat\n4. Probeer: ping ${parsedUrl.hostname}`,
+      };
+      console.error(`✗ DNS resolution failed: ${dnsResult.error}`);
+      return NextResponse.json(result);
+    }
+
+    console.log(`✓ DNS resolution successful:`);
+    console.log(`  IP addresses: ${dnsResult.addresses?.join(', ')}`);
+    console.log(`  Number of IPs: ${dnsResult.addresses?.length}\n`);
+
+    // Test 1: Check if site is reachable (with retry logic)
+    console.log(`\n📡 Test 1: Checking WordPress site reachability: ${sanitizeUrl(wpUrl)}`);
+    const requestStartTime = Date.now();
     try {
-      console.log(`Attempting HEAD request to ${sanitizeUrl(wpUrl)}...`);
+      console.log(`Attempting HEAD request to ${sanitizeUrl(wpUrl)} with 3 retries...`);
+
       // Use advanced browser-like headers to avoid WAF/firewall blocking
-      const siteResponse = await fetch(wpUrl, {
-        method: 'HEAD',
-        headers: getAdvancedBrowserHeaders(wpUrl),
-        signal: AbortSignal.timeout(120000),
-      });
+      const requestHeaders = getAdvancedBrowserHeaders(wpUrl);
+      const siteResponse = await fetchWithRetry(
+        wpUrl,
+        {
+          method: 'HEAD',
+          headers: requestHeaders,
+          signal: AbortSignal.timeout(120000),
+        },
+        3, // maxRetries
+        2000 // baseDelay (2 seconds)
+      );
+
+      const requestDuration = Date.now() - requestStartTime;
+
+      // Log diagnostic report if not successful
+      if (!siteResponse.ok && siteResponse.status !== 301 && siteResponse.status !== 302) {
+        const responseHeaders: Record<string, string> = {};
+        siteResponse.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+
+        const diagnosticReport = createDiagnosticReport(
+          wpUrl,
+          'HEAD',
+          requestHeaders,
+          {
+            status: siteResponse.status,
+            statusText: siteResponse.statusText,
+            headers: responseHeaders,
+          },
+          undefined,
+          { totalMs: requestDuration }
+        );
+
+        console.log(formatDiagnosticReport(diagnosticReport));
+      }
 
       if (siteResponse.ok || siteResponse.status === 301 || siteResponse.status === 302) {
         result.checks.siteReachable = {
           passed: true,
           message: 'WordPress site is bereikbaar',
-          details: `HTTP ${siteResponse.status}`,
+          details: `HTTP ${siteResponse.status} (${requestDuration}ms)`,
         };
-        console.log(`✓ Site reachable: ${siteResponse.status}`);
+        console.log(`✓ Site reachable: ${siteResponse.status} in ${requestDuration}ms`);
       } else {
         result.checks.siteReachable = {
           passed: false,
@@ -172,6 +287,8 @@ export async function POST(request: NextRequest) {
         console.log(`✗ Site returned: ${siteResponse.status} ${siteResponse.statusText}`);
       }
     } catch (error: any) {
+      const requestDuration = Date.now() - requestStartTime;
+
       // Enhanced error diagnostics
       const errorInfo = {
         name: error.name,
@@ -184,6 +301,23 @@ export async function POST(request: NextRequest) {
 
       console.error('✗ Site not reachable:', error.message);
       console.error('Error details:', JSON.stringify(errorInfo, null, 2));
+
+      // Create and log comprehensive diagnostic report
+      const requestHeaders = getAdvancedBrowserHeaders(wpUrl);
+      const diagnosticReport = createDiagnosticReport(
+        wpUrl,
+        'HEAD',
+        requestHeaders,
+        undefined,
+        {
+          code: error.code,
+          message: error.message,
+          cause: error.cause?.message || error.cause?.code,
+        },
+        { totalMs: requestDuration }
+      );
+
+      console.log('\n' + formatDiagnosticReport(diagnosticReport));
 
       // Provide specific error messages based on error type
       let userMessage = 'Kan WordPress site niet bereiken';
@@ -201,15 +335,17 @@ export async function POST(request: NextRequest) {
         userMessage = 'Verbinding geweigerd - server accepteert geen verbindingen';
         troubleshooting = [
           'Controleer of de WordPress site online is',
-          'Mogelijk blokkeert een firewall de verbinding',
+          'Mogelijk blokkeert een firewall de verbinding (Imunify360, Wordfence, etc.)',
           'Controleer of de juiste poort wordt gebruikt (443 voor HTTPS, 80 voor HTTP)',
+          'Vraag je hosting provider om cloud IP ranges te whitelisten',
         ];
-      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') {
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET' || error.code === 'UND_ERR_CONNECT_TIMEOUT') {
         userMessage = 'Timeout - server reageert niet tijdig';
         troubleshooting = [
-          'De hosting server reageert te langzaam',
+          'De hosting server reageert te langzaam (mogelijk WAF/firewall blocking)',
           'Mogelijk is er een netwerk probleem',
           'Probeer het over enkele minuten opnieuw',
+          'Controleer of er geen IP-based firewall blocking actief is',
         ];
       } else if (error.name === 'AbortError') {
         userMessage = 'Request timeout (120 seconden)';
@@ -217,6 +353,7 @@ export async function POST(request: NextRequest) {
           'De WordPress server reageert niet binnen 120 seconden',
           'Controleer de snelheid van je hosting',
           'Test de site in een browser - laadt deze snel?',
+          'Mogelijk blokkeert een firewall de verbinding stilzwijgend',
         ];
       } else if (error.message?.includes('SSL') || error.message?.includes('certificate')) {
         userMessage = 'SSL/TLS certificaat probleem';
@@ -234,10 +371,15 @@ export async function POST(request: NextRequest) {
         ];
       }
 
+      // Add diagnostic suggested fixes if available
+      if (diagnosticReport.suggestedFixes.length > 0) {
+        troubleshooting.push('', '=== GEAVANCEERDE DIAGNOSTICS ===', ...diagnosticReport.suggestedFixes);
+      }
+
       result.checks.siteReachable = {
         passed: false,
         message: userMessage,
-        details: `${error.message}${error.cause ? ` (${error.cause.message || error.cause.code})` : ''} | Code: ${error.code || 'N/A'}`,
+        details: `${error.message}${error.cause ? ` (${error.cause.message || error.cause.code})` : ''} | Code: ${error.code || 'N/A'} | Duration: ${requestDuration}ms`,
       };
 
       // Add troubleshooting to result if available
