@@ -30,11 +30,18 @@ const STOP_WORDS = new Set([
   'der', 'die', 'das', 'und', 'oder', 'für', 'ist', 'sind', 'war', 'waren', 'auf', 'mit', 'von', 'zu', 'bei',
 ]);
 
-// Create admin client for background jobs
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Create admin client for background jobs - lazy initialization
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin(): any {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 // Language configuration
 const LANGUAGE_CONFIG: Record<string, {
@@ -184,7 +191,7 @@ export async function POST(request: Request) {
     }
 
     // Create job in database
-    const { data: job, error: insertError } = await supabaseAdmin
+    const { data: job, error: insertError } = await getSupabaseAdmin()
       .from('content_plan_jobs')
       .insert({
         user_id: userId,
@@ -205,7 +212,7 @@ export async function POST(request: Request) {
     // Start background processing (don't await - fire and forget)
     processContentPlan(job.id, website_url).catch(err => {
       console.error('Background job error:', err);
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('content_plan_jobs')
         .update({ 
           status: 'failed', 
@@ -234,7 +241,7 @@ export async function GET(request: Request) {
 
     if (jobId) {
       // Get specific job
-      const { data: job, error } = await supabaseAdmin
+      const { data: job, error } = await getSupabaseAdmin()
         .from('content_plan_jobs')
         .select('*')
         .eq('id', jobId)
@@ -247,7 +254,7 @@ export async function GET(request: Request) {
       return NextResponse.json(job);
     } else if (projectId) {
       // Get active/processing job for project (exclude cancelled jobs)
-      let query = supabaseAdmin
+      let query = getSupabaseAdmin()
         .from('content_plan_jobs')
         .select('*')
         .eq('project_id', projectId)
@@ -275,7 +282,7 @@ export async function GET(request: Request) {
       return NextResponse.json(jobs[0]);
     } else if (userId) {
       // Get latest job for user
-      const { data: jobs, error } = await supabaseAdmin
+      const { data: jobs, error } = await getSupabaseAdmin()
         .from('content_plan_jobs')
         .select('*')
         .eq('user_id', userId)
@@ -307,7 +314,7 @@ export async function DELETE(request: Request) {
     }
 
     // FIXED: Better error handling
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('content_plan_jobs')
       .update({ 
         status: 'cancelled',
@@ -346,7 +353,7 @@ async function updateJob(jobId: string, updates: any) {
   // Note: Adds one SELECT per update (N+1 pattern), but necessary for correctness
   // in concurrent environment. Trade-off: ~1-2 seconds total overhead over 5-minute
   // generation vs preventing race conditions and status overwrites.
-  const { data: currentJob } = await supabaseAdmin
+  const { data: currentJob } = await getSupabaseAdmin()
     .from('content_plan_jobs')
     .select('status')
     .eq('id', jobId)
@@ -357,7 +364,7 @@ async function updateJob(jobId: string, updates: any) {
     return;
   }
   
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('content_plan_jobs')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', jobId)
@@ -370,7 +377,7 @@ async function updateJob(jobId: string, updates: any) {
 
 // Check if job is cancelled
 async function isJobCancelled(jobId: string): Promise<boolean> {
-  const { data: job } = await supabaseAdmin
+  const { data: job } = await getSupabaseAdmin()
     .from('content_plan_jobs')
     .select('status')
     .eq('id', jobId)

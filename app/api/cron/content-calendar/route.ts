@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -28,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     // Find scheduled content that needs to be processed
     // Get items where scheduled_for is in the past and status is 'scheduled'
-    const { data: pendingItems, error: fetchError } = await supabaseAdmin
+    const { data: pendingItems, error: fetchError } = await getSupabaseAdmin()
       .from('scheduled_content')
       .select(`
         *,
@@ -68,13 +75,13 @@ export async function GET(request: NextRequest) {
         console.log(`[Content Calendar Cron] Processing item: ${item.id} - ${item.title}`);
 
         // Mark as generating
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('scheduled_content')
           .update({ status: 'generating' })
           .eq('id', item.id);
 
         // Get strategy for better content generation
-        const { data: strategy } = await supabaseAdmin
+        const { data: strategy } = await getSupabaseAdmin()
           .from('social_strategies')
           .select('*')
           .eq('project_id', item.project_id)
@@ -94,7 +101,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Create the social post
-        const { data: newPost, error: postError } = await supabaseAdmin
+        const { data: newPost, error: postError } = await getSupabaseAdmin()
           .from('social_posts')
           .insert({
             project_id: item.project_id,
@@ -113,7 +120,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Update the scheduled content item
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('scheduled_content')
           .update({
             status: 'generated',
@@ -136,7 +143,7 @@ export async function GET(request: NextRequest) {
         console.error(`[Content Calendar Cron] Error processing ${item.id}:`, error);
 
         // Mark as failed
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('scheduled_content')
           .update({
             status: 'failed',

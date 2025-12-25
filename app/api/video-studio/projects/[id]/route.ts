@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+// Lazy initialization to prevent build-time errors
+let supabase: ReturnType<typeof createClient<Database>> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase as any; // Type assertion needed for tables not in generated types
+}
 
 /**
  * GET /api/video-studio/projects/[id]
@@ -23,13 +31,13 @@ export async function GET(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: project, error } = await supabase
+    const { data: project, error } = await getSupabase()
       .from('video_projects')
       .select(`
         *,
@@ -73,7 +81,7 @@ export async function PUT(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -88,7 +96,7 @@ export async function PUT(
     if (aspectRatio) updateData.aspect_ratio = aspectRatio;
     if (status) updateData.status = status;
 
-    const { data: project, error } = await supabase
+    const { data: project, error } = await getSupabase()
       .from('video_projects')
       .update(updateData)
       .eq('id', id)
@@ -125,13 +133,13 @@ export async function DELETE(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('video_projects')
       .delete()
       .eq('id', id)

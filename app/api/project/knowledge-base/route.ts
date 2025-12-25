@@ -3,10 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 /**
  * GET - List all knowledge base entries for a project
@@ -22,7 +30,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    let query = supabaseAdmin
+    let query = getSupabaseAdmin()
       .from('project_knowledge_base')
       .select('*')
       .eq('project_id', projectId)
@@ -92,7 +100,7 @@ export async function POST(request: Request) {
     let result;
     if (id) {
       // Update existing
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('project_knowledge_base')
         .update(entryData)
         .eq('id', id)
@@ -103,7 +111,7 @@ export async function POST(request: Request) {
       result = data;
     } else {
       // Create new
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('project_knowledge_base')
         .insert({
           ...entryData,
@@ -139,7 +147,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Entry ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('project_knowledge_base')
       .delete()
       .eq('id', id);

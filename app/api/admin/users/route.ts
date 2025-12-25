@@ -2,11 +2,18 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
-// Create admin client for accessing auth.users
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createAdminClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 /**
  * GET /api/admin/users
@@ -63,7 +70,7 @@ export async function GET() {
     // Get email addresses from auth.users for each subscriber
     const usersWithEmails = await Promise.all(
       subscribers.map(async (sub) => {
-        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(sub.user_id);
+        const { data: authUser } = await getSupabaseAdmin().auth.admin.getUserById(sub.user_id);
         return {
           ...sub,
           email: authUser?.user?.email || 'Unknown',

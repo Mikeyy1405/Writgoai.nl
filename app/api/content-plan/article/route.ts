@@ -3,10 +3,17 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 // Get a specific article from the content plan by index
 export async function GET(request: Request) {
@@ -29,7 +36,7 @@ export async function GET(request: Request) {
     }
 
     // First try content_plans table
-    let { data: plan, error } = await supabaseAdmin
+    let { data: plan, error } = await getSupabaseAdmin()
       .from('content_plans')
       .select('plan, language, niche')
       .eq('project_id', projectId)
@@ -39,7 +46,7 @@ export async function GET(request: Request) {
 
     // If not found, try content_plan_jobs table
     if (error || !plan || !plan.plan) {
-      const { data: job, error: jobError } = await supabaseAdmin
+      const { data: job, error: jobError } = await getSupabaseAdmin()
         .from('content_plan_jobs')
         .select('plan, language, niche')
         .eq('project_id', projectId)

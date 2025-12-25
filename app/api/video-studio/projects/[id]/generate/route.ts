@@ -11,9 +11,16 @@ import {
 } from '@/lib/aiml-api-client';
 import { Database } from '@/lib/database.types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+let supabase: ReturnType<typeof createClient<Database>> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase as any;
+}
 
 interface VideoScene {
   id: string;
@@ -46,7 +53,7 @@ export async function POST(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -57,7 +64,7 @@ export async function POST(
     const { voiceId = 'Rachel', generateMusic = true, musicPrompt } = body;
 
     // Get project with scenes
-    const { data: project, error: projectError } = await supabase
+    const { data: project, error: projectError } = await getSupabase()
       .from('video_projects')
       .select(`
         *,
@@ -116,7 +123,7 @@ export async function POST(
     }
 
     // Update project status to processing
-    await supabase
+    await getSupabase()
       .from('video_projects')
       .update({ status: 'processing' })
       .eq('id', projectId);
@@ -145,7 +152,7 @@ export async function POST(
       }
 
       // Update scene status to generating
-      await supabase
+      await getSupabase()
         .from('video_scenes')
         .update({ status: 'generating' })
         .eq('id', scene.id);
@@ -190,7 +197,7 @@ export async function POST(
         }
 
         // Update scene with video and voice URLs
-        await supabase
+        await getSupabase()
           .from('video_scenes')
           .update({
             video_url: videoUrl,
@@ -214,7 +221,7 @@ export async function POST(
       } catch (error: any) {
         console.error(`Error generating scene ${scene.scene_number}:`, error);
 
-        await supabase
+        await getSupabase()
           .from('video_scenes')
           .update({
             status: 'failed',
@@ -269,13 +276,13 @@ export async function POST(
     // In a production environment, you'd use a service like Shotstack or Creatomate
     // to stitch the videos together server-side
 
-    await supabase
+    await getSupabase()
       .from('video_projects')
       .update(projectUpdate)
       .eq('id', projectId);
 
     // Get updated project with scenes
-    const { data: updatedProject } = await supabase
+    const { data: updatedProject } = await getSupabase()
       .from('video_projects')
       .select(`
         *,
@@ -323,13 +330,13 @@ export async function GET(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await getSupabase().auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: project, error } = await supabase
+    const { data: project, error } = await getSupabase()
       .from('video_projects')
       .select(`
         *,

@@ -7,8 +7,17 @@ import { saveImageFromUrl } from '@/lib/storage-utils';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Lazy initialization to prevent build-time errors
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabase as any; // Type assertion needed for tables not in generated types
+}
 
 const PLATFORM_LIMITS: Record<string, { chars: number; hashtags: number }> = {
   twitter: { chars: 280, hashtags: 2 },
@@ -46,7 +55,6 @@ const POST_TYPE_INSTRUCTIONS: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const body = await req.json();
     const {
       template_id,
@@ -65,7 +73,7 @@ export async function POST(req: Request) {
     // Get template
     let template;
     if (template_id) {
-      const { data: templateData } = await supabase
+      const { data: templateData } = await getSupabase()
         .from('writgo_self_promotion_templates')
         .select('*')
         .eq('id', template_id)
@@ -74,7 +82,7 @@ export async function POST(req: Request) {
       template = templateData;
     } else {
       // Select random template
-      const { data: templates } = await supabase
+      const { data: templates } = await getSupabase()
         .from('writgo_self_promotion_templates')
         .select('*')
         .eq('template_type', 'social')
@@ -93,7 +101,7 @@ export async function POST(req: Request) {
     console.log('🎯 Selected template:', template.title_template);
 
     // Get recent self-promotion posts to avoid repetition
-    const { data: recentPosts } = await supabase
+    const { data: recentPosts } = await getSupabase()
       .from('social_posts')
       .select('content')
       .eq('is_self_promotion', true)
@@ -101,7 +109,7 @@ export async function POST(req: Request) {
       .limit(5);
 
     const recentOpenings = recentPosts
-      ?.map((p) => p.content.split('\n')[0])
+      ?.map((p: any) => p.content.split('\n')[0])
       .filter(Boolean) || [];
 
     // Determine character limit based on platforms
@@ -127,7 +135,7 @@ PLATFORMS: ${platforms.join(', ')}
 MAX LENGTE: ${minCharLimit} karakters
 
 RECENT GEBRUIKTE OPENINGSZINNEN (VERMIJD DEZE):
-${recentOpenings.map((o, i) => `${i + 1}. ${o}`).join('\n')}
+${recentOpenings.map((o: any, i: number) => `${i + 1}. ${o}`).join('\n')}
 
 SCHRIJF EEN POST MET:
 1. Een pakkende opening (verschillend van recente posts)
@@ -217,7 +225,7 @@ Geef je antwoord in dit EXACTE format (geen extra tekst):
       variation_seed: `self-promo-${Date.now()}`,
     };
 
-    const { data: post, error: postError } = await supabase
+    const { data: post, error: postError } = await getSupabase()
       .from('social_posts')
       .insert(postPayload)
       .select()
@@ -230,7 +238,7 @@ Geef je antwoord in dit EXACTE format (geen extra tekst):
     console.log('✅ Saved social post:', post.id);
 
     // Update template usage
-    await supabase
+    await getSupabase()
       .from('writgo_self_promotion_templates')
       .update({
         times_used: (template.times_used || 0) + 1,
@@ -239,7 +247,7 @@ Geef je antwoord in dit EXACTE format (geen extra tekst):
       .eq('id', template.id);
 
     // Update config stats
-    await supabase.rpc('increment_self_promo_social_count');
+    await getSupabase().rpc('increment_self_promo_social_count');
 
     return NextResponse.json({
       success: true,

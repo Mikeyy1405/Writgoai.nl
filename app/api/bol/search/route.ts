@@ -4,10 +4,18 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 export async function GET(request: Request) {
   try {
@@ -26,7 +34,7 @@ export async function GET(request: Request) {
     }
 
     // Get Bol.com credentials from project affiliates
-    const { data: affiliate, error: affiliateError } = await supabaseAdmin
+    const { data: affiliate, error: affiliateError } = await getSupabaseAdmin()
       .from('project_affiliates')
       .select('*')
       .eq('project_id', projectId)
@@ -65,7 +73,7 @@ export async function GET(request: Request) {
 
     // Cache products in database
     for (const product of searchResult.products) {
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('product_cache')
         .upsert({
           ean: product.ean,

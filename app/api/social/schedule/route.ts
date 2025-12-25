@@ -3,10 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabase() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 interface ScheduleConfig {
   project_id: string;
@@ -36,7 +44,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const { data: schedule, error } = await supabaseAdmin
+    const { data: schedule, error } = await getSupabase()
       .from('social_schedules')
       .select('*')
       .eq('project_id', projectId)
@@ -91,7 +99,7 @@ export async function POST(request: Request) {
     };
 
     // Check if schedule exists for this project
-    const { data: existingSchedule } = await supabaseAdmin
+    const { data: existingSchedule } = await getSupabase()
       .from('social_schedules')
       .select('id')
       .eq('project_id', project_id)
@@ -100,7 +108,7 @@ export async function POST(request: Request) {
 
     let result;
     if (existingSchedule) {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabase()
         .from('social_schedules')
         .update(scheduleData)
         .eq('id', existingSchedule.id)
@@ -110,7 +118,7 @@ export async function POST(request: Request) {
       if (error) throw error;
       result = data;
     } else {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabase()
         .from('social_schedules')
         .insert(scheduleData)
         .select()
@@ -161,7 +169,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Schedule ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabase()
       .from('social_schedules')
       .delete()
       .eq('id', scheduleId);
@@ -185,7 +193,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Schedule ID is required' }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabase()
       .from('social_schedules')
       .update({ enabled: enabled ?? true })
       .eq('id', schedule_id)

@@ -3,10 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 /**
  * GET - List all affiliates for a project
@@ -20,7 +28,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const { data: affiliates, error } = await supabaseAdmin
+    const { data: affiliates, error } = await getSupabaseAdmin()
       .from('project_affiliates')
       .select('*')
       .eq('project_id', projectId)
@@ -31,7 +39,7 @@ export async function GET(request: Request) {
     }
 
     // Mask sensitive data but keep custom_links visible
-    const maskedAffiliates = affiliates?.map(a => ({
+    const maskedAffiliates = affiliates?.map((a: any) => ({
       ...a,
       client_secret: a.client_secret ? '••••••••' : null,
       // Keep custom_links as-is for display
@@ -72,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     // Check if affiliate already exists for this project/platform
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await getSupabaseAdmin()
       .from('project_affiliates')
       .select('id, client_secret')
       .eq('project_id', project_id)
@@ -101,7 +109,7 @@ export async function POST(request: Request) {
     let result;
     if (existing) {
       // Update existing
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('project_affiliates')
         .update(affiliateData)
         .eq('id', existing.id)
@@ -113,7 +121,7 @@ export async function POST(request: Request) {
     } else {
       // Create new
       affiliateData.created_at = new Date().toISOString();
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('project_affiliates')
         .insert(affiliateData)
         .select()
@@ -149,7 +157,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Affiliate ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('project_affiliates')
       .delete()
       .eq('id', id);

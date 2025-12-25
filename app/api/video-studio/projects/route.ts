@@ -14,7 +14,7 @@ function getSupabase() {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
   }
-  return supabase;
+  return supabase as any; // Type assertion needed for tables not in generated types
 }
 
 function getOpenAI() {

@@ -9,10 +9,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-12-15.clover',
 });
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -91,7 +98,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Update subscriber record
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from('subscribers')
     .upsert({
       user_id: userId,
@@ -136,7 +143,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 
   // Reset monthly credits
   const subAny = subscription as any;
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from('subscribers')
     .update({
       credits_remaining: credits,
@@ -179,7 +186,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   // Update subscriber record
   const subAny2 = subscription as any;
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from('subscribers')
     .update({
       subscription_tier: packageTier,
@@ -206,7 +213,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   // Mark subscription as inactive
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from('subscribers')
     .update({
       subscription_active: false,

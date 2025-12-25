@@ -4,10 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any;
+}
 
 /**
  * Social Media Autopilot Cron Job
@@ -36,7 +43,7 @@ export async function GET(request: Request) {
     };
 
     // Get all enabled schedules that are due to run
-    const { data: dueSchedules, error: schedulesError } = await supabaseAdmin
+    const { data: dueSchedules, error: schedulesError } = await getSupabaseAdmin()
       .from('social_schedules')
       .select('*, projects(id, name, website_url, niche, language)')
       .eq('enabled', true)
@@ -66,7 +73,7 @@ export async function GET(request: Request) {
         console.log(`\n📅 Processing schedule for project: ${schedule.projects?.name}`);
 
         // Get project strategy for better content generation
-        const { data: strategy } = await supabaseAdmin
+        const { data: strategy } = await getSupabaseAdmin()
           .from('social_strategies')
           .select('*')
           .eq('project_id', schedule.project_id)
@@ -76,7 +83,7 @@ export async function GET(request: Request) {
 
         // Determine post type - rotate through configured types
         const postTypes = schedule.post_types || ['educational', 'storytelling', 'engagement'];
-        const { data: recentAutoPosts } = await supabaseAdmin
+        const { data: recentAutoPosts } = await getSupabaseAdmin()
           .from('social_posts')
           .select('post_type')
           .eq('project_id', schedule.project_id)
@@ -98,14 +105,14 @@ export async function GET(request: Request) {
 
         if (schedule.use_content_ideas && strategy?.content_ideas && strategy.content_ideas.length > 0) {
           // Get used content ideas
-          const { data: usedIdeas } = await supabaseAdmin
+          const { data: usedIdeas } = await getSupabaseAdmin()
             .from('social_posts')
             .select('variation_seed')
             .eq('project_id', schedule.project_id)
             .eq('auto_generated', true)
             .not('variation_seed', 'is', null);
 
-          const usedSeeds = new Set(usedIdeas?.map(p => p.variation_seed) || []);
+          const usedSeeds = new Set(usedIdeas?.map((p: any) => p.variation_seed) || []);
 
           // Find unused content idea
           const unusedIdea = strategy.content_ideas.find((idea: any, index: number) => {
@@ -200,7 +207,7 @@ export async function GET(request: Request) {
           console.log(`📤 Auto-publishing post...`);
 
           // Get connected accounts for this project
-          const { data: accounts } = await supabaseAdmin
+          const { data: accounts } = await getSupabaseAdmin()
             .from('social_accounts')
             .select('id, platform')
             .eq('project_id', schedule.project_id)
@@ -208,8 +215,8 @@ export async function GET(request: Request) {
 
           if (accounts && accounts.length > 0) {
             const accountIds = accounts
-              .filter(a => schedule.target_platforms.includes(a.platform))
-              .map(a => a.id);
+              .filter((a: any) => schedule.target_platforms.includes(a.platform))
+              .map((a: any) => a.id);
 
             if (accountIds.length > 0) {
               console.log(`📤 Publishing/scheduling post to ${accountIds.length} account(s)...`);
@@ -237,7 +244,7 @@ export async function GET(request: Request) {
           }
         } else if (scheduledFor && generatedPost.post?.id) {
           // Update post with scheduled time
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from('social_posts')
             .update({
               scheduled_for: scheduledFor.toISOString(),
@@ -257,7 +264,7 @@ export async function GET(request: Request) {
         });
 
         // Update schedule's last_run_at
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('social_schedules')
           .update({ last_run_at: now.toISOString() })
           .eq('id', schedule.id);

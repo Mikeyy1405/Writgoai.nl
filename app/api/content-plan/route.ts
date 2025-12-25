@@ -3,10 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to prevent build-time errors
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabaseAdmin as any; // Type assertion needed for tables not in generated types
+}
 
 // Get content plan for a project
 export async function GET(request: Request) {
@@ -19,7 +27,7 @@ export async function GET(request: Request) {
     }
 
     // First, try to get from content_plans table
-    const { data: plan, error } = await supabaseAdmin
+    const { data: plan, error } = await getSupabaseAdmin()
       .from('content_plans')
       .select('*')
       .eq('project_id', projectId)
@@ -37,7 +45,7 @@ export async function GET(request: Request) {
     }
 
     // If no plan in content_plans, check for completed jobs
-    const { data: completedJob, error: jobError } = await supabaseAdmin
+    const { data: completedJob, error: jobError } = await getSupabaseAdmin()
       .from('content_plan_jobs')
       .select('*')
       .eq('project_id', projectId)
@@ -53,7 +61,7 @@ export async function GET(request: Request) {
     // If we found a completed job, save it to content_plans and return it
     if (completedJob && completedJob.plan) {
       // Save to content_plans for future use
-      const { data: savedPlan, error: saveError } = await supabaseAdmin
+      const { data: savedPlan, error: saveError } = await getSupabaseAdmin()
         .from('content_plans')
         .insert({
           project_id: projectId,
@@ -119,7 +127,7 @@ export async function POST(request: Request) {
     }
 
     // Check if a plan already exists for this project
-    const { data: existingPlan } = await supabaseAdmin
+    const { data: existingPlan } = await getSupabaseAdmin()
       .from('content_plans')
       .select('id')
       .eq('project_id', project_id)
@@ -129,7 +137,7 @@ export async function POST(request: Request) {
     let result;
     if (existingPlan) {
       // Update existing plan
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('content_plans')
         .update({
           niche,
@@ -150,7 +158,7 @@ export async function POST(request: Request) {
       result = data;
     } else {
       // Create new plan
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await getSupabaseAdmin()
         .from('content_plans')
         .insert({
           project_id,
@@ -188,7 +196,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('content_plans')
       .delete()
       .eq('project_id', projectId);
