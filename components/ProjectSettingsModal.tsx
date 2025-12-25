@@ -578,17 +578,17 @@ export default function ProjectSettingsModal({
 
                         <div>
                           <label className="block text-gray-300 mb-2 font-medium">
-                            WordPress Wachtwoord / Application Password
+                            WritGo Connector API Key
                           </label>
                           <input
                             type="password"
                             value={wpPassword}
                             onChange={(e) => setWpPassword(e.target.value)}
                             className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                            placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                            placeholder="writgo_xxxxxxxxxxxxxxxxxxxx"
                           />
                           <p className="text-xs text-gray-500 mt-1">
-                            Gebruik een Application Password voor betere beveiliging
+                            De API key van de WritGo Connector plugin (te vinden in WordPress admin → Instellingen → WritGo)
                           </p>
                         </div>
 
@@ -605,17 +605,30 @@ export default function ProjectSettingsModal({
                 ) : (
                   <div className="space-y-4">
                     <p className="text-gray-400 mb-4">
-                      Geen WordPress verbinding geconfigureerd. Voeg je WordPress credentials toe om artikelen automatisch te publiceren.
+                      Geen WordPress verbinding geconfigureerd. Installeer de WritGo Connector plugin en voeg je API key toe om artikelen automatisch te publiceren.
                     </p>
 
+                    <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded text-orange-300 text-sm">
+                      <strong>📦 WritGo Connector Plugin v1.1.0</strong>
+                      <div className="mt-2 text-orange-200">
+                        <p className="mb-2">Download de plugin en upload deze naar je WordPress site:</p>
+                        <a
+                          href="/writgo-connector-v1.1.0.zip"
+                          download
+                          className="inline-block px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition-all text-sm"
+                        >
+                          ⬇️ Download WritGo Connector v1.1.0
+                        </a>
+                      </div>
+                    </div>
+
                     <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 text-sm">
-                      <strong>💡 Hoe maak je een WordPress Application Password?</strong>
+                      <strong>💡 Hoe vind je de API Key?</strong>
                       <ol className="mt-2 ml-4 list-decimal space-y-1 text-blue-200">
-                        <li>Log in op je WordPress dashboard</li>
-                        <li>Ga naar Gebruikers → Profiel</li>
-                        <li>Scroll naar "Application Passwords"</li>
-                        <li>Maak een nieuwe Application Password aan</li>
-                        <li>Kopieer het gegenereerde wachtwoord</li>
+                        <li>Installeer de WritGo Connector plugin op je WordPress site</li>
+                        <li>Ga naar WordPress admin → Instellingen → WritGo</li>
+                        <li>De API key wordt automatisch gegenereerd en getoond</li>
+                        <li>Kopieer de API key en plak deze hieronder</li>
                       </ol>
                     </div>
 
@@ -635,17 +648,17 @@ export default function ProjectSettingsModal({
 
                       <div>
                         <label className="block text-gray-300 mb-2 font-medium">
-                          WordPress Wachtwoord / Application Password
+                          WritGo Connector API Key
                         </label>
                         <input
                           type="password"
                           value={wpPassword}
                           onChange={(e) => setWpPassword(e.target.value)}
                           className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                          placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                          placeholder="writgo_xxxxxxxxxxxxxxxxxxxx"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Het Application Password van WordPress (met of zonder spaties)
+                          De API key van de WritGo Connector plugin (te vinden in WordPress admin → Instellingen → WritGo)
                         </p>
                       </div>
 
