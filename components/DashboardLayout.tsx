@@ -213,7 +213,7 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
 
               if (hasSubItems) {
                 // Check if any subitem is active
-                isSectionActive = item.subItems.some(sub => pathname === sub.href);
+                isSectionActive = item.subItems!.some(sub => pathname === sub.href);
 
                 // Determine which menu this is and set appropriate state
                 if (item.label === 'Content') {
