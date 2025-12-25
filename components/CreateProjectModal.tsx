@@ -205,18 +205,40 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
               className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors mb-3"
             >
               <span>{showWordPress ? '▼' : '▶'}</span>
-              <span>WordPress Credentials (Optioneel)</span>
+              <span>WordPress Plugin Integratie (Optioneel)</span>
             </button>
             <p className="text-sm text-gray-400 mb-4">
-              Alleen nodig als je wilt publiceren naar een externe WordPress site
+              Installeer de WritGo Connector plugin voor naadloze integratie met Yoast/RankMath SEO support, automatische Wordfence whitelisting en webhooks
             </p>
           </div>
 
           {showWordPress && (
             <div className="space-y-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+              <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded text-orange-300 text-sm">
+                <strong>📦 WritGo Connector Plugin v1.1.0</strong>
+                <div className="mt-2 text-orange-200">
+                  <p className="mb-2">Download de plugin en upload deze naar je WordPress site:</p>
+                  <a
+                    href="https://github.com/Mikeyy1405/Writgoai.nl/raw/claude/wordpress-api-analysis-13VyA/writgo-connector-v1.1.0.zip"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded transition-colors"
+                  >
+                    📥 Download WritGo Connector (7.2 KB)
+                  </a>
+                  <div className="mt-3 text-sm space-y-1">
+                    <p>✓ Yoast + RankMath SEO support</p>
+                    <p>✓ Automatische Wordfence whitelisting</p>
+                    <p>✓ Real-time webhooks</p>
+                    <p>✓ Custom REST API endpoints</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded text-blue-300 text-sm">
                 <strong>💡 Hoe maak je een Application Password?</strong>
                 <ol className="mt-2 ml-4 list-decimal space-y-1 text-blue-200">
+                  <li>Installeer eerst de WritGo Connector plugin op je WordPress site</li>
                   <li>Ga naar je WordPress admin → Gebruikers → Profiel</li>
                   <li>Scroll naar &quot;Application Passwords&quot;</li>
                   <li>Voer een naam in (bijv. &quot;WritGo&quot;) en klik &quot;Nieuw wachtwoord toevoegen&quot;</li>

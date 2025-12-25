@@ -230,8 +230,8 @@ export default function Home() {
               {
                 icon: "📝",
                 title: "WordPress Integratie",
-                desc: "Direct publiceren naar je WordPress site via REST API. Geen plugins nodig.",
-                time: "Instant publicatie",
+                desc: "Installeer de WritGo Connector plugin (v1.1.0) met Yoast/RankMath support, automatische Wordfence whitelisting en real-time webhooks. Inclusief custom REST API endpoints voor naadloze integratie.",
+                time: "Complete WordPress integratie",
               },
               {
                 icon: "📊",
@@ -362,10 +362,10 @@ export default function Home() {
                 </div>
                 <div className="ml-4">
                   <h3 className="text-2xl font-bold text-white mb-2">
-                    Koppel je WordPress
+                    Installeer de WritGo Plugin
                   </h3>
                   <p className="text-gray-300">
-                    Verbind je WordPress site in één klik. Geen plugins of ingewikkelde setup nodig.
+                    Download en installeer de WritGo Connector plugin (v1.1.0). Automatische Wordfence whitelisting, Yoast & RankMath SEO support en real-time webhooks inbegrepen.
                   </p>
                 </div>
               </div>
