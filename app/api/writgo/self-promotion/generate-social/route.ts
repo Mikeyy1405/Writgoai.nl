@@ -191,6 +191,11 @@ Geef je antwoord in dit EXACTE format (geen extra tekst):
     const imageUrl = await generateFeaturedImage(imagePrompt);
     console.log('✅ Generated image:', imageUrl);
 
+    // Check if image generation succeeded
+    if (!imageUrl) {
+      throw new Error('Failed to generate social media image');
+    }
+
     // Save image
     const savedImageUrl = await saveImageFromUrl(
       imageUrl,

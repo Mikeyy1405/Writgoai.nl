@@ -134,6 +134,11 @@ Geef je antwoord in JSON format:
     const imageUrl = await generateFeaturedImage(imagePrompt);
     console.log('✅ Generated image:', imageUrl);
 
+    // Check if image generation succeeded
+    if (!imageUrl) {
+      throw new Error('Failed to generate featured image');
+    }
+
     // Save image to storage
     const savedImageUrl = await saveImageFromUrl(
       imageUrl,
