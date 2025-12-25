@@ -473,6 +473,9 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
     await updateJob(jobId, { progress: 95, current_step: '🎨 Afbeeldingen klaar' });
 
+    // Generate meta description early (needed for social media post)
+    const metaDescription = outline?.metaDescription || `${title} - Lees alles over ${keyword} in dit uitgebreide artikel.`;
+
     // STEP 7: Generate Social Media Post
     await updateJob(jobId, { progress: 90, current_step: '📱 Social media post genereren...' });
 
@@ -546,7 +549,6 @@ Output alleen de social media post tekst, geen extra uitleg.`;
     }
     const wordCountActual = fullContent.split(/\s+/).length;
     const slug = generateSlug(title);
-    const metaDescription = outline?.metaDescription || `${title} - Lees alles over ${keyword} in dit uitgebreide artikel.`;
 
     // Save to articles table for library FIRST (only if we have a project_id)
     let savedArticleId: string | null = null;
