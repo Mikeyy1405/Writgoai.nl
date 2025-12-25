@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, getPostsEndpoint, getMediaEndpoint, buildWordPressUrl, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
+import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildWritgoHeaders, buildWordPressUrl } from '@/lib/wordpress-endpoints';
 import { sanitizeUrl } from '@/lib/wordpress-errors';
 import { enhanceArticleContent } from '@/lib/content-enhancer';
 
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     // Get project
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select('*')
+      .select('id, name, wp_url, writgo_api_key')
       .eq('id', project_id)
       .eq('user_id', user.id)
       .single();
@@ -113,10 +113,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if WordPress is configured
-    if (!project.wp_url || !project.wp_username || !project.wp_password) {
+    // Check if WritGo plugin is configured
+    if (!project.wp_url || !project.writgo_api_key) {
       return NextResponse.json(
-        { error: 'WordPress is niet geconfigureerd voor dit project. Voeg WordPress credentials toe in projectinstellingen.' },
+        { error: 'WritGo Connector plugin is niet geconfigureerd voor dit project. Voeg de API key toe in projectinstellingen.' },
         { status: 400 }
       );
     }
@@ -189,31 +189,27 @@ export async function POST(request: Request) {
       // Continue with original content if enhancement fails
     }
 
-    // Prepare WordPress API URL and credentials
+    // Prepare WritGo plugin API URL
     const wpUrl = project.wp_url.replace(/\/$/, '');
-    const authHeader = buildAuthHeader(project.wp_username, project.wp_password);
-    const postsEndpoint = getPostsEndpoint(wpUrl);
+    const postsEndpoint = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.writgo.posts);
 
-    console.log('WordPress API URL:', sanitizeUrl(postsEndpoint));
+    console.log('WritGo plugin API URL:', sanitizeUrl(postsEndpoint));
     console.log('Publishing article:', articleTitle);
     console.log('Target host:', new URL(wpUrl).hostname);
     console.log('Using timeout:', PUBLISH_TIMEOUT, 'ms');
 
-    // Publish to WordPress
+    // Publish to WordPress via WritGo plugin
     try {
       const wpResponse = await fetchWithRetry(
         postsEndpoint,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-            'User-Agent': WORDPRESS_USER_AGENT,
-          },
+          headers: buildWritgoHeaders(project.writgo_api_key, wpUrl),
           body: JSON.stringify({
             title: articleTitle,
             content: articleContent,
             status: 'publish',
+            featured_image_url: articleFeaturedImage || undefined,
           }),
         },
         PUBLISH_TIMEOUT,
@@ -231,20 +227,20 @@ export async function POST(request: Request) {
           if (wpError.message) {
             errorMessage = wpError.message;
           }
-          if (wpError.code === 'rest_cannot_create') {
-            errorMessage = 'Geen rechten om posts te maken. Controleer of de gebruiker de juiste rechten heeft.';
+          if (wpError.code === 'rest_cannot_create' || wpError.code === 'no_api_key') {
+            errorMessage = 'Geen rechten om posts te maken. Controleer de WritGo API key.';
           }
-          if (wpError.code === 'rest_forbidden') {
-            errorMessage = 'Toegang geweigerd. Controleer je WordPress credentials en applicatiewachtwoord.';
+          if (wpError.code === 'rest_forbidden' || wpError.code === 'invalid_api_key') {
+            errorMessage = 'Toegang geweigerd. Controleer je WritGo API key.';
           }
         } catch {
           // Use status-based error message
           if (wpResponse.status === 401) {
-            errorMessage = 'Authenticatie mislukt. Controleer je gebruikersnaam en applicatiewachtwoord.';
+            errorMessage = 'Authenticatie mislukt. Controleer je WritGo API key.';
           } else if (wpResponse.status === 403) {
-            errorMessage = 'Toegang geweigerd. De gebruiker heeft geen rechten om posts te maken.';
+            errorMessage = 'Toegang geweigerd. API key heeft geen rechten om posts te maken.';
           } else if (wpResponse.status === 404) {
-            errorMessage = 'WordPress REST API niet gevonden. Controleer de website URL.';
+            errorMessage = 'WritGo Connector plugin niet gevonden. Installeer de plugin op je WordPress site.';
           }
         }
         
@@ -255,14 +251,9 @@ export async function POST(request: Request) {
       }
 
       const wpPost = await wpResponse.json();
-      console.log('WordPress post created:', wpPost.id, wpPost.link);
+      console.log('WritGo plugin post created:', wpPost.post?.id, wpPost.post?.url);
 
-      // Upload featured image if provided (in background, don't block)
-      if (articleFeaturedImage && wpPost.id) {
-        uploadFeaturedImage(wpUrl, authHeader, wpPost.id, articleFeaturedImage).catch(err => {
-          console.warn('Featured image upload failed (non-blocking):', err.message);
-        });
-      }
+      // WritGo plugin handles featured image upload automatically via featured_image_url
 
       // Update article status if we have an article_id
       if (article_id) {
@@ -271,17 +262,17 @@ export async function POST(request: Request) {
           .update({
             status: 'published',
             published_at: new Date().toISOString(),
-            wordpress_id: wpPost.id,
-            wordpress_url: wpPost.link,
+            wordpress_id: wpPost.post?.id,
+            wordpress_url: wpPost.post?.url,
           })
           .eq('id', article_id);
       }
 
       return NextResponse.json({
         success: true,
-        url: wpPost.link,
-        wordpress_url: wpPost.link,
-        wordpress_id: wpPost.id,
+        url: wpPost.post?.url,
+        wordpress_url: wpPost.post?.url,
+        wordpress_id: wpPost.post?.id,
       });
 
     } catch (wpError: any) {
@@ -412,61 +403,57 @@ export async function GET(request: Request) {
 
     const { data: project } = await supabase
       .from('projects')
-      .select('wp_url, wp_username, wp_password')
+      .select('wp_url, writgo_api_key')
       .eq('id', project_id)
       .eq('user_id', user.id)
       .single();
 
-    if (!project || !project.wp_url || !project.wp_username || !project.wp_password) {
-      return NextResponse.json({ 
-        connected: false, 
-        error: 'WordPress niet geconfigureerd' 
+    if (!project || !project.wp_url || !project.writgo_api_key) {
+      return NextResponse.json({
+        connected: false,
+        error: 'WritGo plugin niet geconfigureerd'
       });
     }
 
     const wpUrl = project.wp_url.replace(/\/$/, '');
-    const authHeader = buildAuthHeader(project.wp_username, project.wp_password);
 
-    console.log('[WordPress Test] Testing connection to:', new URL(wpUrl).hostname);
-    console.log('[WordPress Test] Using timeout:', TEST_TIMEOUT, 'ms');
+    console.log('[WritGo Test] Testing connection to:', new URL(wpUrl).hostname);
+    console.log('[WritGo Test] Using timeout:', TEST_TIMEOUT, 'ms');
 
     try {
-      const postsTestUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
+      const testUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.writgo.test);
       const testResponse = await fetchWithRetry(
-        postsTestUrl,
+        testUrl,
         {
-          headers: {
-            'Authorization': authHeader,
-            'User-Agent': WORDPRESS_USER_AGENT,
-          },
+          headers: buildWritgoHeaders(project.writgo_api_key, wpUrl),
         },
         TEST_TIMEOUT,
         1 // 1 retry
       );
 
       if (testResponse.ok) {
-        return NextResponse.json({ 
-          connected: true, 
-          message: 'WordPress verbinding succesvol' 
+        return NextResponse.json({
+          connected: true,
+          message: 'WritGo Connector plugin verbinding succesvol'
         });
       } else {
-        let errorMessage = `WordPress returned status ${testResponse.status}`;
+        let errorMessage = `WritGo plugin returned status ${testResponse.status}`;
         if (testResponse.status === 401) {
-          errorMessage = 'Authenticatie mislukt. Controleer je credentials.';
+          errorMessage = 'Authenticatie mislukt. Controleer je API key.';
         } else if (testResponse.status === 403) {
           errorMessage = 'Toegang geweigerd.';
         } else if (testResponse.status === 404) {
-          errorMessage = 'REST API niet gevonden.';
+          errorMessage = 'WritGo Connector plugin niet gevonden.';
         }
-        return NextResponse.json({ 
-          connected: false, 
-          error: errorMessage 
+        return NextResponse.json({
+          connected: false,
+          error: errorMessage
         });
       }
     } catch (testError: any) {
-      console.error('[WordPress Test] Connection error:', testError);
-      console.error('[WordPress Test] Error code:', testError.code || 'N/A');
-      console.error('[WordPress Test] Error cause:', testError.cause?.message || 'N/A');
+      console.error('[WritGo Test] Connection error:', testError);
+      console.error('[WritGo Test] Error code:', testError.code || 'N/A');
+      console.error('[WritGo Test] Error cause:', testError.cause?.message || 'N/A');
       
       let errorMessage = testError.message;
       if (testError.name === 'AbortError' || testError.code === 'UND_ERR_CONNECT_TIMEOUT' || testError.code === 'ETIMEDOUT') {
