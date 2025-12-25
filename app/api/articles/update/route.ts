@@ -79,7 +79,13 @@ export async function POST(request: Request) {
       if (meta_description !== undefined) updateData.meta_description = meta_description;
       if (focus_keyword !== undefined) updateData.focus_keyword = focus_keyword;
       // Allow updating project_id (e.g., setting to null when publishing to WritGo blog)
-      if (project_id !== undefined) updateData.project_id = project_id;
+      if (project_id !== undefined) {
+        updateData.project_id = project_id;
+        // When setting project_id to null (WritGo blog), ensure user_id is set for RLS
+        if (project_id === null) {
+          updateData.user_id = user.id;
+        }
+      }
 
       // Update article in database
       const { error: updateError } = await supabase
@@ -141,6 +147,7 @@ export async function POST(request: Request) {
         title,
         content,
         project_id,
+        user_id: user.id, // Always set user_id for proper RLS
         status,
         slug: articleSlug,
         excerpt: excerpt || content.substring(0, 160).replace(/<[^>]*>/g, ''),
