@@ -28,6 +28,9 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, user, isAdmin = false }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [contentMenuOpen, setContentMenuOpen] = useState(false);
+  const [mediaMenuOpen, setMediaMenuOpen] = useState(false);
+  const [publishMenuOpen, setPublishMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -67,16 +70,38 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
   const baseMenuItems: MenuItem[] = [
     { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
     { icon: '📝', label: 'Projecten', href: '/dashboard/projects' },
-    { icon: '📋', label: 'Content Plan', href: '/dashboard/content-plan' },
-    { icon: '✍️', label: 'Content Writer', href: '/dashboard/writer' },
-    { icon: '📰', label: 'News Writer', href: '/dashboard/news-writer' },
-    { icon: '🎨', label: 'Image Studio', href: '/dashboard/image-studio' },
-    { icon: '🎬', label: 'Video Studio', href: '/dashboard/video-studio' },
-    { icon: '🖼️', label: 'Media Bibliotheek', href: '/dashboard/media-library' },
-    { icon: '📑', label: 'Writgo Blog', href: '/dashboard/writgo-blog' },
-    { icon: '🔄', label: 'WordPress Posts', href: '/dashboard/wordpress-posts' },
-    { icon: '📚', label: 'Bibliotheek', href: '/dashboard/library' },
-    { icon: '📱', label: 'Social Media', href: '/dashboard/social' },
+    {
+      icon: '✍️',
+      label: 'Content',
+      href: '/dashboard/content',
+      subItems: [
+        { icon: '📋', label: 'Content Plan', href: '/dashboard/content-plan' },
+        { icon: '✍️', label: 'Content Writer', href: '/dashboard/writer' },
+        { icon: '📰', label: 'News Writer', href: '/dashboard/news-writer' },
+        { icon: '📑', label: 'Writgo Blog', href: '/dashboard/writgo-blog' },
+      ],
+    },
+    {
+      icon: '🎨',
+      label: 'Media',
+      href: '/dashboard/media',
+      subItems: [
+        { icon: '🎨', label: 'Image Studio', href: '/dashboard/image-studio' },
+        { icon: '🎬', label: 'Video Studio', href: '/dashboard/video-studio' },
+        { icon: '🖼️', label: 'Media Bibliotheek', href: '/dashboard/media-library' },
+        { icon: '📚', label: 'Bibliotheek', href: '/dashboard/library' },
+      ],
+    },
+    {
+      icon: '🚀',
+      label: 'Publishing',
+      href: '/dashboard/publishing',
+      subItems: [
+        { icon: '🔄', label: 'WordPress Posts', href: '/dashboard/wordpress-posts' },
+        { icon: '📱', label: 'Social Media', href: '/dashboard/social' },
+      ],
+    },
+    { icon: '🤖', label: 'Autopilot', href: '/dashboard/writgo-autopilot' },
   ];
 
   // Admin menu with sub-items
@@ -101,10 +126,29 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
         { icon: '⚙️', label: 'Instellingen', href: '/dashboard/settings' },
       ];
 
-  // Auto-expand admin menu if on admin page
+  // Auto-expand menus based on current page
   useEffect(() => {
     if (pathname?.startsWith('/dashboard/admin')) {
       setAdminMenuOpen(true);
+    }
+    // Content menu
+    if (pathname?.includes('/content-plan') ||
+        pathname?.includes('/writer') ||
+        pathname?.includes('/news-writer') ||
+        pathname?.includes('/writgo-blog')) {
+      setContentMenuOpen(true);
+    }
+    // Media menu
+    if (pathname?.includes('/image-studio') ||
+        pathname?.includes('/video-studio') ||
+        pathname?.includes('/media-library') ||
+        pathname?.includes('/library')) {
+      setMediaMenuOpen(true);
+    }
+    // Publishing menu
+    if (pathname?.includes('/wordpress-posts') ||
+        pathname?.includes('/social')) {
+      setPublishMenuOpen(true);
     }
   }, [pathname]);
 
@@ -159,17 +203,42 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
             {menuItems.map((item) => {
               const isActive = pathname === item.href;
               const hasSubItems = item.subItems && item.subItems.length > 0;
-              const isAdminSection = pathname?.startsWith('/dashboard/admin');
+
+              // Determine which menu state to use and if section is active
+              let isMenuOpen = false;
+              let isSectionActive = false;
+              let toggleMenu = () => {};
+
+              if (hasSubItems) {
+                // Check if any subitem is active
+                isSectionActive = item.subItems.some(sub => pathname === sub.href);
+
+                // Determine which menu this is and set appropriate state
+                if (item.label === 'Content') {
+                  isMenuOpen = contentMenuOpen;
+                  toggleMenu = () => setContentMenuOpen(!contentMenuOpen);
+                } else if (item.label === 'Media') {
+                  isMenuOpen = mediaMenuOpen;
+                  toggleMenu = () => setMediaMenuOpen(!mediaMenuOpen);
+                } else if (item.label === 'Publishing') {
+                  isMenuOpen = publishMenuOpen;
+                  toggleMenu = () => setPublishMenuOpen(!publishMenuOpen);
+                } else if (item.label === 'Admin') {
+                  isMenuOpen = adminMenuOpen;
+                  toggleMenu = () => setAdminMenuOpen(!adminMenuOpen);
+                  isSectionActive = pathname?.startsWith('/dashboard/admin') || false;
+                }
+              }
 
               // Render item with sub-menu
               if (hasSubItems) {
                 return (
-                  <div key={item.href}>
+                  <div key={item.label}>
                     <button
-                      onClick={() => setAdminMenuOpen(!adminMenuOpen)}
+                      onClick={toggleMenu}
                       className={`
                         w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all
-                        ${isAdminSection
+                        ${isSectionActive
                           ? 'bg-orange-500/20 text-orange-400'
                           : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                         }
@@ -180,7 +249,7 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
                         <span className="font-medium">{item.label}</span>
                       </div>
                       <svg
-                        className={`w-4 h-4 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`}
+                        className={`w-4 h-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -189,7 +258,7 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
                       </svg>
                     </button>
                     {/* Sub Items */}
-                    {adminMenuOpen && (
+                    {isMenuOpen && (
                       <div className="ml-4 mt-1 space-y-1">
                         {item.subItems!.map((subItem) => {
                           const isSubActive = pathname === subItem.href;
