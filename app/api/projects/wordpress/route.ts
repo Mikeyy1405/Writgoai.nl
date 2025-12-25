@@ -9,8 +9,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // Improved timeouts for WordPress connection tests (especially for sites with aggressive firewalls like Imunify360)
-const CONNECT_TIMEOUT = 30000; // 30 seconds for initial connection
 const TEST_TIMEOUT = 120000; // 120 seconds for full test (to match other routes)
+const MAX_RETRIES = 3; // Number of retries for connection attempts
+const RETRY_BASE_DELAY = 2000; // Base delay for exponential backoff (2 seconds)
 
 // Helper function to clean WordPress Application Password
 function cleanApplicationPassword(password: string): string {
@@ -25,6 +26,59 @@ function normalizeWordPressBaseUrl(websiteUrl: string): string {
   }
   url = url.replace(/\/wp-json.*$/, '');
   return url;
+}
+
+// Helper function to fetch with retry logic and exponential backoff
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries: number = MAX_RETRIES,
+  baseDelay: number = RETRY_BASE_DELAY
+): Promise<Response> {
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const startTime = Date.now();
+      console.log(`[WP-TEST] [Attempt ${attempt + 1}/${maxRetries + 1}] Fetching ${sanitizeUrl(url)}...`);
+
+      const response = await fetch(url, options);
+      const duration = Date.now() - startTime;
+
+      console.log(`[WP-TEST] ✓ Request completed in ${duration}ms with status ${response.status}`);
+      return response;
+
+    } catch (error: any) {
+      lastError = error;
+      const duration = Date.now() - startTime;
+
+      console.error(`[WP-TEST] ✗ Attempt ${attempt + 1} failed after ${duration}ms:`, error.message);
+      console.error(`[WP-TEST] Error details:`, {
+        name: error.name,
+        code: error.code,
+        cause: error.cause?.message || error.cause,
+      });
+
+      // Don't retry on certain errors
+      if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+        console.log('[WP-TEST] Request was aborted - not retrying');
+        throw error;
+      }
+
+      // If this was the last attempt, throw the error
+      if (attempt === maxRetries) {
+        console.log('[WP-TEST] Max retries reached - giving up');
+        throw error;
+      }
+
+      // Calculate exponential backoff delay
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`[WP-TEST] Waiting ${delay}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
 }
 
 // PATCH - Update WordPress connection
@@ -88,30 +142,18 @@ export async function PATCH(request: Request) {
       if (!shouldSkipTest) {
         try {
           console.log(`[WP-TEST] Testing WordPress connection to: ${sanitizeUrl(wp_url)}`);
+          console.log(`[WP-TEST] Using retry logic with ${MAX_RETRIES} retries and ${TEST_TIMEOUT}ms timeout`);
           const testUrl = buildWordPressUrl(wp_url, WORDPRESS_ENDPOINTS.wp.posts, { per_page: 1 });
 
           // Use advanced browser-like headers to avoid WAF/firewall blocking
           const authHeader = 'Basic ' + Buffer.from(`${wp_username}:${cleanPassword}`).toString('base64');
           const headers = getWordPressApiHeaders(authHeader, wp_url);
 
-          // Create AbortController for timeout management
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), TEST_TIMEOUT);
-
-          const testResponse = await fetch(testUrl, {
+          // Use fetchWithRetry with AbortSignal.timeout for better timeout handling
+          const testResponse = await fetchWithRetry(testUrl, {
             headers,
-            signal: controller.signal,
-            // Node.js undici-specific options for aggressive firewalls (Imunify360, etc.)
-            // These override default connection timeout and prevent premature disconnects
-            // @ts-ignore - undici-specific option
-            connectTimeout: CONNECT_TIMEOUT,
-            // @ts-ignore - undici-specific option
-            headersTimeout: TEST_TIMEOUT,
-            // @ts-ignore - undici-specific option
-            bodyTimeout: TEST_TIMEOUT,
+            signal: AbortSignal.timeout(TEST_TIMEOUT),
           });
-
-          clearTimeout(timeoutId);
 
           if (testResponse.ok) {
             wordpressConnected = true;
@@ -127,12 +169,7 @@ export async function PATCH(request: Request) {
             wordpressWarning = errorDetails.message;
           }
         } catch (wpError: any) {
-          console.error(`[WP-TEST] ✗ WordPress test error:`, wpError.message);
-          console.error(`[WP-TEST] Error details:`, {
-            name: wpError.name,
-            code: wpError.code,
-            cause: wpError.cause?.message || wpError.cause?.code,
-          });
+          console.error(`[WP-TEST] ✗ WordPress test error after all retries:`, wpError.message);
 
           // Use the error classification system for consistent, helpful error messages
           const errorDetails = classifyWordPressError(wpError, undefined, wp_url);
