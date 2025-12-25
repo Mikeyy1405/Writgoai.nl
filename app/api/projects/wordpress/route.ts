@@ -44,8 +44,8 @@ async function fetchWithRetry(
   }
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const startTime = Date.now();
     try {
-      const startTime = Date.now();
       console.log(`[WP-TEST] [Attempt ${attempt + 1}/${maxRetries + 1}] Fetching ${sanitizeUrl(url)}...`);
 
       // Apply proxy configuration to fetch options
