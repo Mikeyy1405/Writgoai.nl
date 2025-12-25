@@ -27,6 +27,7 @@
     "@tiptap/starter-kit": "^3.14.0",
     "dotenv": "^16.6.1",
     "googleapis": "^169.0.0",
+    "https-proxy-agent": "^7.0.6",
     "next": "14.2.35",
     "openai": "^6.15.0",
     "pg": "^8.16.3",

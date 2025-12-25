@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, WORDPRESS_USER_AGENT, buildWritgoHeaders } from '@/lib/wordpress-endpoints';
 import { getAdvancedBrowserHeaders, getWordPressApiHeaders, createDiagnosticReport, formatDiagnosticReport } from '@/lib/wordpress-request-diagnostics';
+import { getProxyFetchOptions, isProxyConfigured, getProxyInfo } from '@/lib/wordpress-proxy';
 import { promises as dns } from 'dns';
 
 // Force dynamic rendering since we use cookies for authentication
@@ -31,12 +32,20 @@ async function fetchWithRetry(
 ): Promise<Response> {
   let lastError: any;
 
+  // Log proxy configuration on first attempt
+  if (isProxyConfigured()) {
+    console.log(`[WP-PROXY] Proxy configured: ${getProxyInfo()}`);
+  }
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const startTime = Date.now();
       console.log(`[Attempt ${attempt + 1}/${maxRetries + 1}] Fetching ${sanitizeUrl(url)}...`);
 
-      const response = await fetch(url, options);
+      // Apply proxy configuration to fetch options
+      const fetchOptions = getProxyFetchOptions(options);
+
+      const response = await fetch(url, fetchOptions);
       const duration = Date.now() - startTime;
 
       console.log(`✓ Request completed in ${duration}ms with status ${response.status}`);
