@@ -505,18 +505,8 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
     const slug = generateSlug(title);
     const metaDescription = outline?.metaDescription || `${title} - Lees alles over ${keyword} in dit uitgebreide artikel.`;
 
-    // Save completed article to article_jobs
-    await updateJob(jobId, {
-      status: 'completed',
-      progress: 100,
-      current_step: '✅ Artikel voltooid!',
-      article_content: fullContent,
-      featured_image: featuredImage,
-      slug,
-      meta_description: metaDescription,
-    });
-
-    // Also save to articles table for library (only if we have a project_id)
+    // Save to articles table for library FIRST (only if we have a project_id)
+    let savedArticleId: string | null = null;
     if (projectId) {
       try {
         const { data: article, error: articleError } = await supabaseAdmin
@@ -535,26 +525,22 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
           })
           .select()
           .single();
-        
+
         if (articleError) {
           console.error('Failed to save to articles table:', articleError);
         } else {
+          savedArticleId = article.id;
           console.log('Article saved to library with ID:', article.id);
-          
-          // Store article_id in the job for publishing later
-          await updateJob(jobId, {
-            article_id: article.id,
-          });
-          
+
           // Trigger affiliate opportunity discovery in the background
           if (article) {
             try {
               console.log('Triggering affiliate opportunity discovery...');
-              
+
               // Call the discover API endpoint
               await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('/rest/v1', '')}/api/affiliate/discover`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
                 },
@@ -577,6 +563,18 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
         console.error('Error saving to articles:', e);
       }
     }
+
+    // Save completed article to article_jobs with article_id in one atomic update
+    await updateJob(jobId, {
+      status: 'completed',
+      progress: 100,
+      current_step: '✅ Artikel voltooid!',
+      article_content: fullContent,
+      featured_image: featuredImage,
+      slug,
+      meta_description: metaDescription,
+      article_id: savedArticleId, // Include article_id here to avoid race conditions
+    });
 
     console.log(`Article job ${jobId} completed with ${wordCountActual} words`);
 
