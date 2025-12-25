@@ -473,7 +473,50 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 
     await updateJob(jobId, { progress: 95, current_step: '🎨 Afbeeldingen klaar' });
 
-    // STEP 7: Finalize and enrich content
+    // STEP 7: Generate Social Media Post
+    await updateJob(jobId, { progress: 90, current_step: '📱 Social media post genereren...' });
+
+    let socialMediaPost = '';
+    try {
+      const socialPrompt = `Schrijf een pakkende social media post om dit artikel te promoten:
+
+Titel: ${title}
+Keyword: ${keyword}
+Samenvatting: ${metaDescription || description || ''}
+
+${langConfig.writingStyle}
+
+Maak een social media post die:
+- Begint met een hook die aandacht trekt
+- De belangrijkste voordelen/inzichten uit het artikel benadrukt
+- Een call-to-action bevat om het artikel te lezen
+- 150-280 karakters lang is (geschikt voor Twitter/X en andere platforms)
+- Emoji's gebruikt om visuele aandacht te trekken (maar niet overdrijven)
+- Een pakkende hashtag bevat
+
+Output alleen de social media post tekst, geen extra uitleg.`;
+
+      socialMediaPost = await generateAICompletion({
+        task: 'content',
+        systemPrompt: `${langConfig.systemPrompt} Je bent een social media expert. Output alleen de post tekst.`,
+        userPrompt: socialPrompt,
+        maxTokens: 500,
+        temperature: 0.8,
+      });
+
+      // Clean up the social media post
+      socialMediaPost = socialMediaPost
+        .trim()
+        .replace(/^["']|["']$/g, '') // Remove quotes
+        .replace(/^(Here is|Here's|Below is|Hier is)/i, '') // Remove intro phrases
+        .trim();
+
+      console.log('Social media post generated:', socialMediaPost.substring(0, 100));
+    } catch (e) {
+      console.warn('Social media post generation failed:', e);
+    }
+
+    // STEP 8: Finalize and enrich content
     await updateJob(jobId, { progress: 98, current_step: '✨ Artikel afronden...' });
 
     // Combine base content
@@ -505,18 +548,8 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
     const slug = generateSlug(title);
     const metaDescription = outline?.metaDescription || `${title} - Lees alles over ${keyword} in dit uitgebreide artikel.`;
 
-    // Save completed article to article_jobs
-    await updateJob(jobId, {
-      status: 'completed',
-      progress: 100,
-      current_step: '✅ Artikel voltooid!',
-      article_content: fullContent,
-      featured_image: featuredImage,
-      slug,
-      meta_description: metaDescription,
-    });
-
-    // Also save to articles table for library (only if we have a project_id)
+    // Save to articles table for library FIRST (only if we have a project_id)
+    let savedArticleId: string | null = null;
     if (projectId) {
       try {
         const { data: article, error: articleError } = await supabaseAdmin
@@ -535,26 +568,22 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
           })
           .select()
           .single();
-        
+
         if (articleError) {
           console.error('Failed to save to articles table:', articleError);
         } else {
+          savedArticleId = article.id;
           console.log('Article saved to library with ID:', article.id);
-          
-          // Store article_id in the job for publishing later
-          await updateJob(jobId, {
-            article_id: article.id,
-          });
-          
+
           // Trigger affiliate opportunity discovery in the background
           if (article) {
             try {
               console.log('Triggering affiliate opportunity discovery...');
-              
+
               // Call the discover API endpoint
               await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('/rest/v1', '')}/api/affiliate/discover`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
                 },
@@ -577,6 +606,19 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
         console.error('Error saving to articles:', e);
       }
     }
+
+    // Save completed article to article_jobs with article_id in one atomic update
+    await updateJob(jobId, {
+      status: 'completed',
+      progress: 100,
+      current_step: '✅ Artikel voltooid!',
+      article_content: fullContent,
+      featured_image: featuredImage,
+      slug,
+      meta_description: metaDescription,
+      social_media_post: socialMediaPost, // Include generated social media post
+      article_id: savedArticleId, // Include article_id here to avoid race conditions
+    });
 
     console.log(`Article job ${jobId} completed with ${wordCountActual} words`);
 
