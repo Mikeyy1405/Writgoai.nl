@@ -187,7 +187,6 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Post succesvol bijgewerkt in WordPress',
       wordpress_url: updatedPost.link,
-      featured_media_id: featuredMediaId,
     });
 
   } catch (error: any) {
@@ -204,64 +203,5 @@ export async function POST(request: NextRequest) {
       { error: error.message || 'Er is een fout opgetreden bij het bijwerken' },
       { status: 500 }
     );
-  }
-}
-
-async function uploadFeaturedImage(
-  imageUrl: string,
-  wpUrl: string,
-  authHeader: string,
-  title: string
-): Promise<number | null> {
-  try {
-    console.log(`Downloading featured image: ${imageUrl}`);
-
-    // Download image
-    const imageResponse = await fetch(imageUrl, {
-      signal: AbortSignal.timeout(30000),
-    });
-
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to download image: ${imageResponse.statusText}`);
-    }
-
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
-
-    // Extract filename from URL or generate one
-    const urlParts = imageUrl.split('/');
-    const filename = urlParts[urlParts.length - 1] || `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg`;
-
-    console.log(`Uploading featured image to WordPress: ${filename}`);
-
-    // Upload to WordPress media library
-    const mediaApiUrl = getMediaEndpoint(wpUrl);
-
-    const uploadResponse = await fetch(mediaApiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-      body: imageBuffer,
-      signal: AbortSignal.timeout(60000),
-    });
-
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error('WordPress media upload error:', uploadResponse.status, errorText);
-      throw new Error(`Media upload failed: ${uploadResponse.statusText}`);
-    }
-
-    const media = await uploadResponse.json();
-    console.log(`Featured image uploaded successfully. Media ID: ${media.id}`);
-
-    return media.id;
-
-  } catch (error) {
-    console.error('Error uploading featured image:', error);
-    // Return null instead of throwing to allow the update to continue
-    return null;
   }
 }
