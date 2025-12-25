@@ -79,6 +79,7 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
         { icon: '✍️', label: 'Content Writer', href: '/dashboard/writer' },
         { icon: '📰', label: 'News Writer', href: '/dashboard/news-writer' },
         { icon: '📑', label: 'Writgo Blog', href: '/dashboard/writgo-blog' },
+        { icon: '🔗', label: 'Affiliate Opportunities', href: '/dashboard/affiliate-opportunities' },
       ],
     },
     {
@@ -135,7 +136,8 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
     if (pathname?.includes('/content-plan') ||
         pathname?.includes('/writer') ||
         pathname?.includes('/news-writer') ||
-        pathname?.includes('/writgo-blog')) {
+        pathname?.includes('/writgo-blog') ||
+        pathname?.includes('/affiliate-opportunities')) {
       setContentMenuOpen(true);
     }
     // Media menu
