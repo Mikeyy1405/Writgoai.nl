@@ -112,7 +112,7 @@ Geef je antwoord in JSON format:
     const aiResponse = await generateAICompletion({
       systemPrompt: 'Je bent een expert content writer voor WritGo.',
       userPrompt: prompt,
-      model: 'anthropic/claude-sonnet-4',
+      model: 'anthropic/claude-sonnet-4.5',
       temperature: 0.8,
     });
 

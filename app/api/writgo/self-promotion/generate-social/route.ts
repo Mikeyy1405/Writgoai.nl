@@ -160,7 +160,7 @@ Geef je antwoord in dit EXACTE format (geen extra tekst):
     const aiResponse = await generateAICompletion({
       systemPrompt: 'Je bent een expert social media marketeer voor WritGo.',
       userPrompt: prompt,
-      model: 'anthropic/claude-sonnet-4',
+      model: 'anthropic/claude-sonnet-4.5',
       temperature: 0.9,
     });
 
