@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Get articles scheduled for now or earlier
     const now = new Date().toISOString();
-    const { data: scheduledArticles, error: fetchError } = await getSupabase()
+    const { data: scheduledArticles, error: fetchError } = await supabase
       .from('writgo_content_queue')
       .select('*')
       .eq('status', 'scheduled')
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
           .substring(0, 100);
 
         // Check if slug already exists
-        const { data: existingArticle } = await getSupabase()
+        const { data: existingArticle } = await supabase
           .from('articles')
           .select('id')
           .eq('slug', slug)
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Publish article
-        const { data: publishedArticle, error: publishError } = await getSupabase()
+        const { data: publishedArticle, error: publishError } = await supabase
           .from('articles')
           .insert({
             title: article.title,
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
           results.errors.push(`Failed to publish "${article.title}": ${publishError.message}`);
           
           // Update queue status to error
-          await getSupabase()
+          await supabase
             .from('writgo_content_queue')
             .update({
               status: 'error',
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update queue status to published
-        await getSupabase()
+        await supabase
           .from('writgo_content_queue')
           .update({
             status: 'published',
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
           .eq('id', article.id);
 
         // Log activity
-        await getSupabase()
+        await supabase
           .from('writgo_activity_logs')
           .insert({
             action: 'article_published',

@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     // Map to expected format
-    const mappedPosts = (posts || []).map(post => ({
+    const mappedPosts = (posts || []).map((post: any) => ({
       ...post,
       category: post.focus_keyword || 'Algemeen',
       tags: [],

@@ -33,14 +33,14 @@ const STOP_WORDS = new Set([
 // Create admin client for background jobs - lazy initialization
 let supabaseAdmin: ReturnType<typeof createClient> | null = null;
 
-function getSupabaseAdmin() {
+function getSupabaseAdmin(): any {
   if (!supabaseAdmin) {
     supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
   }
-  return getSupabaseAdmin() as any;
+  return supabaseAdmin as any;
 }
 
 // Language configuration

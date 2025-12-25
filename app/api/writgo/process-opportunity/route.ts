@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get opportunity
-    const { data: opportunity, error: oppError } = await getSupabase()
+    const { data: opportunity, error: oppError } = await supabase
       .from('writgo_content_opportunities')
       .select('*, writgo_content_triggers(*)')
       .eq('id', opportunityId)
@@ -38,13 +38,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Update status to generating
-    await getSupabase()
+    await supabase
       .from('writgo_content_opportunities')
       .update({ status: 'generating' })
       .eq('id', opportunityId);
 
     // Get related articles for internal linking
-    const { data: relatedArticles } = await getSupabase()
+    const { data: relatedArticles } = await supabase
       .from('articles')
       .select('title, slug')
       .eq('status', 'published')
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     tomorrow.setHours(10, 0, 0, 0);
 
     // Insert into content queue
-    const { data: queuedArticle, error: queueError } = await getSupabase()
+    const { data: queuedArticle, error: queueError } = await supabase
       .from('writgo_content_queue')
       .insert({
         title: generated.title,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update opportunity status
-    await getSupabase()
+    await supabase
       .from('writgo_content_opportunities')
       .update({
         status: 'queued',
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       .eq('id', opportunityId);
 
     // Log activity
-    await getSupabase()
+    await supabase
       .from('writgo_activity_logs')
       .insert({
         action: 'content_generated',
