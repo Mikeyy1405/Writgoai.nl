@@ -1,14 +1,14 @@
 === Writgo Connector ===
 Contributors: writgo
-Tags: writgo, api, content, automation, seo
+Tags: writgo, api, content, automation, seo, yoast, rankmath
 Requires at least: 5.6
 Tested up to: 6.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Verbind je WordPress site eenvoudig en veilig met Writgo.nl voor geautomatiseerde content creatie en SEO optimalisatie.
+Verbind je WordPress site eenvoudig en veilig met Writgo.nl voor geautomatiseerde content creatie en SEO optimalisatie. Ondersteunt Yoast SEO en RankMath SEO.
 
 == Description ==
 
@@ -28,9 +28,11 @@ Writgo Connector maakt het eenvoudig om je WordPress site te verbinden met Writg
 * Custom REST API endpoints (geen conflicts met WordPress REST API)
 * Automatische Wordfence IP whitelisting
 * Real-time webhooks bij post updates
-* Yoast SEO ondersteuning
+* **Yoast SEO ondersteuning** - Automatische sync van meta titles, descriptions, en focus keywords
+* **RankMath SEO ondersteuning** - Volledige compatibiliteit met RankMath meta data
 * Featured image upload from URL
 * Eenvoudige one-click setup
+* Automatische detectie van geïnstalleerde SEO plugin
 
 == Installation ==
 
@@ -86,7 +88,11 @@ Ja! De plugin gebruikt een unieke API key voor authenticatie. Alleen Writgo met 
 
 = Werkt dit met Yoast SEO? =
 
-Ja! SEO titles, descriptions, en focus keywords worden automatisch gesynchroniseerd.
+Ja! SEO titles, descriptions, focus keywords en canonical URLs worden automatisch gesynchroniseerd.
+
+= Werkt dit met RankMath SEO? =
+
+Ja! De plugin detecteert automatisch welke SEO plugin je gebruikt (Yoast of RankMath) en synchroniseert alle SEO meta data correct.
 
 = Kan ik de plugin weer verwijderen? =
 
@@ -101,6 +107,14 @@ Ja, gewoon deactiveren en verwijderen via WordPress. Alle plugin data wordt verw
 
 == Changelog ==
 
+= 1.1.0 =
+* Added: RankMath SEO support
+* Added: Automatic SEO plugin detection (Yoast or RankMath)
+* Added: Canonical URL support for both SEO plugins
+* Added: SEO plugin info in connection test response
+* Improved: SEO meta data handling with unified get/set functions
+* Updated: Plugin description to mention both SEO plugins
+
 = 1.0.0 =
 * Initial release
 * Custom REST API endpoints
@@ -110,6 +124,9 @@ Ja, gewoon deactiveren en verwijderen via WordPress. Alle plugin data wordt verw
 * Yoast SEO support
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Update voegt RankMath SEO ondersteuning toe. Plugin werkt nu met zowel Yoast als RankMath.
 
 = 1.0.0 =
 Eerste versie van Writgo Connector.

@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Writgo Connector
  * Plugin URI: https://writgo.nl
- * Description: Verbind je WordPress site met Writgo.nl - Eenvoudig en veilig zonder technische configuratie
- * Version: 1.0.0
+ * Description: Verbind je WordPress site met Writgo.nl - Eenvoudig en veilig zonder technische configuratie. Ondersteunt Yoast SEO en RankMath SEO.
+ * Version: 1.1.0
  * Author: Writgo
  * Author URI: https://writgo.nl
  * License: GPL v2 or later
@@ -242,18 +242,8 @@ class Writgo_Connector {
             $this->set_featured_image_from_url($post_id, $params['featured_image_url']);
         }
 
-        // Set Yoast SEO meta
-        if (class_exists('WPSEO_Meta')) {
-            if (!empty($params['seo_title'])) {
-                update_post_meta($post_id, '_yoast_wpseo_title', sanitize_text_field($params['seo_title']));
-            }
-            if (!empty($params['seo_description'])) {
-                update_post_meta($post_id, '_yoast_wpseo_metadesc', sanitize_text_field($params['seo_description']));
-            }
-            if (!empty($params['focus_keyword'])) {
-                update_post_meta($post_id, '_yoast_wpseo_focuskw', sanitize_text_field($params['focus_keyword']));
-            }
-        }
+        // Set SEO meta (Yoast or RankMath)
+        $this->set_seo_meta($post_id, $params);
 
         $post = get_post($post_id);
 
@@ -300,6 +290,9 @@ class Writgo_Connector {
             $this->set_featured_image_from_url($post_id, $params['featured_image_url']);
         }
 
+        // Update SEO meta (Yoast or RankMath)
+        $this->set_seo_meta($post_id, $params);
+
         $post = get_post($post_id);
 
         return new WP_REST_Response($this->format_post($post));
@@ -340,7 +333,8 @@ class Writgo_Connector {
             'message' => 'Connection successful',
             'wordpress_version' => get_bloginfo('version'),
             'site_url' => get_site_url(),
-            'plugin_version' => '1.0.0',
+            'plugin_version' => '1.1.0',
+            'seo_plugin' => $this->detect_seo_plugin(),
         ));
     }
 
@@ -386,16 +380,90 @@ class Writgo_Connector {
             );
         }
 
-        // Yoast SEO
-        if (class_exists('WPSEO_Meta')) {
-            $formatted['seo'] = array(
-                'title' => get_post_meta($post->ID, '_yoast_wpseo_title', true),
-                'description' => get_post_meta($post->ID, '_yoast_wpseo_metadesc', true),
-                'focus_keyword' => get_post_meta($post->ID, '_yoast_wpseo_focuskw', true),
+        // SEO meta (Yoast or RankMath)
+        $formatted['seo'] = $this->get_seo_meta($post->ID);
+        $formatted['seo_plugin'] = $this->detect_seo_plugin();
+
+        return $formatted;
+    }
+
+    /**
+     * Detect which SEO plugin is active
+     */
+    private function detect_seo_plugin() {
+        if (class_exists('RankMath')) {
+            return 'rankmath';
+        } elseif (class_exists('WPSEO_Meta')) {
+            return 'yoast';
+        }
+        return 'none';
+    }
+
+    /**
+     * Get SEO meta data (works with Yoast or RankMath)
+     */
+    private function get_seo_meta($post_id) {
+        $seo_plugin = $this->detect_seo_plugin();
+
+        if ($seo_plugin === 'rankmath') {
+            return array(
+                'title' => get_post_meta($post_id, 'rank_math_title', true),
+                'description' => get_post_meta($post_id, 'rank_math_description', true),
+                'focus_keyword' => get_post_meta($post_id, 'rank_math_focus_keyword', true),
+                'canonical_url' => get_post_meta($post_id, 'rank_math_canonical_url', true),
+            );
+        } elseif ($seo_plugin === 'yoast') {
+            return array(
+                'title' => get_post_meta($post_id, '_yoast_wpseo_title', true),
+                'description' => get_post_meta($post_id, '_yoast_wpseo_metadesc', true),
+                'focus_keyword' => get_post_meta($post_id, '_yoast_wpseo_focuskw', true),
+                'canonical_url' => get_post_meta($post_id, '_yoast_wpseo_canonical', true),
             );
         }
 
-        return $formatted;
+        return array(
+            'title' => '',
+            'description' => '',
+            'focus_keyword' => '',
+            'canonical_url' => '',
+        );
+    }
+
+    /**
+     * Set SEO meta data (works with Yoast or RankMath)
+     */
+    private function set_seo_meta($post_id, $params) {
+        $seo_plugin = $this->detect_seo_plugin();
+
+        if ($seo_plugin === 'rankmath') {
+            // RankMath SEO
+            if (!empty($params['seo_title'])) {
+                update_post_meta($post_id, 'rank_math_title', sanitize_text_field($params['seo_title']));
+            }
+            if (!empty($params['seo_description'])) {
+                update_post_meta($post_id, 'rank_math_description', sanitize_text_field($params['seo_description']));
+            }
+            if (!empty($params['focus_keyword'])) {
+                update_post_meta($post_id, 'rank_math_focus_keyword', sanitize_text_field($params['focus_keyword']));
+            }
+            if (!empty($params['canonical_url'])) {
+                update_post_meta($post_id, 'rank_math_canonical_url', esc_url_raw($params['canonical_url']));
+            }
+        } elseif ($seo_plugin === 'yoast') {
+            // Yoast SEO
+            if (!empty($params['seo_title'])) {
+                update_post_meta($post_id, '_yoast_wpseo_title', sanitize_text_field($params['seo_title']));
+            }
+            if (!empty($params['seo_description'])) {
+                update_post_meta($post_id, '_yoast_wpseo_metadesc', sanitize_text_field($params['seo_description']));
+            }
+            if (!empty($params['focus_keyword'])) {
+                update_post_meta($post_id, '_yoast_wpseo_focuskw', sanitize_text_field($params['focus_keyword']));
+            }
+            if (!empty($params['canonical_url'])) {
+                update_post_meta($post_id, '_yoast_wpseo_canonical', esc_url_raw($params['canonical_url']));
+            }
+        }
     }
 
     /**

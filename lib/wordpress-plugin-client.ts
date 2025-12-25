@@ -30,6 +30,7 @@ export interface PluginPost {
   seo_title?: string;
   seo_description?: string;
   focus_keyword?: string;
+  canonical_url?: string;
 }
 
 export interface PluginCategory {
@@ -45,6 +46,7 @@ export interface PluginConnectionTest {
   wordpress_version?: string;
   site_url?: string;
   plugin_version?: string;
+  seo_plugin?: 'yoast' | 'rankmath' | 'none';
   error?: string;
 }
 
@@ -197,6 +199,7 @@ export class WordPressPluginClient {
     seo_title?: string;
     seo_description?: string;
     focus_keyword?: string;
+    canonical_url?: string;
   }): Promise<{
     success: boolean;
     post_id?: number;
@@ -214,6 +217,7 @@ export class WordPressPluginClient {
         seo_title: article.seo_title,
         seo_description: article.seo_description,
         focus_keyword: article.focus_keyword,
+        canonical_url: article.canonical_url,
       });
 
       return {
