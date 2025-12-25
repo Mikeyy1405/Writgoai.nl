@@ -72,6 +72,7 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
     { icon: '📰', label: 'News Writer', href: '/dashboard/news-writer' },
     { icon: '🎨', label: 'Image Studio', href: '/dashboard/image-studio' },
     { icon: '🎬', label: 'Video Studio', href: '/dashboard/video-studio' },
+    { icon: '🖼️', label: 'Media Bibliotheek', href: '/dashboard/media-library' },
     { icon: '📑', label: 'Writgo Blog', href: '/dashboard/writgo-blog' },
     { icon: '🔄', label: 'WordPress Posts', href: '/dashboard/wordpress-posts' },
     { icon: '📚', label: 'Bibliotheek', href: '/dashboard/library' },
