@@ -144,9 +144,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch posts from WordPress API with retry logic
+    // Include _embed to get featured images and _fields for metadata
     const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, {
       page,
       per_page: perPage,
+      _embed: '1', // Include embedded data (featured images)
     });
 
     console.log(`[WP-FETCH-${requestId}] 📥 Fetching WordPress posts from: ${sanitizeUrl(wpApiUrl)}`);
@@ -238,6 +240,52 @@ export async function GET(request: NextRequest) {
 
     // Transform WordPress API posts to our format
     const transformedPosts = posts.map((post: any) => {
+      // Extract featured image URL from _embedded data
+      let featuredImageUrl = null;
+      if (post._embedded?.['wp:featuredmedia']?.[0]?.source_url) {
+        featuredImageUrl = post._embedded['wp:featuredmedia'][0].source_url;
+      }
+
+      // Detect SEO plugin and extract metadata
+      let seoPlugin = 'none';
+      let metaTitle = '';
+      let metaDescription = '';
+      let focusKeyword = '';
+      let seoScore = null;
+
+      // Check for Yoast SEO
+      if (post.yoast_head_json) {
+        seoPlugin = 'yoast';
+        metaTitle = post.yoast_head_json.title || '';
+        metaDescription = post.yoast_head_json.description || '';
+        focusKeyword = post.yoast_head_json.og_title || '';
+        // Yoast score is typically in a separate field
+        if (post.meta?.['_yoast_wpseo_linkdex']) {
+          seoScore = parseInt(post.meta['_yoast_wpseo_linkdex']);
+        }
+      }
+      // Check for RankMath
+      else if (post.meta?.rank_math_title || post.meta?.rank_math_description) {
+        seoPlugin = 'rankmath';
+        metaTitle = post.meta.rank_math_title || '';
+        metaDescription = post.meta.rank_math_description || '';
+        focusKeyword = post.meta.rank_math_focus_keyword || '';
+        if (post.meta.rank_math_seo_score) {
+          seoScore = parseInt(post.meta.rank_math_seo_score);
+        }
+      }
+      // Fallback to generic meta fields
+      else if (post.meta) {
+        metaTitle = post.meta.title || post.title?.rendered || '';
+        metaDescription = post.meta.description || '';
+        focusKeyword = post.meta.focus_keyword || '';
+      }
+
+      // If no SEO title set, use post title
+      if (!metaTitle) {
+        metaTitle = post.title?.rendered || '';
+      }
+
       return {
         wordpress_id: post.id,
         title: post.title?.rendered || '',
@@ -245,21 +293,31 @@ export async function GET(request: NextRequest) {
         excerpt: post.excerpt?.rendered || '',
         slug: post.slug || '',
         status: post.status,
-        featured_image: post.featured_media || null,
+        featured_image: featuredImageUrl,
         wordpress_url: post.link,
         published_at: post.date,
         modified_at: post.modified,
         categories: post.categories || [],
         tags: post.tags || [],
-        // SEO fields from meta (if available)
-        meta_title: post.meta?.title || post.title?.rendered || '',
-        meta_description: post.meta?.description || '',
-        focus_keyword: post.meta?.focus_keyword || '',
-        seo_plugin: 'none',
+        // SEO fields
+        meta_title: metaTitle,
+        meta_description: metaDescription,
+        focus_keyword: focusKeyword,
+        seo_plugin: seoPlugin,
+        seo_score: seoScore,
       };
     });
 
     console.log(`[WP-FETCH-${requestId}] ✅ Request completed successfully`);
+
+    // Detect the most common SEO plugin from all posts
+    const seoPluginCounts = transformedPosts.reduce((acc: any, post: any) => {
+      acc[post.seo_plugin] = (acc[post.seo_plugin] || 0) + 1;
+      return acc;
+    }, {});
+    const detectedSeoPlugin = Object.keys(seoPluginCounts).reduce((a, b) =>
+      seoPluginCounts[a] > seoPluginCounts[b] ? a : b, 'none'
+    );
 
     return NextResponse.json({
       success: true,
@@ -270,7 +328,7 @@ export async function GET(request: NextRequest) {
         total_pages: totalPages,
         total_posts: totalPosts,
       },
-      seo_plugin: 'none',
+      seo_plugin: detectedSeoPlugin,
     });
 
   } catch (error: any) {

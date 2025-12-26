@@ -21,11 +21,21 @@ interface WordPressPost {
   focus_keyword: string;
   categories: Array<{ id: number; name: string; slug: string }>;
   tags: Array<{ id: number; name: string; slug: string }>;
+  seo_plugin: string;
+  seo_score: number | null;
 }
 
 interface Project {
   id: string;
   name: string;
+}
+
+interface SEOModalData {
+  wordpress_id: number;
+  title: string;
+  meta_title: string;
+  meta_description: string;
+  focus_keyword: string;
 }
 
 export default function WordPressPostsManagement() {
@@ -45,6 +55,16 @@ export default function WordPressPostsManagement() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<ConnectionTestResult | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
+  const [seoPlugin, setSeoPlugin] = useState<string>('none');
+
+  // Modal states
+  const [showSEOModal, setShowSEOModal] = useState(false);
+  const [seoModalData, setSeoModalData] = useState<SEOModalData | null>(null);
+  const [savingSEO, setSavingSEO] = useState(false);
+
+  // Action states
+  const [processingAction, setProcessingAction] = useState<number | null>(null);
+  const [actionMessage, setActionMessage] = useState<string>('');
 
   useEffect(() => {
     fetchProjects();
@@ -77,7 +97,7 @@ export default function WordPressPostsManagement() {
     setError(null);
     setErrorDetails(null);
     setShowErrorDetails(false);
-    
+
     try {
       const response = await fetch(
         `/api/wordpress/fetch?project_id=${selectedProject}&page=${currentPage}&per_page=20`
@@ -85,29 +105,27 @@ export default function WordPressPostsManagement() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Enhanced error handling with detailed information
         const errorMsg = data.error || 'Fout bij ophalen van WordPress posts';
         setError(errorMsg);
-        
+
         if (data.errorDetails) {
           setErrorDetails(data.errorDetails);
           console.error('WordPress fetch error details:', data.errorDetails);
         }
-        
+
         throw new Error(errorMsg);
       }
 
       setPosts(data.posts || []);
       setTotalPages(data.pagination?.total_pages || 1);
       setTotalPosts(data.pagination?.total_posts || 0);
-      
-      // Clear any previous errors on success
+      setSeoPlugin(data.seo_plugin || 'none');
+
       setError(null);
       setErrorDetails(null);
     } catch (error: any) {
       console.error('Error fetching WordPress posts:', error);
-      
-      // Check if this is a network error (user is offline)
+
       if (!navigator.onLine) {
         setError('Geen internetverbinding. Controleer je netwerk en probeer opnieuw.');
         setErrorDetails({
@@ -120,10 +138,9 @@ export default function WordPressPostsManagement() {
           timestamp: new Date().toISOString(),
         });
       } else if (!errorDetails) {
-        // Only set generic error if we don't already have detailed error from API
         setError(error.message);
       }
-      
+
       setPosts([]);
     } finally {
       setLoading(false);
@@ -148,7 +165,6 @@ export default function WordPressPostsManagement() {
 
       if (response.ok) {
         setConnectionTestResult(data);
-        console.log('Connection test result:', data);
       } else {
         setConnectionTestResult({
           success: false,
@@ -180,6 +196,7 @@ export default function WordPressPostsManagement() {
 
   const syncSinglePost = async (wordpressId: number) => {
     setSyncing(true);
+    setProcessingAction(wordpressId);
     try {
       const response = await fetch('/api/wordpress/sync', {
         method: 'POST',
@@ -196,12 +213,209 @@ export default function WordPressPostsManagement() {
         throw new Error(data.error || 'Fout bij synchroniseren');
       }
 
-      alert(data.message || 'Post succesvol geïmporteerd!');
+      setActionMessage('Post succesvol geïmporteerd!');
+      setTimeout(() => setActionMessage(''), 3000);
     } catch (error: any) {
       console.error('Error syncing post:', error);
       alert(error.message);
     } finally {
       setSyncing(false);
+      setProcessingAction(null);
+    }
+  };
+
+  const updatePostToWordPress = async (wordpressId: number) => {
+    const post = posts.find(p => p.wordpress_id === wordpressId);
+    if (!post) return;
+
+    if (!confirm(`Weet je zeker dat je "${post.title}" wilt bijwerken op WordPress?`)) {
+      return;
+    }
+
+    setProcessingAction(wordpressId);
+    try {
+      const response = await fetch('/api/wordpress/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: selectedProject,
+          wordpress_id: wordpressId,
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt,
+          meta_title: post.meta_title,
+          meta_description: post.meta_description,
+          focus_keyword: post.focus_keyword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Fout bij bijwerken');
+      }
+
+      setActionMessage('Post succesvol bijgewerkt op WordPress!');
+      setTimeout(() => setActionMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Error updating post:', error);
+      alert(error.message);
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const rewritePost = async (wordpressId: number) => {
+    const post = posts.find(p => p.wordpress_id === wordpressId);
+    if (!post) return;
+
+    if (!confirm(`Post "${post.title}" wordt geïmporteerd zodat je hem kunt bewerken en optimaliseren in de editor. Doorgaan?`)) {
+      return;
+    }
+
+    setProcessingAction(wordpressId);
+    setActionMessage('Post wordt geïmporteerd...');
+
+    try {
+      // Sync the post to get it in our database
+      const syncResponse = await fetch('/api/wordpress/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: selectedProject,
+          wordpress_id: wordpressId,
+        }),
+      });
+
+      const syncData = await syncResponse.json();
+      if (!syncResponse.ok) {
+        throw new Error(syncData.error || 'Fout bij importeren van post');
+      }
+
+      const articleId = syncData.article_id;
+
+      setActionMessage('Post succesvol geïmporteerd! Doorsturen naar editor...');
+      setTimeout(() => {
+        router.push(`/dashboard/wordpress-editor/${articleId}`);
+      }, 1000);
+    } catch (error: any) {
+      console.error('Error importing post for editing:', error);
+      alert(error.message);
+      setProcessingAction(null);
+    }
+  };
+
+  const regenerateFeaturedImage = async (wordpressId: number) => {
+    const post = posts.find(p => p.wordpress_id === wordpressId);
+    if (!post) return;
+
+    if (!confirm(`Weet je zeker dat je een nieuwe uitgelichte afbeelding wilt genereren voor "${post.title}"?`)) {
+      return;
+    }
+
+    setProcessingAction(wordpressId);
+    setActionMessage('Nieuwe afbeelding wordt gegenereerd...');
+
+    try {
+      const response = await fetch('/api/media/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Featured image for article: ${post.title}. Professional, high-quality, relevant to the topic.`,
+          project_id: selectedProject,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Fout bij genereren afbeelding');
+      }
+
+      // Update the post with the new image
+      const updateResponse = await fetch('/api/wordpress/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: selectedProject,
+          wordpress_id: wordpressId,
+          featured_image: data.image_url,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error('Afbeelding gegenereerd maar niet geüpload naar WordPress');
+      }
+
+      // Update local state
+      setPosts(posts.map(p =>
+        p.wordpress_id === wordpressId
+          ? { ...p, featured_image: data.image_url }
+          : p
+      ));
+
+      setActionMessage('Nieuwe afbeelding succesvol gegenereerd en geüpload!');
+      setTimeout(() => setActionMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Error regenerating image:', error);
+      alert(error.message);
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const openSEOModal = (post: WordPressPost) => {
+    setSeoModalData({
+      wordpress_id: post.wordpress_id,
+      title: post.title,
+      meta_title: post.meta_title,
+      meta_description: post.meta_description,
+      focus_keyword: post.focus_keyword,
+    });
+    setShowSEOModal(true);
+  };
+
+  const saveSEOMetadata = async () => {
+    if (!seoModalData) return;
+
+    setSavingSEO(true);
+    try {
+      const response = await fetch('/api/wordpress/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: selectedProject,
+          wordpress_id: seoModalData.wordpress_id,
+          meta_title: seoModalData.meta_title,
+          meta_description: seoModalData.meta_description,
+          focus_keyword: seoModalData.focus_keyword,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Fout bij opslaan SEO metadata');
+      }
+
+      // Update local state
+      setPosts(posts.map(p =>
+        p.wordpress_id === seoModalData.wordpress_id
+          ? {
+              ...p,
+              meta_title: seoModalData.meta_title,
+              meta_description: seoModalData.meta_description,
+              focus_keyword: seoModalData.focus_keyword,
+            }
+          : p
+      ));
+
+      setShowSEOModal(false);
+      setActionMessage('SEO metadata succesvol opgeslagen!');
+      setTimeout(() => setActionMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Error saving SEO metadata:', error);
+      alert(error.message);
+    } finally {
+      setSavingSEO(false);
     }
   };
 
@@ -227,7 +441,8 @@ export default function WordPressPostsManagement() {
         throw new Error(data.error || 'Fout bij synchroniseren');
       }
 
-      alert(data.message || `${data.synced_count} posts gesynchroniseerd!`);
+      setActionMessage(data.message || `${data.synced_count} posts gesynchroniseerd!`);
+      setTimeout(() => setActionMessage(''), 5000);
     } catch (error: any) {
       console.error('Error syncing all posts:', error);
       alert(error.message);
@@ -289,19 +504,53 @@ export default function WordPressPostsManagement() {
 
     setSyncing(false);
     setSelectedPosts([]);
-    alert(`${successCount} posts gesynchroniseerd${errorCount > 0 ? ` (${errorCount} fouten)` : ''}`);
+    setActionMessage(`${successCount} posts gesynchroniseerd${errorCount > 0 ? ` (${errorCount} fouten)` : ''}`);
+    setTimeout(() => setActionMessage(''), 5000);
+  };
+
+  const getSEOScoreColor = (score: number | null) => {
+    if (score === null) return 'bg-gray-500';
+    if (score >= 80) return 'bg-green-500';
+    if (score >= 60) return 'bg-yellow-500';
+    if (score >= 40) return 'bg-orange-500';
+    return 'bg-red-500';
+  };
+
+  const getSEOScoreLabel = (score: number | null) => {
+    if (score === null) return 'N/A';
+    if (score >= 80) return 'Goed';
+    if (score >= 60) return 'OK';
+    if (score >= 40) return 'Matig';
+    return 'Slecht';
   };
 
   return (
     <div className="min-h-screen bg-gray-900 p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1800px] mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">WordPress Posts Beheer</h1>
+          <h1 className="text-3xl font-bold text-white">WordPress Posts Dashboard</h1>
           <p className="text-gray-300 mt-1">
-            Haal je bestaande WordPress posts op en beheer ze in Writgo.ai
+            Beheer je WordPress posts met volledige SEO controle
           </p>
+          {seoPlugin !== 'none' && (
+            <p className="text-sm text-orange-400 mt-1">
+              SEO Plugin gedetecteerd: {seoPlugin === 'yoast' ? 'Yoast SEO' : seoPlugin === 'rankmath' ? 'RankMath' : seoPlugin}
+            </p>
+          )}
         </div>
+
+        {/* Action Message */}
+        {actionMessage && (
+          <div className="mb-6 bg-green-900/20 border border-green-500/50 rounded-lg p-4">
+            <div className="flex items-center text-green-300">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              {actionMessage}
+            </div>
+          </div>
+        )}
 
         {/* Project Selection & Actions */}
         <div className="bg-gray-800 rounded-lg shadow-sm p-6 mb-6 border border-gray-700">
@@ -354,8 +603,8 @@ export default function WordPressPostsManagement() {
         {/* Connection Test Results */}
         {showConnectionTest && connectionTestResult && (
           <div className={`rounded-lg border p-6 mb-6 ${
-            connectionTestResult.success 
-              ? 'bg-green-900/20 border-green-500/50' 
+            connectionTestResult.success
+              ? 'bg-green-900/20 border-green-500/50'
               : 'bg-orange-900/20 border-orange-500/50'
           }`}>
             <div className="flex items-start justify-between mb-4">
@@ -391,55 +640,10 @@ export default function WordPressPostsManagement() {
             </div>
 
             <div className="space-y-3">
-              {/* Site Reachability */}
-              <div className="flex items-start p-3 bg-gray-800/50 rounded-lg">
-                <div className="flex-shrink-0 mr-3 mt-0.5">
-                  {connectionTestResult.checks.siteReachable.passed ? (
-                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white">Site Bereikbaarheid</p>
-                  <p className="text-sm text-gray-300 mt-1">{connectionTestResult.checks.siteReachable.message}</p>
-                  {connectionTestResult.checks.siteReachable.details && (
-                    <p className="text-xs text-gray-400 mt-1">{connectionTestResult.checks.siteReachable.details}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* REST API */}
-              <div className="flex items-start p-3 bg-gray-800/50 rounded-lg">
-                <div className="flex-shrink-0 mr-3 mt-0.5">
-                  {connectionTestResult.checks.restApiEnabled.passed ? (
-                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white">REST API Basis (/wp-json/)</p>
-                  <p className="text-sm text-gray-300 mt-1">{connectionTestResult.checks.restApiEnabled.message}</p>
-                  {connectionTestResult.checks.restApiEnabled.details && (
-                    <p className="text-xs text-gray-400 mt-1">{connectionTestResult.checks.restApiEnabled.details}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* WordPress v2 API */}
-              {connectionTestResult.checks.wpV2ApiEnabled && (
-                <div className="flex items-start p-3 bg-gray-800/50 rounded-lg">
+              {Object.entries(connectionTestResult.checks).map(([key, check]) => (
+                <div key={key} className="flex items-start p-3 bg-gray-800/50 rounded-lg">
                   <div className="flex-shrink-0 mr-3 mt-0.5">
-                    {connectionTestResult.checks.wpV2ApiEnabled.passed ? (
+                    {check.passed ? (
                       <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
@@ -450,75 +654,15 @@ export default function WordPressPostsManagement() {
                     )}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-white">WordPress v2 API (/wp-json/wp/v2)</p>
-                    <p className="text-sm text-gray-300 mt-1">{connectionTestResult.checks.wpV2ApiEnabled.message}</p>
-                    {connectionTestResult.checks.wpV2ApiEnabled.details && (
-                      <p className="text-xs text-gray-400 mt-1">{connectionTestResult.checks.wpV2ApiEnabled.details}</p>
+                    <p className="text-sm font-medium text-white">{key}</p>
+                    <p className="text-sm text-gray-300 mt-1">{check.message}</p>
+                    {check.details && (
+                      <p className="text-xs text-gray-400 mt-1">{check.details}</p>
                     )}
                   </div>
                 </div>
-              )}
-
-              {/* Posts Endpoint */}
-              {connectionTestResult.checks.postsEndpointAccessible && (
-                <div className="flex items-start p-3 bg-gray-800/50 rounded-lg">
-                  <div className="flex-shrink-0 mr-3 mt-0.5">
-                    {connectionTestResult.checks.postsEndpointAccessible.passed ? (
-                      <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Posts Endpoint (/wp/v2/posts)</p>
-                    <p className="text-sm text-gray-300 mt-1">{connectionTestResult.checks.postsEndpointAccessible.message}</p>
-                    {connectionTestResult.checks.postsEndpointAccessible.details && (
-                      <p className="text-xs text-gray-400 mt-1">{connectionTestResult.checks.postsEndpointAccessible.details}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Authentication */}
-              <div className="flex items-start p-3 bg-gray-800/50 rounded-lg">
-                <div className="flex-shrink-0 mr-3 mt-0.5">
-                  {connectionTestResult.checks.authenticationValid.passed ? (
-                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white">Authenticatie</p>
-                  <p className="text-sm text-gray-300 mt-1">{connectionTestResult.checks.authenticationValid.message}</p>
-                  {connectionTestResult.checks.authenticationValid.details && (
-                    <p className="text-xs text-gray-400 mt-1">{connectionTestResult.checks.authenticationValid.details}</p>
-                  )}
-                </div>
-              </div>
+              ))}
             </div>
-
-            {/* Tested Endpoints */}
-            {connectionTestResult.testedEndpoints && connectionTestResult.testedEndpoints.length > 0 && (
-              <div className="mt-4 p-3 bg-gray-800/30 rounded-lg">
-                <p className="text-xs font-medium text-gray-400 mb-2">Geteste Endpoints:</p>
-                <ul className="text-xs text-gray-500 space-y-1">
-                  {connectionTestResult.testedEndpoints.map((endpoint, index) => (
-                    <li key={index} className="font-mono truncate" title={endpoint}>
-                      • {endpoint}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         )}
 
@@ -532,66 +676,30 @@ export default function WordPressPostsManagement() {
               <div className="flex-1">
                 <h3 className="text-sm font-medium text-red-300">Fout bij ophalen van WordPress posts</h3>
                 <p className="text-sm text-red-400 mt-1">{error}</p>
-                
-                {errorDetails && (
-                  <>
-                    {errorDetails.wpUrl && (
-                      <p className="text-xs text-red-300 mt-2">
-                        <strong>WordPress URL:</strong> {errorDetails.wpUrl}
-                      </p>
-                    )}
-                    
-                    {errorDetails.troubleshooting && errorDetails.troubleshooting.length > 0 && (
-                      <div className="mt-3">
-                        <button
-                          onClick={() => setShowErrorDetails(!showErrorDetails)}
-                          className="text-sm text-red-300 hover:text-red-200 underline flex items-center"
-                        >
-                          {showErrorDetails ? 'Verberg' : 'Toon'} probleemoplossing
-                          <svg 
-                            className={`w-4 h-4 ml-1 transform transition-transform ${showErrorDetails ? 'rotate-180' : ''}`} 
-                            fill="currentColor" 
-                            viewBox="0 0 20 20"
-                          >
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                        
-                        {showErrorDetails && (
-                          <div className="mt-3 p-3 bg-red-900/30 rounded-lg">
-                            <p className="text-sm font-medium text-red-200 mb-2">Probeer het volgende:</p>
-                            <ul className="text-sm text-red-300 space-y-1">
-                              {errorDetails.troubleshooting.map((tip, index) => (
-                                <li key={index} className="flex items-start">
-                                  <span className="mr-2">•</span>
-                                  <span>{tip}</span>
-                                </li>
-                              ))}
-                            </ul>
-                            
-                            <button
-                              onClick={testConnection}
-                              disabled={testingConnection}
-                              className="mt-3 px-4 py-2 bg-red-700 hover:bg-red-600 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
-                            >
-                              {testingConnection ? 'Testen...' : 'Test Connectie'}
-                            </button>
-                          </div>
-                        )}
+
+                {errorDetails && errorDetails.troubleshooting && errorDetails.troubleshooting.length > 0 && (
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setShowErrorDetails(!showErrorDetails)}
+                      className="text-sm text-red-300 hover:text-red-200 underline flex items-center"
+                    >
+                      {showErrorDetails ? 'Verberg' : 'Toon'} probleemoplossing
+                    </button>
+
+                    {showErrorDetails && (
+                      <div className="mt-3 p-3 bg-red-900/30 rounded-lg">
+                        <p className="text-sm font-medium text-red-200 mb-2">Probeer het volgende:</p>
+                        <ul className="text-sm text-red-300 space-y-1">
+                          {errorDetails.troubleshooting.map((tip, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="mr-2">•</span>
+                              <span>{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
-                    
-                    {errorDetails.technicalDetails && (
-                      <details className="mt-3">
-                        <summary className="text-xs text-red-400 cursor-pointer hover:text-red-300">
-                          Technische details (voor developers)
-                        </summary>
-                        <pre className="text-xs text-red-300 mt-2 p-2 bg-red-900/30 rounded overflow-x-auto">
-                          {errorDetails.technicalDetails}
-                        </pre>
-                      </details>
-                    )}
-                  </>
+                  </div>
                 )}
               </div>
             </div>
@@ -642,7 +750,7 @@ export default function WordPressPostsManagement() {
               <table className="min-w-full divide-y divide-gray-700">
                 <thead className="bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left">
+                    <th className="px-4 py-3 text-left">
                       <input
                         type="checkbox"
                         checked={selectedPosts.length === posts.length}
@@ -650,19 +758,22 @@ export default function WordPressPostsManagement() {
                         className="rounded border-gray-600 bg-gray-700 text-orange-600 focus:ring-orange-500"
                       />
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Titel
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Meta Description
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      SEO Score
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Afbeelding
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Datum
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Acties
                     </th>
                   </tr>
@@ -670,7 +781,7 @@ export default function WordPressPostsManagement() {
                 <tbody className="bg-gray-800 divide-y divide-gray-700">
                   {posts.map((post) => (
                     <tr key={post.wordpress_id} className="hover:bg-gray-700/50">
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
                         <input
                           type="checkbox"
                           checked={selectedPosts.includes(post.wordpress_id)}
@@ -678,11 +789,37 @@ export default function WordPressPostsManagement() {
                           className="rounded border-gray-600 bg-gray-700 text-orange-600 focus:ring-orange-500"
                         />
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-white">{post.title}</div>
-                        <div className="text-sm text-gray-400">/{post.slug}</div>
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-medium text-white max-w-xs truncate">{post.title}</div>
+                        <div className="text-xs text-gray-400 truncate">/{post.slug}</div>
+                        {post.focus_keyword && (
+                          <div className="text-xs text-orange-400 mt-1">
+                            Keyword: {post.focus_keyword}
+                          </div>
+                        )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
+                        <div className="text-sm text-gray-300 max-w-md">
+                          {post.meta_description ? (
+                            <div className="line-clamp-2" title={post.meta_description}>
+                              {post.meta_description}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 italic">Geen meta description</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-12 h-12 rounded-full ${getSEOScoreColor(post.seo_score)} flex items-center justify-center text-white font-bold text-sm`}>
+                            {post.seo_score ?? 'N/A'}
+                          </div>
+                          <span className="text-xs text-gray-400">
+                            {getSEOScoreLabel(post.seo_score)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                           post.status === 'publish' ? 'bg-green-100 text-green-800' :
                           post.status === 'draft' ? 'bg-gray-100 text-gray-800' :
@@ -692,40 +829,75 @@ export default function WordPressPostsManagement() {
                            post.status === 'draft' ? 'Draft' : post.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
                         {post.featured_image ? (
                           <img
                             src={post.featured_image}
                             alt={post.title}
-                            className="h-10 w-10 rounded object-cover"
+                            className="h-16 w-16 rounded object-cover"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded bg-gray-200 flex items-center justify-center">
-                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="h-16 w-16 rounded bg-gray-700 flex items-center justify-center">
+                            <svg className="h-8 w-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-400">
-                        {new Date(post.published_at).toLocaleDateString('nl-NL')}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium space-x-4">
-                        <button
-                          onClick={() => syncSinglePost(post.wordpress_id)}
-                          disabled={syncing}
-                          className="text-orange-500 hover:text-orange-400 disabled:opacity-50"
-                        >
-                          Importeren
-                        </button>
-                        <a
-                          href={post.wordpress_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-orange-400 hover:text-orange-300"
-                        >
-                          Bekijken
-                        </a>
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          {processingAction === post.wordpress_id ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-500"></div>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => syncSinglePost(post.wordpress_id)}
+                                disabled={syncing}
+                                className="text-xs px-3 py-1.5 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+                                title="Importeren naar Writgo"
+                              >
+                                Import
+                              </button>
+                              <button
+                                onClick={() => openSEOModal(post)}
+                                className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                title="SEO metadata bewerken"
+                              >
+                                SEO
+                              </button>
+                              <button
+                                onClick={() => updatePostToWordPress(post.wordpress_id)}
+                                className="text-xs px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700"
+                                title="Bijwerken op WordPress"
+                              >
+                                Update
+                              </button>
+                              <button
+                                onClick={() => rewritePost(post.wordpress_id)}
+                                className="text-xs px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700"
+                                title="Openen in editor voor bewerking"
+                              >
+                                Bewerk
+                              </button>
+                              <button
+                                onClick={() => regenerateFeaturedImage(post.wordpress_id)}
+                                className="text-xs px-3 py-1.5 bg-pink-600 text-white rounded hover:bg-pink-700"
+                                title="Nieuwe afbeelding genereren"
+                              >
+                                Afbeelding
+                              </button>
+                              <a
+                                href={post.wordpress_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700"
+                                title="Bekijken op WordPress"
+                              >
+                                Bekijk
+                              </a>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -761,17 +933,127 @@ export default function WordPressPostsManagement() {
           </div>
         </div>
 
+        {/* SEO Modal */}
+        {showSEOModal && seoModalData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-white">SEO Metadata Bewerken</h2>
+                  <button
+                    onClick={() => setShowSEOModal(false)}
+                    className="text-gray-400 hover:text-gray-300"
+                  >
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="mb-4 p-3 bg-gray-700 rounded-lg">
+                  <p className="text-sm text-gray-300">
+                    <strong className="text-white">Post:</strong> {seoModalData.title}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Updates worden direct naar WordPress gestuurd ({seoPlugin === 'yoast' ? 'Yoast SEO' : seoPlugin === 'rankmath' ? 'RankMath' : 'WordPress'})
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      SEO Titel (Meta Title)
+                    </label>
+                    <input
+                      type="text"
+                      value={seoModalData.meta_title}
+                      onChange={(e) => setSeoModalData({ ...seoModalData, meta_title: e.target.value })}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Voer SEO titel in..."
+                      maxLength={60}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      {seoModalData.meta_title.length}/60 karakters - Optimaal: 50-60
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Meta Description
+                    </label>
+                    <textarea
+                      value={seoModalData.meta_description}
+                      onChange={(e) => setSeoModalData({ ...seoModalData, meta_description: e.target.value })}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Voer meta description in..."
+                      rows={3}
+                      maxLength={160}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      {seoModalData.meta_description.length}/160 karakters - Optimaal: 150-160
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Focus Keyword
+                    </label>
+                    <input
+                      type="text"
+                      value={seoModalData.focus_keyword}
+                      onChange={(e) => setSeoModalData({ ...seoModalData, focus_keyword: e.target.value })}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Voer focus keyword in..."
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Het belangrijkste zoekwoord voor deze post
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    onClick={() => setShowSEOModal(false)}
+                    className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    onClick={saveSEOMetadata}
+                    disabled={savingSEO}
+                    className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium disabled:opacity-50"
+                  >
+                    {savingSEO ? 'Opslaan...' : 'Opslaan'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Help Text */}
         <div className="mt-8 bg-orange-900/20 border border-orange-500/50 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-orange-400 mb-2">
-            Hoe werkt WordPress post synchronisatie?
+            Functionaliteit Overzicht
           </h3>
-          <ul className="text-sm text-gray-300 space-y-2">
-            <li>• <strong className="text-white">Posts Ophalen:</strong> Haalt posts op van je WordPress website (alleen om te bekijken)</li>
-            <li>• <strong className="text-white">Importeren:</strong> Importeert een enkele post naar Writgo.ai waar je hem kunt bewerken</li>
-            <li>• <strong className="text-white">Alles Synchroniseren:</strong> Importeert alle WordPress posts in één keer</li>
-            <li>• Na import kun je posts bewerken in Writgo.ai en wijzigingen terugpushen naar WordPress</li>
-          </ul>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
+            <div>
+              <p className="font-semibold text-white mb-1">Post Acties:</p>
+              <ul className="space-y-1">
+                <li>• <strong className="text-orange-300">Import:</strong> Importeer post naar Writgo voor bewerking</li>
+                <li>• <strong className="text-orange-300">SEO:</strong> Bewerk SEO metadata (Yoast/RankMath)</li>
+                <li>• <strong className="text-orange-300">Update:</strong> Werk post direct bij op WordPress</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold text-white mb-1">Geavanceerde Acties:</p>
+              <ul className="space-y-1">
+                <li>• <strong className="text-orange-300">Bewerk:</strong> Open post in editor voor bewerking en optimalisatie</li>
+                <li>• <strong className="text-orange-300">Afbeelding:</strong> Genereer nieuwe uitgelichte afbeelding met AI</li>
+                <li>• <strong className="text-orange-300">Bekijk:</strong> Open post op je WordPress website</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
