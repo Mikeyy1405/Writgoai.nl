@@ -5,6 +5,42 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
+ * Send task to VPS for execution
+ */
+async function sendTaskToVPS(task: any) {
+  const vpsApiUrl = process.env.VPS_API_URL;
+  const vpsApiSecret = process.env.VPS_API_SECRET;
+
+  if (!vpsApiUrl || !vpsApiSecret) {
+    throw new Error('VPS configuration missing (VPS_API_URL or VPS_API_SECRET)');
+  }
+
+  const response = await fetch(`${vpsApiUrl}/tasks/execute`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${vpsApiSecret}`,
+    },
+    body: JSON.stringify({
+      task_id: task.id,
+      title: task.title,
+      description: task.description,
+      prompt: task.prompt,
+      priority: task.priority,
+      user_id: task.user_id,
+      project_id: task.project_id,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`VPS API error: ${response.status} - ${error}`);
+  }
+
+  return response.json();
+}
+
+/**
  * GET /api/agent/tasks
  * List user's agent tasks
  */
@@ -126,10 +162,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
-    // TODO: Send task to VPS for execution
-    // For now, we'll just create it in the database
-    // Later, you'll add:
-    // await sendTaskToVPS(task);
+    // Send task to VPS for execution
+    const vpsEnabled = process.env.VPS_ENABLED === 'true';
+    if (vpsEnabled) {
+      try {
+        await sendTaskToVPS(task);
+      } catch (vpsError) {
+        console.error('VPS execution error:', vpsError);
+        // Task is still created in DB, mark as failed
+        await supabase
+          .from('agent_tasks')
+          .update({
+            status: 'failed',
+            error_message: `VPS error: ${vpsError instanceof Error ? vpsError.message : 'Unknown error'}`
+          })
+          .eq('id', task.id);
+      }
+    }
 
     // Log activity
     await supabase.from('activity_logs').insert({
