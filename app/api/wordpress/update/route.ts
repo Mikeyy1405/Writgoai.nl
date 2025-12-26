@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildWritgoHeaders } from '@/lib/wordpress-endpoints';
+import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildWordPressHeaders } from '@/lib/wordpress-endpoints';
 
 
 export const runtime = 'nodejs';
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
           id,
           user_id,
           wp_url,
-          writgo_api_key
+          wp_username,
+          wp_password
         )
       `)
       .eq('id', article_id)
@@ -72,13 +73,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare WritGo plugin credentials
+    // Prepare WordPress credentials
     const wpUrl = article.projects.wp_url.replace(/\/$/, '');
-    const apiKey = article.projects.writgo_api_key;
+    const wpUsername = article.projects.wp_username;
+    const wpPassword = article.projects.wp_password;
 
-    if (!apiKey) {
+    if (!wpUsername || !wpPassword) {
       return NextResponse.json(
-        { error: 'WritGo API key ontbreekt' },
+        { error: 'WordPress credentials ontbreken' },
         { status: 400 }
       );
     }
@@ -108,30 +110,17 @@ export async function POST(request: NextRequest) {
       updateData.status = wpStatus;
     }
 
-    // Handle featured image update - WritGo plugin handles this automatically
-    if (update_fields.featured_image !== undefined && update_fields.featured_image) {
-      updateData.featured_image_url = update_fields.featured_image;
-    }
+    // Note: Featured image and SEO fields require separate handling for standard WordPress API
+    // For now, we'll skip featured_image_url and SEO fields - these can be added later if needed
 
-    // Handle SEO fields - WritGo plugin auto-detects Yoast/RankMath
-    if (update_fields.meta_title !== undefined) {
-      updateData.seo_title = update_fields.meta_title;
-    }
-    if (update_fields.meta_description !== undefined) {
-      updateData.seo_description = update_fields.meta_description;
-    }
-    if (update_fields.focus_keyword !== undefined) {
-      updateData.focus_keyword = update_fields.focus_keyword;
-    }
+    // Update post via WordPress REST API
+    const wpApiUrl = getWordPressEndpoint(wpUrl, `${WORDPRESS_ENDPOINTS.wp.posts}/${article.wordpress_id}`);
 
-    // Update post via WritGo plugin
-    const wpApiUrl = `${wpUrl}${WORDPRESS_ENDPOINTS.writgo.posts}/${article.wordpress_id}`;
-
-    console.log(`Updating WordPress post ${article.wordpress_id} via WritGo plugin:`, updateData);
+    console.log(`Updating WordPress post ${article.wordpress_id} via REST API:`, updateData);
 
     const wpResponse = await fetch(wpApiUrl, {
-      method: 'PUT',
-      headers: buildWritgoHeaders(apiKey, wpUrl),
+      method: 'POST', // WordPress REST API uses POST for updates
+      headers: buildWordPressHeaders(wpUsername, wpPassword, wpUrl),
       body: JSON.stringify(updateData),
       signal: AbortSignal.timeout(60000), // 60 second timeout
     });
@@ -142,19 +131,18 @@ export async function POST(request: NextRequest) {
 
       if (wpResponse.status === 401) {
         return NextResponse.json(
-          { error: 'WritGo API key authenticatie mislukt. Controleer je API key.' },
+          { error: 'WordPress authenticatie mislukt. Controleer je credentials.' },
           { status: 401 }
         );
       }
 
       return NextResponse.json(
-        { error: `WritGo plugin update mislukt: ${wpResponse.statusText}` },
+        { error: `WordPress update mislukt: ${wpResponse.statusText}` },
         { status: wpResponse.status }
       );
     }
 
-    const responseData = await wpResponse.json();
-    const updatedPost = responseData.post || responseData;
+    const updatedPost = await wpResponse.json();
 
     // Update local database
     const dbUpdateData: any = {

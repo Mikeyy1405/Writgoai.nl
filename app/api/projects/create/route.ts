@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { buildWordPressUrl, WORDPRESS_ENDPOINTS, buildWritgoHeaders } from '@/lib/wordpress-endpoints';
+import { buildWordPressUrl, WORDPRESS_ENDPOINTS, buildWordPressHeaders } from '@/lib/wordpress-endpoints';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -36,10 +36,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, website_url, writgo_api_key, skip_wp_test } = body;
+    const { name, website_url, wp_username, wp_password, skip_wp_test } = body;
 
     // Log incoming request for debugging
-    console.log('Creating project:', { name, website_url, hasWritgoApiKey: !!writgo_api_key, skip_wp_test });
+    console.log('Creating project:', { name, website_url, hasWpCredentials: !!(wp_username && wp_password), skip_wp_test });
 
     // Validate required fields (only name and URL)
     if (!name || !website_url) {
@@ -49,19 +49,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if WritGo Connector API key is provided
-    const hasWritgoApiKey = !!writgo_api_key;
+    // Check if WordPress credentials are provided
+    const hasWordPressCredentials = !!(wp_username && wp_password);
 
     let wp_url = null;
     let wordpressConnected = false;
     let wordpressWarning = null;
 
-    // Only process WordPress connection if WritGo API key is provided
-    if (hasWritgoApiKey) {
+    // Only process WordPress connection if credentials are provided
+    if (hasWordPressCredentials) {
       // Generate wp_url from website_url (base URL only)
       wp_url = normalizeWordPressBaseUrl(website_url);
 
-      console.log('WritGo API key provided for:', wp_url);
+      console.log('WordPress credentials provided for:', wp_url);
       console.log('Skip test:', skip_wp_test, 'Type:', typeof skip_wp_test);
 
       // ALWAYS skip test if skip_wp_test is truthy (string "true", boolean true, or any truthy value)
@@ -69,53 +69,53 @@ export async function POST(request: Request) {
 
       console.log('Should skip test:', shouldSkipTest);
 
-      // Test WritGo Connector plugin connection (unless skipped)
+      // Test WordPress REST API connection (unless skipped)
       if (!shouldSkipTest) {
         try {
-          const testUrl = `${wp_url}${WORDPRESS_ENDPOINTS.writgo.test}`;
+          const testUrl = `${wp_url}${WORDPRESS_ENDPOINTS.wp.posts}?per_page=1`;
           const testResponse = await fetch(testUrl, {
-            headers: buildWritgoHeaders(writgo_api_key, wp_url),
+            headers: buildWordPressHeaders(wp_username, wp_password, wp_url),
             signal: AbortSignal.timeout(120000),
           });
 
-          console.log('WritGo plugin test response status:', testResponse.status);
+          console.log('WordPress API test response status:', testResponse.status);
 
           if (testResponse.ok) {
             wordpressConnected = true;
-            console.log('WritGo Connector plugin connection successful');
+            console.log('WordPress REST API connection successful');
           } else {
             const errorText = await testResponse.text();
-            console.error('WritGo plugin connection failed:', testResponse.status, errorText);
+            console.error('WordPress connection failed:', testResponse.status, errorText);
 
             // Don't block project creation, just warn
             if (testResponse.status === 401) {
-              wordpressWarning = 'WritGo API key is ongeldig. Controleer je plugin instellingen later.';
+              wordpressWarning = 'WordPress credentials zijn ongeldig. Controleer je username en Application Password.';
             } else if (testResponse.status === 404) {
-              wordpressWarning = 'WritGo Connector plugin niet gevonden. Installeer de plugin op je WordPress site.';
+              wordpressWarning = 'WordPress REST API niet gevonden. Controleer of de REST API is ingeschakeld.';
             } else {
-              wordpressWarning = `WritGo plugin test mislukt (${testResponse.status})`;
+              wordpressWarning = `WordPress test mislukt (${testResponse.status})`;
             }
           }
         } catch (wpError: any) {
-          console.error('WritGo plugin connection error:', wpError);
+          console.error('WordPress connection error:', wpError);
           console.error('Error code:', wpError.code || 'N/A');
           console.error('Error cause:', wpError.cause?.message || 'N/A');
 
           // Don't block project creation on timeout or connection errors
           if (wpError.name === 'AbortError' || wpError.code === 'UND_ERR_CONNECT_TIMEOUT' || wpError.code === 'ETIMEDOUT' || wpError.code === 'TIMEOUT') {
-            wordpressWarning = 'WritGo plugin test timeout - de server reageert traag (>120s). API key is opgeslagen.';
+            wordpressWarning = 'WordPress test timeout - de server reageert traag (>120s). Credentials zijn opgeslagen.';
           } else if (wpError.code === 'ENOTFOUND') {
             wordpressWarning = 'Website niet gevonden. Controleer de URL.';
           } else if (wpError.code === 'ECONNREFUSED') {
             wordpressWarning = 'Verbinding geweigerd. Website mogelijk offline.';
           } else {
-            wordpressWarning = `WritGo plugin test mislukt: ${wpError.message || 'onbekende fout'}`;
+            wordpressWarning = `WordPress test mislukt: ${wpError.message || 'onbekende fout'}`;
           }
         }
       } else {
-        // Test was skipped, assume API key is correct
-        console.log('WritGo plugin test skipped by user request');
-        wordpressWarning = 'WritGo plugin test overgeslagen. API key opgeslagen.';
+        // Test was skipped, assume credentials are correct
+        console.log('WordPress test skipped by user request');
+        wordpressWarning = 'WordPress test overgeslagen. Credentials opgeslagen.';
       }
     }
 
@@ -127,7 +127,8 @@ export async function POST(request: Request) {
         name,
         website_url,
         wp_url,
-        writgo_api_key: writgo_api_key || null,
+        wp_username: wp_username || null,
+        wp_password: wp_password || null,
       })
       .select()
       .single();

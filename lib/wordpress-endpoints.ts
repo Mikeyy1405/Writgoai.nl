@@ -10,24 +10,12 @@ import { routeViaCloudflareWorker } from './wordpress-cloudflare-worker';
 /**
  * WordPress REST API Endpoints
  *
- * IMPORTANT: All endpoints now use the WritGo Connector Plugin
- * The plugin provides secure API key authentication and enhanced features:
- * - Automatic Yoast/RankMath SEO support
- * - Wordfence whitelisting
- * - Real-time webhooks
- * - Better error handling
+ * Uses standard WordPress REST API with Application Password authentication
+ * https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/
  */
 export const WORDPRESS_ENDPOINTS = {
   base: '/wp-json',
-  // WritGo Connector Plugin endpoints (v1.1.0+)
-  writgo: {
-    base: '/wp-json/writgo/v1',
-    posts: '/wp-json/writgo/v1/posts',
-    categories: '/wp-json/writgo/v1/categories',
-    test: '/wp-json/writgo/v1/test',
-    health: '/wp-json/writgo/v1/health',
-  },
-  // Legacy WordPress core endpoints (deprecated - use writgo instead)
+  // WordPress core REST API endpoints
   wp: {
     base: '/wp-json/wp/v2',
     posts: '/wp-json/wp/v2/posts',
@@ -224,8 +212,8 @@ export function buildWordPressUrl(
 }
 
 /**
- * Helper to build WordPress authentication header
- * @deprecated Use buildWritgoHeaders instead for WritGo Connector plugin
+ * Build WordPress Application Password authentication header
+ * https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/
  * @param username - WordPress username
  * @param password - WordPress application password
  * @returns Basic auth header value
@@ -237,16 +225,21 @@ export function buildAuthHeader(username: string, password: string): string {
 }
 
 /**
- * Build headers for WritGo Connector plugin API requests
- * Includes advanced browser-like headers to bypass WAF/firewall detection
- * @param apiKey - WritGo Connector plugin API key
+ * Build headers for WordPress REST API requests
+ * Includes browser-like headers to bypass WAF/firewall detection
+ * @param username - WordPress username
+ * @param password - WordPress application password
  * @param wpUrl - WordPress site URL (for Referer header)
  * @returns Headers object for fetch requests
  */
-export function buildWritgoHeaders(apiKey: string, wpUrl?: string): Record<string, string> {
+export function buildWordPressHeaders(
+  username: string,
+  password: string,
+  wpUrl?: string
+): Record<string, string> {
   const headers: Record<string, string> = {
-    // WritGo authentication
-    'X-Writgo-API-Key': apiKey,
+    // WordPress Application Password authentication
+    'Authorization': buildAuthHeader(username, password),
 
     // Core browser headers
     'User-Agent': WORDPRESS_USER_AGENT,
