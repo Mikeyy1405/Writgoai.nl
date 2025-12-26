@@ -1,0 +1,9 @@
+name = "wordpress-proxy"
+main = "wordpress-proxy.js"
+compatibility_date = "2025-12-26"
+
+# Workers Logs
+# Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+# Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
+[observability]
+enabled = true
