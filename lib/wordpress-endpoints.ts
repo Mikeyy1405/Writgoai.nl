@@ -1,9 +1,11 @@
 /**
  * WordPress and WooCommerce REST API Endpoints Configuration
- * 
+ *
  * This module provides centralized endpoint definitions and helper functions
  * for WordPress and WooCommerce REST API integration.
  */
+
+import { routeViaCloudflareWorker } from './wordpress-cloudflare-worker';
 
 /**
  * WordPress REST API Endpoints
@@ -47,11 +49,23 @@ export const WORDPRESS_ENDPOINTS = {
  * Get full WordPress endpoint URL
  * @param baseUrl - Base WordPress site URL (e.g., "https://example.com")
  * @param endpoint - Endpoint path from WORDPRESS_ENDPOINTS
- * @returns Full endpoint URL
+ * @param useCloudflareWorker - Route via Cloudflare Worker als geconfigureerd (default: true)
+ * @returns Full endpoint URL (mogelijk via Cloudflare Worker)
  */
-export function getWordPressEndpoint(baseUrl: string, endpoint: string): string {
+export function getWordPressEndpoint(
+  baseUrl: string,
+  endpoint: string,
+  useCloudflareWorker: boolean = true
+): string {
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-  return `${cleanBaseUrl}${endpoint}`;
+  const fullEndpoint = `${cleanBaseUrl}${endpoint}`;
+
+  // Route via Cloudflare Worker als enabled
+  if (useCloudflareWorker) {
+    return routeViaCloudflareWorker(fullEndpoint);
+  }
+
+  return fullEndpoint;
 }
 
 /**
@@ -192,14 +206,16 @@ export function buildWordPressQuery(params: WordPressQueryParams): string {
  * @param baseUrl - Base WordPress site URL
  * @param endpoint - Endpoint path
  * @param params - Optional query parameters
+ * @param useCloudflareWorker - Route via Cloudflare Worker als geconfigureerd (default: true)
  * @returns Full URL with query string
  */
 export function buildWordPressUrl(
   baseUrl: string,
   endpoint: string,
-  params?: WordPressQueryParams
+  params?: WordPressQueryParams,
+  useCloudflareWorker: boolean = true
 ): string {
-  const url = getWordPressEndpoint(baseUrl, endpoint);
+  const url = getWordPressEndpoint(baseUrl, endpoint, useCloudflareWorker);
   if (!params || Object.keys(params).length === 0) {
     return url;
   }
