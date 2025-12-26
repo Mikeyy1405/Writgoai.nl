@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { ConnectionTestResult, sanitizeUrl } from '@/lib/wordpress-errors';
-import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildAuthHeader, WORDPRESS_USER_AGENT, buildWritgoHeaders } from '@/lib/wordpress-endpoints';
+import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildWordPressHeaders, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
 import { getAdvancedBrowserHeaders, getWordPressApiHeaders, createDiagnosticReport, formatDiagnosticReport } from '@/lib/wordpress-request-diagnostics';
 import { getProxyFetchOptions, isProxyConfigured, getProxyInfo } from '@/lib/wordpress-proxy';
 import { promises as dns } from 'dns';
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     // Get project with WordPress credentials
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select('id, name, wp_url, wp_username, wp_password, wp_app_password, writgo_api_key')
+      .select('id, name, wp_url, wp_username, wp_password, wp_app_password')
       .eq('id', projectId)
       .eq('user_id', user.id)
       .single();
@@ -158,15 +158,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    // Check if we have WritGo Connector plugin credentials OR legacy credentials
-    const hasWritgoApiKey = !!project.writgo_api_key;
-    const hasLegacyCredentials = !!(project.wp_username || project.wp_app_password);
+    // Check if we have WordPress credentials
+    const hasCredentials = !!(project.wp_username || project.wp_app_password);
 
-    if (!hasWritgoApiKey && !hasLegacyCredentials) {
+    if (!hasCredentials) {
       result.checks.authenticationValid = {
         passed: false,
         message: 'WordPress credentials zijn niet geconfigureerd',
-        details: 'Configureer je WritGo Connector API key OF WordPress gebruikersnaam en app password in de project instellingen',
+        details: 'Configureer je WordPress gebruikersnaam en app password in de project instellingen',
       };
       return NextResponse.json(result);
     }
@@ -176,29 +175,21 @@ export async function POST(request: NextRequest) {
     let wpUrl = project.wp_url.replace(/\/$/, ''); // Remove trailing slash
     wpUrl = wpUrl.replace(/\/wp-json.*$/, ''); // Remove any /wp-json paths to ensure clean base URL
 
-    // Prepare authentication headers based on available credentials
-    let authHeaders: Record<string, string>;
+    // Prepare authentication headers using WordPress credentials
+    console.log('Using WordPress Basic Auth authentication');
+    const username = project.wp_username || '';
+    const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
 
-    if (hasWritgoApiKey) {
-      console.log('Using WritGo Connector plugin API key authentication');
-      authHeaders = buildWritgoHeaders(project.writgo_api_key!, wpUrl);
-    } else {
-      console.log('Using legacy WordPress Basic Auth authentication');
-      const username = project.wp_username || '';
-      const password = (project.wp_app_password || project.wp_password || '').replace(/\s+/g, '');
-
-      if (!password) {
-        result.checks.authenticationValid = {
-          passed: false,
-          message: 'WordPress password ontbreekt',
-          details: 'Configureer je WordPress app password in de project instellingen',
-        };
-        return NextResponse.json(result);
-      }
-
-      const authHeader = buildAuthHeader(username, password);
-      authHeaders = getWordPressApiHeaders(authHeader, wpUrl);
+    if (!password) {
+      result.checks.authenticationValid = {
+        passed: false,
+        message: 'WordPress password ontbreekt',
+        details: 'Configureer je WordPress app password in de project instellingen',
+      };
+      return NextResponse.json(result);
     }
+
+    const authHeaders = buildWordPressHeaders(username, password, wpUrl);
 
     // Track tested endpoints
     result.testedEndpoints = [];
@@ -491,10 +482,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Test 4: Check if posts endpoint is accessible
-    // Use WritGo Connector posts endpoint if API key is available, otherwise use legacy WordPress endpoint
-    const postsEndpoint = hasWritgoApiKey
-      ? getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.writgo.posts)
-      : getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.wp.posts);
+    const postsEndpoint = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.wp.posts);
 
     result.testedEndpoints.push(`${postsEndpoint}?per_page=1`);
     console.log(`Testing posts endpoint: ${sanitizeUrl(postsEndpoint)}?per_page=1`);
@@ -509,7 +497,7 @@ export async function POST(request: NextRequest) {
         const posts = await postsResponse.json();
         result.checks.postsEndpointAccessible = {
           passed: true,
-          message: hasWritgoApiKey ? 'WritGo Connector posts endpoint is bereikbaar' : 'Posts endpoint is bereikbaar',
+          message: 'Posts endpoint is bereikbaar',
           details: `Status ${postsResponse.status}, ${Array.isArray(posts) ? posts.length : 0} post(s) gevonden`,
         };
         console.log(`✓ Posts endpoint accessible: ${Array.isArray(posts) ? posts.length : 0} posts`);
@@ -531,13 +519,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Test 5: Check authentication
-    // Use WritGo Connector health endpoint if API key is available, otherwise use legacy users/me endpoint
-    let authTestEndpoint: string;
-    if (hasWritgoApiKey) {
-      authTestEndpoint = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.writgo.health);
-    } else {
-      authTestEndpoint = `${getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.wp.base)}/users/me`;
-    }
+    const authTestEndpoint = `${getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.wp.base)}/users/me`;
 
     result.testedEndpoints.push(authTestEndpoint);
     console.log(`Testing authentication with ${sanitizeUrl(authTestEndpoint)}`);
@@ -551,30 +533,18 @@ export async function POST(request: NextRequest) {
       if (authResponse.ok) {
         const responseData = await authResponse.json();
 
-        if (hasWritgoApiKey) {
-          // WritGo Connector plugin response
-          result.checks.authenticationValid = {
-            passed: true,
-            message: `WritGo Connector plugin authenticatie succesvol`,
-            details: `Plugin versie: ${responseData.plugin_version || 'N/A'}, Status: ${responseData.status || 'active'}`,
-          };
-          console.log(`✓ WritGo Connector authentication successful`);
-        } else {
-          // Legacy WordPress response
-          result.checks.authenticationValid = {
-            passed: true,
-            message: `Authenticatie succesvol als: ${responseData.name || 'gebruiker'}`,
-            details: `Gebruiker ID: ${responseData.id || 'N/A'}, Roles: ${responseData.roles?.join(', ') || 'N/A'}`,
-          };
-          console.log(`✓ Authentication successful: ${responseData.name}`);
-        }
+        // WordPress response
+        result.checks.authenticationValid = {
+          passed: true,
+          message: `Authenticatie succesvol als: ${responseData.name || 'gebruiker'}`,
+          details: `Gebruiker ID: ${responseData.id || 'N/A'}, Roles: ${responseData.roles?.join(', ') || 'N/A'}`,
+        };
+        console.log(`✓ Authentication successful: ${responseData.name}`);
       } else if (authResponse.status === 401) {
         result.checks.authenticationValid = {
           passed: false,
           message: 'Authenticatie mislukt - ongeldige credentials',
-          details: hasWritgoApiKey
-            ? 'HTTP 401 Unauthorized - controleer je WritGo Connector API key'
-            : 'HTTP 401 Unauthorized - controleer je gebruikersnaam en app password',
+          details: 'HTTP 401 Unauthorized - controleer je WordPress gebruikersnaam en app password',
         };
         console.log('✗ Authentication failed: 401 Unauthorized');
       } else if (authResponse.status === 403) {
@@ -584,20 +554,13 @@ export async function POST(request: NextRequest) {
           details: 'HTTP 403 Forbidden - onvoldoende rechten',
         };
         console.log('✗ Authentication failed: 403 Forbidden');
-      } else if (authResponse.status === 404 && hasWritgoApiKey) {
-        result.checks.authenticationValid = {
-          passed: false,
-          message: 'WritGo Connector plugin niet gevonden',
-          details: 'HTTP 404 Not Found - installeer en activeer de WritGo Connector plugin op je WordPress site',
-        };
-        console.log('✗ WritGo Connector plugin not found');
       } else {
         result.checks.authenticationValid = {
           passed: false,
           message: `Authenticatie test gaf onverwachte response: ${authResponse.status}`,
           details: authResponse.statusText,
         };
-        console.log(`✗ Authentication test returned: ${authResponse.status}`);
+        console.log(`✓ Authentication test returned: ${authResponse.status}`);
       }
     } catch (error: any) {
       result.checks.authenticationValid = {

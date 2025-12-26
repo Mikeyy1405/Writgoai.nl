@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
-import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildWritgoHeaders, getWordPressEndpoint } from '@/lib/wordpress-endpoints';
+import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildWordPressHeaders, getWordPressEndpoint } from '@/lib/wordpress-endpoints';
 
 
 export const runtime = 'nodejs';
@@ -49,11 +49,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get project with WritGo API key
+    // Get project with WordPress credentials
     console.log(`[WP-FETCH-${requestId}] 📂 Fetching project from database...`);
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select('id, name, wp_url, writgo_api_key')
+      .select('id, name, wp_url, wp_username, wp_password')
       .eq('id', projectId)
       .eq('user_id', user.id)
       .single();
@@ -68,17 +68,18 @@ export async function GET(request: NextRequest) {
 
     console.log(`[WP-FETCH-${requestId}] ✅ Project found: ${project.name}`);
 
-    // Check if WritGo API key is configured
-    console.log(`[WP-FETCH-${requestId}] 🔧 Checking WritGo plugin configuration...`);
+    // Check if WordPress credentials are configured
+    console.log(`[WP-FETCH-${requestId}] 🔧 Checking WordPress credentials configuration...`);
     console.log(`[WP-FETCH-${requestId}] 📊 Config status:`, {
       hasWpUrl: !!project.wp_url,
-      hasApiKey: !!project.writgo_api_key,
+      hasUsername: !!project.wp_username,
+      hasPassword: !!project.wp_password,
     });
 
-    if (!project.wp_url || !project.writgo_api_key) {
-      console.error(`[WP-FETCH-${requestId}] ❌ WritGo plugin configuration incomplete`);
+    if (!project.wp_url || !project.wp_username || !project.wp_password) {
+      console.error(`[WP-FETCH-${requestId}] ❌ WordPress credentials configuration incomplete`);
       const errorDetails = classifyWordPressError(
-        new Error('WritGo Connector plugin is niet geconfigureerd. Voeg de API key toe in project instellingen.'),
+        new Error('WordPress credentials zijn niet geconfigureerd. Voeg gebruikersnaam en wachtwoord toe in project instellingen.'),
         undefined,
         project.wp_url
       );
@@ -98,25 +99,25 @@ export async function GET(request: NextRequest) {
     wpUrl = wpUrl.replace(/\/wp-json.*$/, ''); // Remove any /wp-json paths to ensure clean base URL
 
     console.log(`[WP-FETCH-${requestId}] 🌐 WordPress URL:`, sanitizeUrl(wpUrl));
-    console.log(`[WP-FETCH-${requestId}] ✅ WritGo API key configured`);
+    console.log(`[WP-FETCH-${requestId}] ✅ WordPress credentials configured`);
 
-    // First, test if WritGo plugin is available
-    const healthCheckUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.writgo.health);
-    console.log(`[WP-FETCH-${requestId}] 🔌 Testing WritGo plugin at: ${sanitizeUrl(healthCheckUrl)}`);
+    // First, test if WordPress API is available
+    const healthCheckUrl = getWordPressEndpoint(wpUrl, WORDPRESS_ENDPOINTS.wp.base);
+    console.log(`[WP-FETCH-${requestId}] 🔌 Testing WordPress API at: ${sanitizeUrl(healthCheckUrl)}`);
     try {
       const healthResponse = await fetch(healthCheckUrl, {
         method: 'GET',
-        headers: buildWritgoHeaders(project.writgo_api_key, wpUrl),
+        headers: buildWordPressHeaders(project.wp_username, project.wp_password, wpUrl),
         signal: AbortSignal.timeout(120000),
       });
 
       if (!healthResponse.ok) {
         const errorDetails = classifyWordPressError(
-          new Error(`WritGo plugin niet gevonden. Installeer de WritGo Connector plugin.`),
+          new Error(`WordPress REST API niet bereikbaar.`),
           healthResponse,
           wpUrl
         );
-        console.error('WritGo plugin health check failed:', formatErrorForLogging(errorDetails));
+        console.error('WordPress API health check failed:', formatErrorForLogging(errorDetails));
 
         return NextResponse.json(
           {
@@ -127,9 +128,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      console.log(`[WP-FETCH-${requestId}] ✓ WritGo Connector plugin is active`);
+      console.log(`[WP-FETCH-${requestId}] ✓ WordPress REST API is active`);
     } catch (healthError: any) {
-      console.error(`[WP-FETCH-${requestId}] ❌ WritGo plugin health check failed`);
+      console.error(`[WP-FETCH-${requestId}] ❌ WordPress API health check failed`);
       const errorDetails = classifyWordPressError(healthError, undefined, wpUrl);
       console.error(`[WP-FETCH-${requestId}]`, formatErrorForLogging(errorDetails));
 
@@ -142,8 +143,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch posts from WritGo plugin with retry logic
-    const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.writgo.posts, {
+    // Fetch posts from WordPress API with retry logic
+    const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, {
       page,
       per_page: perPage,
     });
@@ -160,10 +161,10 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`[WP-FETCH-${requestId}] 🔄 Attempt ${attempt}/${maxRetries} to fetch WordPress posts`);
 
-        // Use WritGo plugin headers with API key
+        // Use WordPress credentials for authentication
         wpResponse = await fetch(wpApiUrl, {
           method: 'GET',
-          headers: buildWritgoHeaders(project.writgo_api_key, wpUrl),
+          headers: buildWordPressHeaders(project.wp_username, project.wp_password, wpUrl),
           signal: AbortSignal.timeout(timeoutMs),
         });
 
@@ -226,33 +227,35 @@ export async function GET(request: NextRequest) {
 
     const responseData = await wpResponse.json();
 
-    // WritGo plugin returns: { posts: [...], total: X, pages: Y }
-    const posts = responseData.posts || [];
-    const totalPages = responseData.pages || 1;
-    const totalPosts = responseData.total || 0;
+    // WordPress REST API returns array of posts directly
+    const posts = Array.isArray(responseData) ? responseData : [];
+
+    // Get total count from headers
+    const totalPosts = parseInt(wpResponse.headers.get('X-WP-Total') || '0');
+    const totalPages = parseInt(wpResponse.headers.get('X-WP-TotalPages') || '1');
 
     console.log(`[WP-FETCH-${requestId}] ✓ Successfully fetched ${posts.length} posts (page ${page}/${totalPages}, total: ${totalPosts})`);
 
-    // Transform WritGo plugin posts to our format
+    // Transform WordPress API posts to our format
     const transformedPosts = posts.map((post: any) => {
       return {
         wordpress_id: post.id,
-        title: post.title,
-        content: post.content,
-        excerpt: post.excerpt || '',
+        title: post.title?.rendered || '',
+        content: post.content?.rendered || '',
+        excerpt: post.excerpt?.rendered || '',
         slug: post.slug || '',
         status: post.status,
-        featured_image: post.featured_image || null,
-        wordpress_url: post.url,
+        featured_image: post.featured_media || null,
+        wordpress_url: post.link,
         published_at: post.date,
         modified_at: post.modified,
         categories: post.categories || [],
         tags: post.tags || [],
-        // SEO fields from WritGo plugin (auto-detects Yoast/RankMath)
-        meta_title: post.seo?.title || post.title,
-        meta_description: post.seo?.description || '',
-        focus_keyword: post.seo?.focus_keyword || '',
-        seo_plugin: post.seo_plugin || 'none',
+        // SEO fields from meta (if available)
+        meta_title: post.meta?.title || post.title?.rendered || '',
+        meta_description: post.meta?.description || '',
+        focus_keyword: post.meta?.focus_keyword || '',
+        seo_plugin: 'none',
       };
     });
 
@@ -267,7 +270,7 @@ export async function GET(request: NextRequest) {
         total_pages: totalPages,
         total_posts: totalPosts,
       },
-      seo_plugin: responseData.seo_plugin || 'none', // Which SEO plugin is active
+      seo_plugin: 'none',
     });
 
   } catch (error: any) {
