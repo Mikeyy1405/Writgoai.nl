@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
     const wpApiUrl = buildWordPressUrl(wpUrl, WORDPRESS_ENDPOINTS.wp.posts, {
       page,
       per_page: perPage,
-      _embed: '1', // Include embedded data (featured images)
+      _embed: true, // Include embedded data (featured images)
     });
 
     console.log(`[WP-FETCH-${requestId}] 📥 Fetching WordPress posts from: ${sanitizeUrl(wpApiUrl)}`);
