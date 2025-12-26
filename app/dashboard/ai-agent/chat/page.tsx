@@ -13,18 +13,42 @@ interface Message {
   created_at: string;
 }
 
+interface VPSStatus {
+  connected: boolean;
+  config?: {
+    host: string;
+    user: string;
+    port: number;
+    authMethod: string;
+  };
+  error?: string;
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [vpsStatus, setVpsStatus] = useState<VPSStatus | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Load chat history
+  // Load chat history and VPS status
   useEffect(() => {
     loadMessages();
+    checkVPSStatus();
   }, []);
+
+  const checkVPSStatus = async () => {
+    try {
+      const res = await fetch('/api/agent/execute/test');
+      const data = await res.json();
+      setVpsStatus(data);
+    } catch (error) {
+      console.error('Error checking VPS status:', error);
+      setVpsStatus({ connected: false, error: 'Failed to check VPS status' });
+    }
+  };
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -132,27 +156,51 @@ export default function ChatPage() {
     <div className="flex flex-col h-screen bg-black">
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">🤖 AI Agent Chat</h1>
-            <p className="text-sm text-gray-400">
-              Tell me what you want me to do
-            </p>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h1 className="text-2xl font-bold text-white">🤖 AI Agent Chat</h1>
+              <p className="text-sm text-gray-400">
+                Tell me what you want me to do
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => router.push('/dashboard/ai-agent/templates')}
+                className="px-4 py-2 text-sm border border-gray-700 text-white rounded-lg hover:bg-gray-800"
+              >
+                📚 Templates
+              </button>
+              <button
+                onClick={() => router.push('/dashboard/ai-agent/tasks')}
+                className="px-4 py-2 text-sm border border-gray-700 text-white rounded-lg hover:bg-gray-800"
+              >
+                📋 Tasks
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => router.push('/dashboard/ai-agent/templates')}
-              className="px-4 py-2 text-sm border border-gray-700 text-white rounded-lg hover:bg-gray-800"
-            >
-              📚 Templates
-            </button>
-            <button
-              onClick={() => router.push('/dashboard/ai-agent/tasks')}
-              className="px-4 py-2 text-sm border border-gray-700 text-white rounded-lg hover:bg-gray-800"
-            >
-              📋 Tasks
-            </button>
-          </div>
+
+          {/* VPS Status Indicator */}
+          {vpsStatus && (
+            <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg border ${
+              vpsStatus.connected
+                ? 'bg-green-900/20 border-green-700 text-green-400'
+                : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                vpsStatus.connected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
+              }`}></div>
+              {vpsStatus.connected ? (
+                <span>
+                  🖥️ VPS Connected: <strong>{vpsStatus.config?.user}@{vpsStatus.config?.host}</strong>
+                </span>
+              ) : (
+                <span>
+                  ⚠️ VPS niet geconfigureerd. Voeg VPS_HOST, VPS_USER en VPS_PASSWORD toe aan .env
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

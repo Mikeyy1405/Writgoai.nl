@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 import { aimlClient } from '@/lib/ai-client';
+import { executeCommand } from '@/lib/vps-executor';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -123,10 +124,14 @@ export async function POST(request: NextRequest) {
       .or(`user_id.eq.${user.id},is_public.eq.true,is_system.eq.true`)
       .limit(10);
 
+    // Check if VPS is configured
+    const vpsConfigured = !!(process.env.VPS_HOST && process.env.VPS_USER);
+
     // System prompt for AI agent
     const systemPrompt = `You are an AI Virtual Assistant for WritGo.nl, helping the user automate tasks.
 
 Your capabilities:
+${vpsConfigured ? '- **VPS Terminal Access**: Je hebt DIRECTE toegang tot een Ubuntu VPS server via SSH. Je kunt ALLES uitvoeren: installeren, configureren, deployen, scripts draaien, etc.' : ''}
 - Browser automation (scraping, form filling, navigation)
 - WordPress management (publish posts, manage content)
 - SEO tasks (GSC reports, keyword research, competitor analysis)
@@ -137,33 +142,34 @@ Your capabilities:
 User's projects:
 ${projects?.map((p) => `- ${p.name} (${p.url}) - ${p.niche || 'General'}`).join('\n')}
 
-Available templates:
-${templates?.map((t) => `- ${t.name}: ${t.description}`).join('\n')}
+${vpsConfigured ? `
+🚀 **VPS TERMINAL MODE ENABLED**
+Je hebt toegang tot een Ubuntu VPS server. Wanneer de gebruiker iets vraagt dat op een server uitgevoerd moet worden, genereer dan een VPS command.
 
-When the user asks you to do something:
-1. Understand the request clearly
-2. Break it down into steps
-3. Ask for confirmation before executing
-4. Provide clear status updates
+Voorbeelden van VPS commands:
+- "installeer docker" → "sudo apt-get update && sudo apt-get install -y docker.io"
+- "check disk ruimte" → "df -h"
+- "lijst alle processen" → "ps aux"
+- "deploy een node.js app" → Commands voor git clone, npm install, pm2 start
+- "setup een database" → Docker commando's voor PostgreSQL/MySQL
+- "check system resources" → "free -h && df -h && uptime"
 
-If you need credentials (login info), ask the user to add them via the Credentials page.
+Wanneer je een VPS command wilt uitvoeren, respond met JSON:
+{
+  "type": "vps_command",
+  "command": "het bash command",
+  "description": "Wat dit doet",
+  "auto_execute": true
+}
+
+Als auto_execute true is, wordt het DIRECT uitgevoerd zonder bevestiging.
+Voor destructieve commands (rm, delete, drop) zet auto_execute op false voor bevestiging.
+` : ''}
 
 Response format:
 - Be concise and helpful
 - Use bullet points for steps
 - Ask clarifying questions if needed
-- Suggest relevant templates when applicable
-
-IMPORTANT: If the user wants to execute a task, respond with a JSON object in this format:
-{
-  "type": "task_proposal",
-  "title": "Short title",
-  "description": "What you'll do",
-  "steps": ["step 1", "step 2", ...],
-  "requires_credentials": ["service1", "service2"],
-  "estimated_duration": "2-3 minutes",
-  "template_id": "uuid or null"
-}
 
 Otherwise, just respond conversationally.`;
 
@@ -179,24 +185,63 @@ Otherwise, just respond conversationally.`;
       max_tokens: 4000, // Opus has higher capacity
     });
 
-    const agentResponse = aiResponse.choices[0].message.content || 'Sorry, I couldn\'t process that.';
+    let agentResponse = aiResponse.choices[0].message.content || 'Sorry, I couldn\'t process that.';
 
-    // Check if response contains a task proposal
+    // Check if response contains a task proposal or VPS command
     let actionRequired = false;
     let actionType = null;
     let actionData = null;
+    let vpsExecutionResult = null;
 
     try {
       // Try to parse JSON from response
-      const jsonMatch = agentResponse.match(/\{[\s\S]*"type":\s*"task_proposal"[\s\S]*\}/);
+      const jsonMatch = agentResponse.match(/\{[\s\S]*"type":\s*"(task_proposal|vps_command)"[\s\S]*\}/);
       if (jsonMatch) {
         const proposal = JSON.parse(jsonMatch[0]);
-        actionRequired = true;
-        actionType = 'task_proposal';
-        actionData = proposal;
+
+        if (proposal.type === 'vps_command') {
+          // VPS Command detected
+          actionType = 'vps_command';
+          actionData = proposal;
+
+          // Auto-execute if configured
+          if (vpsConfigured && proposal.auto_execute) {
+            console.log('[VPS] Auto-executing command:', proposal.command);
+
+            try {
+              const result = await executeCommand(proposal.command);
+              vpsExecutionResult = result;
+
+              // Append execution result to response
+              agentResponse += `\n\n**✅ VPS Command Executed**\n`;
+              agentResponse += `Command: \`${proposal.command}\`\n\n`;
+
+              if (result.success) {
+                agentResponse += `**Output:**\n\`\`\`\n${result.stdout || '(no output)'}\`\`\`\n`;
+                if (result.stderr) {
+                  agentResponse += `\n**Warnings:**\n\`\`\`\n${result.stderr}\`\`\`\n`;
+                }
+              } else {
+                agentResponse += `**❌ Error:**\n\`\`\`\n${result.error || result.stderr}\`\`\`\n`;
+              }
+
+              agentResponse += `\nExit code: ${result.exitCode}`;
+            } catch (execError: any) {
+              agentResponse += `\n\n❌ Failed to execute VPS command: ${execError.message}`;
+            }
+          } else {
+            // Requires confirmation
+            actionRequired = true;
+          }
+        } else if (proposal.type === 'task_proposal') {
+          // Task proposal
+          actionRequired = true;
+          actionType = 'task_proposal';
+          actionData = proposal;
+        }
       }
     } catch (e) {
-      // Not a task proposal, just normal response
+      // Not a proposal, just normal response
     }
 
     // Save agent response
@@ -209,7 +254,10 @@ Otherwise, just respond conversationally.`;
         content: agentResponse,
         action_required: actionRequired,
         action_type: actionType,
-        action_data: actionData,
+        action_data: {
+          ...actionData,
+          vps_result: vpsExecutionResult,
+        },
       })
       .select()
       .single();
