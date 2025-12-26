@@ -7,10 +7,20 @@ import { getPackageTierByPriceId } from '@/lib/stripe-config';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+let stripeClient: Stripe | null = null;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover',
-});
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+    }
+    stripeClient = new Stripe(secretKey, {
+      apiVersion: '2025-12-15.clover',
+    });
+  }
+  return stripeClient;
+}
 
 let supabaseAdmin: ReturnType<typeof createClient> | null = null;
 
@@ -28,7 +38,13 @@ function getSupabaseAdmin() {
   return supabaseAdmin as any;
 }
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+function getWebhookSecret(): string {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not set');
+  }
+  return secret;
+}
 
 export async function POST(request: Request) {
   try {
@@ -45,7 +61,7 @@ export async function POST(request: Request) {
     let event: Stripe.Event;
 
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = getStripe().webhooks.constructEvent(body, signature, getWebhookSecret());
     } catch (err: any) {
       console.error('Webhook signature verification failed:', err.message);
       return NextResponse.json(
@@ -139,7 +155,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   // Get subscription details
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
   const userId = subscription.metadata?.user_id;
   const credits = parseInt(subscription.metadata?.credits || '0', 10);
 
