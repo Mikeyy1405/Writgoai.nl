@@ -152,20 +152,25 @@ VEREISTEN:
 STRUCTUUR (AI OVERVIEW OPTIMIZED):
 
 1. **Direct Answer (100 woorden)** ⭐ KRITIEK voor AI Overview!
-   <h2>Wat is [Onderwerp]?</h2>
-   <p><strong>DIRECT ANTWOORD in 40-60 woorden - clear, concise, factual</strong></p>
+   - Begin met een specifieke, waardevolle heading die DIRECT waarde communiceert
+   - NOOIT: "Wat is [onderwerp]", "Definitie van", "Waarom belangrijk"
+   - WEL: "[Onderwerp] uitgelegd in 60 seconden", "Alles wat je moet weten over [onderwerp]", "De complete [onderwerp] gids voor ${dateInfo.year}"
+   - <p><strong>DIRECT ANTWOORD in 40-60 woorden - clear, concise, factual</strong></p>
    - Beantwoord de vraag meteen
    - Gebruik simpele taal
    - Geen fluff, alleen facts
 
 2. **Intro & Context (150 woorden)**
-   - Waarom is dit belangrijk?
+   - Gebruik een specifieke heading zoals "Waarom [onderwerp] nu belangrijker is dan ooit"
+   - Of: "Hoe [onderwerp] jouw resultaten kan verdubbelen"
+   - NOOIT generieke headings!
    - Wat is er gebeurd? (met datum!)
    - Wat leert de lezer?
 
 3. **Belangrijkste Punten in Lijst (300 woorden)**
-   <h2>5 Belangrijkste Dingen over [Onderwerp]</h2>
-   <ol>
+   - Gebruik specifieke heading: "5 game-changers bij [onderwerp]", "De belangrijkste [onderwerp] trends voor ${dateInfo.year}"
+   - NOOIT: "5 Belangrijkste Dingen over [Onderwerp]" (te generiek!)
+   - <ol>
      <li><strong>Punt 1:</strong> Uitleg</li>
      <li><strong>Punt 2:</strong> Uitleg</li>
      ...
@@ -180,14 +185,18 @@ STRUCTUUR (AI OVERVIEW OPTIMIZED):
    - Expert quotes ("Volgens Google...")
 
 5. **Impact & Praktische Gevolgen (400 woorden)**
-   <h2>Wat betekent dit voor jouw website?</h2>
-   - Specifieke impact
+   - Gebruik specifieke heading zoals "3 manieren waarop [onderwerp] jouw strategie transformeert"
+   - Of: "De directe impact van [onderwerp] op jouw ROI"
+   - NOOIT: "Wat betekent dit voor jouw website?" (te vaag!)
+   - Specifieke impact met cijfers
    - Concrete gevolgen
    - Actie-items
 
 6. **Step-by-Step Guide (500 woorden)**
-   <h2>Hoe [Actie] uitvoeren: Stap-voor-stap</h2>
-   <ol>
+   - Gebruik actie-gerichte heading: "Van 0 naar resultaat: je [onderwerp] stappenplan"
+   - Of: "Implementeer [onderwerp] in 7 stappen"
+   - NOOIT: "Hoe [Actie] uitvoeren: Stap-voor-stap" (te algemeen!)
+   - <ol>
      <li><strong>Stap 1:</strong> Concrete actie met uitleg</li>
      <li><strong>Stap 2:</strong> Concrete actie met uitleg</li>
      ...
@@ -196,11 +205,13 @@ STRUCTUUR (AI OVERVIEW OPTIMIZED):
    - Actionable, specific
 
 7. **FAQ Sectie (500 woorden)** ⭐ KRITIEK voor AI Overview!
-   <h2>Veelgestelde Vragen over [Onderwerp]</h2>
-   
+   - Gebruik een specifieke heading: "Jouw [onderwerp] vragen beantwoord"
+   - Of: "Alles wat je wilt weten over [onderwerp]"
+   - "Veelgestelde Vragen over [Onderwerp]" mag ook, maar wees creatiever als het kan
+
    <h3>Vraag 1 met vraagteken?</h3>
    <p><strong>Kort antwoord in 1 zin.</strong> Uitgebreide uitleg in 2-3 zinnen.</p>
-   
+
    - 7-10 vragen
    - Gebruik vraagwoorden: Wat, Hoe, Waarom, Wanneer
    - Eerste zin = direct antwoord

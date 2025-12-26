@@ -148,7 +148,25 @@ ${keywords.length > 0 ? `**Related Keywords:** ${keywords.join(', ')}` : ''}
    - Minimaal 5 H2 secties voor de hoofdinhoud
    - H3 subsecties waar nodig
    - Afsluiting met inhoudelijke heading (NIET "Conclusie", "Tot slot", "Ten slotte" - gebruik "Aan de slag met [onderwerp]" of "Jouw volgende stappen")
-   - ⚠️ VERBODEN: Gebruik NOOIT dezelfde woorden of frasen meerdere keren in headings
+
+   ⚠️ **ABSOLUUT VERBODEN - Generieke Heading Patronen:**
+   - NOOIT: "Wat is [onderwerp]" / "Wat zijn [onderwerp]"
+   - NOOIT: "Definitie van [onderwerp]" / "De definitie"
+   - NOOIT: "Waarom is het belangrijk" / "Belang van"
+   - NOOIT: "Waarom zou je [onderwerp]" / "Redenen om"
+   - NOOIT: "Voordelen van [onderwerp]" (gebruik specifieke voordelen als heading)
+   - NOOIT: "Nadelen van [onderwerp]" (gebruik specifieke nadelen als heading)
+   - NOOIT: "Hoe werkt [onderwerp]" (wees specifieker)
+   - NOOIT: "Tips voor [onderwerp]" (benoem specifieke tips)
+
+   ✓ **WEL Toegestaan - Waardevolle Headings:**
+   - Specifieke voordelen: "3x sneller resultaat met [techniek]"
+   - Concrete stappen: "Zo begin je vandaag met [onderwerp]"
+   - Directe antwoorden: "Hoeveel tijd kost [onderwerp] per week?"
+   - Praktische scenarios: "Wanneer kies je voor [optie A] vs [optie B]?"
+   - Meetbare resultaten: "Van 0 naar 100 bezoekers in 30 dagen"
+   - Unieke inzichten: "De #1 fout die beginners maken bij [onderwerp]"
+   - ALTIJD: Zorg dat elke heading DIRECT waarde communiceert
 
 3. **Content Kwaliteit:**
    - Actuele informatie (2024/2025)
