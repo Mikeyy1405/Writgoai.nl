@@ -14,7 +14,7 @@ from pydantic import BaseModel
 import httpx
 
 from ..core.agent import AgentLoop
-from ..core.llm import create_llm_setup
+from ..core.llm_aiml import create_aiml_setup  # ← AIML API provider
 from ..tools.sandbox import DockerSandbox
 from ..memory.event_stream import EventStream
 from ..memory.file_storage import FileStorage
@@ -29,20 +29,23 @@ app = FastAPI(title="WritGo.nl AI Agent VPS")
 
 # Configuration from environment
 CONFIG = {
-    "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
-    "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+    "AIML_API_KEY": os.getenv("AIML_API_KEY"),  # ← AIML API key
     "WRITGO_API_URL": os.getenv("WRITGO_API_URL", "https://writgo.nl"),
     "WRITGO_WEBHOOK_SECRET": os.getenv("WRITGO_WEBHOOK_SECRET"),
     "MAX_ITERATIONS": int(os.getenv("MAX_ITERATIONS", "50")),
     "SANDBOX_TIMEOUT": int(os.getenv("SANDBOX_TIMEOUT", "300")),
-    "DEFAULT_MODEL": os.getenv("DEFAULT_MODEL", "claude-opus-4-20250514"),
-    "MODEL_COMPLEX": os.getenv("MODEL_COMPLEX", "claude-opus-4-20250514"),
-    "MODEL_FAST": os.getenv("MODEL_FAST", "claude-haiku-3-20250307"),
-    "MODEL_CODING": os.getenv("MODEL_CODING", "claude-sonnet-4-20250514"),
+
+    # AIML API model configurations
+    "DEFAULT_MODEL": os.getenv("DEFAULT_MODEL", "claude-3-5-sonnet-20241022"),
+    "MODEL_COMPLEX": os.getenv("MODEL_COMPLEX", "claude-3-opus-20240229"),
+    "MODEL_BALANCED": os.getenv("MODEL_BALANCED", "claude-3-5-sonnet-20241022"),
+    "MODEL_FAST": os.getenv("MODEL_FAST", "claude-3-5-haiku-20241022"),
+    "MODEL_CODING": os.getenv("MODEL_CODING", "deepseek-ai/DeepSeek-Coder-V2-Instruct"),
+    "MODEL_LLAMA": os.getenv("MODEL_LLAMA", "meta-llama/Llama-3.3-70B-Instruct-Turbo"),
 }
 
-# Initialize LLM
-llm_provider, model_router = create_llm_setup(CONFIG)
+# Initialize AIML API provider
+llm_provider, model_router = create_aiml_setup(CONFIG)
 
 
 # === Request/Response Models ===
