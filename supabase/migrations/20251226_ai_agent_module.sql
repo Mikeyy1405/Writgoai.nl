@@ -1,9 +1,68 @@
 -- AI Agent Module Database Schema
 -- Created: 2025-12-26
--- Purpose: Add complete AI Agent functionality to WritGo.nl
+-- FIXED: Correct table creation order (templates first, then tasks)
 
 -- ============================================================================
--- 1. AGENT TASKS
+-- 1. AGENT TEMPLATES (Playbooks) - MUST BE FIRST!
+-- ============================================================================
+CREATE TABLE agent_templates (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Template info
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT, -- research, ecommerce, content, admin
+  icon TEXT, -- emoji or icon name
+
+  -- Template content
+  prompt_template TEXT NOT NULL,
+  variables JSONB DEFAULT '[]'::jsonb,
+
+  -- Scheduling
+  is_scheduled BOOLEAN DEFAULT FALSE,
+  schedule_cron TEXT,
+  schedule_enabled BOOLEAN DEFAULT FALSE,
+
+  -- Usage stats
+  usage_count INTEGER DEFAULT 0,
+  last_used_at TIMESTAMP WITH TIME ZONE,
+  avg_duration_seconds INTEGER,
+
+  -- Sharing
+  is_public BOOLEAN DEFAULT FALSE,
+  is_system BOOLEAN DEFAULT FALSE,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_agent_templates_user_id ON agent_templates(user_id);
+CREATE INDEX idx_agent_templates_category ON agent_templates(category);
+CREATE INDEX idx_agent_templates_is_public ON agent_templates(is_public) WHERE is_public = TRUE;
+
+-- RLS Policies
+ALTER TABLE agent_templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own and public templates"
+  ON agent_templates FOR SELECT
+  USING (auth.uid() = user_id OR is_public = TRUE OR is_system = TRUE);
+
+CREATE POLICY "Users can create own templates"
+  ON agent_templates FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own templates"
+  ON agent_templates FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own templates"
+  ON agent_templates FOR DELETE
+  USING (auth.uid() = user_id AND is_system = FALSE);
+
+-- ============================================================================
+-- 2. AGENT TASKS - Now can reference agent_templates
 -- ============================================================================
 CREATE TABLE agent_tasks (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -13,13 +72,11 @@ CREATE TABLE agent_tasks (
   -- Task details
   title TEXT NOT NULL,
   description TEXT,
-  prompt TEXT NOT NULL, -- Full prompt sent to agent
+  prompt TEXT NOT NULL,
 
   -- Status
   status TEXT NOT NULL DEFAULT 'queued',
-  -- queued, running, completed, failed, cancelled
-
-  priority TEXT DEFAULT 'normal', -- low, normal, high
+  priority TEXT DEFAULT 'normal',
 
   -- Execution
   started_at TIMESTAMP WITH TIME ZONE,
@@ -27,13 +84,13 @@ CREATE TABLE agent_tasks (
   duration_seconds INTEGER,
 
   -- Results
-  result_data JSONB, -- Output data
-  result_files TEXT[], -- URLs to generated files
+  result_data JSONB,
+  result_files TEXT[],
   error_message TEXT,
 
   -- Metadata
   template_id UUID REFERENCES agent_templates(id) ON DELETE SET NULL,
-  vps_task_id TEXT, -- ID on VPS side
+  vps_task_id TEXT,
   credits_used INTEGER DEFAULT 0,
 
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -65,67 +122,7 @@ CREATE POLICY "Users can delete own tasks"
   USING (auth.uid() = user_id);
 
 -- ============================================================================
--- 2. AGENT TEMPLATES (Playbooks)
--- ============================================================================
-CREATE TABLE agent_templates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-
-  -- Template info
-  name TEXT NOT NULL,
-  description TEXT,
-  category TEXT, -- research, ecommerce, content, admin
-  icon TEXT, -- emoji or icon name
-
-  -- Template content
-  prompt_template TEXT NOT NULL,
-  variables JSONB DEFAULT '[]'::jsonb,
-  -- [{"name": "product_url", "type": "url", "required": true}]
-
-  -- Scheduling
-  is_scheduled BOOLEAN DEFAULT FALSE,
-  schedule_cron TEXT, -- cron expression
-  schedule_enabled BOOLEAN DEFAULT FALSE,
-
-  -- Usage stats
-  usage_count INTEGER DEFAULT 0,
-  last_used_at TIMESTAMP WITH TIME ZONE,
-  avg_duration_seconds INTEGER,
-
-  -- Sharing
-  is_public BOOLEAN DEFAULT FALSE, -- Share with other users?
-  is_system BOOLEAN DEFAULT FALSE, -- Built-in template
-
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Indexes
-CREATE INDEX idx_agent_templates_user_id ON agent_templates(user_id);
-CREATE INDEX idx_agent_templates_category ON agent_templates(category);
-CREATE INDEX idx_agent_templates_is_public ON agent_templates(is_public) WHERE is_public = TRUE;
-
--- RLS Policies
-ALTER TABLE agent_templates ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own and public templates"
-  ON agent_templates FOR SELECT
-  USING (auth.uid() = user_id OR is_public = TRUE OR is_system = TRUE);
-
-CREATE POLICY "Users can create own templates"
-  ON agent_templates FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own templates"
-  ON agent_templates FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own templates"
-  ON agent_templates FOR DELETE
-  USING (auth.uid() = user_id AND is_system = FALSE);
-
--- ============================================================================
--- 3. AGENT SESSIONS (Browser activity logs)
+-- 3. AGENT SESSIONS
 -- ============================================================================
 CREATE TABLE agent_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -133,32 +130,18 @@ CREATE TABLE agent_sessions (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
   -- Session info
-  container_id TEXT, -- Docker container ID on VPS
-  vnc_url TEXT, -- VNC streaming URL
+  container_id TEXT,
+  vnc_url TEXT,
 
-  -- Activity log (step by step)
+  -- Activity log
   activity_log JSONB DEFAULT '[]'::jsonb,
-  /* [
-    {
-      "timestamp": "2025-12-26T14:32:01Z",
-      "action": "browser_open",
-      "details": "Chromium launched",
-      "success": true
-    },
-    {
-      "timestamp": "2025-12-26T14:32:05Z",
-      "action": "navigate",
-      "url": "https://bol.com",
-      "success": true
-    }
-  ] */
 
   -- Screenshots
-  screenshots TEXT[], -- URLs to screenshots
+  screenshots TEXT[],
 
   -- Browser state
   current_url TEXT,
-  browser_cookies JSONB, -- Encrypted
+  browser_cookies JSONB,
 
   -- Status
   is_active BOOLEAN DEFAULT TRUE,
@@ -189,19 +172,19 @@ CREATE POLICY "Users can update own sessions"
   USING (auth.uid() = user_id);
 
 -- ============================================================================
--- 4. AGENT CREDENTIALS (Encrypted vault)
+-- 4. AGENT CREDENTIALS
 -- ============================================================================
 CREATE TABLE agent_credentials (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
   -- Service info
-  service_name TEXT NOT NULL, -- wordpress, google, bol.com, etc.
-  service_type TEXT NOT NULL, -- oauth, api_key, password, session
+  service_name TEXT NOT NULL,
+  service_type TEXT NOT NULL,
   display_name TEXT,
 
   -- Credentials (ENCRYPTED)
-  encrypted_data TEXT NOT NULL, -- JSON with credentials, encrypted with AES-256-GCM
+  encrypted_data TEXT NOT NULL,
   encryption_iv TEXT NOT NULL,
   encryption_tag TEXT NOT NULL,
 
@@ -211,8 +194,8 @@ CREATE TABLE agent_credentials (
   oauth_expires_at TIMESTAMP WITH TIME ZONE,
   oauth_scopes TEXT[],
 
-  -- Session specific (for browser sessions)
-  session_cookies JSONB, -- Encrypted
+  -- Session specific
+  session_cookies JSONB,
   session_expires_at TIMESTAMP WITH TIME ZONE,
 
   -- Metadata
@@ -223,7 +206,6 @@ CREATE TABLE agent_credentials (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
-  -- Unique constraint
   UNIQUE(user_id, service_name)
 );
 
@@ -259,16 +241,16 @@ CREATE TABLE agent_chat_messages (
   task_id UUID REFERENCES agent_tasks(id) ON DELETE SET NULL,
 
   -- Message info
-  role TEXT NOT NULL, -- user, agent, system
+  role TEXT NOT NULL,
   content TEXT NOT NULL,
 
   -- Metadata
-  action_required BOOLEAN DEFAULT FALSE, -- Agent needs confirmation
-  action_type TEXT, -- run_task, confirm_action, etc.
+  action_required BOOLEAN DEFAULT FALSE,
+  action_type TEXT,
   action_data JSONB,
 
   -- Attachments
-  attachments TEXT[], -- File URLs
+  attachments TEXT[],
 
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -290,10 +272,9 @@ CREATE POLICY "Users can create own chat messages"
   WITH CHECK (auth.uid() = user_id);
 
 -- ============================================================================
--- 6. FUNCTIONS & TRIGGERS
+-- 6. TRIGGERS
 -- ============================================================================
 
--- Update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -315,7 +296,7 @@ CREATE TRIGGER update_agent_credentials_updated_at BEFORE UPDATE ON agent_creden
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
--- 7. DEFAULT SYSTEM TEMPLATES
+-- 7. DEFAULT TEMPLATES
 -- ============================================================================
 INSERT INTO agent_templates (
   id,
@@ -385,5 +366,5 @@ INSERT INTO agent_templates (
 );
 
 -- ============================================================================
--- MIGRATION COMPLETE
+-- SUCCESS!
 -- ============================================================================
