@@ -141,7 +141,14 @@ Vereisten:
 - Voeg affiliate links toe voor relevante producten
 - Structureer met duidelijke headers en paragrafen
 - Begin direct met de content (geen intro zoals "Hier is het artikel")
-- Sluit af met een sterke conclusie
+- Sluit af met een sterke conclusie (NIET "Conclusie", "Tot slot", "Ten slotte")
+
+⚠️ ABSOLUUT VERBODEN - Generieke Headings:
+- NOOIT: "Wat is [onderwerp]", "Definitie van", "Waarom belangrijk"
+- NOOIT: "Voordelen van", "Nadelen van", "Hoe werkt"
+- WEL: Specifieke, waardevolle headings die direct waarde communiceren
+- Voorbeeld: "3x sneller resultaat met [techniek]", "Hoeveel tijd kost [onderwerp] per week?"
+
 - BELANGRIJK: Houd je STRIKT aan de woordlimiet van ${word_count} woorden!
 
 Schrijf het artikel in HTML formaat:`;
