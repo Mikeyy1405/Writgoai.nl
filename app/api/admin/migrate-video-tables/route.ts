@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/admin/migrate-video-tables
  *

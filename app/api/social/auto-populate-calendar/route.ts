@@ -7,14 +7,21 @@ import {
   Holiday,
 } from '@/lib/dutch-holidays';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 let supabaseAdmin: ReturnType<typeof createClient> | null = null;
 
 function getSupabaseAdmin() {
   if (!supabaseAdmin) {
-    supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
   }
   return supabaseAdmin as any;
 }

@@ -7,10 +7,21 @@
 import { createClient } from '@supabase/supabase-js';
 import { CREDIT_COSTS, type CreditAction, isFreeAction } from './credit-costs';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin(): ReturnType<typeof createClient> {
+  if (!supabaseAdmin) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabaseAdmin!;
+}
 
 export interface CreditBalance {
   credits_remaining: number;
@@ -67,7 +78,8 @@ export async function deductCredits(
 
   try {
     // Get current balance
-    const { data: subscriber, error: fetchError } = await supabaseAdmin
+    const supabase = getSupabaseAdmin();
+    const { data: subscriber, error: fetchError } = await supabase
       .from('subscribers')
       .select('credits_remaining, subscription_active, is_admin')
       .eq('user_id', userId)
@@ -82,7 +94,7 @@ export async function deductCredits(
     }
 
     // Admin users don't deduct credits
-    if (subscriber.is_admin) {
+    if ((subscriber as any).is_admin) {
       await logCreditUsage(userId, action, amount);
       return {
         success: true,
@@ -91,26 +103,26 @@ export async function deductCredits(
     }
 
     // Check if subscription is active
-    if (!subscriber.subscription_active) {
+    if (!(subscriber as any).subscription_active) {
       return {
         success: false,
-        remaining: subscriber.credits_remaining,
+        remaining: (subscriber as any).credits_remaining,
         error: 'Subscription not active',
       };
     }
 
     // Check if enough credits
-    if (subscriber.credits_remaining < amount) {
+    if ((subscriber as any).credits_remaining < amount) {
       return {
         success: false,
-        remaining: subscriber.credits_remaining,
+        remaining: (subscriber as any).credits_remaining,
         error: 'Insufficient credits',
       };
     }
 
     // Deduct credits
-    const newBalance = subscriber.credits_remaining - amount;
-    const { error: updateError } = await supabaseAdmin
+    const newBalance = (subscriber as any).credits_remaining - amount;
+    const { error: updateError } = await (supabase as any)
       .from('subscribers')
       .update({ credits_remaining: newBalance })
       .eq('user_id', userId);
@@ -118,7 +130,7 @@ export async function deductCredits(
     if (updateError) {
       return {
         success: false,
-        remaining: subscriber.credits_remaining,
+        remaining: (subscriber as any).credits_remaining,
         error: 'Failed to update credits',
       };
     }
@@ -145,7 +157,8 @@ export async function deductCredits(
  */
 export async function getCreditBalance(userId: string): Promise<CreditBalance | null> {
   try {
-    const { data, error } = await supabaseAdmin
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await (supabase as any)
       .from('subscribers')
       .select('credits_remaining, monthly_credits, subscription_tier, subscription_active, is_admin')
       .eq('user_id', userId)
@@ -169,41 +182,32 @@ export async function addCredits(
   userId: string,
   amount: number,
   reason: string = 'subscription'
-): Promise<{ success: boolean; error?: string }> {
+): Promise<boolean> {
   try {
-    const { data: subscriber, error: fetchError } = await supabaseAdmin
-      .from('subscribers')
+    const supabase = getSupabaseAdmin();
+    const { data: subscriber, error: fetchError } = await supabase.from('subscribers')
       .select('credits_remaining')
       .eq('user_id', userId)
       .single();
 
     if (fetchError || !subscriber) {
-      return {
-        success: false,
-        error: 'Subscriber not found',
-      };
+      return false;
     }
 
-    const newBalance = subscriber.credits_remaining + amount;
-    const { error: updateError } = await supabaseAdmin
+    const newBalance = (subscriber as any).credits_remaining + amount;
+    const { error: updateError } = await (supabase as any)
       .from('subscribers')
       .update({ credits_remaining: newBalance })
       .eq('user_id', userId);
 
     if (updateError) {
-      return {
-        success: false,
-        error: 'Failed to add credits',
-      };
+      return false;
     }
 
-    return { success: true };
+    return true;
   } catch (error: any) {
     console.error('Add credits error:', error);
-    return {
-      success: false,
-      error: error.message || 'Unknown error',
-    };
+    return false;
   }
 }
 
@@ -212,7 +216,8 @@ export async function addCredits(
  */
 export async function resetMonthlyCredits(userId: string): Promise<boolean> {
   try {
-    const { data: subscriber, error: fetchError } = await supabaseAdmin
+    const supabase = getSupabaseAdmin();
+    const { data: subscriber, error: fetchError } = await (supabase as any)
       .from('subscribers')
       .select('monthly_credits')
       .eq('user_id', userId)
@@ -222,9 +227,9 @@ export async function resetMonthlyCredits(userId: string): Promise<boolean> {
       return false;
     }
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await (supabase as any)
       .from('subscribers')
-      .update({ credits_remaining: subscriber.monthly_credits })
+      .update({ credits_remaining: (subscriber as any).monthly_credits })
       .eq('user_id', userId);
 
     return !updateError;
@@ -243,7 +248,8 @@ async function logCreditUsage(
   amount: number
 ): Promise<void> {
   try {
-    await supabaseAdmin.from('credit_usage_logs').insert({
+    const supabase = getSupabaseAdmin();
+    await (supabase as any).from('credit_usage_logs').insert({
       user_id: userId,
       action,
       credits_used: amount,

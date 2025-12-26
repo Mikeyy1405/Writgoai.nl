@@ -10,8 +10,10 @@ import {
   RequestDiagnostics,
 } from '@/lib/wordpress-request-diagnostics';
 
-// Force dynamic rendering
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Force dynamic rendering
 
 interface DiagnoseResult {
   serverInfo: {

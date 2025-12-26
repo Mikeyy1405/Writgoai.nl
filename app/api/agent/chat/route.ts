@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     // Build conversation context
     const conversationHistory = (chatHistory || []).map((msg) => ({
-      role: msg.role === 'agent' ? 'assistant' : 'user',
+      role: (msg.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user',
       content: msg.content,
     }));
 
@@ -171,9 +171,9 @@ Otherwise, just respond conversationally.`;
     const aiResponse = await aimlClient.chat.completions.create({
       model: 'claude-opus-4.5',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system' as const, content: systemPrompt },
         ...conversationHistory,
-        { role: 'user', content: message },
+        { role: 'user' as const, content: message },
       ],
       temperature: 0.7,
       max_tokens: 4000, // Opus has higher capacity

@@ -3,7 +3,10 @@ import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase-server';
 import { STRIPE_PACKAGES, type PackageTier } from '@/lib/stripe-config';
 
+
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-12-15.clover',

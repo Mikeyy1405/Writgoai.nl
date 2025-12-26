@@ -3,18 +3,25 @@ import { createClient } from '@supabase/supabase-js';
 import { getCreditBalance, deductCredits } from '@/lib/credit-manager';
 import { getModelById } from '@/lib/image-models';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 let supabase: ReturnType<typeof createClient> | null = null;
 
 function getSupabase() {
   if (!supabase) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
     supabase = createClient(supabaseUrl, supabaseServiceKey);
   }
   return supabase as any;
 }
 
-const AIML_API_KEY = process.env.AIML_API_KEY!;
 const AIML_BASE_URL = 'https://api.aimlapi.com/v1';
 
 interface GenerateImageRequest {
@@ -181,10 +188,18 @@ export async function POST(req: NextRequest) {
     });
 
     // Call AIML API
+    const aimlApiKey = process.env.AIML_API_KEY;
+    if (!aimlApiKey) {
+      return NextResponse.json(
+        { error: 'AIML API key not configured' },
+        { status: 500 }
+      );
+    }
+
     const response = await fetch(`${AIML_BASE_URL}/images/generations`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${AIML_API_KEY}`,
+        'Authorization': `Bearer ${aimlApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(apiPayload),

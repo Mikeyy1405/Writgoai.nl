@@ -5,9 +5,6 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 const premiumFeeds = [
   // BREAKING NEWS - Hoogste prioriteit (check elk uur)
   { name: 'Google Search Central Blog', category: 'seo', url: 'https://developers.google.com/search/blog/feeds/posts/default', priority: 10 },
@@ -41,6 +38,13 @@ const premiumFeeds = [
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Step 1: Delete old RSS feeds
