@@ -16,10 +16,21 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
-const openai = new OpenAI({
-  apiKey: process.env.AIML_API_KEY!,
-  baseURL: 'https://api.aimlapi.com/v1',
-});
+let openaiClient: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.AIML_API_KEY;
+    if (!apiKey) {
+      throw new Error('AIML_API_KEY environment variable is not set');
+    }
+    openaiClient = new OpenAI({
+      apiKey,
+      baseURL: 'https://api.aimlapi.com/v1',
+    });
+  }
+  return openaiClient;
+}
 
 // Language-specific instructions
 const LANGUAGE_INSTRUCTIONS: Record<string, {
@@ -151,7 +162,7 @@ Schrijf het artikel in HTML formaat:`;
           // Calculate max tokens based on word count (roughly 1.3 tokens per word for English/Dutch)
           const estimatedTokens = Math.min(Math.round(word_count * 1.5) + 500, 8000);
 
-          const completion = await openai.chat.completions.create({
+          const completion = await getOpenAI().chat.completions.create({
             model: 'anthropic/claude-sonnet-4.5',
             max_tokens: estimatedTokens,
             temperature: 0.7,

@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { WORDPRESS_ENDPOINTS, getWordPressEndpoint, buildWritgoHeaders } from '@/lib/wordpress-endpoints';
 
-// Force dynamic rendering since we use cookies for authentication
+
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Force dynamic rendering since we use cookies for authentication
 
 export async function POST(request: NextRequest) {
   try {

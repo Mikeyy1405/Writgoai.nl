@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // Lazy initialization to prevent build-time errors
 let supabase: ReturnType<typeof createClient<Database>> | null = null;
 
 function getSupabase() {
   if (!supabase) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
     supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
   }
   return supabase as any; // Type assertion needed for tables not in generated types

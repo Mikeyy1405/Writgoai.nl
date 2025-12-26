@@ -2,11 +2,24 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase-server';
 
+
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover',
-});
+let stripeClient: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+    }
+    stripeClient = new Stripe(secretKey, {
+      apiVersion: '2025-12-15.clover',
+    });
+  }
+  return stripeClient;
+}
 
 export async function GET(request: Request) {
   try {
@@ -33,7 +46,7 @@ export async function GET(request: Request) {
     }
 
     // Fetch invoices from Stripe
-    const invoices = await stripe.invoices.list({
+    const invoices = await getStripe().invoices.list({
       customer: subscriber.stripe_customer_id,
       limit: 100, // Get last 100 invoices
     });

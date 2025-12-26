@@ -10,10 +10,21 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin(): ReturnType<typeof createClient> {
+  if (!supabaseAdmin) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabaseAdmin!;
+}
 
 export interface ProjectContext {
   knowledgeBase: string;
@@ -56,13 +67,13 @@ export interface CustomAffiliateLink {
  */
 export async function getProjectContext(projectId: string): Promise<ProjectContext & { customAffiliateLinks: CustomAffiliateLink[] }> {
   // Check if backlinks are enabled for this project
-  const { data: project } = await supabaseAdmin
+  const { data: project } = await getSupabaseAdmin()
     .from('projects')
     .select('enable_backlinks')
     .eq('id', projectId)
     .single();
 
-  const backlinksEnabled = project?.enable_backlinks !== false; // Default to true
+  const backlinksEnabled = (project as any)?.enable_backlinks !== false; // Default to true
 
   const [knowledgeBase, internalLinks, externalLinks, affiliateConfig, customInstructions, customAffiliateLinks] = await Promise.all([
     getKnowledgeBaseContext(projectId),
@@ -87,7 +98,7 @@ export async function getProjectContext(projectId: string): Promise<ProjectConte
  * Get knowledge base entries as context string
  */
 async function getKnowledgeBaseContext(projectId: string): Promise<string> {
-  const { data: entries } = await supabaseAdmin
+  const { data: entries } = await getSupabaseAdmin()
     .from('project_knowledge_base')
     .select('title, content, category')
     .eq('project_id', projectId)
@@ -97,7 +108,7 @@ async function getKnowledgeBaseContext(projectId: string): Promise<string> {
     return '';
   }
 
-  const context = entries.map(entry => 
+  const context = (entries as any).map((entry: any) =>
     `### ${entry.title} (${entry.category})\n${entry.content}`
   ).join('\n\n');
 
@@ -109,18 +120,18 @@ async function getKnowledgeBaseContext(projectId: string): Promise<string> {
  */
 async function getInternalLinks(projectId: string): Promise<InternalLink[]> {
   // Get project website URL
-  const { data: project } = await supabaseAdmin
+  const { data: project } = await getSupabaseAdmin()
     .from('projects')
     .select('websiteUrl')
     .eq('id', projectId)
     .single();
 
-  if (!project?.websiteUrl) {
+  if (!(project as any)?.websiteUrl) {
     return [];
   }
 
   // Get published articles from this project
-  const { data: articles } = await supabaseAdmin
+  const { data: articles } = await getSupabaseAdmin()
     .from('articles')
     .select('title, slug, excerpt')
     .eq('project_id', projectId)
@@ -132,9 +143,9 @@ async function getInternalLinks(projectId: string): Promise<InternalLink[]> {
     return [];
   }
 
-  const baseUrl = project.websiteUrl.replace(/\/$/, '');
+  const baseUrl = (project as any).websiteUrl.replace(/\/$/, '');
 
-  return articles.map(article => ({
+  return (articles as any).map((article: any) => ({
     title: article.title,
     slug: article.slug,
     url: `${baseUrl}/${article.slug}`,
@@ -150,7 +161,7 @@ async function getInternalLinks(projectId: string): Promise<InternalLink[]> {
  */
 async function getExternalLinks(projectId: string): Promise<ExternalLink[]> {
   // Get current project info
-  const { data: currentProject } = await supabaseAdmin
+  const { data: currentProject } = await getSupabaseAdmin()
     .from('projects')
     .select('user_id, participate_in_backlink_exchange, backlink_exchange_category, max_outbound_backlinks')
     .eq('id', projectId)
@@ -161,35 +172,35 @@ async function getExternalLinks(projectId: string): Promise<ExternalLink[]> {
   }
 
   const externalLinks: ExternalLink[] = [];
-  const maxLinks = currentProject.max_outbound_backlinks || 5;
+  const maxLinks = (currentProject as any).max_outbound_backlinks || 5;
 
   // 1. Get projects from the same user (always included)
-  const { data: sameUserProjects } = await supabaseAdmin
+  const { data: sameUserProjects } = await getSupabaseAdmin()
     .from('projects')
     .select('id, name, website_url')
-    .eq('user_id', currentProject.user_id)
+    .eq('user_id', (currentProject as any).user_id)
     .neq('id', projectId)
     .limit(3);
 
   if (sameUserProjects && sameUserProjects.length > 0) {
-    for (const project of sameUserProjects) {
-      const { data: articles } = await supabaseAdmin
+    for (const project of sameUserProjects as any) {
+      const { data: articles } = await getSupabaseAdmin()
         .from('articles')
         .select('title, slug, excerpt')
-        .eq('project_id', project.id)
+        .eq('project_id', (project as any).id)
         .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(3);
 
       if (articles && articles.length > 0) {
-        const baseUrl = project.website_url?.replace(/\/$/, '') || '';
+        const baseUrl = (project as any).website_url?.replace(/\/$/, '') || '';
 
-        for (const article of articles) {
+        for (const article of articles as any) {
           externalLinks.push({
-            projectName: project.name,
-            title: article.title,
-            url: `${baseUrl}/${article.slug}`,
-            excerpt: article.excerpt,
+            projectName: (project as any).name,
+            title: (article as any).title,
+            url: `${baseUrl}/${(article as any).slug}`,
+            excerpt: (article as any).excerpt,
           });
         }
       }
@@ -197,20 +208,20 @@ async function getExternalLinks(projectId: string): Promise<ExternalLink[]> {
   }
 
   // 2. Get projects from backlink exchange network (if opted in)
-  if (currentProject.participate_in_backlink_exchange) {
-    const { data: exchangeProjects } = await supabaseAdmin
+  if ((currentProject as any).participate_in_backlink_exchange) {
+    const { data: exchangeProjects } = await getSupabaseAdmin()
       .from('projects')
       .select('id, name, website_url, backlink_exchange_category')
       .eq('participate_in_backlink_exchange', true)
       .neq('id', projectId)
-      .neq('user_id', currentProject.user_id) // Different users only
+      .neq('user_id', (currentProject as any).user_id) // Different users only
       .limit(10);
 
     if (exchangeProjects && exchangeProjects.length > 0) {
       // Filter by matching category if specified
-      const relevantProjects = currentProject.backlink_exchange_category
-        ? exchangeProjects.filter(p =>
-            p.backlink_exchange_category === currentProject.backlink_exchange_category
+      const relevantProjects = (currentProject as any).backlink_exchange_category
+        ? (exchangeProjects as any).filter((p: any) =>
+            p.backlink_exchange_category === (currentProject as any).backlink_exchange_category
           )
         : exchangeProjects;
 
@@ -219,23 +230,23 @@ async function getExternalLinks(projectId: string): Promise<ExternalLink[]> {
       const selectedProjects = shuffled.slice(0, 3); // Max 3 external projects
 
       for (const project of selectedProjects) {
-        const { data: articles } = await supabaseAdmin
+        const { data: articles } = await getSupabaseAdmin()
           .from('articles')
           .select('id, title, slug, excerpt')
-          .eq('project_id', project.id)
+          .eq('project_id', (project as any).id)
           .eq('status', 'published')
           .order('created_at', { ascending: false })
           .limit(2); // Max 2 articles per external project
 
         if (articles && articles.length > 0) {
-          const baseUrl = project.website_url?.replace(/\/$/, '') || '';
+          const baseUrl = (project as any).website_url?.replace(/\/$/, '') || '';
 
-          for (const article of articles) {
+          for (const article of articles as any) {
             externalLinks.push({
-              projectName: project.name,
-              title: article.title,
-              url: `${baseUrl}/${article.slug}`,
-              excerpt: article.excerpt,
+              projectName: (project as any).name,
+              title: (article as any).title,
+              url: `${baseUrl}/${(article as any).slug}`,
+              excerpt: (article as any).excerpt,
             });
           }
         }
@@ -251,7 +262,7 @@ async function getExternalLinks(projectId: string): Promise<ExternalLink[]> {
  * Get affiliate configuration for the project
  */
 async function getAffiliateConfig(projectId: string): Promise<AffiliateConfig | null> {
-  const { data: affiliate } = await supabaseAdmin
+  const { data: affiliate } = await getSupabaseAdmin()
     .from('project_affiliates')
     .select('*')
     .eq('project_id', projectId)
@@ -264,11 +275,11 @@ async function getAffiliateConfig(projectId: string): Promise<AffiliateConfig | 
   }
 
   return {
-    platform: affiliate.platform,
-    siteCode: affiliate.site_code || '',
-    clientId: affiliate.client_id,
-    clientSecret: affiliate.client_secret,
-    isActive: affiliate.is_active,
+    platform: (affiliate as any).platform,
+    siteCode: (affiliate as any).site_code || '',
+    clientId: (affiliate as any).client_id,
+    clientSecret: (affiliate as any).client_secret,
+    isActive: (affiliate as any).is_active,
   };
 }
 
@@ -276,7 +287,7 @@ async function getAffiliateConfig(projectId: string): Promise<AffiliateConfig | 
  * Get custom affiliate links for the project
  */
 async function getCustomAffiliateLinks(projectId: string): Promise<CustomAffiliateLink[]> {
-  const { data: affiliate } = await supabaseAdmin
+  const { data: affiliate } = await getSupabaseAdmin()
     .from('project_affiliates')
     .select('custom_links')
     .eq('project_id', projectId)
@@ -284,13 +295,13 @@ async function getCustomAffiliateLinks(projectId: string): Promise<CustomAffilia
     .eq('is_active', true)
     .single();
 
-  if (!affiliate?.custom_links) {
+  if (!(affiliate as any)?.custom_links) {
     return [];
   }
 
   // Parse custom_links - it's stored as text in format: "Name | URL | Description" per line
-  const linksText = typeof affiliate.custom_links === 'string' 
-    ? affiliate.custom_links 
+  const linksText = typeof (affiliate as any).custom_links === 'string'
+    ? (affiliate as any).custom_links
     : '';
 
   const links: CustomAffiliateLink[] = [];
@@ -314,7 +325,7 @@ async function getCustomAffiliateLinks(projectId: string): Promise<CustomAffilia
  * Get custom instructions from project settings
  */
 async function getCustomInstructions(projectId: string): Promise<string> {
-  const { data: project } = await supabaseAdmin
+  const { data: project } = await getSupabaseAdmin()
     .from('projects')
     .select('customInstructions, brandVoice, targetAudience, writingStyle')
     .eq('id', projectId)
@@ -326,17 +337,17 @@ async function getCustomInstructions(projectId: string): Promise<string> {
 
   const instructions: string[] = [];
 
-  if (project.customInstructions) {
-    instructions.push(`Custom instructies: ${project.customInstructions}`);
+  if ((project as any).customInstructions) {
+    instructions.push(`Custom instructies: ${(project as any).customInstructions}`);
   }
-  if (project.brandVoice) {
-    instructions.push(`Brand voice: ${project.brandVoice}`);
+  if ((project as any).brandVoice) {
+    instructions.push(`Brand voice: ${(project as any).brandVoice}`);
   }
-  if (project.targetAudience) {
-    instructions.push(`Doelgroep: ${project.targetAudience}`);
+  if ((project as any).targetAudience) {
+    instructions.push(`Doelgroep: ${(project as any).targetAudience}`);
   }
-  if (project.writingStyle) {
-    instructions.push(`Schrijfstijl: ${project.writingStyle}`);
+  if ((project as any).writingStyle) {
+    instructions.push(`Schrijfstijl: ${(project as any).writingStyle}`);
   }
 
   return instructions.join('\n');

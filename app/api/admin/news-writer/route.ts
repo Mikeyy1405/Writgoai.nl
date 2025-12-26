@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { openaiClient, BEST_MODELS, generateAICompletion } from '@/lib/ai-client';
 
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 interface NewsResearchRequest {
   type: 'website' | 'topic' | 'prompt';
   input: string;

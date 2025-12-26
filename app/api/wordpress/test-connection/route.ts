@@ -6,8 +6,11 @@ import { getAdvancedBrowserHeaders, getWordPressApiHeaders, createDiagnosticRepo
 import { getProxyFetchOptions, isProxyConfigured, getProxyInfo } from '@/lib/wordpress-proxy';
 import { promises as dns } from 'dns';
 
-// Force dynamic rendering since we use cookies for authentication
+
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Force dynamic rendering since we use cookies for authentication
 
 /**
  * Perform DNS lookup for a hostname

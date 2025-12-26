@@ -3,8 +3,11 @@ import { createClient } from '@/lib/supabase-server';
 import { classifyWordPressError, formatErrorForLogging, sanitizeUrl } from '@/lib/wordpress-errors';
 import { WORDPRESS_ENDPOINTS, buildWordPressUrl, buildAuthHeader, getWordPressEndpoint, WORDPRESS_USER_AGENT } from '@/lib/wordpress-endpoints';
 
-// Force dynamic rendering since we use cookies for authentication
+
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Force dynamic rendering since we use cookies for authentication
 
 export async function GET(request: NextRequest) {
   try {

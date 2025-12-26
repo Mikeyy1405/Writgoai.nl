@@ -2,16 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const MEDIA_LIBRARY_BUCKET = 'media-library';
 
 let supabaseAdmin: ReturnType<typeof createAdminClient> | null = null;
 
 function getSupabaseAdmin() {
   if (!supabaseAdmin) {
-    supabaseAdmin = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    supabaseAdmin = createAdminClient(supabaseUrl, supabaseServiceKey);
   }
   return supabaseAdmin;
 }

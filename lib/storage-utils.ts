@@ -4,10 +4,21 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseAdmin(): ReturnType<typeof createClient> {
+  if (!supabaseAdmin) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabaseAdmin!;
+}
 
 const STORAGE_BUCKET = 'social-media-images';
 
@@ -53,7 +64,7 @@ export async function saveImageFromUrl(
     console.log('📤 Uploading to Supabase Storage:', storagePath);
 
     // Upload to Supabase Storage
-    const { data, error } = await supabaseAdmin.storage
+    const { data, error } = await getSupabaseAdmin().storage
       .from(STORAGE_BUCKET)
       .upload(storagePath, buffer, {
         contentType: blob.type || 'image/png',
@@ -69,7 +80,7 @@ export async function saveImageFromUrl(
     console.log('✅ Upload successful:', data.path);
 
     // Get public URL
-    const { data: { publicUrl } } = supabaseAdmin.storage
+    const { data: { publicUrl } } = getSupabaseAdmin().storage
       .from(STORAGE_BUCKET)
       .getPublicUrl(data.path);
 
@@ -98,14 +109,14 @@ export async function saveImageFromUrl(
  */
 async function ensureBucketExists(): Promise<void> {
   try {
-    const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+    const { data: buckets } = await getSupabaseAdmin().storage.listBuckets();
 
     const bucketExists = buckets?.some(b => b.name === STORAGE_BUCKET);
 
     if (!bucketExists) {
       console.log('📦 Creating storage bucket:', STORAGE_BUCKET);
 
-      const { error } = await supabaseAdmin.storage.createBucket(STORAGE_BUCKET, {
+      const { error } = await getSupabaseAdmin().storage.createBucket(STORAGE_BUCKET, {
         public: true,
         fileSizeLimit: 10485760, // 10MB
         allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif']
@@ -137,7 +148,7 @@ export async function deleteImage(publicUrl: string): Promise<boolean> {
 
     const filePath = urlParts[1];
 
-    const { error } = await supabaseAdmin.storage
+    const { error } = await getSupabaseAdmin().storage
       .from(STORAGE_BUCKET)
       .remove([filePath]);
 

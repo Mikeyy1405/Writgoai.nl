@@ -79,7 +79,7 @@ export default async function TemplatesPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categoryTemplates.map((template) => (
+              {categoryTemplates.map((template: any) => (
                 <div
                   key={template.id}
                   className="bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-300 hover:shadow-lg transition-all"
