@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
-import { aiClient } from '@/lib/ai-client';
+import { aimlClient } from '@/lib/ai-client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -168,7 +168,7 @@ IMPORTANT: If the user wants to execute a task, respond with a JSON object in th
 Otherwise, just respond conversationally.`;
 
     // Call AI - Using Claude Opus 4.5 for AI Agent chat
-    const aiResponse = await aiClient.chat.completions.create({
+    const aiResponse = await aimlClient.chat.completions.create({
       model: 'claude-opus-4.5',
       messages: [
         { role: 'system', content: systemPrompt },
