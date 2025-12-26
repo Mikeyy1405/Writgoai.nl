@@ -45,19 +45,19 @@ export default async function TemplatesPage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-4 py-8 max-w-7xl bg-black min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold">📚 Agent Templates</h1>
+          <h1 className="text-3xl font-bold text-white">📚 Agent Templates</h1>
           <Link
             href="/dashboard/ai-agent/chat"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
           >
             💬 Back to Chat
           </Link>
         </div>
-        <p className="text-gray-600">
+        <p className="text-gray-400">
           Pre-built workflows you can use or customize for your needs
         </p>
       </div>
@@ -72,7 +72,7 @@ export default async function TemplatesPage() {
           <div key={category.key} className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">{category.icon}</span>
-              <h2 className="text-xl font-bold">{category.name}</h2>
+              <h2 className="text-xl font-bold text-white">{category.name}</h2>
               <span className="text-sm text-gray-500">
                 ({categoryTemplates.length})
               </span>
@@ -82,26 +82,26 @@ export default async function TemplatesPage() {
               {categoryTemplates.map((template: any) => (
                 <div
                   key={template.id}
-                  className="bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-300 hover:shadow-lg transition-all"
+                  className="bg-gray-900 border border-gray-800 rounded-lg p-5 hover:border-primary-500 hover:shadow-lg transition-all"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="text-3xl">{template.icon || '📝'}</div>
                     <div className="flex gap-1">
                       {template.is_system && (
-                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                        <span className="text-xs px-2 py-1 bg-primary-900 text-primary-500 rounded border border-primary-500">
                           Official
                         </span>
                       )}
                       {template.is_scheduled && (
-                        <span className="text-xs px-2 py-1 bg-purple-100 text-purple-600 rounded">
+                        <span className="text-xs px-2 py-1 bg-gray-800 text-gray-400 rounded border border-gray-700">
                           Scheduled
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-lg mb-2">{template.name}</h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <h3 className="font-bold text-lg mb-2 text-white">{template.name}</h3>
+                  <p className="text-sm text-gray-400 mb-4">
                     {template.description}
                   </p>
 
@@ -119,28 +119,28 @@ export default async function TemplatesPage() {
                   <div className="flex gap-2">
                     <Link
                       href={`/dashboard/ai-agent/chat?template=${template.id}`}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 text-sm font-medium"
+                      className="flex-1 px-4 py-2 bg-primary-500 text-white text-center rounded-lg hover:bg-primary-600 text-sm font-medium"
                     >
                       ▶️ Run
                     </Link>
-                    <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                    <button className="px-4 py-2 border border-gray-700 rounded-lg hover:bg-gray-800 text-white text-sm">
                       👁️
                     </button>
                     {!template.is_system && (
-                      <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                      <button className="px-4 py-2 border border-gray-700 rounded-lg hover:bg-gray-800 text-white text-sm">
                         ✏️
                       </button>
                     )}
                   </div>
 
                   {template.is_scheduled && template.schedule_cron && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="mt-3 pt-3 border-t border-gray-800">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">Schedule:</span>
-                        <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                        <span className="text-gray-400">Schedule:</span>
+                        <span className="font-mono bg-gray-800 text-gray-300 px-2 py-1 rounded">
                           {template.schedule_cron}
                         </span>
-                        <label className="flex items-center gap-1">
+                        <label className="flex items-center gap-1 text-white">
                           <input
                             type="checkbox"
                             checked={template.schedule_enabled}
@@ -159,13 +159,13 @@ export default async function TemplatesPage() {
       })}
 
       {/* Create New Template */}
-      <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-dashed border-blue-300 rounded-lg p-8 text-center">
+      <div className="mt-8 bg-gray-900 border-2 border-dashed border-primary-500 rounded-lg p-8 text-center">
         <div className="text-4xl mb-3">✨</div>
-        <h3 className="text-lg font-bold mb-2">Create Your Own Template</h3>
-        <p className="text-gray-600 mb-4">
+        <h3 className="text-lg font-bold mb-2 text-white">Create Your Own Template</h3>
+        <p className="text-gray-400 mb-4">
           Save frequently used workflows as templates for quick access
         </p>
-        <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+        <button className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 font-medium">
           ➕ Create Template
         </button>
       </div>
