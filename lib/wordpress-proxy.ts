@@ -13,12 +13,12 @@
  * WORDPRESS_PROXY_URL=http://proxy.example.com:8080
  */
 
-import { HttpsProxyAgent } from 'https-proxy-agent';
+import { ProxyAgent } from 'undici';
 
 /**
  * Get proxy agent if WORDPRESS_PROXY_URL is configured
  */
-export function getProxyAgent(): HttpsProxyAgent<string> | undefined {
+export function getProxyAgent(): ProxyAgent | undefined {
   const proxyUrl = process.env.WORDPRESS_PROXY_URL;
 
   if (!proxyUrl) {
@@ -26,7 +26,7 @@ export function getProxyAgent(): HttpsProxyAgent<string> | undefined {
   }
 
   try {
-    const agent = new HttpsProxyAgent(proxyUrl);
+    const agent = new ProxyAgent(proxyUrl);
     console.log('[WP-PROXY] Using proxy:', proxyUrl.replace(/:[^:@]+@/, ':****@')); // Hide password in logs
     return agent;
   } catch (error: any) {
