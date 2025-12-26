@@ -167,16 +167,16 @@ IMPORTANT: If the user wants to execute a task, respond with a JSON object in th
 
 Otherwise, just respond conversationally.`;
 
-    // Call AI
+    // Call AI - Using Claude Opus 4.5 for AI Agent chat
     const aiResponse = await aiClient.chat.completions.create({
-      model: 'claude-sonnet-4.5',
+      model: 'claude-opus-4.5',
       messages: [
         { role: 'system', content: systemPrompt },
         ...conversationHistory,
         { role: 'user', content: message },
       ],
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 4000, // Opus has higher capacity
     });
 
     const agentResponse = aiResponse.choices[0].message.content || 'Sorry, I couldn\'t process that.';
