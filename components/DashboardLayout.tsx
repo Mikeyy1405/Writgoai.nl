@@ -31,6 +31,7 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
   const [contentMenuOpen, setContentMenuOpen] = useState(false);
   const [mediaMenuOpen, setMediaMenuOpen] = useState(false);
   const [publishMenuOpen, setPublishMenuOpen] = useState(false);
+  const [agentMenuOpen, setAgentMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -103,6 +104,18 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
       ],
     },
     { icon: '🤖', label: 'Autopilot', href: '/dashboard/writgo-autopilot' },
+    {
+      icon: '🦾',
+      label: 'AI Agent',
+      href: '/dashboard/ai-agent',
+      subItems: [
+        { icon: '💬', label: 'Chat', href: '/dashboard/ai-agent/chat' },
+        { icon: '📚', label: 'Templates', href: '/dashboard/ai-agent/templates' },
+        { icon: '📋', label: 'Tasks', href: '/dashboard/ai-agent/tasks' },
+        { icon: '🖥️', label: 'Browser', href: '/dashboard/ai-agent/browser' },
+        { icon: '🔐', label: 'Credentials', href: '/dashboard/ai-agent/credentials' },
+      ],
+    },
   ];
 
   // Admin menu with sub-items
@@ -146,6 +159,10 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
         pathname?.includes('/media-library') ||
         pathname?.includes('/library')) {
       setMediaMenuOpen(true);
+    }
+    // AI Agent menu
+    if (pathname?.includes('/ai-agent')) {
+      setAgentMenuOpen(true);
     }
     // Publishing menu
     if (pathname?.includes('/wordpress-posts') ||
@@ -225,6 +242,10 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
                 } else if (item.label === 'Publishing') {
                   isMenuOpen = publishMenuOpen;
                   toggleMenu = () => setPublishMenuOpen(!publishMenuOpen);
+                } else if (item.label === 'AI Agent') {
+                  isMenuOpen = agentMenuOpen;
+                  toggleMenu = () => setAgentMenuOpen(!agentMenuOpen);
+                  isSectionActive = pathname?.startsWith('/dashboard/ai-agent') || false;
                 } else if (item.label === 'Admin') {
                   isMenuOpen = adminMenuOpen;
                   toggleMenu = () => setAdminMenuOpen(!adminMenuOpen);
