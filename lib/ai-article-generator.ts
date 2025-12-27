@@ -5,6 +5,7 @@
  */
 
 import OpenAI from 'openai';
+import { analyzeSERPWithPerplexity, formatSERPAnalysisForPrompt } from './serp-research';
 
 const aimlClient = new OpenAI({
   apiKey: process.env.AIML_API_KEY || '',
@@ -24,6 +25,8 @@ export interface ArticleGenerationParams {
     title: string;
     url: string;
   }>;
+  language?: string; // Language for SERP analysis
+  skipSERPAnalysis?: boolean; // Skip SERP research (for speed)
 }
 
 export interface GeneratedArticle {
@@ -54,7 +57,9 @@ export async function generateArticle(
     topicName,
     contentType,
     keywords = [],
-    relatedArticles = []
+    relatedArticles = [],
+    language = 'nl',
+    skipSERPAnalysis = false,
   } = params;
 
   // Determine target word count
@@ -63,9 +68,31 @@ export async function generateArticle(
     cluster: 2500,
     supporting: 1500
   };
-  const targetWordCount = wordCounts[contentType];
+  let targetWordCount = wordCounts[contentType];
 
-  // Build prompt
+  // Step 1: Analyze Google's top 5 results with Perplexity (unless skipped)
+  let serpAnalysisPrompt = '';
+  if (!skipSERPAnalysis) {
+    try {
+      console.log(`🔍 Analyzing Google top 5 for "${focusKeyword}"...`);
+      const serpAnalysis = await analyzeSERPWithPerplexity(focusKeyword, language);
+
+      // Adjust word count based on competition
+      if (serpAnalysis.averageWordCount > targetWordCount) {
+        targetWordCount = Math.max(targetWordCount, serpAnalysis.averageWordCount + 200);
+        console.log(`📊 Adjusted target word count to ${targetWordCount} (competition average: ${serpAnalysis.averageWordCount})`);
+      }
+
+      serpAnalysisPrompt = formatSERPAnalysisForPrompt(serpAnalysis);
+    } catch (error) {
+      console.error('SERP analysis failed, continuing without it:', error);
+      // Continue without SERP analysis if it fails
+    }
+  } else {
+    console.log('⚡ Skipping SERP analysis for faster generation');
+  }
+
+  // Step 2: Build prompt with SERP insights
   const prompt = buildArticlePrompt(
     title,
     focusKeyword,
@@ -73,7 +100,8 @@ export async function generateArticle(
     contentType,
     targetWordCount,
     keywords,
-    relatedArticles
+    relatedArticles,
+    serpAnalysisPrompt
   );
 
   try {
@@ -125,7 +153,8 @@ function buildArticlePrompt(
   contentType: string,
   targetWordCount: number,
   keywords: string[],
-  relatedArticles: Array<{ id: string; title: string; url: string }>
+  relatedArticles: Array<{ id: string; title: string; url: string }>,
+  serpAnalysis: string = ''
 ): string {
   const contentTypeDescriptions = {
     pillar: 'een uitgebreide pillar page die het hele onderwerp dekt',
@@ -142,6 +171,7 @@ function buildArticlePrompt(
 **Target Lengte:** ${targetWordCount} woorden
 **Content Type:** ${contentType}
 ${keywords.length > 0 ? `**Related Keywords:** ${keywords.join(', ')}` : ''}
+${serpAnalysis ? serpAnalysis : ''}
 
 **BELANGRIJKE VEREISTEN:**
 
