@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
+import {
+  DataForSEOClient,
+  KeywordOpportunityAnalyzer,
+  KeywordClusterer,
+  type KeywordOpportunity,
+} from '@/lib/keyword-research';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -69,7 +75,12 @@ interface ContentCluster {
 
 export async function POST(request: Request) {
   try {
-    const { website_url, target_count = 500 } = await request.json();
+    const {
+      website_url,
+      target_count = 500,
+      use_advanced_research = true, // Enable modern keyword research by default
+      domain_authority = 20, // User's estimated domain authority
+    } = await request.json();
 
     if (!website_url) {
       return NextResponse.json(
@@ -339,7 +350,92 @@ Output alleen valide JSON zonder markdown formatting.`,
     }
 
     // Step 5: Deduplicate and limit to target count
-    const uniqueArticles = deduplicateArticles(enrichedArticles).slice(0, target_count);
+    let uniqueArticles = deduplicateArticles(enrichedArticles).slice(0, target_count);
+
+    // Step 6: Advanced Keyword Research (if enabled)
+    if (use_advanced_research && process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD) {
+      try {
+        console.log('Starting advanced keyword research...');
+        const client = new DataForSEOClient();
+        const analyzer = new KeywordOpportunityAnalyzer(client);
+
+        // Get focus keywords from top articles (limit to avoid API costs)
+        const focusKeywords = uniqueArticles
+          .slice(0, 50) // Analyze top 50 articles
+          .map(a => a.focusKeyword)
+          .filter(Boolean);
+
+        // Batch analyze opportunities
+        const opportunities = await analyzer.analyzeBatch(
+          focusKeywords,
+          domain_authority,
+          2528, // Netherlands
+          'nl'
+        );
+
+        // Create opportunity map
+        const opportunityMap = new Map<string, KeywordOpportunity>();
+        opportunities.forEach(opp => {
+          opportunityMap.set(opp.focusKeyword.toLowerCase(), opp);
+        });
+
+        // Enrich articles with opportunity data
+        uniqueArticles = uniqueArticles.map(article => {
+          const opp = opportunityMap.get(article.focusKeyword?.toLowerCase() || '');
+
+          if (!opp) return article;
+
+          return {
+            ...article,
+            // Add modern SEO metrics
+            keywordDifficulty: opp.difficulty,
+            rankingPotential: opp.rankingPotential,
+            recommendation: opp.recommendation,
+            recommendationReason: opp.reason,
+
+            // Add SERP intelligence
+            serpData: {
+              avgDomainAuthority: opp.serp.avgDomainAuthority,
+              avgWordCount: opp.serp.avgWordCount,
+              topResultType: opp.serp.topResultType,
+              featuredSnippetAvailable: opp.serp.featuredSnippetAvailable,
+            },
+
+            // Add related content opportunities
+            peopleAlsoAsk: opp.peopleAlsoAsk.slice(0, 5),
+            relatedKeywords: opp.relatedKeywords.slice(0, 10),
+            semanticKeywords: opp.semanticKeywords.slice(0, 10),
+          };
+        });
+
+        // Re-sort by ranking potential and recommendation
+        uniqueArticles.sort((a, b) => {
+          // Prioritize by recommendation
+          const recPriority: Record<string, number> = {
+            'high-priority': 4,
+            'medium-priority': 3,
+            'low-priority': 2,
+            'skip': 1,
+          };
+
+          const aPriority = recPriority[a.recommendation || 'medium-priority'] || 2;
+          const bPriority = recPriority[b.recommendation || 'medium-priority'] || 2;
+
+          if (bPriority !== aPriority) return bPriority - aPriority;
+
+          // Then by ranking potential
+          const aRP = a.rankingPotential || 50;
+          const bRP = b.rankingPotential || 50;
+
+          return bRP - aRP;
+        });
+
+        console.log(`Advanced research completed for ${opportunities.length} keywords`);
+      } catch (advancedResearchError) {
+        console.error('Advanced keyword research failed:', advancedResearchError);
+        // Continue without advanced data
+      }
+    }
 
     // Calculate statistics
     const stats = {
@@ -357,6 +453,28 @@ Output alleen valide JSON zonder markdown formatting.`,
         news: uniqueArticles.filter(a => a.contentType === 'news').length,
       },
       dataForSEOEnriched: enrichedArticles.some(a => a.searchVolume !== null),
+      advancedResearch: use_advanced_research ? {
+        enabled: true,
+        analyzedKeywords: uniqueArticles.filter(a => a.keywordDifficulty !== undefined).length,
+        byRecommendation: {
+          highPriority: uniqueArticles.filter(a => a.recommendation === 'high-priority').length,
+          mediumPriority: uniqueArticles.filter(a => a.recommendation === 'medium-priority').length,
+          lowPriority: uniqueArticles.filter(a => a.recommendation === 'low-priority').length,
+          skip: uniqueArticles.filter(a => a.recommendation === 'skip').length,
+        },
+        avgKeywordDifficulty: Math.round(
+          uniqueArticles
+            .filter(a => a.keywordDifficulty !== undefined)
+            .reduce((sum, a) => sum + (a.keywordDifficulty || 0), 0) /
+          (uniqueArticles.filter(a => a.keywordDifficulty !== undefined).length || 1)
+        ),
+        avgRankingPotential: Math.round(
+          uniqueArticles
+            .filter(a => a.rankingPotential !== undefined)
+            .reduce((sum, a) => sum + (a.rankingPotential || 0), 0) /
+          (uniqueArticles.filter(a => a.rankingPotential !== undefined).length || 1)
+        ),
+      } : { enabled: false },
     };
 
     return NextResponse.json({
