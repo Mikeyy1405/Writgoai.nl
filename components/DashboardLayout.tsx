@@ -32,6 +32,7 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
   const [mediaMenuOpen, setMediaMenuOpen] = useState(false);
   const [publishMenuOpen, setPublishMenuOpen] = useState(false);
   const [agentMenuOpen, setAgentMenuOpen] = useState(false);
+  const [aiModelsMenuOpen, setAiModelsMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -71,6 +72,17 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
   const baseMenuItems: MenuItem[] = [
     { icon: '🏠', label: 'Dashboard', href: '/dashboard' },
     { icon: '📝', label: 'Projecten', href: '/dashboard/projects' },
+    {
+      icon: '⚡',
+      label: 'AI Models',
+      href: '/dashboard/ai-models',
+      subItems: [
+        { icon: '🎯', label: 'Model Selector', href: '/dashboard/ai-models' },
+        { icon: '∞', label: 'Unlimited Modellen', href: '/dashboard/ai-models/unlimited' },
+        { icon: '📊', label: 'Model Vergelijking', href: '/dashboard/ai-models/compare' },
+        { icon: '💰', label: 'Kosten & Credits', href: '/dashboard/ai-models/pricing' },
+      ],
+    },
     {
       icon: '✍️',
       label: 'Content',
@@ -144,6 +156,10 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
   useEffect(() => {
     if (pathname?.startsWith('/dashboard/admin')) {
       setAdminMenuOpen(true);
+    }
+    // AI Models menu
+    if (pathname?.startsWith('/dashboard/ai-models')) {
+      setAiModelsMenuOpen(true);
     }
     // Content menu
     if (pathname?.includes('/content-plan') ||
@@ -233,7 +249,11 @@ export default function DashboardLayout({ children, user, isAdmin = false }: Das
                 isSectionActive = item.subItems!.some(sub => pathname === sub.href);
 
                 // Determine which menu this is and set appropriate state
-                if (item.label === 'Content') {
+                if (item.label === 'AI Models') {
+                  isMenuOpen = aiModelsMenuOpen;
+                  toggleMenu = () => setAiModelsMenuOpen(!aiModelsMenuOpen);
+                  isSectionActive = pathname?.startsWith('/dashboard/ai-models') || false;
+                } else if (item.label === 'Content') {
                   isMenuOpen = contentMenuOpen;
                   toggleMenu = () => setContentMenuOpen(!contentMenuOpen);
                 } else if (item.label === 'Media') {
