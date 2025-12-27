@@ -224,7 +224,7 @@ Instructies:
 Schrijf alleen de post tekst, geen extra uitleg.`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'anthropic/claude-sonnet-4.5',
       max_tokens: 1024,
       messages: [
         {

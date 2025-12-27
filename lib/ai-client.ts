@@ -24,12 +24,12 @@ export const aimlClient = openaiClient;
 export const anthropicClient = openaiClient;
 
 // Best models for each task
-// NOTE: Using GPT-4o models via AIML API to avoid Anthropic credit requirements
+// NOTE: Using Claude models via AIML API (uses AIML credits, not Anthropic credits)
 export const BEST_MODELS = {
-  CONTENT: 'gpt-4o',                           // Best content writing (OpenAI via AIML)
-  TECHNICAL: 'gpt-4o',                         // Best coding (OpenAI via AIML)
-  QUICK: 'gpt-4o-mini',                        // Fast & reliable (OpenAI via AIML)
-  BUDGET: 'gpt-4o-mini',                       // Budget-friendly (OpenAI via AIML)
+  CONTENT: 'anthropic/claude-sonnet-4.5',      // Best content writing (Claude via AIML)
+  TECHNICAL: 'anthropic/claude-sonnet-4.5',    // Best coding (Claude via AIML)
+  QUICK: 'anthropic/claude-sonnet-4.5',        // Fast & reliable (Claude via AIML)
+  BUDGET: 'anthropic/claude-sonnet-4.5',       // Same model (Claude via AIML)
   IMAGE: 'flux-pro/v1.1',                      // Best quality images
   PERPLEXITY: 'perplexity/sonar-pro',          // For research/discovery with web access
 };

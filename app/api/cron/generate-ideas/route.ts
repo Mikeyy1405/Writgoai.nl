@@ -173,7 +173,7 @@ Antwoord ALLEEN met een JSON array, geen extra tekst:
 ]`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'anthropic/claude-sonnet-4.5',
       max_tokens: 2048,
       messages: [
         {
