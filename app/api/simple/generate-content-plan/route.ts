@@ -143,44 +143,62 @@ Genereer een COMPLETE topical authority cluster voor: "${pillarTopic}"
 Niche: ${nicheData.niche}
 Website: ${website_url}
 
-Maak een uitgebreide lijst van ${articlesPerPillar} artikel ideeën die VOLLEDIGE topical authority opbouwen.
+Maak een uitgebreide lijst van ${articlesPerPillar} SPECIFIEKE en WAARDEVOLLE artikel ideeën.
+
+❌ NIET GENERIEK zoals:
+- "Wat is ${pillarTopic}?"
+- "Ervaringen met ${pillarTopic}"
+- "Test ${pillarTopic}"
+- "Review ${pillarTopic}"
+
+✅ WEL SPECIFIEK zoals:
+- "Hoe kies je de beste ${pillarTopic} voor beginners in 2025?"
+- "5 Veelgemaakte fouten bij ${pillarTopic} en hoe je ze vermijdt"
+- "${pillarTopic} A vs B: Welke past bij jouw situatie?"
+- "Stap-voor-stap: ${pillarTopic} implementeren in 30 dagen"
 
 CLUSTER STRUCTUUR:
-1. 1 Pillar Page (uitgebreide 5000+ woorden gids)
-2. ${Math.floor(articlesPerPillar * 0.3)} How-to Guides (praktische handleidingen)
-3. ${Math.floor(articlesPerPillar * 0.2)} Vergelijkingen & Reviews
-4. ${Math.floor(articlesPerPillar * 0.2)} Lijstartikelen (Top 10, Best X)
-5. ${Math.floor(articlesPerPillar * 0.15)} FAQ & Beginner content
-6. ${Math.floor(articlesPerPillar * 0.1)} Case Studies & Voorbeelden
-7. ${Math.floor(articlesPerPillar * 0.05)} Nieuws & Trends ${currentYear}-${nextYear}
+1. 1 Pillar Page - Compleet overzicht met alle aspecten
+2. ${Math.floor(articlesPerPillar * 0.3)} How-to Guides - Praktische stap-voor-stap handleidingen
+3. ${Math.floor(articlesPerPillar * 0.2)} Vergelijkingen - Specifieke A vs B vergelijkingen
+4. ${Math.floor(articlesPerPillar * 0.2)} Lijstartikelen - Concrete tips, tools, voorbeelden
+5. ${Math.floor(articlesPerPillar * 0.15)} Probleemoplossing - Veelvoorkomende problemen en oplossingen
+6. ${Math.floor(articlesPerPillar * 0.1)} Case Studies - Concrete voorbeelden en succesverhalen
+7. ${Math.floor(articlesPerPillar * 0.05)} Trends & Updates - Actuele ontwikkelingen ${currentYear}-${nextYear}
 
-KEYWORD VARIATIES (genereer voor elk artikel):
-- Exacte match keywords
-- Long-tail variaties
-- Vraag-gebaseerde keywords (hoe, wat, waarom, wanneer)
-- Vergelijkende keywords (vs, beste, top, review)
-- Lokale variaties (Nederland, België)
-- Intent variaties (kopen, leren, vergelijken)
+EISEN PER ARTIKEL:
+1. Specifieke doelgroep (beginners/gevorderden/professionals/bedrijven)
+2. Duidelijke waardepropositie (wat leert de lezer?)
+3. Concreet en actionable (geen vage titels)
+4. Unieke hoek of perspectief
+5. Zoekbaar en relevant voor ${currentYear}
 
-BELANGRIJK:
-- Focus op ${currentYear}-${nextYear} relevantie
-- Elk artikel moet uniek zijn (geen duplicaten)
-- Varieer in zoekintent (informational, commercial, transactional)
-- Denk aan alle fases van de customer journey
-- Include long-tail keywords met lage concurrentie
+VOORBEELDEN VAN GOEDE TITELS:
+- "7 Manieren om [specifiek probleem] op te lossen met ${pillarTopic}"
+- "Complete Gids: ${pillarTopic} voor [doelgroep] - Van Start tot Expert"
+- "${pillarTopic} Kosten in Nederland: Wat betaal je echt in 2025?"
+- "[Tool/Methode A] vs [Tool/Methode B]: Welke is beter voor ${pillarTopic}?"
+- "Fouten die iedereen maakt met ${pillarTopic} (en hoe je ze voorkomt)"
 
-Output als JSON (ALLEEN de array, geen markdown):
+VARIEER IN:
+- Doelgroep (beginners, gevorderden, professionals, specifieke sectoren)
+- Probleem/oplossing focus
+- Vergelijkingen (A vs B, voor vs nadelen, oude vs nieuwe methode)
+- Tijdframe (2025, toekomst, trends)
+- Gebruik specifieke getallen (5 tips, 10 voorbeelden, 3 stappen)
+
+Output als JSON (ALLEEN de object, geen markdown):
 {
-  "pillarTitle": "Uitgebreide titel voor pillar page",
-  "pillarDescription": "Beschrijving van de pillar page",
-  "pillarKeywords": ["keyword1", "keyword2", "keyword3"],
+  "pillarTitle": "Specifieke titel met waarde propositie",
+  "pillarDescription": "Wat de lezer precies leert en waarom het waardevol is",
+  "pillarKeywords": ["hoofdkeyword", "long-tail variant", "vraag-gebaseerd"],
   "supportingContent": [
     {
-      "title": "Artikel titel met keyword",
-      "description": "Korte beschrijving",
-      "keywords": ["keyword1", "keyword2"],
+      "title": "Specifieke, actionable titel met duidelijke waarde",
+      "description": "Concrete beschrijving wat de lezer leert",
+      "keywords": ["specifiek keyword", "long-tail variant"],
       "contentType": "how-to|guide|comparison|list|case-study|faq|news",
-      "searchIntent": "informational|commercial|transactional|navigational"
+      "searchIntent": "informational|commercial|transactional"
     }
   ]
 }`;
@@ -360,7 +378,7 @@ Output alleen valide JSON zonder markdown formatting.`,
   }
 }
 
-// Generate additional long-tail keyword variations
+// Generate additional specific, valuable content ideas
 async function generateLongTailVariations(
   niche: string,
   pillarTopics: string[],
@@ -370,181 +388,238 @@ async function generateLongTailVariations(
 ): Promise<any[]> {
   const variations: any[] = [];
 
-  // Organized modifier groups with specific content types
-  const modifierGroups = {
-    questions: {
-      modifiers: ['hoe werkt', 'wat is', 'waarom is', 'wanneer gebruik je', 'welke zijn de beste'],
-      contentType: 'faq',
-      intent: 'informational',
-    },
-    howTo: {
-      modifiers: ['hoe gebruik je', 'handleiding voor', 'stap voor stap', 'uitleg over', 'werken met'],
-      contentType: 'how-to',
-      intent: 'informational',
-    },
-    comparisons: {
-      modifiers: ['vergelijken', 'verschillen tussen', 'alternatieven voor', 'versus'],
-      contentType: 'comparison',
-      intent: 'commercial',
-    },
-    lists: {
-      modifiers: ['top 10', 'beste', '5 tips voor', 'voorbeelden van', 'soorten'],
+  // Specific content templates that create valuable, actionable articles
+  const contentTemplates = [
+    // Problem-solving templates
+    {
+      template: (topic: string) => `${getNumber()} Veelgemaakte fouten bij ${topic} (en hoe je ze vermijdt)`,
       contentType: 'list',
       intent: 'informational',
+      keywords: (topic: string) => [`${topic} fouten`, `${topic} problemen`, `${topic} vermijden`],
     },
-    buying: {
-      modifiers: ['kopen', 'prijs van', 'waar te koop', 'goedkope', 'aanbiedingen'],
-      contentType: 'guide',
-      intent: 'commercial',
+    {
+      template: (topic: string) => `Hoe los je ${getCommonProblem()} op met ${topic}?`,
+      contentType: 'how-to',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} oplossing`, `${topic} probleem`, `hoe ${topic}`],
     },
-    reviews: {
-      modifiers: ['ervaringen met', 'test van', 'beoordeling van', 'voor- en nadelen'],
+
+    // Comparison templates
+    {
+      template: (topic: string) => `${topic} voor beginners vs gevorderden: Wat zijn de verschillen?`,
       contentType: 'comparison',
       intent: 'commercial',
+      keywords: (topic: string) => [`${topic} vergelijking`, `${topic} beginners`, `${topic} gevorderden`],
     },
-    audience: {
-      modifiers: ['voor beginners', 'voor professionals', 'voor gevorderden', 'voor mkb'],
-      contentType: 'guide',
-      intent: 'informational',
+    {
+      template: (topic: string) => `Gratis vs Betaald ${topic}: Waar moet je op letten?`,
+      contentType: 'comparison',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} gratis`, `${topic} betaald`, `${topic} kosten`],
     },
-    location: {
-      modifiers: ['in nederland', 'in belgie', 'nederlandse', 'belgische'],
-      contentType: 'guide',
-      intent: 'informational',
-    },
-  };
 
+    // How-to templates
+    {
+      template: (topic: string) => `Stap-voor-stap: ${topic} implementeren in ${getTimeframe()} dagen`,
+      contentType: 'how-to',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} implementeren`, `${topic} stappen`, `${topic} handleiding`],
+    },
+    {
+      template: (topic: string) => `Complete ${topic} checklist voor ${getAudience()} in ${nextYear}`,
+      contentType: 'guide',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} checklist`, `${topic} ${nextYear}`, `${topic} gids`],
+    },
+
+    // List templates
+    {
+      template: (topic: string) => `Top ${getNumber()} ${topic} tools die je moet kennen in ${nextYear}`,
+      contentType: 'list',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} tools`, `beste ${topic}`, `${topic} ${nextYear}`],
+    },
+    {
+      template: (topic: string) => `${getNumber()} Manieren om ${getTopic(topic)} te verbeteren met ${topic}`,
+      contentType: 'list',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} tips`, `${topic} verbeteren`, `${topic} technieken`],
+    },
+
+    // Buying guides
+    {
+      template: (topic: string) => `${topic} kosten in Nederland: Complete prijsoverzicht ${nextYear}`,
+      contentType: 'guide',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} kosten`, `${topic} prijs`, `${topic} nederland`],
+    },
+    {
+      template: (topic: string) => `Waar koop je de beste ${topic} voor ${getAudience()}?`,
+      contentType: 'guide',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} kopen`, `beste ${topic}`, `${topic} aanbieding`],
+    },
+
+    // Audience-specific templates
+    {
+      template: (topic: string) => `${topic} voor ${getAudience()}: Complete gids van start tot expert`,
+      contentType: 'guide',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} ${getAudience()}`, `${topic} gids`, `${topic} leren`],
+    },
+    {
+      template: (topic: string) => `Welke ${topic} past het beste bij ${getAudience()}?`,
+      contentType: 'comparison',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} kiezen`, `${topic} advies`, `${topic} ${getAudience()}`],
+    },
+
+    // Trend/update templates
+    {
+      template: (topic: string) => `${topic} trends in ${nextYear}: Wat moet je weten?`,
+      contentType: 'news',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} trends`, `${topic} ${nextYear}`, `${topic} toekomst`],
+    },
+    {
+      template: (topic: string) => `Nieuwe ontwikkelingen in ${topic}: ${nextYear} update`,
+      contentType: 'news',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} nieuw`, `${topic} ${nextYear}`, `${topic} ontwikkelingen`],
+    },
+
+    // Case study templates
+    {
+      template: (topic: string) => `Case study: Hoe ${getCompany()} ${getResult()} behaalde met ${topic}`,
+      contentType: 'case-study',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} case study`, `${topic} succesverhaal`, `${topic} voorbeeld`],
+    },
+
+    // FAQ templates
+    {
+      template: (topic: string) => `${getNumber()} Meestgestelde vragen over ${topic} beantwoord`,
+      contentType: 'faq',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} vragen`, `${topic} antwoorden`, `${topic} faq`],
+    },
+  ];
+
+  // Generate variations using templates
   for (const topic of pillarTopics) {
-    // Skip if we already have enough variations
     if (variations.length >= count) break;
 
-    // Generate variations for each modifier group
-    for (const [groupName, group] of Object.entries(modifierGroups)) {
+    // Use each template multiple times with different random values
+    for (const templateObj of contentTemplates) {
       if (variations.length >= count) break;
 
-      for (const modifier of group.modifiers) {
-        if (variations.length >= count) break;
+      const title = templateObj.template(topic);
+      const description = generateValueDescription(title, topic, templateObj.contentType);
+      const keywords = templateObj.keywords(topic);
 
-        // Clean the topic to avoid duplicates
-        const cleanTopic = topic.toLowerCase();
+      // Validate title is meaningful
+      if (!isValidTitle(title)) continue;
 
-        // Skip if modifier words already exist in topic (avoid duplicates)
-        const modifierWords = modifier.toLowerCase().split(' ');
-        const topicWords = cleanTopic.split(' ');
-        const hasDuplicate = modifierWords.some(word =>
-          word.length > 3 && topicWords.includes(word)
-        );
-
-        if (hasDuplicate) continue;
-
-        // Generate contextual title based on modifier type
-        const title = generateContextualTitle(topic, modifier, groupName, nextYear);
-
-        // Validate title is meaningful
-        if (!isValidTitle(title)) continue;
-
-        variations.push({
-          title,
-          category: topic,
-          description: generateContextualDescription(title, topic, modifier, groupName),
-          keywords: generateRelevantKeywords(topic, modifier, groupName),
-          contentType: group.contentType,
-          searchIntent: group.intent,
-          cluster: topic,
-          priority: groupName === 'howTo' || groupName === 'reviews' ? 'medium' : 'low',
-          generated: 'long-tail-expansion',
-        });
-      }
+      variations.push({
+        title,
+        category: topic,
+        description,
+        keywords,
+        contentType: templateObj.contentType,
+        searchIntent: templateObj.intent,
+        cluster: topic,
+        priority: templateObj.contentType === 'how-to' || templateObj.contentType === 'case-study' ? 'medium' : 'low',
+        generated: 'specific-content-expansion',
+      });
     }
   }
 
   return variations.slice(0, count);
 }
 
-function generateContextualTitle(topic: string, modifier: string, groupName: string, nextYear: number): string {
-  const templates: Record<string, string[]> = {
-    questions: [
-      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}?`,
-      `${topic}: ${modifier}`,
-    ],
-    howTo: [
-      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`,
-      `${topic}: ${modifier}`,
-    ],
-    comparisons: [
-      `${topic} ${modifier}`,
-      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)}: ${topic}`,
-    ],
-    lists: [
-      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`,
-      `${topic}: ${modifier}`,
-    ],
-    buying: [
-      `${topic} ${modifier}`,
-      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)}: ${topic}`,
-    ],
-    reviews: [
-      `${topic}: ${modifier}`,
-      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`,
-    ],
-    audience: [
-      `${topic} ${modifier}`,
-      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)}: ${topic}`,
-    ],
-    location: [
-      `${topic} ${modifier}`,
-      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`,
-    ],
-  };
-
-  const templateList = templates[groupName] || templates.questions;
-  const template = templateList[Math.floor(Math.random() * templateList.length)];
-
-  return template;
+// Helper functions for generating specific content
+function getNumber(): number {
+  const numbers = [3, 5, 7, 10, 12, 15];
+  return numbers[Math.floor(Math.random() * numbers.length)];
 }
 
-function generateContextualDescription(title: string, topic: string, modifier: string, groupName: string): string {
+function getTimeframe(): number {
+  const timeframes = [7, 14, 30, 60, 90];
+  return timeframes[Math.floor(Math.random() * timeframes.length)];
+}
+
+function getAudience(): string {
+  const audiences = [
+    'beginners',
+    'gevorderden',
+    'professionals',
+    'kleine bedrijven',
+    'mkb',
+    'startups',
+    'ondernemers',
+    'studenten',
+  ];
+  return audiences[Math.floor(Math.random() * audiences.length)];
+}
+
+function getCommonProblem(): string {
+  const problems = [
+    'weinig tijd',
+    'een beperkt budget',
+    'geen ervaring',
+    'complexe situaties',
+    'veel concurrentie',
+    'technische uitdagingen',
+  ];
+  return problems[Math.floor(Math.random() * problems.length)];
+}
+
+function getTopic(baseTopic: string): string {
+  const topics = [
+    'resultaten',
+    'efficiency',
+    'productiviteit',
+    'kwaliteit',
+    'conversies',
+    'bereik',
+  ];
+  return topics[Math.floor(Math.random() * topics.length)];
+}
+
+function getCompany(): string {
+  const companies = [
+    'een Nederlands bedrijf',
+    'startup X',
+    'dit mkb-bedrijf',
+    'deze organisatie',
+    'ondernemer Y',
+  ];
+  return companies[Math.floor(Math.random() * companies.length)];
+}
+
+function getResult(): string {
+  const results = [
+    '200% groei',
+    'succesvol',
+    'snelle resultaten',
+    'aanzienlijke verbetering',
+    'meetbaar succes',
+  ];
+  return results[Math.floor(Math.random() * results.length)];
+}
+
+function generateValueDescription(title: string, topic: string, contentType: string): string {
   const descriptions: Record<string, string> = {
-    questions: `Ontdek het antwoord op veel gestelde vragen over ${topic.toLowerCase()}. Compleet overzicht met praktische informatie.`,
-    howTo: `Praktische handleiding voor ${topic.toLowerCase()}. Stap voor stap uitleg met voorbeelden en tips.`,
-    comparisons: `Vergelijk verschillende opties en ontdek de verschillen. Objectief overzicht van ${topic.toLowerCase()}.`,
-    lists: `Overzichtelijke lijst met de beste opties, tips en voorbeelden voor ${topic.toLowerCase()}.`,
-    buying: `Koopgids voor ${topic.toLowerCase()}. Prijzen, aanbieders en waar je het beste kunt kopen.`,
-    reviews: `Onafhankelijke reviews en ervaringen met ${topic.toLowerCase()}. Voor- en nadelen op een rij.`,
-    audience: `Toegespitste informatie over ${topic.toLowerCase()} voor jouw doelgroep. Praktische tips en advies.`,
-    location: `Alles wat je moet weten over ${topic.toLowerCase()} specifiek voor de Nederlandse markt.`,
+    'how-to': `Leer precies hoe je ${topic.toLowerCase()} succesvol toepast. Praktische stappen met concrete voorbeelden en direct toepasbare tips.`,
+    'guide': `Uitgebreide gids over ${topic.toLowerCase()} met alle informatie die je nodig hebt. Van basics tot geavanceerde strategieën.`,
+    'comparison': `Objectieve vergelijking van verschillende opties voor ${topic.toLowerCase()}. Ontdek welke het beste bij jouw situatie past.`,
+    'list': `Handige lijst met de beste opties, tools en tips voor ${topic.toLowerCase()}. Bespaar tijd met deze gecureerde selectie.`,
+    'case-study': `Concrete voorbeelden en succesverhalen over ${topic.toLowerCase()}. Leer van echte ervaringen en bewezen resultaten.`,
+    'faq': `Antwoorden op alle belangrijke vragen over ${topic.toLowerCase()}. Helder en begrijpelijk uitgelegd.`,
+    'news': `Blijf up-to-date met de laatste ontwikkelingen in ${topic.toLowerCase()}. Wat betekent dit voor jou?`,
   };
 
-  return descriptions[groupName] || `Uitgebreide informatie over ${topic.toLowerCase()}.`;
-}
-
-function generateRelevantKeywords(topic: string, modifier: string, groupName: string): string[] {
-  const keywords: string[] = [];
-  const cleanTopic = topic.toLowerCase();
-  const cleanModifier = modifier.toLowerCase();
-
-  // Primary keyword: combination of topic and modifier
-  keywords.push(`${cleanTopic} ${cleanModifier}`.trim());
-
-  // Secondary: topic alone
-  keywords.push(cleanTopic);
-
-  // Tertiary: related variations based on group
-  const variations: Record<string, string[]> = {
-    questions: [`${cleanTopic} vraag`, `${cleanTopic} antwoord`],
-    howTo: [`${cleanTopic} tutorial`, `${cleanTopic} gids`],
-    comparisons: [`${cleanTopic} vergelijking`, `${cleanTopic} verschillen`],
-    lists: [`beste ${cleanTopic}`, `top ${cleanTopic}`],
-    buying: [`${cleanTopic} kopen`, `${cleanTopic} prijs`],
-    reviews: [`${cleanTopic} review`, `${cleanTopic} ervaringen`],
-    audience: [cleanTopic],
-    location: [`${cleanTopic} nederland`],
-  };
-
-  const groupVariations = variations[groupName] || [];
-  keywords.push(...groupVariations.slice(0, 2));
-
-  return keywords.filter((kw, idx) => keywords.indexOf(kw) === idx).slice(0, 5);
+  return descriptions[contentType] || `Waardevolle informatie over ${topic.toLowerCase()} die je direct kunt toepassen.`;
 }
 
 function isValidTitle(title: string): boolean {
@@ -570,11 +645,6 @@ function isValidTitle(title: string): boolean {
   }
 
   return true;
-}
-
-function generateVariationTitle(topic: string, modifier: string, currentYear: number, nextYear: number): string {
-  // This function is kept for backward compatibility but should not be used
-  return generateContextualTitle(topic, modifier, 'questions', nextYear);
 }
 
 function getSearchIntent(modifier: string): string {
