@@ -3,6 +3,7 @@ import { generateAICompletion, analyzeWithPerplexityJSON } from '@/lib/ai-client
 import { createClient as createServerClient } from '@/lib/supabase-server';
 import { createClient } from '@supabase/supabase-js';
 import { getRelatedKeywords } from '@/lib/dataforseo-client';
+import { checkForbiddenWords } from '@/lib/writing-rules';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -1781,19 +1782,62 @@ Output als JSON:
       return true;
     });
 
+    // Filter out articles with forbidden words
+    const filteredArticles: any[] = [];
+    const forbiddenFiltered: Array<{ title: string; keywords: string[]; reason: string }> = [];
+
+    for (const article of uniqueArticles) {
+      // Check title for forbidden words
+      const titleForbidden = checkForbiddenWords(article.title);
+
+      // Check all keywords for forbidden words
+      let keywordsForbidden: string[] = [];
+      if (article.keywords && Array.isArray(article.keywords)) {
+        for (const keyword of article.keywords) {
+          const found = checkForbiddenWords(keyword);
+          keywordsForbidden = [...keywordsForbidden, ...found];
+        }
+      }
+
+      // If forbidden words found, filter out and log
+      if (titleForbidden.length > 0 || keywordsForbidden.length > 0) {
+        const allForbidden = [...new Set([...titleForbidden, ...keywordsForbidden])];
+        forbiddenFiltered.push({
+          title: article.title,
+          keywords: article.keywords || [],
+          reason: `Verboden woorden gevonden: ${allForbidden.join(', ')}`
+        });
+      } else {
+        filteredArticles.push(article);
+      }
+    }
+
+    // Log filtered articles
+    if (forbiddenFiltered.length > 0) {
+      console.log(`🚫 ${forbiddenFiltered.length} artikelen gefilterd wegens verboden woorden:`);
+      forbiddenFiltered.forEach((filtered, index) => {
+        console.log(`  ${index + 1}. "${filtered.title}" - ${filtered.reason}`);
+      });
+      await updateJob(jobId, {
+        progress: 96,
+        current_step: `🚫 ${forbiddenFiltered.length} artikelen gefilterd (verboden woorden)`
+      });
+    }
+
     // Calculate stats
     const stats = {
-      totalArticles: uniqueArticles.length,
-      pillarPages: uniqueArticles.filter(a => a.contentType === 'pillar').length,
+      totalArticles: filteredArticles.length,
+      pillarPages: filteredArticles.filter(a => a.contentType === 'pillar').length,
       clusters: clusters.length,
       byContentType: {
-        pillar: uniqueArticles.filter(a => a.contentType === 'pillar').length,
-        'how-to': uniqueArticles.filter(a => a.contentType === 'how-to').length,
-        guide: uniqueArticles.filter(a => a.contentType === 'guide').length,
-        comparison: uniqueArticles.filter(a => a.contentType === 'comparison').length,
-        list: uniqueArticles.filter(a => a.contentType === 'list').length,
-        faq: uniqueArticles.filter(a => a.contentType === 'faq').length,
+        pillar: filteredArticles.filter(a => a.contentType === 'pillar').length,
+        'how-to': filteredArticles.filter(a => a.contentType === 'how-to').length,
+        guide: filteredArticles.filter(a => a.contentType === 'guide').length,
+        comparison: filteredArticles.filter(a => a.contentType === 'comparison').length,
+        list: filteredArticles.filter(a => a.contentType === 'list').length,
+        faq: filteredArticles.filter(a => a.contentType === 'faq').length,
       },
+      forbiddenWordsFiltered: forbiddenFiltered.length,
     };
 
     // Complete - save everything to database
@@ -1801,12 +1845,12 @@ Output als JSON:
       status: 'completed',
       progress: 100,
       current_step: '✅ Content plan voltooid!',
-      plan: uniqueArticles,
+      plan: filteredArticles,
       clusters,
       stats,
     });
 
-    console.log(`Job ${jobId} completed with ${uniqueArticles.length} articles`);
+    console.log(`Job ${jobId} completed with ${filteredArticles.length} articles (${forbiddenFiltered.length} filtered)`);
 
   } catch (error: any) {
     console.error('Content plan generation error:', error);
