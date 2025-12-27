@@ -25,12 +25,12 @@ export const anthropicClient = openaiClient;
 
 // Best models for each task
 // NOTE: Using Claude Sonnet 4.5 via AIML API
-// AIML API model format (without vendor prefix as per their docs)
+// Using full model ID with date as per AIML API requirements
 export const BEST_MODELS = {
-  CONTENT: 'claude-sonnet-4-5',                // Best content writing (Claude 4.5 via AIML)
-  TECHNICAL: 'claude-sonnet-4-5',              // Best coding (Claude 4.5 via AIML)
-  QUICK: 'claude-sonnet-4-5',                  // Fast & reliable (Claude 4.5 via AIML)
-  BUDGET: 'claude-sonnet-4-5',                 // Same model (Claude 4.5 via AIML)
+  CONTENT: 'claude-sonnet-4-5-20250929',       // Best content writing (Claude 4.5 Sonnet via AIML)
+  TECHNICAL: 'claude-sonnet-4-5-20250929',     // Best coding (Claude 4.5 Sonnet via AIML)
+  QUICK: 'claude-sonnet-4-5-20250929',         // Fast & reliable (Claude 4.5 Sonnet via AIML)
+  BUDGET: 'claude-sonnet-4-5-20250929',        // Same model (Claude 4.5 Sonnet via AIML)
   IMAGE: 'flux-pro/v1.1',                      // Best quality images
   PERPLEXITY: 'perplexity/sonar-pro',          // For research/discovery with web access
 };
