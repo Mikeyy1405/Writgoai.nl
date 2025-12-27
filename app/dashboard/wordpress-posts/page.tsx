@@ -292,7 +292,11 @@ export default function WordPressPostsManagement() {
         throw new Error(syncData.error || 'Fout bij importeren van post');
       }
 
-      const articleId = syncData.article_id;
+      const articleId = syncData.article?.id;
+
+      if (!articleId) {
+        throw new Error('Geen artikel ID ontvangen van server');
+      }
 
       setActionMessage('Post succesvol geïmporteerd! Doorsturen naar editor...');
       setTimeout(() => {
