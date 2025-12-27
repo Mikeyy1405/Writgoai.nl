@@ -46,9 +46,16 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    // If we found a plan, return it
+    // If we found a plan, validate it has articles and return it
     if (plan) {
-      return NextResponse.json({ plan });
+      // Validate that the plan actually contains articles
+      if (!plan.plan || !Array.isArray(plan.plan) || plan.plan.length === 0) {
+        console.warn(`Content plan for project ${projectId} exists but has empty plan array. Marking as invalid.`);
+        // Don't return this invalid plan - treat it as if no plan exists
+        // This will trigger the job lookup below
+      } else {
+        return NextResponse.json({ plan });
+      }
     }
 
     // If no plan in content_plans, check for completed jobs
