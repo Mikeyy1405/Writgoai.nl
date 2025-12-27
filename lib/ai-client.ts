@@ -24,19 +24,14 @@ export const aimlClient = openaiClient;
 export const anthropicClient = openaiClient;
 
 // Best models for each task
-// NOTE: Using GPT-4o models via AIML API (included in pay-as-you-go plan)
-// Claude models require higher tier access or separate credits on AIML API
+// NOTE: Using Claude Sonnet 4.5 via AIML API
 export const BEST_MODELS = {
-  CONTENT: 'gpt-4o',                           // Best content writing (OpenAI via AIML)
-  TECHNICAL: 'gpt-4o',                         // Best coding (OpenAI via AIML)
-  QUICK: 'gpt-4o-mini',                        // Fast & cost-effective (OpenAI via AIML)
-  BUDGET: 'gpt-4o-mini',                       // Budget-friendly (OpenAI via AIML)
+  CONTENT: 'anthropic/claude-sonnet-4.5',      // Best content writing (Claude via AIML)
+  TECHNICAL: 'anthropic/claude-sonnet-4.5',    // Best coding (Claude via AIML)
+  QUICK: 'anthropic/claude-sonnet-4.5',        // Fast & reliable (Claude via AIML)
+  BUDGET: 'anthropic/claude-sonnet-4.5',       // Same model (Claude via AIML)
   IMAGE: 'flux-pro/v1.1',                      // Best quality images
   PERPLEXITY: 'perplexity/sonar-pro',          // For research/discovery with web access
-
-  // Alternative models (uncomment if you have access):
-  // CONTENT: 'anthropic/claude-sonnet-4.5',  // Requires higher tier AIML access
-  // CONTENT: 'anthropic/claude-3.5-sonnet',  // Requires higher tier AIML access
 };
 
 interface GenerateOptions {
