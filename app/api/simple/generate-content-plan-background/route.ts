@@ -1174,8 +1174,8 @@ Output als JSON (ALLEEN JSON, geen tekst ervoor of erna):
 
     const targetCount = Math.min(Math.max(nicheData.totalArticlesNeeded || 500, 100), 2000);
 
-    await updateJob(jobId, { 
-      progress: 25, 
+    await updateJob(jobId, {
+      progress: 25,
       current_step: `✅ Niche: ${nicheData.niche}`,
       niche: nicheData.niche,
       target_count: targetCount,
@@ -1183,7 +1183,81 @@ Output als JSON (ALLEEN JSON, geen tekst ervoor of erna):
       reasoning: nicheData.reasoning,
     });
 
-    // Step 3: Generate pillar topics if needed
+    // Step 3: Competitor Analysis
+    await updateJob(jobId, { progress: 27, current_step: '🔍 Top concurrenten analyseren...' });
+
+    let competitorInsights = {
+      competitors: [] as Array<{name: string; url: string; strengths: string[]}>,
+      contentGaps: [] as string[],
+      opportunities: [] as string[],
+      topTopics: [] as string[],
+    };
+
+    try {
+      const competitorPrompt = `Analyseer de top 5 concurrenten van ${websiteUrl} in de niche "${nicheData.niche}".
+
+WEBSITE TYPE: ${websiteTypeName}
+${websiteContent ? `\nContext van de website:\n${websiteContent.substring(0, 1000)}...\n` : ''}
+
+Zoek naar de grootste concurrenten door:
+1. Te zoeken naar top rankende websites voor belangrijke keywords in deze niche
+2. Websites te vinden die vergelijkbare ${websiteType === 'local_seo' ? 'diensten' : websiteType === 'affiliate' ? 'productreviews' : websiteType === 'webshop' ? 'producten' : 'content'} aanbieden
+3. Hun content strategie te analyseren
+
+Voor elke concurrent:
+- Identificeer hun sterkste content onderwerpen
+- Wat voor type content maken zij veel (reviews, gidsen, tutorials, etc.)
+- Welke keywords/topics domineren zij
+
+Identificeer ook:
+- Content gaps: Onderwerpen die concurrenten NIET goed behandelen
+- Opportunities: Waar kan ${websiteUrl} beter/anders presteren
+- Top topics: Welke hoofdonderwerpen zijn essentieel in deze niche
+
+${languageInstructions[language]}
+
+Output als JSON:
+{
+  "competitors": [
+    {"name": "Concurrent naam", "url": "https://...", "strengths": ["sterke punt 1", "sterke punt 2"]}
+  ],
+  "contentGaps": ["gap 1", "gap 2"],
+  "opportunities": ["opportunity 1", "opportunity 2"],
+  "topTopics": ["essentieel topic 1", "essentieel topic 2"]
+}`;
+
+      console.log('Analyzing top competitors with Perplexity...');
+      const competitorData = await analyzeWithPerplexityJSON<typeof competitorInsights>(
+        competitorPrompt,
+        45000 // 45s timeout
+      );
+
+      if (competitorData) {
+        competitorInsights = {
+          competitors: competitorData.competitors || [],
+          contentGaps: competitorData.contentGaps || [],
+          opportunities: competitorData.opportunities || [],
+          topTopics: competitorData.topTopics || [],
+        };
+
+        console.log(`✓ Found ${competitorInsights.competitors.length} competitors`);
+        console.log(`✓ Identified ${competitorInsights.contentGaps.length} content gaps`);
+        console.log(`✓ Found ${competitorInsights.opportunities.length} opportunities`);
+      }
+    } catch (e: any) {
+      console.warn('Competitor analysis failed:', e.message);
+      console.log('Continuing without competitor insights');
+    }
+
+    await updateJob(jobId, {
+      progress: 29,
+      current_step: `✅ ${competitorInsights.competitors.length} concurrenten geanalyseerd`,
+      competitors: competitorInsights.competitors,
+      content_gaps: competitorInsights.contentGaps,
+      opportunities: competitorInsights.opportunities,
+    });
+
+    // Step 4: Generate pillar topics if needed
     if (!nicheData.pillarTopics || nicheData.pillarTopics.length < 5) {
       await updateJob(jobId, { progress: 30, current_step: '📊 Pillar topics genereren...' });
 
@@ -1278,10 +1352,43 @@ MAAK BREDE TOPICS die relevant zijn voor de niche.
 Mix van informatief, praktisch en vergelijkend.`
         };
 
+        const competitorContext = competitorInsights.competitors.length > 0 ? `
+
+📊 CONCURRENT ANALYSE (${competitorInsights.competitors.length} concurrenten):
+
+Top concurrenten:
+${competitorInsights.competitors.slice(0, 5).map(c => `- ${c.name}: ${c.strengths.join(', ')}`).join('\n')}
+
+${competitorInsights.topTopics.length > 0 ? `
+✅ ESSENTIËLE TOPICS (gebaseerd op concurrenten):
+${competitorInsights.topTopics.map(t => `- ${t}`).join('\n')}
+
+BELANGRIJKE INSTRUCTIE: Zorg dat deze essentiële topics ALLEMAAL in je pillar topics lijst komen!
+` : ''}
+
+${competitorInsights.contentGaps.length > 0 ? `
+🎯 CONTENT GAPS (kansen om te scoren):
+${competitorInsights.contentGaps.map(g => `- ${g}`).join('\n')}
+
+BELANGRIJKE INSTRUCTIE: Maak pillar topics voor deze gaps - dit zijn gebieden waar concurrenten ZWAK zijn!
+` : ''}
+
+${competitorInsights.opportunities.length > 0 ? `
+💡 OPPORTUNITIES:
+${competitorInsights.opportunities.map(o => `- ${o}`).join('\n')}
+` : ''}
+
+STRATEGIE:
+1. Dek EERST alle essentiële topics af die concurrenten ook behandelen (table stakes)
+2. Focus dan op content gaps waar concurrenten zwak zijn (differentiatie)
+3. Combineer beide voor een compleet contentplan
+` : '';
+
         const topicsPrompt = `Genereer 15-20 pillar topics voor de niche: "${nicheData.niche}"
 
 WEBSITE TYPE: ${websiteTypeName}
 CONTENT FOCUS: ${websiteTypeConfig.focusAreas.join(', ')}
+${competitorContext}
 
 ${typeSpecificInstructions[websiteType]}
 
@@ -1293,6 +1400,8 @@ BELANGRIJKE REGELS:
 3. Gebruik subtopics die SPECIFIEK en ACTIONABLE zijn
 4. VERMIJD generieke "wat is" of "waarom" topics tenzij dat past bij het website type
 5. Denk aan wat bezoekers op dit type website zoeken
+${competitorInsights.topTopics.length > 0 ? `6. INCLUDE alle essentiële topics uit de concurrent analyse
+7. PRIORITIZE content gaps voor differentiatie` : ''}
 
 Output als JSON array (ALLEEN JSON, geen tekst ervoor of erna):
 [
@@ -1368,7 +1477,7 @@ Output als JSON array (ALLEEN JSON, geen tekst ervoor of erna):
 
     await updateJob(jobId, { progress: 35, current_step: `✅ ${nicheData.pillarTopics?.length || 0} pillar topics` });
 
-    // Step 4: Generate content clusters IN PARALLEL (massive speed improvement)
+    // Step 5: Generate content clusters IN PARALLEL (massive speed improvement)
     await updateJob(jobId, { progress: 38, current_step: '📝 Content clusters voorbereiden...' });
 
     const clusters: any[] = [];
@@ -1535,7 +1644,7 @@ Output als JSON:
       return;
     }
 
-    // Step 5: Generate long-tail variations with type-specific modifiers
+    // Step 6: Generate long-tail variations with type-specific modifiers
     await updateJob(jobId, { progress: 80, current_step: '🔄 Long-tail variaties genereren...' });
 
     if (allArticles.length < targetCount) {
@@ -1573,7 +1682,7 @@ Output als JSON:
       return;
     }
 
-    // Step 6: DataForSEO enrichment (85-95%)
+    // Step 7: DataForSEO enrichment (85-95%)
     await updateJob(jobId, { progress: 85, current_step: '📊 SEO data ophalen (DataForSEO)...' });
 
     const hasDataForSEO = process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD;
