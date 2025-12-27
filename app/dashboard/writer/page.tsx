@@ -141,7 +141,7 @@ export default function WriterPage() {
             competition: data.article.competition,
             cpc: data.article.cpc,
           });
-          setLanguage(data.language || 'nl');
+          setLanguage(data.article.language || 'nl');
         }
       } catch (e) {
         console.error('Failed to load article from database:', e);
