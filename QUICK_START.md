@@ -1,302 +1,247 @@
-# 🚀 Quick Start Guide - What You Need To Do
+# 🚀 Quick Start Guide - WritGo.nl
 
-## ⏱️ Time Required: 5-10 minutes
-
----
-
-## ✅ Step 1: Review This PR (2 minutes)
-
-Look at these key files:
-1. `supabase_critical_fixes_migration.sql` - The database fixes
-2. `app/api/simple/generate-content-plan-background/route.ts` - API fixes
-3. `app/dashboard/content-plan/page.tsx` - Delete button added
-
-**Everything is ready to deploy!**
+**Status:** ✅ Build errors gefixed | ✅ €20 AIML credits toegevoegd | ⏳ Configuratie nodig
 
 ---
 
-## ✅ Step 2: Run Database Migration (3 minutes)
+## ✅ WAT WERKT AL
 
-### Option A: Via Supabase Dashboard (Recommended)
+- ✅ Dependencies geïnstalleerd (387 packages)
+- ✅ Build succesvol (166 routes)
+- ✅ AIML API account heeft €20 credits
+- ✅ Code gebruikt AIML API voor Claude, Perplexity & Flux
 
-1. Go to https://supabase.com/dashboard
-2. Select your project: `utursgxvfhhfheeoewfn`
-3. Click **SQL Editor** in left sidebar
-4. Click **New query** button
-5. Open the file `supabase_critical_fixes_migration.sql` from this PR
-6. Copy ALL contents (175 lines)
-7. Paste into SQL Editor
-8. Click **Run** button
-9. Wait for "Success" message (should take ~2-5 seconds)
+---
 
-### Option B: Via Supabase CLI
+## 🎯 STAP 1: VERZAMEL JE CREDENTIALS
+
+### A. Supabase Credentials
+
+1. Ga naar https://supabase.com/dashboard
+2. Selecteer je project: **utursgxvfhhfheeoewfn**
+3. Klik op **Settings** (tandwiel links) → **API**
+4. Kopieer deze 2 keys:
+   - **anon / public key** (Project API keys sectie)
+   - **service_role key** (Project API keys sectie, klik "Reveal")
+
+### B. AIML API Key
+
+1. Ga naar https://aimlapi.com/app/keys (of https://aimlapi.com/dashboard)
+2. Login met je account (waar je net €20 hebt toegevoegd)
+3. Kopieer je **API Key**
+
+---
+
+## 🎯 STAP 2: CREËER .env.local
+
+### Optie A: Via de terminal (snelst)
 
 ```bash
-# If you have Supabase CLI installed:
-supabase db execute < supabase_critical_fixes_migration.sql
+# Kopieer de template
+cp .env.local.TEMPLATE_TO_FILL .env.local
+
+# Open in je editor
+nano .env.local
+# of
+code .env.local
+# of
+vim .env.local
 ```
 
-### ✅ Verify Migration Succeeded
+### Optie B: Handmatig
 
-Run these queries in SQL Editor to verify:
-
-```sql
--- Should return 5 tables
-SELECT table_name 
-FROM information_schema.tables 
-WHERE table_schema = 'public' 
-AND table_name IN ('articles', 'projects', 'content_plan_jobs', 'content_plans', 'article_jobs')
-ORDER BY table_name;
-
--- Should return word_count and project_id
-SELECT column_name 
-FROM information_schema.columns 
-WHERE table_name = 'articles' 
-AND column_name IN ('word_count', 'project_id');
-
--- Should show 'cancelled' in the constraint
-SELECT constraint_name, check_clause
-FROM information_schema.check_constraints
-WHERE constraint_name LIKE '%content_plan_jobs_status%';
-```
-
-**Expected results:**
-- First query: 5 rows (all tables exist)
-- Second query: 2 rows (both columns exist)
-- Third query: Should include 'cancelled' in status list
+1. Creëer een nieuw bestand `.env.local` in de root folder
+2. Kopieer de inhoud van `.env.local.TEMPLATE_TO_FILL`
+3. Vul de waarden in (zie hieronder)
 
 ---
 
-## ✅ Step 3: Merge This PR (1 minute)
+## 🎯 STAP 3: VULT DE VERPLICHTE WAARDEN IN
 
-After SQL migration succeeds:
+Open `.env.local` en vul **minimaal** deze in:
 
-1. Click **Merge pull request** button
-2. Confirm merge
-3. Delete branch (optional)
-
----
-
-## ✅ Step 4: Deploy to Production (2 minutes)
-
-Depends on your deployment setup:
-
-### If using Vercel:
-- Automatically deploys on merge ✅
-- Check deployment status in Vercel dashboard
-
-### If using other hosting:
 ```bash
-git pull origin main
+# Supabase (vul je eigen keys in!)
+NEXT_PUBLIC_SUPABASE_URL=https://utursgxvfhhfheeoewfn.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhb...  # ← Plak hier je anon key
+SUPABASE_SERVICE_ROLE_KEY=eyJhb...      # ← Plak hier je service role key
+
+# AIML API (vul je eigen key in!)
+AIML_API_KEY=                            # ← Plak hier je AIML API key
+
+# App URLs (deze zijn goed voor lokaal)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+**Let op:**
+- De Supabase keys beginnen met `eyJ...`
+- Geen spaties voor of na het `=` teken
+- Geen aanhalingstekens nodig
+
+---
+
+## 🎯 STAP 4: TEST DE CONFIGURATIE
+
+### A. Test AIML Credits
+
+```bash
+npx tsx scripts/check-aiml-credits.ts
+```
+
+**Verwachte output:**
+```
+✅ AIML_API_KEY is set
+✅ API call successful!
+   Your AIML API is working correctly!
+```
+
+Als je een error ziet, check:
+- Is je AIML_API_KEY correct ingevuld?
+- Heeft je account nog credits? (ga naar https://aimlapi.com/app/billing)
+
+---
+
+### B. Test de Build
+
+```bash
 npm run build
-npm start  # or your deployment command
+```
+
+**Verwachte output:**
+```
+✓ Compiled successfully
+✓ Generating static pages (42/42)
 ```
 
 ---
 
-## ✅ Step 5: Test Everything (2 minutes)
+### C. Start Development Server
 
-### Test 1: Visit New Pages
-- ✅ Go to `/pricing` - Should see "Prijzen" page
-- ✅ Go to `/features` - Should see "Features" page
-- ✅ Go to `/dashboard/writgo-autopilot` - Should see "In Ontwikkeling" page
-
-### Test 2: Content Plan Generation
-1. Go to `/dashboard/content-plan`
-2. Select a project
-3. Click "Genereer Content Plan"
-4. Wait for completion
-5. ✅ Should work without database errors
-
-### Test 3: Delete Functionality
-1. In content plan page
-2. Look for 🗑️ button next to "Schrijven" button
-3. Click it
-4. Confirm deletion
-5. ✅ Item should be removed
-
-### Test 4: Cancel Functionality
-1. Start generating a content plan
-2. Click "Annuleren" button
-3. ✅ Should cancel without errors
-
----
-
-## 🎯 Expected Results
-
-### Before This PR
-```
-❌ Database error: word_count not found
-❌ Foreign key violation errors
-❌ 404 on /pricing
-❌ 404 on /features
-❌ 404 on /dashboard/writgo-autopilot
-❌ Can't delete content plan items
-❌ Cancel causes 500 errors
-```
-
-### After This PR
-```
-✅ No database errors
-✅ No foreign key violations
-✅ All pages return 200
-✅ Delete button works
-✅ Cancel works properly
-```
-
----
-
-## 🆘 Troubleshooting
-
-### Problem: SQL Migration Fails
-
-**Error: "table already exists"**
-- This is OK! The migration uses `IF NOT EXISTS`
-- Continue with the rest of the migration
-
-**Error: "column already exists"**
-- This is OK! The migration uses `IF NOT EXISTS`
-- Continue with the rest of the migration
-
-**Error: "syntax error"**
-- Make sure you copied ALL 175 lines
-- Check for missing characters at start/end
-- Try copying again
-
-### Problem: Pages Still Show 404
-
-**Solution:**
-- Clear browser cache: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
-- Wait 1-2 minutes for deployment
-- Check if build succeeded in deployment logs
-
-### Problem: Delete Button Doesn't Appear
-
-**Solution:**
-- Clear browser cache
-- Check if you're on latest deployment
-- Refresh page: F5 or Cmd+R
-
-### Problem: Can't See Changes
-
-**Solution:**
-1. Check deployment status
-2. Clear all caches
-3. Try incognito/private window
-4. Check browser console for errors
-
----
-
-## 📞 Need Help?
-
-If you encounter issues:
-
-1. **Check deployment logs** - Look for build errors
-2. **Check browser console** - Press F12, look for red errors
-3. **Check Supabase logs** - Go to Logs section in Supabase dashboard
-4. **Review documentation:**
-   - `CRITICAL_FIXES_README.md` - Detailed deployment guide
-   - `IMPLEMENTATION_SUMMARY.md` - Technical details
-   - `UI_CHANGES_GUIDE.md` - Visual guide
-
----
-
-## ✅ Checklist Before Closing
-
-After deployment, verify:
-
-- [ ] SQL migration ran successfully (no errors)
-- [ ] PR is merged
-- [ ] Deployment completed
-- [ ] `/pricing` returns 200
-- [ ] `/features` returns 200
-- [ ] `/dashboard/writgo-autopilot` returns 200
-- [ ] Content plan generation works
-- [ ] Delete button appears
-- [ ] Delete functionality works
-- [ ] Cancel functionality works
-- [ ] No errors in browser console
-- [ ] No errors in server logs
-
----
-
-## 🎉 You're Done!
-
-If all checkboxes are marked:
-- ✅ All critical issues are fixed
-- ✅ Users can generate content plans
-- ✅ Users can delete plan items
-- ✅ All pages load correctly
-- ✅ No more database errors
-
-**Total time spent:** ~5-10 minutes
-**Issues fixed:** 7 critical issues
-**User experience:** Significantly improved
-
----
-
-## 📊 What Changed?
-
-| File | Change | Impact |
-|------|--------|--------|
-| SQL Migration | +175 lines | Fixes all database errors |
-| API Route | +14 lines | Fixes GET/DELETE endpoints |
-| Content Plan Page | +45 lines | Adds delete button |
-| 3 New Pages | +37 lines | Fixes 404 errors |
-| 3 Documentation Files | +8,220 lines | Complete guides |
-
-**Total:** 8 files, +812 lines, 0 breaking changes
-
----
-
-## 🔄 Rollback Plan
-
-If something goes wrong (unlikely):
-
-### Rollback Code
 ```bash
-git revert <this-pr-commit-hash>
-git push origin main
+npm run dev
 ```
 
-### Rollback Database
-```sql
--- Only if absolutely necessary:
-DROP TABLE IF EXISTS article_jobs CASCADE;
-DROP TABLE IF EXISTS content_plan_jobs CASCADE;
-DROP TABLE IF EXISTS content_plans CASCADE;
-
-ALTER TABLE articles DROP COLUMN IF EXISTS word_count;
-ALTER TABLE articles DROP COLUMN IF EXISTS project_id;
+**Verwachte output:**
+```
+▲ Next.js 14.2.35
+- Local:        http://localhost:3000
+✓ Ready in 2.5s
 ```
 
-**Note:** Rollback should not be necessary. All changes are safe and tested.
+Open je browser op: http://localhost:3000
 
 ---
 
-## 📈 Monitoring After Deployment
+## 🎯 STAP 5: EERSTE TEST
 
-For the first 24 hours, monitor:
+### A. Test Authenticatie
 
-1. **Error logs** - Check for any new errors
-2. **User feedback** - Ask users if they notice improvements
-3. **Database performance** - New indexes should improve speed
-4. **API response times** - Should be same or better
+1. Ga naar http://localhost:3000/register
+2. Maak een test account aan
+3. Login met je credentials
 
----
-
-## 🎯 Success Metrics
-
-You'll know it worked when:
-
-- ✅ Zero database schema errors in logs
-- ✅ Users can complete content plan workflow
-- ✅ No 404 errors reported
-- ✅ Delete functionality used successfully
-- ✅ No support tickets about these issues
+**Als dit werkt:** ✅ Supabase connectie werkt!
 
 ---
 
-**Questions?** Check the other documentation files or create a GitHub issue.
+### B. Test AI Generatie
 
-**Ready?** Start with Step 1! ⬆️
+1. Ga naar het Writer dashboard
+2. Probeer een kort artikel te genereren
+3. Kies een onderwerp en klik "Generate"
+
+**Als dit werkt:** ✅ AIML API werkt!
+
+---
+
+## ❌ TROUBLESHOOTING
+
+### "Missing Supabase environment variables"
+
+- Check of `.env.local` bestaat in de root folder
+- Check of de Supabase variabelen ingevuld zijn
+- Restart de dev server (`Ctrl+C` en dan `npm run dev`)
+
+---
+
+### "Missing AI API key"
+
+- Check of `AIML_API_KEY` in `.env.local` staat
+- Check of de key correct is (geen spaties, volledig gekopieerd)
+- Restart de dev server
+
+---
+
+### "Your credit balance is too low"
+
+- Ga naar https://aimlapi.com/app/billing
+- Check je credit balance
+- Koop meer credits als nodig (je hebt net €20 toegevoegd, dit zou genoeg moeten zijn!)
+
+---
+
+### "Database error" / "relation does not exist"
+
+Je moet de database migrations draaien:
+
+```bash
+# Check of de Supabase connectie werkt
+npm run migrate
+```
+
+Of draai de migrations handmatig via Supabase SQL Editor.
+
+---
+
+## 📊 CREDIT USAGE (met €20)
+
+**Bij AIML API:**
+- Claude Sonnet 4.5: ~$3 per 1M tokens
+- €20 = ongeveer 6-7M tokens
+- 1 artikel (2000 woorden) ≈ 3000-5000 tokens
+- **Je kunt ongeveer 1000-1500 artikelen genereren!**
+
+**Tip:** Monitor je usage op https://aimlapi.com/app/usage
+
+---
+
+## 🎉 SUCCESS!
+
+Als je dit ziet, werkt alles:
+- ✅ Build succeeds
+- ✅ Dev server draait
+- ✅ Je kunt inloggen
+- ✅ AI generatie werkt
+- ✅ Supabase connectie werkt
+
+**Volgende stappen:**
+- Configureer WordPress integratie (zie `WORDPRESS_SETUP.md`)
+- Setup Social Media (zie `SOCIAL_MEDIA_SETUP.md`)
+- Configureer Stripe credits (zie `CREDIT_SYSTEM_SETUP.md`)
+- Setup cron jobs voor autopilot (zie `AUTOPILOT_README.md`)
+
+---
+
+## 📚 MEER DOCUMENTATIE
+
+- `PROJECT_STATUS_REPORT.md` - Volledige status van het project
+- `SUPABASE_SETUP.md` - Gedetailleerde Supabase setup
+- `WORDPRESS_SETUP.md` - WordPress connectie
+- `SOCIAL_MEDIA_SETUP.md` - Social media integratie
+- `AI_AGENT_SETUP.md` - AI Agent module
+- `.env.example` - Alle mogelijke environment variabelen
+
+---
+
+## 🆘 HULP NODIG?
+
+Als je vastloopt:
+1. Check `PROJECT_STATUS_REPORT.md` voor gedetailleerde info
+2. Run `npx tsx scripts/check-aiml-credits.ts` voor AIML diagnostics
+3. Check de console logs voor specifieke errors
+4. Vraag hulp met de exacte error message
+
+---
+
+**Made with ❤️ by WritGo.nl**
