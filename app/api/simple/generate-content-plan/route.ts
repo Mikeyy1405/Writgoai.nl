@@ -413,7 +413,9 @@ Output alleen valide JSON zonder markdown formatting.`,
             keywordDifficulty: opp.difficulty,
             rankingPotential: opp.rankingPotential,
             recommendation: opp.recommendation,
-            recommendationReason: opp.recommendationReason || (opp as any).reason,
+            recommendationReason: isDataForSEO
+              ? (opp as KeywordOpportunity).reason
+              : (opp as FreeKeywordOpportunity).recommendationReason,
 
             // Add SERP intelligence (if available from DataForSEO)
             ...(isDataForSEO && {
