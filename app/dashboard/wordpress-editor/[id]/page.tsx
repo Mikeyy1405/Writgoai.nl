@@ -79,8 +79,14 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
   useEffect(() => {
     fetchArticle();
     fetchInternalLinks();
-    fetchAffiliateLinks();
   }, [params.id]);
+
+  // Fetch affiliate links after article is loaded
+  useEffect(() => {
+    if (article?.project_id) {
+      fetchAffiliateLinks();
+    }
+  }, [article?.project_id]);
 
   const fetchArticle = async () => {
     setLoading(true);
