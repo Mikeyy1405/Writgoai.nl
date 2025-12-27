@@ -1650,7 +1650,7 @@ Output als JSON:
 
     if (allArticles.length < targetCount) {
       // Use type-specific modifiers and content types
-      const modifiers = websiteTypeConfig.modifiers[language] || websiteTypeConfig.modifiers['en'];
+      const modifiers = websiteTypeConfig.modifiers[language as keyof typeof websiteTypeConfig.modifiers] || websiteTypeConfig.modifiers['en'];
       const contentTypes = websiteTypeConfig.contentTypes;
 
       console.log(`Using ${modifiers.length} ${websiteTypeName} modifiers for ${language} language`);
