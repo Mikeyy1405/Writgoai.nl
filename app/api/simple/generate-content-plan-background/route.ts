@@ -1188,15 +1188,124 @@ Output als JSON (ALLEEN JSON, geen tekst ervoor of erna):
       await updateJob(jobId, { progress: 30, current_step: '📊 Pillar topics genereren...' });
 
       try {
-        const topicsPrompt = `Genereer 15-20 pillar topics voor: "${nicheData.niche}"
+        // Type-specific pillar topic examples and instructions
+        const typeSpecificInstructions: Record<WebsiteType, string> = {
+          local_seo: `
+VOOR LOKALE SEO SITES - Focus op DIENSTEN en LOCATIES:
+
+✓ GOED - Dienst-gebaseerde topics:
+- "Dakdekker Diensten" (met subtopics: dakisolatie, dakreparatie, nieuw dak)
+- "Loodgieter Werkzaamheden" (met subtopics: lekkage, cv-ketel, riool)
+- "Tuinonderhoud Prijzen" (met subtopics: kosten, offertes, tarieven)
+- "Schilderwerk Binnen" (met subtopics: muren, plafonds, houtwerk)
+
+✗ FOUT - Generieke informatieve topics:
+- "Wat is een dakdekker" (te algemeen)
+- "Waarom tuinonderhoud" (niet dienst-gericht)
+- "Hoe werkt schilderen" (niet relevant voor dienstverlener)
+
+MAAK TOPICS OVER:
+- Specifieke diensten die je aanbiedt
+- Werkgebieden en locaties
+- Kosten en tarieven
+- Wanneer klanten je nodig hebben
+- Problemen die je oplost`,
+
+          affiliate: `
+VOOR AFFILIATE SITES - Focus op PRODUCT REVIEWS en VERGELIJKINGEN:
+
+✓ GOED - Product categorie topics:
+- "Beste Noise Cancelling Koptelefoons" (met subtopics: Sony WH-1000XM5, Bose QC45, AirPods Max)
+- "Gaming Laptop Reviews" (met subtopics: budget, mid-range, high-end)
+- "Smartwatch Vergelijkingen" (met subtopics: Apple Watch vs Galaxy Watch, features, prijzen)
+- "Draadloze Oordopjes Test" (met subtopics: geluidskwaliteit, batterij, comfort)
+
+✗ FOUT - Algemene info topics:
+- "Wat zijn koptelefoons" (geen review/vergelijking)
+- "Hoe werkt een smartwatch" (te basic)
+- "Geschiedenis van gaming" (niet product-gericht)
+
+MAAK TOPICS OVER:
+- Specifieke productcategorieën
+- Product vergelijkingen (A vs B)
+- Beste [product] voor [doelgroep]
+- Review roundups (Top 10, Beste van 2025)
+- Koopgidsen en alternatieven`,
+
+          webshop: `
+VOOR WEBSHOPS - Focus op PRODUCT CATEGORIEËN en GEBRUIK:
+
+✓ GOED - Product en gebruik topics:
+- "Hardloopschoenen Gids" (met subtopics: voor beginners, trail running, marathon)
+- "Yogamat Kiezen" (met subtopics: materialen, dikte, grip)
+- "Supplementen voor Spieropbouw" (met subtopics: proteïne, creatine, BCAA)
+- "Sportkleding Onderhoud" (met subtopics: wassen, drogen, opbergen)
+
+✗ FOUT - Te algemeen of niet product-gericht:
+- "Wat is hardlopen" (te basic)
+- "Waarom sporten" (niet product-gericht)
+- "Geschiedenis van yoga" (niet relevant)
+
+MAAK TOPICS OVER:
+- Productcategorieën die je verkoopt
+- Hoe producten te gebruiken
+- Voor wie welk product
+- Onderhoud en verzorging
+- Trends en nieuwe producten`,
+
+          blog: `
+VOOR BLOGS - Focus op EDUCATIEVE en INFORMATIEVE CONTENT:
+
+✓ GOED - Brede educatieve topics:
+- "SEO voor Beginners" (met subtopics: keywords, on-page, backlinks)
+- "Content Marketing Strategie" (met subtopics: planning, creatie, distributie)
+- "WordPress Tutorials" (met subtopics: installatie, themes, plugins)
+- "Social Media Tips" (met subtopics: Instagram, LinkedIn, strategie)
+
+✗ FOUT - Te specifiek of product-gericht:
+- "SEMrush vs Ahrefs" (meer affiliate-achtig)
+- "Beste SEO tools kopen" (te commercieel)
+
+MAAK TOPICS OVER:
+- Brede thema's in je niche
+- How-to handleidingen
+- Tips en best practices
+- Trends en ontwikkelingen
+- Achtergrond en uitleg`,
+
+          general: `
+MAAK BREDE TOPICS die relevant zijn voor de niche.
+Mix van informatief, praktisch en vergelijkend.`
+        };
+
+        const topicsPrompt = `Genereer 15-20 pillar topics voor de niche: "${nicheData.niche}"
+
+WEBSITE TYPE: ${websiteTypeName}
+CONTENT FOCUS: ${websiteTypeConfig.focusAreas.join(', ')}
+
+${typeSpecificInstructions[websiteType]}
+
 ${languageInstructions[language]}
 
-Output als JSON array:
-[{"topic": "Topic naam", "estimatedArticles": 30, "subtopics": ["sub1", "sub2"]}]`;
+BELANGRIJKE REGELS:
+1. Maak topics die RELEVANT zijn voor ${websiteTypeName}
+2. Elk topic moet leiden tot 20-40 concrete artikelen
+3. Gebruik subtopics die SPECIFIEK en ACTIONABLE zijn
+4. VERMIJD generieke "wat is" of "waarom" topics tenzij dat past bij het website type
+5. Denk aan wat bezoekers op dit type website zoeken
+
+Output als JSON array (ALLEEN JSON, geen tekst ervoor of erna):
+[
+  {
+    "topic": "Concrete topic naam die past bij ${websiteTypeName}",
+    "estimatedArticles": 30,
+    "subtopics": ["specifiek subtopic 1", "specifiek subtopic 2", "specifiek subtopic 3"]
+  }
+]`;
 
         const topicsResponse = await generateAICompletion({
           task: 'content',
-          systemPrompt: `${languageInstructions[language]} Output JSON.`,
+          systemPrompt: `Je bent een SEO content strategist gespecialiseerd in ${websiteTypeName}. ${languageInstructions[language]} Output ALLEEN valide JSON array.`,
           userPrompt: topicsPrompt,
           maxTokens: 3000,
           temperature: 0.7,
@@ -1208,22 +1317,52 @@ Output als JSON array:
           const parsedTopics = JSON.parse(jsonMatch[0]);
           if (parsedTopics && parsedTopics.length > 0) {
             nicheData.pillarTopics = parsedTopics;
+            console.log(`✓ Generated ${parsedTopics.length} ${websiteTypeName}-specific pillar topics`);
           }
         }
       } catch (e) {
         console.warn('Topics generation failed:', e);
       }
 
-      // Fallback: generate default topics if still empty
+      // Fallback: generate type-specific default topics if still empty
       if (!nicheData.pillarTopics || nicheData.pillarTopics.length === 0) {
-        console.log('Using fallback pillar topics for:', nicheData.niche);
-        nicheData.pillarTopics = [
-          { topic: `${nicheData.niche} Basis`, estimatedArticles: 30, subtopics: ['introductie', 'beginnen', 'tips'] },
-          { topic: `${nicheData.niche} Gids`, estimatedArticles: 30, subtopics: ['handleiding', 'stappenplan', 'voorbeelden'] },
-          { topic: `${nicheData.niche} Tips`, estimatedArticles: 30, subtopics: ['beste praktijken', 'fouten vermijden', 'optimaliseren'] },
-          { topic: `${nicheData.niche} Vergelijkingen`, estimatedArticles: 20, subtopics: ['alternatieven', 'reviews', 'keuzes'] },
-          { topic: `${nicheData.niche} FAQ`, estimatedArticles: 20, subtopics: ['veelgestelde vragen', 'problemen', 'oplossingen'] },
-        ];
+        console.log('Using fallback pillar topics for:', nicheData.niche, websiteType);
+
+        // Type-specific fallback topics
+        if (websiteType === 'local_seo') {
+          nicheData.pillarTopics = [
+            { topic: `${nicheData.niche} Diensten`, estimatedArticles: 30, subtopics: ['basis diensten', 'specialisaties', 'spoedopdrachten'] },
+            { topic: `${nicheData.niche} Prijzen`, estimatedArticles: 25, subtopics: ['kosten overzicht', 'offertes', 'tarieven vergelijken'] },
+            { topic: `${nicheData.niche} Werkgebied`, estimatedArticles: 20, subtopics: ['locaties', 'regio\'s', 'bereik'] },
+            { topic: `Waarom ${nicheData.niche} Inhuren`, estimatedArticles: 20, subtopics: ['voordelen', 'wanneer nodig', 'zelf doen vs professional'] },
+            { topic: `${nicheData.niche} Checklist`, estimatedArticles: 20, subtopics: ['controle punten', 'onderhoud', 'preventie'] },
+          ];
+        } else if (websiteType === 'affiliate') {
+          nicheData.pillarTopics = [
+            { topic: `Beste ${nicheData.niche} Products`, estimatedArticles: 35, subtopics: ['budget opties', 'premium keuzes', 'best value'] },
+            { topic: `${nicheData.niche} Reviews`, estimatedArticles: 35, subtopics: ['top merken', 'nieuwe producten', 'user ervaringen'] },
+            { topic: `${nicheData.niche} Vergelijkingen`, estimatedArticles: 30, subtopics: ['feature comparison', 'prijs vergelijking', 'alternatieven'] },
+            { topic: `${nicheData.niche} Koopgids`, estimatedArticles: 25, subtopics: ['waar op letten', 'specificaties', 'voor wie'] },
+            { topic: `${nicheData.niche} Deals`, estimatedArticles: 20, subtopics: ['kortingen', 'aanbiedingen', 'waar te koop'] },
+          ];
+        } else if (websiteType === 'webshop') {
+          nicheData.pillarTopics = [
+            { topic: `${nicheData.niche} Categorieën`, estimatedArticles: 30, subtopics: ['product types', 'voor beginners', 'voor gevorderden'] },
+            { topic: `${nicheData.niche} Gebruik`, estimatedArticles: 30, subtopics: ['handleidingen', 'tips', 'technieken'] },
+            { topic: `${nicheData.niche} Kiezen`, estimatedArticles: 25, subtopics: ['maat kiezen', 'materiaal kiezen', 'voor wie geschikt'] },
+            { topic: `${nicheData.niche} Onderhoud`, estimatedArticles: 20, subtopics: ['verzorging', 'opslag', 'levensduur verlengen'] },
+            { topic: `${nicheData.niche} Trends`, estimatedArticles: 20, subtopics: ['nieuwe producten', 'populair', 'innovaties'] },
+          ];
+        } else {
+          // blog or general
+          nicheData.pillarTopics = [
+            { topic: `${nicheData.niche} Basis`, estimatedArticles: 30, subtopics: ['introductie', 'beginnen', 'fundamentals'] },
+            { topic: `${nicheData.niche} Gids`, estimatedArticles: 30, subtopics: ['handleiding', 'stappenplan', 'voorbeelden'] },
+            { topic: `${nicheData.niche} Tips`, estimatedArticles: 30, subtopics: ['beste praktijken', 'fouten vermijden', 'optimaliseren'] },
+            { topic: `${nicheData.niche} Trends`, estimatedArticles: 20, subtopics: ['ontwikkelingen', 'toekomst', 'innovaties'] },
+            { topic: `${nicheData.niche} Tools`, estimatedArticles: 20, subtopics: ['resources', 'software', 'hulpmiddelen'] },
+          ];
+        }
       }
     }
 
