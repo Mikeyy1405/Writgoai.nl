@@ -24,7 +24,7 @@ export const aimlClient = openaiClient;
 export const anthropicClient = openaiClient;
 
 // Best models for each task
-// NOTE: Using Claude models via AIML API (uses AIML credits, not Anthropic credits)
+// NOTE: Using Claude Sonnet 4.5 via AIML API
 export const BEST_MODELS = {
   CONTENT: 'anthropic/claude-sonnet-4.5',      // Best content writing (Claude via AIML)
   TECHNICAL: 'anthropic/claude-sonnet-4.5',    // Best coding (Claude via AIML)
