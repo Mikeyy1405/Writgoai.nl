@@ -288,7 +288,7 @@ export default function ContentPlanPage() {
     
     // Check database for active job for this project
     try {
-      const response = await fetch(`/api/simple/generate-content-plan-background?projectId=${projectId}&status=processing`);
+      const response = await fetch(`/api/content-plan/generate?projectId=${projectId}&status=processing`);
       if (response.ok) {
         const data = await response.json();
         // Only resume if job is actually processing or pending (NOT cancelled or failed)
@@ -334,7 +334,7 @@ export default function ContentPlanPage() {
 
   const pollJobStatus = async (jobId: string, projectId: string) => {
     try {
-      const response = await fetch(`/api/simple/generate-content-plan-background?jobId=${jobId}`);
+      const response = await fetch(`/api/content-plan/generate?jobId=${jobId}`);
       
       if (!response.ok) {
         console.error('Failed to poll job status');
@@ -418,7 +418,7 @@ export default function ContentPlanPage() {
 
     try {
       // Start background job
-      const response = await fetch('/api/simple/generate-content-plan-background', {
+      const response = await fetch('/api/content-plan/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -450,7 +450,7 @@ export default function ContentPlanPage() {
     // First cancel the backend job
     if (currentJobId) {
       try {
-        await fetch(`/api/simple/generate-content-plan-background?jobId=${currentJobId}`, {
+        await fetch(`/api/content-plan/generate?jobId=${currentJobId}`, {
           method: 'DELETE',
         });
       } catch (err) {
