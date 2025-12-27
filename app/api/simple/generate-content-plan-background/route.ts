@@ -1911,20 +1911,110 @@ Output als JSON:
       return;
     }
 
+    // Step 8: Enrich top articles with comprehensive details (97-99%)
+    await updateJob(jobId, { progress: 97, current_step: '✨ Top artikelen verrijken met details...' });
+
+    let finalArticles = filteredArticles;
+    let enrichedCount = 0;
+
+    try {
+      // Import enricher
+      const { enrichContentIdea } = await import('@/lib/content-plan-enricher');
+
+      // Enrich top 15 high-priority articles with comprehensive details
+      const articlesToEnrich = filteredArticles
+        .filter(a => a.priority === 'high' || a.contentType === 'pillar')
+        .slice(0, 15);
+
+      console.log(`Enriching ${articlesToEnrich.length} high-priority articles with comprehensive details...`);
+
+      const enrichedArticles = [];
+      for (let i = 0; i < articlesToEnrich.length; i++) {
+        // Check cancellation
+        if (await isJobCancelled(jobId)) {
+          console.log(`Job ${jobId} was cancelled during enrichment`);
+          return;
+        }
+
+        const article = articlesToEnrich[i];
+
+        try {
+          const enriched = await enrichContentIdea(
+            {
+              title: article.title,
+              description: article.description,
+              keywords: article.keywords,
+              contentType: article.contentType,
+              cluster: article.cluster,
+              category: article.category,
+              priority: article.priority,
+              searchIntent: article.searchIntent,
+            },
+            nicheData.niche,
+            language
+          );
+
+          // Preserve existing SEO data
+          enrichedArticles.push({
+            ...enriched,
+            searchVolume: article.searchVolume,
+            competition: article.competition,
+            keywordDifficulty: article.keywordDifficulty,
+            rankingPotential: article.rankingPotential,
+            cpc: article.cpc,
+            competitionIndex: article.competitionIndex,
+          });
+
+          enrichedCount++;
+
+          // Update progress
+          const enrichProgress = 97 + Math.round((i / articlesToEnrich.length) * 2);
+          await updateJob(jobId, {
+            progress: enrichProgress,
+            current_step: `✨ Verrijkt: ${i + 1}/${articlesToEnrich.length} artikelen`
+          });
+
+          // Small delay to avoid rate limits
+          if (i < articlesToEnrich.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (enrichError) {
+          console.warn(`Failed to enrich article ${i + 1}:`, enrichError);
+          // Keep original article if enrichment fails
+          enrichedArticles.push(article);
+        }
+      }
+
+      // Combine enriched articles with rest
+      const enrichedMap = new Map(enrichedArticles.map((a, i) => [articlesToEnrich[i].title, a]));
+
+      finalArticles = filteredArticles.map(article => {
+        const enriched = enrichedMap.get(article.title);
+        return enriched || article;
+      });
+
+      console.log(`✓ Successfully enriched ${enrichedCount} articles with comprehensive details`);
+    } catch (enrichError) {
+      console.warn('Enrichment failed, using basic articles:', enrichError);
+      // Continue with basic articles if enrichment fails
+      finalArticles = filteredArticles;
+    }
+
     // Calculate stats
     const stats = {
-      totalArticles: filteredArticles.length,
-      pillarPages: filteredArticles.filter(a => a.contentType === 'pillar').length,
+      totalArticles: finalArticles.length,
+      pillarPages: finalArticles.filter(a => a.contentType === 'pillar').length,
       clusters: clusters.length,
       byContentType: {
-        pillar: filteredArticles.filter(a => a.contentType === 'pillar').length,
-        'how-to': filteredArticles.filter(a => a.contentType === 'how-to').length,
-        guide: filteredArticles.filter(a => a.contentType === 'guide').length,
-        comparison: filteredArticles.filter(a => a.contentType === 'comparison').length,
-        list: filteredArticles.filter(a => a.contentType === 'list').length,
-        faq: filteredArticles.filter(a => a.contentType === 'faq').length,
+        pillar: finalArticles.filter(a => a.contentType === 'pillar').length,
+        'how-to': finalArticles.filter(a => a.contentType === 'how-to').length,
+        guide: finalArticles.filter(a => a.contentType === 'guide').length,
+        comparison: finalArticles.filter(a => a.contentType === 'comparison').length,
+        list: finalArticles.filter(a => a.contentType === 'list').length,
+        faq: finalArticles.filter(a => a.contentType === 'faq').length,
       },
       forbiddenWordsFiltered: forbiddenFiltered.length,
+      enrichedArticles: enrichedCount,
     };
 
     // Complete - save everything to database
@@ -1932,12 +2022,12 @@ Output als JSON:
       status: 'completed',
       progress: 100,
       current_step: '✅ Content plan voltooid!',
-      plan: filteredArticles,
+      plan: finalArticles,
       clusters,
       stats,
     });
 
-    console.log(`Job ${jobId} completed with ${filteredArticles.length} articles (${forbiddenFiltered.length} filtered)`);
+    console.log(`Job ${jobId} completed with ${finalArticles.length} articles (${enrichedCount} enriched, ${forbiddenFiltered.length} filtered)`);
 
   } catch (error: any) {
     console.error('Content plan generation error:', error);
