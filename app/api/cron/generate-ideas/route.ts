@@ -22,10 +22,23 @@ function getSupabaseAdmin() {
   return supabaseAdmin as any;
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.AIML_API_KEY!,
-  baseURL: 'https://api.aimlapi.com/v1',
-});
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient() {
+  if (!openaiClient) {
+    const apiKey = process.env.AIML_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('Missing AI API key. Please set AIML_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY');
+    }
+
+    openaiClient = new OpenAI({
+      apiKey: apiKey,
+      baseURL: 'https://api.aimlapi.com/v1',
+    });
+  }
+  return openaiClient;
+}
 
 // Cron job to automatically generate new content ideas every week
 // Runs every Monday at 8:00 AM
@@ -172,6 +185,7 @@ Antwoord ALLEEN met een JSON array, geen extra tekst:
   }
 ]`;
 
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'anthropic/claude-sonnet-4.5',
       max_tokens: 2048,
