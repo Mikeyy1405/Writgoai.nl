@@ -203,20 +203,36 @@ export default function ContentPlanPage() {
   const loadSavedPlan = async (projectId: string) => {
     // Clear current state first
     clearPlanState();
-    
+
     try {
       // Load from database
       const response = await fetch(`/api/content-plan?project_id=${projectId}`);
       const data = await response.json();
-      
+
+      console.log('Loaded content plan:', {
+        hasPlan: !!data.plan,
+        planArrayLength: data.plan?.plan?.length || 0,
+        hasStats: !!data.plan?.stats,
+        niche: data.plan?.niche
+      });
+
       if (data.plan) {
         // Ensure all articles have a status (backwards compatibility)
-        if (data.plan.plan) {
+        if (data.plan.plan && Array.isArray(data.plan.plan)) {
           const planWithStatus = data.plan.plan.map((article: ContentIdea) => ({
             ...article,
             status: article.status || 'todo'
           }));
           setContentPlan(planWithStatus);
+
+          // Show warning if plan is empty but stats exist
+          if (planWithStatus.length === 0 && data.plan.stats) {
+            console.warn('Content plan loaded but plan array is empty while stats exist:', data.plan.stats);
+            setError('Content plan is beschikbaar maar bevat geen artikelen. Genereer een nieuw plan.');
+          }
+        } else if (!data.plan.plan) {
+          console.warn('Content plan loaded but plan field is missing');
+          setError('Content plan data is onvolledig. Genereer een nieuw plan.');
         }
         if (data.plan.clusters) setClusters(data.plan.clusters);
         if (data.plan.stats) setStats(data.plan.stats);
@@ -1082,16 +1098,27 @@ export default function ContentPlanPage() {
       {/* Empty State */}
       {!loading && contentPlan.length === 0 && selectedProject && (
         <div className="bg-gray-800/30 border-2 border-dashed border-gray-700 rounded-xl p-12 text-center">
-          <div className="text-6xl mb-4">📝</div>
-          <h3 className="text-2xl font-bold text-white mb-2">Geen Content Plan</h3>
+          <div className="text-6xl mb-4">
+            {stats ? '⚠️' : '📝'}
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-2">
+            {stats ? 'Content Plan Bevat Geen Artikelen' : 'Geen Content Plan'}
+          </h3>
           <p className="text-gray-400 mb-6">
-            Genereer een content plan om te beginnen met schrijven
+            {stats ? (
+              <>
+                Er is wel een content plan gevonden voor <strong>{niche}</strong>, maar deze bevat geen artikelen.<br/>
+                Genereer een nieuw content plan om te beginnen met schrijven.
+              </>
+            ) : (
+              'Genereer een content plan om te beginnen met schrijven'
+            )}
           </p>
           <button
             onClick={generateContentPlan}
             className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all"
           >
-            Genereer Content Plan
+            {stats ? 'Genereer Nieuw Content Plan' : 'Genereer Content Plan'}
           </button>
         </div>
       )}

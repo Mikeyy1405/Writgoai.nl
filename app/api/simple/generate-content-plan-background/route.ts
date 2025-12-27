@@ -1894,6 +1894,23 @@ Output als JSON:
       });
     }
 
+    // Check if we have any articles - if not, this is an error
+    if (filteredArticles.length === 0) {
+      const errorMessage = allArticles.length === 0
+        ? 'Geen artikelen gegenereerd. Mogelijk is de niche te smal of zijn er technische problemen opgetreden.'
+        : `Alle ${allArticles.length} gegenereerde artikelen werden gefilterd wegens verboden woorden. Controleer de forbidden words lijst of pas de niche aan.`;
+
+      console.error(`Job ${jobId} failed: ${errorMessage}`);
+      console.log('Forbidden filtered articles:', forbiddenFiltered.map(f => f.title).slice(0, 10));
+
+      await updateJob(jobId, {
+        status: 'failed',
+        error: errorMessage,
+        current_step: '❌ Geen bruikbare artikelen',
+      });
+      return;
+    }
+
     // Calculate stats
     const stats = {
       totalArticles: filteredArticles.length,
