@@ -203,7 +203,7 @@ export default function ContentPlanCard({
               <h4 className="text-sm font-semibold text-white mb-2">📋 Artikel Outline</h4>
               <div className="bg-gray-900/50 rounded-lg p-3 text-sm text-gray-300 space-y-3">
                 {/* Introduction */}
-                {article.outline.introduction && (
+                {article.outline?.introduction && (
                   <div>
                     <p className="font-semibold text-orange-400">Introductie (~{article.outline.introduction.wordCount} woorden)</p>
                     <ul className="list-disc list-inside ml-2 mt-1 text-xs">
@@ -215,7 +215,7 @@ export default function ContentPlanCard({
                 )}
 
                 {/* Main Sections */}
-                {article.outline.mainSections.map((section, i) => (
+                {article.outline?.mainSections?.map((section, i) => (
                   <div key={i}>
                     <p className="font-semibold text-blue-400">H2: {section.heading} (~{section.wordCount} woorden)</p>
                     {section.subheadings && section.subheadings.length > 0 && (
@@ -244,7 +244,7 @@ export default function ContentPlanCard({
                 ))}
 
                 {/* Conclusion */}
-                {article.outline.conclusion && (
+                {article.outline?.conclusion && (
                   <div>
                     <p className="font-semibold text-green-400">Conclusie (~{article.outline.conclusion.wordCount} woorden)</p>
                     <ul className="list-disc list-inside ml-2 mt-1 text-xs">
@@ -257,7 +257,7 @@ export default function ContentPlanCard({
                 )}
 
                 {/* FAQ */}
-                {article.outline.faq && article.outline.faq.length > 0 && (
+                {article.outline?.faq && article.outline.faq.length > 0 && (
                   <div>
                     <p className="font-semibold text-purple-400">FAQ ({article.outline.faq.length} vragen)</p>
                     <div className="ml-2 mt-1 text-xs space-y-1">
@@ -336,7 +336,7 @@ export default function ContentPlanCard({
             <div>
               <h4 className="text-sm font-semibold text-white mb-2">📚 Bronnen</h4>
               <div className="bg-gray-900/50 rounded-lg p-3 text-xs space-y-2">
-                {article.sources.primarySources && article.sources.primarySources.length > 0 && (
+                {article.sources?.primarySources && article.sources.primarySources.length > 0 && (
                   <div>
                     <span className="text-blue-400 font-semibold">Primary Sources:</span>
                     <ul className="list-disc list-inside ml-2 mt-1">
@@ -346,7 +346,7 @@ export default function ContentPlanCard({
                     </ul>
                   </div>
                 )}
-                {article.sources.statistics && article.sources.statistics.length > 0 && (
+                {article.sources?.statistics && article.sources.statistics.length > 0 && (
                   <div>
                     <span className="text-green-400 font-semibold">Statistics:</span>
                     <ul className="list-disc list-inside ml-2 mt-1">
@@ -356,7 +356,7 @@ export default function ContentPlanCard({
                     </ul>
                   </div>
                 )}
-                {article.sources.tools && article.sources.tools.length > 0 && (
+                {article.sources?.tools && article.sources.tools.length > 0 && (
                   <div>
                     <span className="text-purple-400 font-semibold">Tools:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
