@@ -1478,8 +1478,58 @@ Output als JSON array (ALLEEN JSON, geen tekst ervoor of erna):
 
     await updateJob(jobId, { progress: 35, current_step: `✅ ${nicheData.pillarTopics?.length || 0} pillar topics` });
 
+    // NEW: Generate specific products/items for affiliate/webshop websites
+    let specificItems: string[] = [];
+    if ((websiteType === 'affiliate' || websiteType === 'webshop') && nicheData.niche && nicheData.niche !== 'Algemeen') {
+      try {
+        await updateJob(jobId, { progress: 38, current_step: `🔍 Specifieke ${nicheData.niche} producten genereren...` });
+
+        const itemsPrompt = `Genereer een lijst van 20-30 SPECIFIEKE, CONCRETE en POPULAIRE producten/items voor de niche: "${nicheData.niche}"
+
+${languageInstructions[language]}
+
+BELANGRIJKE REGELS:
+1. Alleen ECHTE, BESTAANDE producten/items die mensen zoeken
+2. Gebruik BEKENDE merknamen en productnamen waar mogelijk
+3. Mix van populaire en niche producten
+4. Varieer in prijsklasse (budget, mid-range, premium)
+5. Voor spellen: alleen de NAAM, geen generieke termen
+6. Voor producten: alleen de PRODUCTNAAM, geen categorieën
+
+VOORBEELDEN:
+✅ GOED (Bordspel): ["Catan", "Ticket to Ride", "Wingspan", "Azul", "7 Wonders", "Pandemic", "Carcassonne"]
+❌ FOUT (Bordspel): ["Bordspel Reviews", "Beste Bordspellen", "Familie Spellen"]
+
+✅ GOED (Haarverzorging): ["Olaplex No. 3", "Redken All Soft Shampoo", "Kerastase Nutritive", "Paul Mitchell Tea Tree"]
+❌ FOUT (Haarverzorging): ["Shampoo", "Conditioner", "Haarmasker"]
+
+Output als JSON array (ALLEEN JSON, geen tekst):
+["Product 1", "Product 2", "Product 3", ...]`;
+
+        const itemsResponse = await generateAICompletion({
+          task: 'content',
+          systemPrompt: `Je bent een product expert gespecialiseerd in ${nicheData.niche}. ${languageInstructions[language]} Output ALLEEN valide JSON array.`,
+          userPrompt: itemsPrompt,
+          maxTokens: 2000,
+          temperature: 0.8,
+          timeout: 45000,
+        });
+
+        const jsonMatch = itemsResponse.match(/\[[\s\S]*?\]/);
+        if (jsonMatch) {
+          const parsedItems = JSON.parse(jsonMatch[0]);
+          if (parsedItems && Array.isArray(parsedItems) && parsedItems.length > 0) {
+            specificItems = parsedItems.filter(item => typeof item === 'string' && item.length > 0);
+            console.log(`✓ Generated ${specificItems.length} specific items for ${nicheData.niche}:`, specificItems.slice(0, 5));
+          }
+        }
+      } catch (e) {
+        console.warn('Specific items generation failed:', e);
+      }
+    }
+
     // Step 5: Generate content clusters IN PARALLEL (massive speed improvement)
-    await updateJob(jobId, { progress: 38, current_step: '📝 Content clusters voorbereiden...' });
+    await updateJob(jobId, { progress: 40, current_step: '📝 Content clusters voorbereiden...' });
 
     const clusters: any[] = [];
     const allArticles: any[] = [];
@@ -1655,21 +1705,41 @@ Output als JSON:
 
       console.log(`Using ${modifiers.length} ${websiteTypeName} modifiers for ${language} language`);
 
-      for (const pillarData of nicheData.pillarTopics) {
-        const topic = typeof pillarData === 'string' ? pillarData : pillarData.topic;
+      // IMPROVED: Use specific items if available (for affiliate/webshop), otherwise use pillar topics
+      const itemsToExpand = specificItems.length > 0 ? specificItems : nicheData.pillarTopics.map((p: any) => typeof p === 'string' ? p : p.topic);
+
+      console.log(`Expanding ${itemsToExpand.length} items with modifiers (${specificItems.length > 0 ? 'specific products' : 'pillar topics'})`);
+
+      for (const item of itemsToExpand) {
+        // Determine cluster name (use pillar topic if available, otherwise use item)
+        const clusterName = nicheData.pillarTopics.length > 0
+          ? (typeof nicheData.pillarTopics[0] === 'string' ? nicheData.pillarTopics[0] : nicheData.pillarTopics[0].topic)
+          : item;
 
         for (const modifier of modifiers) {
           if (allArticles.length >= targetCount) break;
 
-          const title = `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`;
+          // Check if modifier is already in the item name to prevent duplicates
+          const itemLower = item.toLowerCase();
+          const modifierLower = modifier.toLowerCase();
+
+          // Skip if the item already contains the modifier word (prevents "Review Bordspel Reviews")
+          if (itemLower.includes(modifierLower) ||
+              (modifierLower.includes('review') && itemLower.includes('review')) ||
+              (modifierLower.includes('vergelijk') && itemLower.includes('vergelijk')) ||
+              (modifierLower.includes('best') && itemLower.includes('best'))) {
+            continue;
+          }
+
+          const title = `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${item}`;
 
           allArticles.push({
             title,
-            category: topic,
+            category: clusterName,
             description: `${title} - Uitgebreide informatie.`,
-            keywords: [`${topic.toLowerCase()} ${modifier}`.trim(), topic.toLowerCase()],
+            keywords: [`${item.toLowerCase()} ${modifier}`.trim(), item.toLowerCase()],
             contentType: contentTypes[Math.floor(Math.random() * contentTypes.length)],
-            cluster: topic,
+            cluster: clusterName,
             priority: 'low',
             websiteType: websiteType, // Add website type for filtering/sorting
           });
