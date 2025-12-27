@@ -1,14 +1,10 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 import { generateArticleImage } from '@/lib/aiml-image-generator';
-import Anthropic from '@anthropic-ai/sdk';
+import { generateAICompletion } from '@/lib/ai-client';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
 
 interface EnhanceRequest {
   article_id: string;
@@ -98,21 +94,18 @@ export async function POST(request: Request) {
  * Rewrite text using AI
  */
 async function rewriteText(text: string): Promise<{ rewritten_text: string }> {
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 2000,
-    messages: [{
-      role: 'user',
-      content: `Herschrijf de volgende tekst om deze boeiender, professioneler en SEO-vriendelijker te maken. Behoud de kernboodschap en belangrijkste informatie. Gebruik Nederlandse taal.
+  const rewrittenText = await generateAICompletion({
+    systemPrompt: 'Je bent een expert contentschrijver die teksten herschrijft om ze boeiender, professioneler en SEO-vriendelijker te maken. Je behoudt altijd de kernboodschap en belangrijkste informatie. Je schrijft uitsluitend in het Nederlands.',
+    userPrompt: `Herschrijf de volgende tekst om deze boeiender, professioneler en SEO-vriendelijker te maken. Behoud de kernboodschap en belangrijkste informatie.
 
 Tekst om te herschrijven:
 ${text}
 
-Geef alleen de herschreven tekst terug, zonder extra uitleg.`
-    }]
+Geef alleen de herschreven tekst terug, zonder extra uitleg.`,
+    task: 'content',
+    temperature: 0.7,
+    maxTokens: 2000,
   });
-
-  const rewrittenText = message.content[0].type === 'text' ? message.content[0].text : text;
 
   return { rewritten_text: rewrittenText };
 }
@@ -141,12 +134,9 @@ async function addAffiliateLinks(content: string, project_id: string, supabase: 
   const affiliate = affiliates[0];
 
   // Use AI to identify products that could benefit from affiliate links
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 4000,
-    messages: [{
-      role: 'user',
-      content: `Analyseer de volgende HTML content en identificeer producten of items die kunnen worden gelinkt naar bol.com.
+  const responseText = await generateAICompletion({
+    systemPrompt: 'Je bent een expert in het identificeren van producten in content die geschikt zijn voor affiliate links naar bol.com. Je geeft altijd een geldige JSON array terug.',
+    userPrompt: `Analyseer de volgende HTML content en identificeer producten of items die kunnen worden gelinkt naar bol.com.
 
 Voor elk gevonden product, geef terug:
 1. Het product/item
@@ -165,14 +155,15 @@ Retourneer een JSON array met formaat:
   }
 ]
 
-Als er geen producten zijn, retourneer een lege array [].`
-    }]
+Als er geen producten zijn, retourneer een lege array [].`,
+    task: 'content',
+    temperature: 0.5,
+    maxTokens: 4000,
   });
 
   let products: Array<{ product: string; search_term: string; text_to_link: string }> = [];
 
   try {
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '[]';
     // Extract JSON from response
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
@@ -232,12 +223,9 @@ async function addInternalLinks(content: string, current_article_id: string, pro
   }));
 
   // Use AI to suggest relevant internal links
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 4000,
-    messages: [{
-      role: 'user',
-      content: `Analyseer de volgende HTML content en identificeer plaatsen waar relevante interne links kunnen worden toegevoegd.
+  const responseText = await generateAICompletion({
+    systemPrompt: 'Je bent een expert in het identificeren van interne link opportuniteiten in content. Je geeft altijd een geldige JSON array terug met alleen relevante, logische link suggesties.',
+    userPrompt: `Analyseer de volgende HTML content en identificeer plaatsen waar relevante interne links kunnen worden toegevoegd.
 
 Beschikbare artikelen om naar te linken:
 ${JSON.stringify(articlesList, null, 2)}
@@ -259,14 +247,15 @@ Retourneer een JSON array met formaat:
   }
 ]
 
-Voeg alleen links toe waar het echt logisch en relevant is. Maximum 5 links. Als er geen goede matches zijn, retourneer een lege array [].`
-    }]
+Voeg alleen links toe waar het echt logisch en relevant is. Maximum 5 links. Als er geen goede matches zijn, retourneer een lege array [].`,
+    task: 'content',
+    temperature: 0.5,
+    maxTokens: 4000,
   });
 
   let linkOpportunities: Array<{ text_to_link: string; target_slug: string; reason: string }> = [];
 
   try {
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '[]';
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       linkOpportunities = JSON.parse(jsonMatch[0]);
@@ -305,12 +294,9 @@ Voeg alleen links toe waar het echt logisch en relevant is. Maximum 5 links. Als
  */
 async function addImages(content: string, title: string, focusKeyword: string, project_id: string, article_id: string, supabase: any): Promise<{ enhanced_content: string; images_added: number }> {
   // Use AI to identify sections that need images
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 2000,
-    messages: [{
-      role: 'user',
-      content: `Analyseer de volgende HTML content en identificeer 3-5 plaatsen waar een afbeelding de content zou verbeteren.
+  const responseText = await generateAICompletion({
+    systemPrompt: 'Je bent een expert in het identificeren van secties in content waar afbeeldingen de leeservaring verbeteren. Je geeft altijd een geldige JSON array terug.',
+    userPrompt: `Analyseer de volgende HTML content en identificeer 3-5 plaatsen waar een afbeelding de content zou verbeteren.
 
 Content:
 ${content}
@@ -327,14 +313,15 @@ Retourneer een JSON array met formaat:
   }
 ]
 
-Maximum 3 afbeeldingen. Focus op belangrijke secties die visuele ondersteuning nodig hebben.`
-    }]
+Maximum 3 afbeeldingen. Focus op belangrijke secties die visuele ondersteuning nodig hebben.`,
+    task: 'content',
+    temperature: 0.5,
+    maxTokens: 2000,
   });
 
   let imageOpportunities: Array<{ prompt: string; section_start: string }> = [];
 
   try {
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '[]';
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       imageOpportunities = JSON.parse(jsonMatch[0]);
