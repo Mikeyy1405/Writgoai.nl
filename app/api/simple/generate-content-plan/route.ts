@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { generateAICompletion } from '@/lib/ai-client';
+import {
+  DataForSEOClient,
+  KeywordOpportunityAnalyzer,
+  KeywordClusterer,
+  type KeywordOpportunity,
+} from '@/lib/keyword-research';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -69,7 +75,12 @@ interface ContentCluster {
 
 export async function POST(request: Request) {
   try {
-    const { website_url, target_count = 500 } = await request.json();
+    const {
+      website_url,
+      target_count = 500,
+      use_advanced_research = true, // Enable modern keyword research by default
+      domain_authority = 20, // User's estimated domain authority
+    } = await request.json();
 
     if (!website_url) {
       return NextResponse.json(
@@ -143,44 +154,64 @@ Genereer een COMPLETE topical authority cluster voor: "${pillarTopic}"
 Niche: ${nicheData.niche}
 Website: ${website_url}
 
-Maak een uitgebreide lijst van ${articlesPerPillar} artikel ideeën die VOLLEDIGE topical authority opbouwen.
+Maak een uitgebreide lijst van ${articlesPerPillar} SPECIFIEKE en WAARDEVOLLE artikel ideeën.
+
+❌ NIET GENERIEK zoals:
+- "Wat is ${pillarTopic}?"
+- "Ervaringen met ${pillarTopic}"
+- "Test ${pillarTopic}"
+- "Review ${pillarTopic}"
+
+✅ WEL SPECIFIEK zoals:
+- "Hoe kies je de beste ${pillarTopic} voor beginners in 2025?"
+- "5 Veelgemaakte fouten bij ${pillarTopic} en hoe je ze vermijdt"
+- "${pillarTopic} A vs B: Welke past bij jouw situatie?"
+- "Stap-voor-stap: ${pillarTopic} implementeren in 30 dagen"
 
 CLUSTER STRUCTUUR:
-1. 1 Pillar Page (uitgebreide 5000+ woorden gids)
-2. ${Math.floor(articlesPerPillar * 0.3)} How-to Guides (praktische handleidingen)
-3. ${Math.floor(articlesPerPillar * 0.2)} Vergelijkingen & Reviews
-4. ${Math.floor(articlesPerPillar * 0.2)} Lijstartikelen (Top 10, Best X)
-5. ${Math.floor(articlesPerPillar * 0.15)} FAQ & Beginner content
-6. ${Math.floor(articlesPerPillar * 0.1)} Case Studies & Voorbeelden
-7. ${Math.floor(articlesPerPillar * 0.05)} Nieuws & Trends ${currentYear}-${nextYear}
+1. 1 Pillar Page - Compleet overzicht met alle aspecten
+2. ${Math.floor(articlesPerPillar * 0.3)} How-to Guides - Praktische stap-voor-stap handleidingen
+3. ${Math.floor(articlesPerPillar * 0.2)} Vergelijkingen - Specifieke A vs B vergelijkingen
+4. ${Math.floor(articlesPerPillar * 0.2)} Lijstartikelen - Concrete tips, tools, voorbeelden
+5. ${Math.floor(articlesPerPillar * 0.15)} Probleemoplossing - Veelvoorkomende problemen en oplossingen
+6. ${Math.floor(articlesPerPillar * 0.1)} Case Studies - Concrete voorbeelden en succesverhalen
+7. ${Math.floor(articlesPerPillar * 0.05)} Trends & Updates - Actuele ontwikkelingen ${currentYear}-${nextYear}
 
-KEYWORD VARIATIES (genereer voor elk artikel):
-- Exacte match keywords
-- Long-tail variaties
-- Vraag-gebaseerde keywords (hoe, wat, waarom, wanneer)
-- Vergelijkende keywords (vs, beste, top, review)
-- Lokale variaties (Nederland, België)
-- Intent variaties (kopen, leren, vergelijken)
+EISEN PER ARTIKEL:
+1. Specifieke doelgroep (beginners/gevorderden/professionals/bedrijven)
+2. Duidelijke waardepropositie (wat leert de lezer?)
+3. Concreet en actionable (geen vage titels)
+4. Unieke hoek of perspectief
+5. Zoekbaar en relevant voor ${currentYear}
 
-BELANGRIJK:
-- Focus op ${currentYear}-${nextYear} relevantie
-- Elk artikel moet uniek zijn (geen duplicaten)
-- Varieer in zoekintent (informational, commercial, transactional)
-- Denk aan alle fases van de customer journey
-- Include long-tail keywords met lage concurrentie
+VOORBEELDEN VAN GOEDE TITELS:
+- "7 Manieren om [specifiek probleem] op te lossen met ${pillarTopic}"
+- "Complete Gids: ${pillarTopic} voor [doelgroep] - Van Start tot Expert"
+- "${pillarTopic} Kosten in Nederland: Wat betaal je echt in 2025?"
+- "[Tool/Methode A] vs [Tool/Methode B]: Welke is beter voor ${pillarTopic}?"
+- "Fouten die iedereen maakt met ${pillarTopic} (en hoe je ze voorkomt)"
 
-Output als JSON (ALLEEN de array, geen markdown):
+VARIEER IN:
+- Doelgroep (beginners, gevorderden, professionals, specifieke sectoren)
+- Probleem/oplossing focus
+- Vergelijkingen (A vs B, voor vs nadelen, oude vs nieuwe methode)
+- Tijdframe (2025, toekomst, trends)
+- Gebruik specifieke getallen (5 tips, 10 voorbeelden, 3 stappen)
+
+Output als JSON (ALLEEN de object, geen markdown):
 {
-  "pillarTitle": "Uitgebreide titel voor pillar page",
-  "pillarDescription": "Beschrijving van de pillar page",
-  "pillarKeywords": ["keyword1", "keyword2", "keyword3"],
+  "pillarTitle": "Specifieke titel met waarde propositie",
+  "pillarDescription": "Wat de lezer precies leert en waarom het waardevol is",
+  "pillarKeywords": ["hoofdkeyword", "long-tail variant", "vraag-gebaseerd"],
+  "focusKeyword": "primair zoekwoord voor dit artikel (2-4 woorden)",
   "supportingContent": [
     {
-      "title": "Artikel titel met keyword",
-      "description": "Korte beschrijving",
-      "keywords": ["keyword1", "keyword2"],
+      "title": "Specifieke, actionable titel met duidelijke waarde",
+      "description": "Concrete beschrijving wat de lezer leert",
+      "keywords": ["specifiek keyword", "long-tail variant"],
+      "focusKeyword": "primair zoekwoord (2-4 woorden)",
       "contentType": "how-to|guide|comparison|list|case-study|faq|news",
-      "searchIntent": "informational|commercial|transactional|navigational"
+      "searchIntent": "informational|commercial|transactional"
     }
   ]
 }`;
@@ -222,6 +253,7 @@ Output alleen valide JSON zonder markdown formatting.`,
             category: pillarTopic,
             description: cluster.pillarDescription,
             keywords: cluster.pillarKeywords,
+            focusKeyword: cluster.focusKeyword || cluster.pillarKeywords?.[0] || pillarTopic.toLowerCase(),
             contentType: 'pillar',
             cluster: pillarTopic,
             priority: 'high',
@@ -234,6 +266,7 @@ Output alleen valide JSON zonder markdown formatting.`,
               category: pillarTopic,
               description: article.description,
               keywords: article.keywords || [],
+              focusKeyword: article.focusKeyword || article.keywords?.[0] || pillarTopic.toLowerCase(),
               contentType: article.contentType || 'guide',
               searchIntent: article.searchIntent || 'informational',
               cluster: pillarTopic,
@@ -317,7 +350,92 @@ Output alleen valide JSON zonder markdown formatting.`,
     }
 
     // Step 5: Deduplicate and limit to target count
-    const uniqueArticles = deduplicateArticles(enrichedArticles).slice(0, target_count);
+    let uniqueArticles = deduplicateArticles(enrichedArticles).slice(0, target_count);
+
+    // Step 6: Advanced Keyword Research (if enabled)
+    if (use_advanced_research && process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD) {
+      try {
+        console.log('Starting advanced keyword research...');
+        const client = new DataForSEOClient();
+        const analyzer = new KeywordOpportunityAnalyzer(client);
+
+        // Get focus keywords from top articles (limit to avoid API costs)
+        const focusKeywords = uniqueArticles
+          .slice(0, 50) // Analyze top 50 articles
+          .map(a => a.focusKeyword)
+          .filter(Boolean);
+
+        // Batch analyze opportunities
+        const opportunities = await analyzer.analyzeBatch(
+          focusKeywords,
+          domain_authority,
+          2528, // Netherlands
+          'nl'
+        );
+
+        // Create opportunity map
+        const opportunityMap = new Map<string, KeywordOpportunity>();
+        opportunities.forEach(opp => {
+          opportunityMap.set(opp.focusKeyword.toLowerCase(), opp);
+        });
+
+        // Enrich articles with opportunity data
+        uniqueArticles = uniqueArticles.map(article => {
+          const opp = opportunityMap.get(article.focusKeyword?.toLowerCase() || '');
+
+          if (!opp) return article;
+
+          return {
+            ...article,
+            // Add modern SEO metrics
+            keywordDifficulty: opp.difficulty,
+            rankingPotential: opp.rankingPotential,
+            recommendation: opp.recommendation,
+            recommendationReason: opp.reason,
+
+            // Add SERP intelligence
+            serpData: {
+              avgDomainAuthority: opp.serp.avgDomainAuthority,
+              avgWordCount: opp.serp.avgWordCount,
+              topResultType: opp.serp.topResultType,
+              featuredSnippetAvailable: opp.serp.featuredSnippetAvailable,
+            },
+
+            // Add related content opportunities
+            peopleAlsoAsk: opp.peopleAlsoAsk.slice(0, 5),
+            relatedKeywords: opp.relatedKeywords.slice(0, 10),
+            semanticKeywords: opp.semanticKeywords.slice(0, 10),
+          };
+        });
+
+        // Re-sort by ranking potential and recommendation
+        uniqueArticles.sort((a, b) => {
+          // Prioritize by recommendation
+          const recPriority: Record<string, number> = {
+            'high-priority': 4,
+            'medium-priority': 3,
+            'low-priority': 2,
+            'skip': 1,
+          };
+
+          const aPriority = recPriority[a.recommendation || 'medium-priority'] || 2;
+          const bPriority = recPriority[b.recommendation || 'medium-priority'] || 2;
+
+          if (bPriority !== aPriority) return bPriority - aPriority;
+
+          // Then by ranking potential
+          const aRP = a.rankingPotential || 50;
+          const bRP = b.rankingPotential || 50;
+
+          return bRP - aRP;
+        });
+
+        console.log(`Advanced research completed for ${opportunities.length} keywords`);
+      } catch (advancedResearchError) {
+        console.error('Advanced keyword research failed:', advancedResearchError);
+        // Continue without advanced data
+      }
+    }
 
     // Calculate statistics
     const stats = {
@@ -335,6 +453,28 @@ Output alleen valide JSON zonder markdown formatting.`,
         news: uniqueArticles.filter(a => a.contentType === 'news').length,
       },
       dataForSEOEnriched: enrichedArticles.some(a => a.searchVolume !== null),
+      advancedResearch: use_advanced_research ? {
+        enabled: true,
+        analyzedKeywords: uniqueArticles.filter(a => a.keywordDifficulty !== undefined).length,
+        byRecommendation: {
+          highPriority: uniqueArticles.filter(a => a.recommendation === 'high-priority').length,
+          mediumPriority: uniqueArticles.filter(a => a.recommendation === 'medium-priority').length,
+          lowPriority: uniqueArticles.filter(a => a.recommendation === 'low-priority').length,
+          skip: uniqueArticles.filter(a => a.recommendation === 'skip').length,
+        },
+        avgKeywordDifficulty: Math.round(
+          uniqueArticles
+            .filter(a => a.keywordDifficulty !== undefined)
+            .reduce((sum, a) => sum + (a.keywordDifficulty || 0), 0) /
+          (uniqueArticles.filter(a => a.keywordDifficulty !== undefined).length || 1)
+        ),
+        avgRankingPotential: Math.round(
+          uniqueArticles
+            .filter(a => a.rankingPotential !== undefined)
+            .reduce((sum, a) => sum + (a.rankingPotential || 0), 0) /
+          (uniqueArticles.filter(a => a.rankingPotential !== undefined).length || 1)
+        ),
+      } : { enabled: false },
     };
 
     return NextResponse.json({
@@ -360,7 +500,7 @@ Output alleen valide JSON zonder markdown formatting.`,
   }
 }
 
-// Generate additional long-tail keyword variations
+// Generate additional specific, valuable content ideas
 async function generateLongTailVariations(
   niche: string,
   pillarTopics: string[],
@@ -369,65 +509,282 @@ async function generateLongTailVariations(
   nextYear: number
 ): Promise<any[]> {
   const variations: any[] = [];
-  
-  const modifiers = [
-    // Question modifiers
-    'hoe', 'wat is', 'waarom', 'wanneer', 'waar', 'wie', 'welke',
-    // Comparison modifiers
-    'vs', 'versus', 'of', 'beste', 'top 10', 'vergelijking',
-    // Intent modifiers
-    'kopen', 'gratis', 'goedkoop', 'premium', 'review', 'ervaringen',
-    // Time modifiers
-    `${currentYear}`, `${nextYear}`, 'nieuw', 'update', 'trends',
-    // Audience modifiers
-    'beginners', 'gevorderden', 'professionals', 'bedrijven', 'mkb',
-    // Action modifiers
-    'tips', 'gids', 'handleiding', 'checklist', 'template', 'voorbeeld',
-    // Location modifiers
-    'nederland', 'belgie', 'vlaanderen', 'amsterdam', 'rotterdam',
+
+  // Specific content templates that create valuable, actionable articles
+  const contentTemplates = [
+    // Problem-solving templates
+    {
+      template: (topic: string) => `${getNumber()} Veelgemaakte fouten bij ${topic} (en hoe je ze vermijdt)`,
+      contentType: 'list',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} fouten`, `${topic} problemen`, `${topic} vermijden`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} fouten`,
+    },
+    {
+      template: (topic: string) => `Hoe los je ${getCommonProblem()} op met ${topic}?`,
+      contentType: 'how-to',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} oplossing`, `${topic} probleem`, `hoe ${topic}`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} oplossing`,
+    },
+
+    // Comparison templates
+    {
+      template: (topic: string) => `${topic} voor beginners vs gevorderden: Wat zijn de verschillen?`,
+      contentType: 'comparison',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} vergelijking`, `${topic} beginners`, `${topic} gevorderden`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} vergelijking`,
+    },
+    {
+      template: (topic: string) => `Gratis vs Betaald ${topic}: Waar moet je op letten?`,
+      contentType: 'comparison',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} gratis`, `${topic} betaald`, `${topic} kosten`],
+      focusKeyword: (topic: string) => `gratis ${topic.toLowerCase()}`,
+    },
+
+    // How-to templates
+    {
+      template: (topic: string) => `Stap-voor-stap: ${topic} implementeren in ${getTimeframe()} dagen`,
+      contentType: 'how-to',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} implementeren`, `${topic} stappen`, `${topic} handleiding`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} implementeren`,
+    },
+    {
+      template: (topic: string) => `Complete ${topic} checklist voor ${getAudience()} in ${nextYear}`,
+      contentType: 'guide',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} checklist`, `${topic} ${nextYear}`, `${topic} gids`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} checklist`,
+    },
+
+    // List templates
+    {
+      template: (topic: string) => `Top ${getNumber()} ${topic} tools die je moet kennen in ${nextYear}`,
+      contentType: 'list',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} tools`, `beste ${topic}`, `${topic} ${nextYear}`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} tools`,
+    },
+    {
+      template: (topic: string) => `${getNumber()} Manieren om ${getTopic(topic)} te verbeteren met ${topic}`,
+      contentType: 'list',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} tips`, `${topic} verbeteren`, `${topic} technieken`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} tips`,
+    },
+
+    // Buying guides
+    {
+      template: (topic: string) => `${topic} kosten in Nederland: Complete prijsoverzicht ${nextYear}`,
+      contentType: 'guide',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} kosten`, `${topic} prijs`, `${topic} nederland`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} kosten`,
+    },
+    {
+      template: (topic: string) => `Waar koop je de beste ${topic} voor ${getAudience()}?`,
+      contentType: 'guide',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} kopen`, `beste ${topic}`, `${topic} aanbieding`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} kopen`,
+    },
+
+    // Audience-specific templates
+    {
+      template: (topic: string) => `${topic} voor ${getAudience()}: Complete gids van start tot expert`,
+      contentType: 'guide',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} ${getAudience()}`, `${topic} gids`, `${topic} leren`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} gids`,
+    },
+    {
+      template: (topic: string) => `Welke ${topic} past het beste bij ${getAudience()}?`,
+      contentType: 'comparison',
+      intent: 'commercial',
+      keywords: (topic: string) => [`${topic} kiezen`, `${topic} advies`, `${topic} ${getAudience()}`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} kiezen`,
+    },
+
+    // Trend/update templates
+    {
+      template: (topic: string) => `${topic} trends in ${nextYear}: Wat moet je weten?`,
+      contentType: 'news',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} trends`, `${topic} ${nextYear}`, `${topic} toekomst`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} trends ${nextYear}`,
+    },
+    {
+      template: (topic: string) => `Nieuwe ontwikkelingen in ${topic}: ${nextYear} update`,
+      contentType: 'news',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} nieuw`, `${topic} ${nextYear}`, `${topic} ontwikkelingen`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} ${nextYear}`,
+    },
+
+    // Case study templates
+    {
+      template: (topic: string) => `Case study: Hoe ${getCompany()} ${getResult()} behaalde met ${topic}`,
+      contentType: 'case-study',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} case study`, `${topic} succesverhaal`, `${topic} voorbeeld`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} case study`,
+    },
+
+    // FAQ templates
+    {
+      template: (topic: string) => `${getNumber()} Meestgestelde vragen over ${topic} beantwoord`,
+      contentType: 'faq',
+      intent: 'informational',
+      keywords: (topic: string) => [`${topic} vragen`, `${topic} antwoorden`, `${topic} faq`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} vragen`,
+    },
   ];
 
-  const contentTypes = ['how-to', 'guide', 'comparison', 'list', 'faq'];
-  
+  // Generate variations using templates
   for (const topic of pillarTopics) {
-    for (const modifier of modifiers) {
+    if (variations.length >= count) break;
+
+    // Use each template multiple times with different random values
+    for (const templateObj of contentTemplates) {
       if (variations.length >= count) break;
-      
-      const title = generateVariationTitle(topic, modifier, currentYear, nextYear);
-      const contentType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
-      
+
+      const title = templateObj.template(topic);
+      const description = generateValueDescription(title, topic, templateObj.contentType);
+      const keywords = templateObj.keywords(topic);
+      const focusKeyword = templateObj.focusKeyword(topic);
+
+      // Validate title is meaningful
+      if (!isValidTitle(title)) continue;
+
       variations.push({
         title,
         category: topic,
-        description: `${title} - Uitgebreide informatie over ${topic.toLowerCase()} met focus op ${modifier}.`,
-        keywords: [
-          `${topic.toLowerCase()} ${modifier}`.trim(),
-          topic.toLowerCase(),
-          modifier,
-        ],
-        contentType,
-        searchIntent: getSearchIntent(modifier),
+        description,
+        keywords,
+        focusKeyword,
+        contentType: templateObj.contentType,
+        searchIntent: templateObj.intent,
         cluster: topic,
-        priority: 'low',
-        generated: 'long-tail-expansion',
+        priority: templateObj.contentType === 'how-to' || templateObj.contentType === 'case-study' ? 'medium' : 'low',
+        generated: 'specific-content-expansion',
       });
     }
   }
-  
+
   return variations.slice(0, count);
 }
 
-function generateVariationTitle(topic: string, modifier: string, currentYear: number, nextYear: number): string {
-  const templates = [
-    `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}?`,
-    `${topic}: ${modifier.charAt(0).toUpperCase() + modifier.slice(1)} Gids`,
-    `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic} in ${nextYear}`,
-    `De ${modifier} van ${topic}`,
-    `${topic} ${modifier}: Complete Handleiding`,
-    `Alles over ${topic} ${modifier}`,
+// Helper functions for generating specific content
+function getNumber(): number {
+  const numbers = [3, 5, 7, 10, 12, 15];
+  return numbers[Math.floor(Math.random() * numbers.length)];
+}
+
+function getTimeframe(): number {
+  const timeframes = [7, 14, 30, 60, 90];
+  return timeframes[Math.floor(Math.random() * timeframes.length)];
+}
+
+function getAudience(): string {
+  const audiences = [
+    'beginners',
+    'gevorderden',
+    'professionals',
+    'kleine bedrijven',
+    'mkb',
+    'startups',
+    'ondernemers',
+    'studenten',
   ];
-  
-  return templates[Math.floor(Math.random() * templates.length)];
+  return audiences[Math.floor(Math.random() * audiences.length)];
+}
+
+function getCommonProblem(): string {
+  const problems = [
+    'weinig tijd',
+    'een beperkt budget',
+    'geen ervaring',
+    'complexe situaties',
+    'veel concurrentie',
+    'technische uitdagingen',
+  ];
+  return problems[Math.floor(Math.random() * problems.length)];
+}
+
+function getTopic(baseTopic: string): string {
+  const topics = [
+    'resultaten',
+    'efficiency',
+    'productiviteit',
+    'kwaliteit',
+    'conversies',
+    'bereik',
+  ];
+  return topics[Math.floor(Math.random() * topics.length)];
+}
+
+function getCompany(): string {
+  const companies = [
+    'een Nederlands bedrijf',
+    'startup X',
+    'dit mkb-bedrijf',
+    'deze organisatie',
+    'ondernemer Y',
+  ];
+  return companies[Math.floor(Math.random() * companies.length)];
+}
+
+function getResult(): string {
+  const results = [
+    '200% groei',
+    'succesvol',
+    'snelle resultaten',
+    'aanzienlijke verbetering',
+    'meetbaar succes',
+  ];
+  return results[Math.floor(Math.random() * results.length)];
+}
+
+function generateValueDescription(title: string, topic: string, contentType: string): string {
+  const descriptions: Record<string, string> = {
+    'how-to': `Leer precies hoe je ${topic.toLowerCase()} succesvol toepast. Praktische stappen met concrete voorbeelden en direct toepasbare tips.`,
+    'guide': `Uitgebreide gids over ${topic.toLowerCase()} met alle informatie die je nodig hebt. Van basics tot geavanceerde strategieën.`,
+    'comparison': `Objectieve vergelijking van verschillende opties voor ${topic.toLowerCase()}. Ontdek welke het beste bij jouw situatie past.`,
+    'list': `Handige lijst met de beste opties, tools en tips voor ${topic.toLowerCase()}. Bespaar tijd met deze gecureerde selectie.`,
+    'case-study': `Concrete voorbeelden en succesverhalen over ${topic.toLowerCase()}. Leer van echte ervaringen en bewezen resultaten.`,
+    'faq': `Antwoorden op alle belangrijke vragen over ${topic.toLowerCase()}. Helder en begrijpelijk uitgelegd.`,
+    'news': `Blijf up-to-date met de laatste ontwikkelingen in ${topic.toLowerCase()}. Wat betekent dit voor jou?`,
+  };
+
+  return descriptions[contentType] || `Waardevolle informatie over ${topic.toLowerCase()} die je direct kunt toepassen.`;
+}
+
+function isValidTitle(title: string): boolean {
+  // Check for duplicate words (case insensitive)
+  const words = title.toLowerCase().split(/\s+/);
+  const uniqueWords = new Set(words.filter(w => w.length > 3)); // Only check words longer than 3 chars
+
+  // If there are significant duplicates, it's invalid
+  const significantWords = words.filter(w => w.length > 3);
+  if (significantWords.length > uniqueWords.size) {
+    return false;
+  }
+
+  // Check minimum length
+  if (title.length < 10) {
+    return false;
+  }
+
+  // Check it doesn't have too many special characters
+  const specialCharCount = (title.match(/[^a-zA-Z0-9\s\-:?]/g) || []).length;
+  if (specialCharCount > 3) {
+    return false;
+  }
+
+  return true;
 }
 
 function getSearchIntent(modifier: string): string {
