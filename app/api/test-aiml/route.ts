@@ -14,7 +14,7 @@ export async function GET() {
     });
 
     const completion = await openai.chat.completions.create({
-      model: 'anthropic/claude-sonnet-4.5',
+      model: 'gpt-4o',
       max_tokens: 50,
       messages: [
         { role: 'user', content: 'Say "AIML API werkt!" in Dutch' }
@@ -23,7 +23,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      model: 'anthropic/claude-sonnet-4.5',
+      model: 'gpt-4o',
       response: completion.choices[0]?.message?.content,
       provider: 'AIML API',
     });

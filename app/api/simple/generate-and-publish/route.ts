@@ -42,7 +42,7 @@ Genereer ALLEEN de HTML content (zonder <html>, <head>, <body> tags).
 Begin met een intro paragraaf, gebruik <h2> voor secties, <p> voor tekst.`;
 
     const message = await anthropicClient.chat.completions.create({
-      model: 'anthropic/claude-sonnet-4.5',
+      model: 'gpt-4o',
       max_tokens: 8000,
       messages: [
         {

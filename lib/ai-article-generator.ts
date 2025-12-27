@@ -105,9 +105,9 @@ export async function generateArticle(
   );
 
   try {
-    console.log('Starting AI article generation with Claude Sonnet 4.5...');
+    console.log('Starting AI article generation with GPT-4o...');
     const response = await aimlClient.chat.completions.create({
-      model: 'anthropic/claude-sonnet-4.5', // Use Claude instead of Perplexity for more reliable content generation
+      model: 'gpt-4o', // Using GPT-4o via AIML API
       messages: [
         {
           role: 'system',
