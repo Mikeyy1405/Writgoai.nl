@@ -14,6 +14,8 @@ import {
   findMiddlePosition,
   insertContentAtPosition,
 } from '@/lib/content-enrichment';
+import { checkCredits, deductCredits } from '@/lib/credit-manager';
+import type { CreditAction } from '@/lib/credit-costs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -166,6 +168,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Title and keyword are required' }, { status: 400 });
     }
 
+    // Determine credit cost based on word count
+    let creditAction: CreditAction = 'article_medium';
+    if (word_count <= 1000) {
+      creditAction = 'article_short';
+    } else if (word_count >= 2500) {
+      creditAction = 'article_long';
+    }
+
+    // Check if user has enough credits BEFORE starting generation
+    const hasCredits = await checkCredits(user.id, creditAction);
+    if (!hasCredits) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient credits',
+          message: 'Je hebt niet genoeg credits voor deze actie. Upgrade je plan om door te gaan.',
+        },
+        { status: 402 } // Payment Required
+      );
+    }
+
     // Create job in database
     const { data: job, error: createError } = await getSupabaseAdmin()
       .from('article_jobs')
@@ -198,6 +220,8 @@ export async function POST(request: Request) {
       websiteUrl: website_url,
       projectId: project_id,
       model, // Pass model to processArticle
+      userId: user.id, // Pass user ID for credit deduction
+      creditAction, // Pass credit action for deduction after completion
     }).catch(err => {
       console.error('Background article generation failed:', err);
       updateJob(job.id, { status: 'failed', error: err.message });
@@ -224,8 +248,10 @@ async function processArticle(jobId: string, params: {
   websiteUrl?: string;
   projectId?: string;
   model?: string; // Add model parameter
+  userId: string; // Add user ID for credit deduction
+  creditAction: CreditAction; // Add credit action for deduction
 }) {
-  const { title, keyword, description, contentType, wordCount, language, websiteUrl, projectId, model } = params;
+  const { title, keyword, description, contentType, wordCount, language, websiteUrl, projectId, model, userId, creditAction } = params;
   
   try {
     const now = new Date();
@@ -761,6 +787,16 @@ Check de server logs voor gedetailleerde error informatie.`;
       }
     }
 
+    // Deduct credits AFTER successful generation
+    const creditResult = await deductCredits(userId, creditAction);
+
+    if (!creditResult.success) {
+      console.error(`Failed to deduct credits for user ${userId}:`, creditResult.error);
+      // Don't fail the article generation, but log the issue
+    } else {
+      console.log(`Credits deducted for user ${userId}. Remaining: ${creditResult.remaining}`);
+    }
+
     // Save completed article to article_jobs with article_id in one atomic update
     await updateJob(jobId, {
       status: 'completed',
@@ -774,7 +810,7 @@ Check de server logs voor gedetailleerde error informatie.`;
       article_id: savedArticleId, // Include article_id here to avoid race conditions
     });
 
-    console.log(`Article job ${jobId} completed with ${wordCountActual} words`);
+    console.log(`Article job ${jobId} completed with ${wordCountActual} words. Credits used: ${creditAction}`);
 
   } catch (error: any) {
     console.error('Article generation error:', error);

@@ -102,16 +102,7 @@ export async function deductCredits(
       };
     }
 
-    // Check if subscription is active
-    if (!(subscriber as any).subscription_active) {
-      return {
-        success: false,
-        remaining: (subscriber as any).credits_remaining,
-        error: 'Subscription not active',
-      };
-    }
-
-    // Check if enough credits
+    // Check if enough credits (removed subscription_active check - credits should work regardless)
     if ((subscriber as any).credits_remaining < amount) {
       return {
         success: false,
