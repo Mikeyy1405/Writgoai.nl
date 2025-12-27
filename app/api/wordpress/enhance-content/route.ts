@@ -122,11 +122,17 @@ Geef alleen de herschreven tekst terug, zonder extra uitleg.`
  */
 async function addAffiliateLinks(content: string, project_id: string, supabase: any): Promise<{ enhanced_content: string; links_added: number }> {
   // Get affiliate configuration
-  const { data: affiliates } = await supabase
-    .from('affiliate_links')
+  const { data: affiliates, error: affiliateError } = await supabase
+    .from('project_affiliates')
     .select('*')
     .eq('project_id', project_id)
-    .eq('platform', 'bol.com');
+    .eq('platform', 'bol.com')
+    .eq('is_active', true);
+
+  if (affiliateError) {
+    console.error('Error fetching affiliates:', affiliateError);
+    return { enhanced_content: content, links_added: 0 };
+  }
 
   if (!affiliates || affiliates.length === 0) {
     return { enhanced_content: content, links_added: 0 };
