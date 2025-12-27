@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 
 export const runtime = 'nodejs';
@@ -22,8 +22,9 @@ function getSupabaseAdmin() {
   return supabaseAdmin as any;
 }
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+const openai = new OpenAI({
+  apiKey: process.env.AIML_API_KEY!,
+  baseURL: 'https://api.aimlapi.com/v1',
 });
 
 // Cron job to automatically generate new content ideas every week
@@ -171,8 +172,8 @@ Antwoord ALLEEN met een JSON array, geen extra tekst:
   }
 ]`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'anthropic/claude-sonnet-4.5',
       max_tokens: 2048,
       messages: [
         {
@@ -182,13 +183,13 @@ Antwoord ALLEEN met een JSON array, geen extra tekst:
       ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
       return [];
     }
 
     // Parse JSON from response
-    const jsonMatch = content.text.match(/\[[\s\S]*\]/);
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       console.error('[generateContentIdeas] Could not parse JSON from response');
       return [];

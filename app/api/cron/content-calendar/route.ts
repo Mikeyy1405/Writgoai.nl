@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 
 export const runtime = 'nodejs';
@@ -22,8 +22,9 @@ function getSupabaseAdmin() {
   return supabaseAdmin as any;
 }
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+const openai = new OpenAI({
+  apiKey: process.env.AIML_API_KEY!,
+  baseURL: 'https://api.aimlapi.com/v1',
 });
 
 // Cron job endpoint to process scheduled content
@@ -222,8 +223,8 @@ Instructies:
 
 Schrijf alleen de post tekst, geen extra uitleg.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'anthropic/claude-sonnet-4.5',
       max_tokens: 1024,
       messages: [
         {
@@ -233,9 +234,9 @@ Schrijf alleen de post tekst, geen extra uitleg.`;
       ],
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
-      return content.text.trim();
+    const content = response.choices[0]?.message?.content;
+    if (content) {
+      return content.trim();
     }
 
     return null;

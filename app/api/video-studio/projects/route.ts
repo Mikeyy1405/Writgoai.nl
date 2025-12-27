@@ -246,7 +246,7 @@ async function generateCompleteScenes(
 
   try {
     const response = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'anthropic/claude-sonnet-4.5',
       messages: [
         {
           role: 'system',

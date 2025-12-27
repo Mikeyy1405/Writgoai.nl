@@ -165,7 +165,7 @@ Schrijf het artikel in HTML formaat:`;
           let fullContent = '';
           let chunkCount = 0;
 
-          // Stream from Claude via AIML API
+          // Stream from Claude Sonnet 4.5 via AIML API
           // Calculate max tokens based on word count (roughly 1.3 tokens per word for English/Dutch)
           const estimatedTokens = Math.min(Math.round(word_count * 1.5) + 500, 8000);
 
