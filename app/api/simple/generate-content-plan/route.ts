@@ -6,6 +6,10 @@ import {
   KeywordClusterer,
   type KeywordOpportunity,
 } from '@/lib/keyword-research';
+import {
+  FreeKeywordResearch,
+  type FreeKeywordOpportunity,
+} from '@/lib/keyword-research-free';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -353,28 +357,43 @@ Output alleen valide JSON zonder markdown formatting.`,
     let uniqueArticles = deduplicateArticles(enrichedArticles).slice(0, target_count);
 
     // Step 6: Advanced Keyword Research (if enabled)
-    if (use_advanced_research && process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD) {
-      try {
-        console.log('Starting advanced keyword research...');
-        const client = new DataForSEOClient();
-        const analyzer = new KeywordOpportunityAnalyzer(client);
+    if (use_advanced_research) {
+      const hasDataForSEO = process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD;
+      const researchMode = hasDataForSEO ? 'DataForSEO (Paid)' : 'Google + AI (FREE)';
 
-        // Get focus keywords from top articles (limit to avoid API costs)
+      try {
+        console.log(`Starting keyword research using: ${researchMode}`);
+
+        // Get focus keywords from top articles (limit to avoid costs)
         const focusKeywords = uniqueArticles
           .slice(0, 50) // Analyze top 50 articles
           .map(a => a.focusKeyword)
           .filter(Boolean);
 
-        // Batch analyze opportunities
-        const opportunities = await analyzer.analyzeBatch(
-          focusKeywords,
-          domain_authority,
-          2528, // Netherlands
-          'nl'
-        );
+        let opportunities: (KeywordOpportunity | FreeKeywordOpportunity)[] = [];
+
+        if (hasDataForSEO) {
+          // Use DataForSEO (paid, more accurate)
+          const client = new DataForSEOClient();
+          const analyzer = new KeywordOpportunityAnalyzer(client);
+          opportunities = await analyzer.analyzeBatch(
+            focusKeywords,
+            domain_authority,
+            2528, // Netherlands
+            'nl'
+          );
+        } else {
+          // Use FREE mode (Google + AI)
+          const freeResearch = new FreeKeywordResearch();
+          opportunities = await freeResearch.analyzeBatch(
+            focusKeywords,
+            domain_authority,
+            nicheData.niche
+          );
+        }
 
         // Create opportunity map
-        const opportunityMap = new Map<string, KeywordOpportunity>();
+        const opportunityMap = new Map<string, KeywordOpportunity | FreeKeywordOpportunity>();
         opportunities.forEach(opp => {
           opportunityMap.set(opp.focusKeyword.toLowerCase(), opp);
         });
@@ -385,21 +404,33 @@ Output alleen valide JSON zonder markdown formatting.`,
 
           if (!opp) return article;
 
+          // Check if it's a DataForSEO opportunity (has serp property)
+          const isDataForSEO = 'serp' in opp;
+
           return {
             ...article,
             // Add modern SEO metrics
             keywordDifficulty: opp.difficulty,
             rankingPotential: opp.rankingPotential,
             recommendation: opp.recommendation,
-            recommendationReason: opp.reason,
+            recommendationReason: opp.recommendationReason || (opp as any).reason,
 
-            // Add SERP intelligence
-            serpData: {
-              avgDomainAuthority: opp.serp.avgDomainAuthority,
-              avgWordCount: opp.serp.avgWordCount,
-              topResultType: opp.serp.topResultType,
-              featuredSnippetAvailable: opp.serp.featuredSnippetAvailable,
-            },
+            // Add SERP intelligence (if available from DataForSEO)
+            ...(isDataForSEO && {
+              serpData: {
+                avgDomainAuthority: (opp as KeywordOpportunity).serp.avgDomainAuthority,
+                avgWordCount: (opp as KeywordOpportunity).serp.avgWordCount,
+                topResultType: (opp as KeywordOpportunity).serp.topResultType,
+                featuredSnippetAvailable: (opp as KeywordOpportunity).serp.featuredSnippetAvailable,
+              },
+            }),
+
+            // Add AI-powered content suggestions (if available from FREE mode)
+            ...(!isDataForSEO && {
+              contentSuggestions: (opp as FreeKeywordOpportunity).contentSuggestions,
+              estimatedVolume: (opp as FreeKeywordOpportunity).estimatedVolume,
+              trend: (opp as FreeKeywordOpportunity).trend,
+            }),
 
             // Add related content opportunities
             peopleAlsoAsk: opp.peopleAlsoAsk.slice(0, 5),
@@ -430,9 +461,9 @@ Output alleen valide JSON zonder markdown formatting.`,
           return bRP - aRP;
         });
 
-        console.log(`Advanced research completed for ${opportunities.length} keywords`);
+        console.log(`Keyword research completed (${researchMode}): ${opportunities.length} keywords analyzed`);
       } catch (advancedResearchError) {
-        console.error('Advanced keyword research failed:', advancedResearchError);
+        console.error('Keyword research failed:', advancedResearchError);
         // Continue without advanced data
       }
     }
@@ -455,6 +486,7 @@ Output alleen valide JSON zonder markdown formatting.`,
       dataForSEOEnriched: enrichedArticles.some(a => a.searchVolume !== null),
       advancedResearch: use_advanced_research ? {
         enabled: true,
+        mode: process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD ? 'DataForSEO (Paid)' : 'Google + AI (FREE)',
         analyzedKeywords: uniqueArticles.filter(a => a.keywordDifficulty !== undefined).length,
         byRecommendation: {
           highPriority: uniqueArticles.filter(a => a.recommendation === 'high-priority').length,
