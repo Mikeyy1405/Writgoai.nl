@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AVAILABLE_TEXT_MODELS, BEST_MODELS } from '@/lib/ai-client';
 
 interface ContentIdea {
   title: string;
@@ -62,6 +63,7 @@ export default function WriterPage() {
   const [starting, setStarting] = useState(false);
   const [wordCount, setWordCount] = useState(2000);
   const [language, setLanguage] = useState('nl');
+  const [selectedModel, setSelectedModel] = useState(BEST_MODELS.CONTENT);
   const [viewMode, setViewMode] = useState<'preview' | 'html'>('preview');
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -229,6 +231,7 @@ export default function WriterPage() {
           word_count: wordCount,
           language,
           website_url: project!.website_url,
+          model: selectedModel, // Include selected model
         }),
       });
 
@@ -493,8 +496,25 @@ export default function WriterPage() {
             {!currentJob && idea && (
               <div className="bg-gray-800 rounded-xl p-6">
                 <h2 className="text-lg font-semibold text-white mb-4">⚙️ Instellingen</h2>
-                
+
                 <div className="space-y-4">
+                  <div>
+                    <label className="block text-gray-400 text-sm mb-2">AI Model</label>
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-orange-500 focus:outline-none text-sm"
+                    >
+                      {AVAILABLE_TEXT_MODELS.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.recommended ? '⭐ ' : ''}{model.name} - {model.developer} {model.recommended ? '(Aanbevolen)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {AVAILABLE_TEXT_MODELS.find(m => m.id === selectedModel)?.description}
+                    </p>
+                  </div>
                   <div>
                     <label className="block text-gray-400 text-sm mb-2">Aantal woorden</label>
                     <select
