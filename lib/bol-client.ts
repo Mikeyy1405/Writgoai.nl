@@ -15,7 +15,7 @@ interface BolToken {
   expiresAt: number;
 }
 
-interface BolProduct {
+export interface BolProduct {
   ean: string;
   bolProductId: string;
   title: string;
