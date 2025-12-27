@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AVAILABLE_TEXT_MODELS, BEST_MODELS } from '@/lib/ai-client';
+import { AVAILABLE_TEXT_MODELS, BEST_MODELS } from '@/lib/ai-models';
 
 interface ContentIdea {
   title: string;
