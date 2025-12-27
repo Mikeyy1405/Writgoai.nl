@@ -369,65 +369,212 @@ async function generateLongTailVariations(
   nextYear: number
 ): Promise<any[]> {
   const variations: any[] = [];
-  
-  const modifiers = [
-    // Question modifiers
-    'hoe', 'wat is', 'waarom', 'wanneer', 'waar', 'wie', 'welke',
-    // Comparison modifiers
-    'vs', 'versus', 'of', 'beste', 'top 10', 'vergelijking',
-    // Intent modifiers
-    'kopen', 'gratis', 'goedkoop', 'premium', 'review', 'ervaringen',
-    // Time modifiers
-    `${currentYear}`, `${nextYear}`, 'nieuw', 'update', 'trends',
-    // Audience modifiers
-    'beginners', 'gevorderden', 'professionals', 'bedrijven', 'mkb',
-    // Action modifiers
-    'tips', 'gids', 'handleiding', 'checklist', 'template', 'voorbeeld',
-    // Location modifiers
-    'nederland', 'belgie', 'vlaanderen', 'amsterdam', 'rotterdam',
-  ];
 
-  const contentTypes = ['how-to', 'guide', 'comparison', 'list', 'faq'];
-  
+  // Organized modifier groups with specific content types
+  const modifierGroups = {
+    questions: {
+      modifiers: ['hoe werkt', 'wat is', 'waarom is', 'wanneer gebruik je', 'welke zijn de beste'],
+      contentType: 'faq',
+      intent: 'informational',
+    },
+    howTo: {
+      modifiers: ['hoe gebruik je', 'handleiding voor', 'stap voor stap', 'uitleg over', 'werken met'],
+      contentType: 'how-to',
+      intent: 'informational',
+    },
+    comparisons: {
+      modifiers: ['vergelijken', 'verschillen tussen', 'alternatieven voor', 'versus'],
+      contentType: 'comparison',
+      intent: 'commercial',
+    },
+    lists: {
+      modifiers: ['top 10', 'beste', '5 tips voor', 'voorbeelden van', 'soorten'],
+      contentType: 'list',
+      intent: 'informational',
+    },
+    buying: {
+      modifiers: ['kopen', 'prijs van', 'waar te koop', 'goedkope', 'aanbiedingen'],
+      contentType: 'guide',
+      intent: 'commercial',
+    },
+    reviews: {
+      modifiers: ['ervaringen met', 'test van', 'beoordeling van', 'voor- en nadelen'],
+      contentType: 'comparison',
+      intent: 'commercial',
+    },
+    audience: {
+      modifiers: ['voor beginners', 'voor professionals', 'voor gevorderden', 'voor mkb'],
+      contentType: 'guide',
+      intent: 'informational',
+    },
+    location: {
+      modifiers: ['in nederland', 'in belgie', 'nederlandse', 'belgische'],
+      contentType: 'guide',
+      intent: 'informational',
+    },
+  };
+
   for (const topic of pillarTopics) {
-    for (const modifier of modifiers) {
+    // Skip if we already have enough variations
+    if (variations.length >= count) break;
+
+    // Generate variations for each modifier group
+    for (const [groupName, group] of Object.entries(modifierGroups)) {
       if (variations.length >= count) break;
-      
-      const title = generateVariationTitle(topic, modifier, currentYear, nextYear);
-      const contentType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
-      
-      variations.push({
-        title,
-        category: topic,
-        description: `${title} - Uitgebreide informatie over ${topic.toLowerCase()} met focus op ${modifier}.`,
-        keywords: [
-          `${topic.toLowerCase()} ${modifier}`.trim(),
-          topic.toLowerCase(),
-          modifier,
-        ],
-        contentType,
-        searchIntent: getSearchIntent(modifier),
-        cluster: topic,
-        priority: 'low',
-        generated: 'long-tail-expansion',
-      });
+
+      for (const modifier of group.modifiers) {
+        if (variations.length >= count) break;
+
+        // Clean the topic to avoid duplicates
+        const cleanTopic = topic.toLowerCase();
+
+        // Skip if modifier words already exist in topic (avoid duplicates)
+        const modifierWords = modifier.toLowerCase().split(' ');
+        const topicWords = cleanTopic.split(' ');
+        const hasDuplicate = modifierWords.some(word =>
+          word.length > 3 && topicWords.includes(word)
+        );
+
+        if (hasDuplicate) continue;
+
+        // Generate contextual title based on modifier type
+        const title = generateContextualTitle(topic, modifier, groupName, nextYear);
+
+        // Validate title is meaningful
+        if (!isValidTitle(title)) continue;
+
+        variations.push({
+          title,
+          category: topic,
+          description: generateContextualDescription(title, topic, modifier, groupName),
+          keywords: generateRelevantKeywords(topic, modifier, groupName),
+          contentType: group.contentType,
+          searchIntent: group.intent,
+          cluster: topic,
+          priority: groupName === 'howTo' || groupName === 'reviews' ? 'medium' : 'low',
+          generated: 'long-tail-expansion',
+        });
+      }
     }
   }
-  
+
   return variations.slice(0, count);
 }
 
+function generateContextualTitle(topic: string, modifier: string, groupName: string, nextYear: number): string {
+  const templates: Record<string, string[]> = {
+    questions: [
+      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}?`,
+      `${topic}: ${modifier}`,
+    ],
+    howTo: [
+      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`,
+      `${topic}: ${modifier}`,
+    ],
+    comparisons: [
+      `${topic} ${modifier}`,
+      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)}: ${topic}`,
+    ],
+    lists: [
+      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`,
+      `${topic}: ${modifier}`,
+    ],
+    buying: [
+      `${topic} ${modifier}`,
+      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)}: ${topic}`,
+    ],
+    reviews: [
+      `${topic}: ${modifier}`,
+      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`,
+    ],
+    audience: [
+      `${topic} ${modifier}`,
+      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)}: ${topic}`,
+    ],
+    location: [
+      `${topic} ${modifier}`,
+      `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`,
+    ],
+  };
+
+  const templateList = templates[groupName] || templates.questions;
+  const template = templateList[Math.floor(Math.random() * templateList.length)];
+
+  return template;
+}
+
+function generateContextualDescription(title: string, topic: string, modifier: string, groupName: string): string {
+  const descriptions: Record<string, string> = {
+    questions: `Ontdek het antwoord op veel gestelde vragen over ${topic.toLowerCase()}. Compleet overzicht met praktische informatie.`,
+    howTo: `Praktische handleiding voor ${topic.toLowerCase()}. Stap voor stap uitleg met voorbeelden en tips.`,
+    comparisons: `Vergelijk verschillende opties en ontdek de verschillen. Objectief overzicht van ${topic.toLowerCase()}.`,
+    lists: `Overzichtelijke lijst met de beste opties, tips en voorbeelden voor ${topic.toLowerCase()}.`,
+    buying: `Koopgids voor ${topic.toLowerCase()}. Prijzen, aanbieders en waar je het beste kunt kopen.`,
+    reviews: `Onafhankelijke reviews en ervaringen met ${topic.toLowerCase()}. Voor- en nadelen op een rij.`,
+    audience: `Toegespitste informatie over ${topic.toLowerCase()} voor jouw doelgroep. Praktische tips en advies.`,
+    location: `Alles wat je moet weten over ${topic.toLowerCase()} specifiek voor de Nederlandse markt.`,
+  };
+
+  return descriptions[groupName] || `Uitgebreide informatie over ${topic.toLowerCase()}.`;
+}
+
+function generateRelevantKeywords(topic: string, modifier: string, groupName: string): string[] {
+  const keywords: string[] = [];
+  const cleanTopic = topic.toLowerCase();
+  const cleanModifier = modifier.toLowerCase();
+
+  // Primary keyword: combination of topic and modifier
+  keywords.push(`${cleanTopic} ${cleanModifier}`.trim());
+
+  // Secondary: topic alone
+  keywords.push(cleanTopic);
+
+  // Tertiary: related variations based on group
+  const variations: Record<string, string[]> = {
+    questions: [`${cleanTopic} vraag`, `${cleanTopic} antwoord`],
+    howTo: [`${cleanTopic} tutorial`, `${cleanTopic} gids`],
+    comparisons: [`${cleanTopic} vergelijking`, `${cleanTopic} verschillen`],
+    lists: [`beste ${cleanTopic}`, `top ${cleanTopic}`],
+    buying: [`${cleanTopic} kopen`, `${cleanTopic} prijs`],
+    reviews: [`${cleanTopic} review`, `${cleanTopic} ervaringen`],
+    audience: [cleanTopic],
+    location: [`${cleanTopic} nederland`],
+  };
+
+  const groupVariations = variations[groupName] || [];
+  keywords.push(...groupVariations.slice(0, 2));
+
+  return keywords.filter((kw, idx) => keywords.indexOf(kw) === idx).slice(0, 5);
+}
+
+function isValidTitle(title: string): boolean {
+  // Check for duplicate words (case insensitive)
+  const words = title.toLowerCase().split(/\s+/);
+  const uniqueWords = new Set(words.filter(w => w.length > 3)); // Only check words longer than 3 chars
+
+  // If there are significant duplicates, it's invalid
+  const significantWords = words.filter(w => w.length > 3);
+  if (significantWords.length > uniqueWords.size) {
+    return false;
+  }
+
+  // Check minimum length
+  if (title.length < 10) {
+    return false;
+  }
+
+  // Check it doesn't have too many special characters
+  const specialCharCount = (title.match(/[^a-zA-Z0-9\s\-:?]/g) || []).length;
+  if (specialCharCount > 3) {
+    return false;
+  }
+
+  return true;
+}
+
 function generateVariationTitle(topic: string, modifier: string, currentYear: number, nextYear: number): string {
-  const templates = [
-    `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}?`,
-    `${topic}: ${modifier.charAt(0).toUpperCase() + modifier.slice(1)} Gids`,
-    `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic} in ${nextYear}`,
-    `De ${modifier} van ${topic}`,
-    `${topic} ${modifier}: Complete Handleiding`,
-    `Alles over ${topic} ${modifier}`,
-  ];
-  
-  return templates[Math.floor(Math.random() * templates.length)];
+  // This function is kept for backward compatibility but should not be used
+  return generateContextualTitle(topic, modifier, 'questions', nextYear);
 }
 
 function getSearchIntent(modifier: string): string {
