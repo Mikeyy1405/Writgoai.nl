@@ -57,6 +57,9 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
+  const [enhancing, setEnhancing] = useState(false);
+  const [rewriting, setRewriting] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
 
   const [internalLinks, setInternalLinks] = useState<InternalLink[]>([]);
   const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
@@ -304,43 +307,267 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
     }
   };
 
+  // AI Enhancement Functions
+  const handleRewriteText = async () => {
+    if (!selectedText && !formData.content) {
+      alert('Selecteer eerst tekst om te herschrijven');
+      return;
+    }
+
+    const textToRewrite = selectedText || formData.content;
+
+    if (!confirm(`Wil je "${textToRewrite.substring(0, 50)}..." herschrijven met AI?`)) {
+      return;
+    }
+
+    setRewriting(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'rewrite-text',
+          selected_text: textToRewrite,
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to rewrite text');
+      }
+
+      // Replace selected text or full content
+      if (selectedText) {
+        setFormData(prev => ({
+          ...prev,
+          content: prev.content.replace(selectedText, data.rewritten_text)
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          content: data.rewritten_text
+        }));
+      }
+
+      alert('Tekst succesvol herschreven!');
+      setSelectedText('');
+    } catch (error: any) {
+      console.error('Error rewriting text:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het herschrijven');
+    } finally {
+      setRewriting(false);
+    }
+  };
+
+  const handleFullEnhancement = async () => {
+    if (!formData.content) {
+      alert('Voeg eerst content toe');
+      return;
+    }
+
+    if (!confirm('AI zal automatisch affiliate links, interne links en afbeeldingen toevoegen. Dit kan enkele minuten duren. Doorgaan?')) {
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'full-enhancement',
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to enhance content');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        content: data.enhanced_content
+      }));
+
+      const stats = data.stats;
+      alert(`Content verbeterd!\n\n` +
+        `✅ ${stats.affiliate_links} affiliate links toegevoegd\n` +
+        `✅ ${stats.internal_links} interne links toegevoegd\n` +
+        `✅ ${stats.images} afbeeldingen toegevoegd`);
+    } catch (error: any) {
+      console.error('Error enhancing content:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het verbeteren van content');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleAddAffiliateLinks = async () => {
+    if (!formData.content) {
+      alert('Voeg eerst content toe');
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'add-affiliate-links',
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add affiliate links');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        content: data.enhanced_content
+      }));
+
+      alert(`${data.links_added} bol.com affiliate links toegevoegd!`);
+    } catch (error: any) {
+      console.error('Error adding affiliate links:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het toevoegen van affiliate links');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleAddInternalLinks = async () => {
+    if (!formData.content) {
+      alert('Voeg eerst content toe');
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'add-internal-links',
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add internal links');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        content: data.enhanced_content
+      }));
+
+      alert(`${data.links_added} interne links toegevoegd!`);
+    } catch (error: any) {
+      console.error('Error adding internal links:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het toevoegen van interne links');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleAddImages = async () => {
+    if (!formData.content) {
+      alert('Voeg eerst content toe');
+      return;
+    }
+
+    if (!confirm('AI zal afbeeldingen genereren en invoegen. Dit kan enkele minuten duren. Doorgaan?')) {
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'add-images',
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add images');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        content: data.enhanced_content
+      }));
+
+      alert(`${data.images_added} afbeeldingen toegevoegd!`);
+    } catch (error: any) {
+      console.error('Error adding images:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het toevoegen van afbeeldingen');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">WordPress Post Bewerken</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">WordPress Post Bewerken</h1>
             {article?.wordpress_url && (
               <a
                 href={article.wordpress_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 mt-1 inline-block"
+                className="text-sm text-orange-400 hover:text-orange-300 mt-1 inline-block"
               >
                 Bekijk op WordPress →
               </a>
             )}
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 md:gap-3">
             <button
               onClick={() => router.back()}
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="px-4 md:px-6 py-2 md:py-3 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors font-medium text-white text-sm md:text-base"
               disabled={saving || syncing}
             >
               Terug
             </button>
             <button
               onClick={handleSave}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+              className="px-4 md:px-6 py-2 md:py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 text-sm md:text-base"
               disabled={saving || syncing}
             >
               {saving ? 'Opslaan...' : 'Opslaan'}
@@ -348,7 +575,7 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
             {article?.wordpress_id && (
               <button
                 onClick={handleSyncToWordPress}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+                className="px-4 md:px-6 py-2 md:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 text-sm md:text-base"
                 disabled={saving || syncing}
               >
                 {syncing ? 'Synchroniseren...' : 'Sync naar WordPress'}
@@ -357,44 +584,95 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Main Content */}
-          <div className="col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 md:space-y-6">
             {/* Title */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 md:p-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Titel *
               </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-4 py-3 text-2xl font-bold border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-3 text-xl md:text-2xl font-bold bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 placeholder="Voer een titel in..."
               />
             </div>
 
             {/* Slug */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 md:p-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Slug (URL)
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500">/</span>
+                <span className="text-gray-400">/</span>
                 <input
                   type="text"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="url-slug"
                 />
               </div>
             </div>
 
+            {/* AI Content Enhancement */}
+            <div className="bg-gradient-to-r from-purple-500/10 to-orange-500/10 border border-purple-500/30 rounded-xl p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-white mb-3">🤖 AI Content Enhancement</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Gebruik AI om je content automatisch te verbeteren met affiliate links, interne links en afbeeldingen
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <button
+                  onClick={handleFullEnhancement}
+                  disabled={enhancing || !formData.content}
+                  className="px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  {enhancing ? '⏳' : '✨'} Alles Optimaliseren
+                </button>
+                <button
+                  onClick={handleAddAffiliateLinks}
+                  disabled={enhancing || !formData.content}
+                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  💰 Affiliate Links
+                </button>
+                <button
+                  onClick={handleAddInternalLinks}
+                  disabled={enhancing || !formData.content}
+                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  🔗 Interne Links
+                </button>
+                <button
+                  onClick={handleAddImages}
+                  disabled={enhancing || !formData.content}
+                  className="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  🎨 Afbeeldingen
+                </button>
+                <button
+                  onClick={handleRewriteText}
+                  disabled={rewriting || !formData.content}
+                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  ✍️ Tekst Herschrijven
+                </button>
+              </div>
+              {(enhancing || rewriting) && (
+                <div className="mt-3 flex items-center gap-2 text-sm text-purple-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+                  <span>AI is bezig met het verbeteren van je content...</span>
+                </div>
+              )}
+            </div>
+
             {/* Content with Editor Mode Toggle */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <label className="block text-sm font-medium text-gray-700">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                <label className="block text-sm font-medium text-gray-300">
                   Content *
                 </label>
                 <div className="flex gap-2">
@@ -402,8 +680,8 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                     onClick={() => setEditorMode('visual')}
                     className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                       editorMode === 'visual'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700'
                     }`}
                   >
                     ✨ Visueel
@@ -412,8 +690,8 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                     onClick={() => setEditorMode('html')}
                     className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                       editorMode === 'html'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700'
                     }`}
                   >
                     &lt;/&gt; HTML
@@ -433,35 +711,35 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   rows={20}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono text-sm"
                   placeholder="Schrijf je content hier... HTML tags zijn toegestaan."
                 />
               )}
             </div>
 
             {/* Excerpt */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 md:p-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Excerpt (Korte samenvatting)
               </label>
               <textarea
                 value={formData.excerpt}
                 onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 placeholder="Korte samenvatting..."
               />
             </div>
 
             {/* SEO Optimization Section */}
-            <div className="bg-white rounded-lg shadow-sm">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
               <button
                 onClick={() => setShowSEO(!showSEO)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full px-4 md:px-6 py-4 flex items-center justify-between hover:bg-gray-800/50 transition-colors"
               >
-                <span className="font-medium text-gray-900">🎯 SEO Optimalisatie</span>
+                <span className="font-medium text-white">🎯 SEO Optimalisatie</span>
                 <svg
-                  className={`w-5 h-5 transform transition-transform ${showSEO ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 transform transition-transform text-gray-400 ${showSEO ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -470,7 +748,7 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                 </svg>
               </button>
               {showSEO && (
-                <div className="px-6 pb-6 space-y-4">
+                <div className="px-4 md:px-6 pb-6 space-y-4">
                   <div className="flex gap-2 mb-4">
                     <button
                       onClick={optimizeForSEO}
@@ -482,20 +760,20 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Focus Keyword
                     </label>
                     <input
                       type="text"
                       value={formData.focus_keyword}
                       onChange={(e) => setFormData({ ...formData, focus_keyword: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       placeholder="Hoofd zoekwoord..."
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Meta Title ({formData.meta_title.length}/60)
                     </label>
                     <input
@@ -503,10 +781,10 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                       value={formData.meta_title}
                       onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
                       maxLength={60}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       placeholder="SEO title..."
                     />
-                    <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="mt-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all ${
                           formData.meta_title.length > 60 ? 'bg-red-500' :
@@ -519,7 +797,7 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Meta Description ({formData.meta_description.length}/160)
                     </label>
                     <textarea
@@ -527,10 +805,10 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                       onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
                       maxLength={160}
                       rows={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       placeholder="SEO description..."
                     />
-                    <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="mt-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all ${
                           formData.meta_description.length > 160 ? 'bg-red-500' :
@@ -546,14 +824,14 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
             </div>
 
             {/* Internal Links Section */}
-            <div className="bg-white rounded-lg shadow-sm">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
               <button
                 onClick={() => setShowLinks(!showLinks)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full px-4 md:px-6 py-4 flex items-center justify-between hover:bg-gray-800/50 transition-colors"
               >
-                <span className="font-medium text-gray-900">🔗 Interne Links</span>
+                <span className="font-medium text-white">🔗 Interne Links</span>
                 <svg
-                  className={`w-5 h-5 transform transition-transform ${showLinks ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 transform transition-transform text-gray-400 ${showLinks ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -562,8 +840,8 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                 </svg>
               </button>
               {showLinks && (
-                <div className="px-6 pb-6">
-                  <p className="text-sm text-gray-600 mb-3">
+                <div className="px-4 md:px-6 pb-6">
+                  <p className="text-sm text-gray-400 mb-3">
                     Klik op een link om deze in je content in te voegen
                   </p>
                   <div className="max-h-60 overflow-y-auto space-y-2">
@@ -571,10 +849,10 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                       <button
                         key={link.id}
                         onClick={() => insertInternalLink(link)}
-                        className="w-full text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-colors text-sm"
+                        className="w-full text-left px-3 py-2 rounded-lg border border-gray-700 hover:border-orange-500 hover:bg-orange-500/10 transition-colors text-sm"
                       >
-                        <div className="font-medium text-gray-900">{link.title}</div>
-                        <div className="text-xs text-gray-500">{link.url}</div>
+                        <div className="font-medium text-white">{link.title}</div>
+                        <div className="text-xs text-gray-400">{link.url}</div>
                       </button>
                     ))}
                   </div>
@@ -583,14 +861,14 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
             </div>
 
             {/* Affiliate Links Section */}
-            <div className="bg-white rounded-lg shadow-sm">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
               <button
                 onClick={() => setShowAffiliate(!showAffiliate)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full px-4 md:px-6 py-4 flex items-center justify-between hover:bg-gray-800/50 transition-colors"
               >
-                <span className="font-medium text-gray-900">💰 Affiliate Links</span>
+                <span className="font-medium text-white">💰 Affiliate Links</span>
                 <svg
-                  className={`w-5 h-5 transform transition-transform ${showAffiliate ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 transform transition-transform text-gray-400 ${showAffiliate ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -599,19 +877,19 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                 </svg>
               </button>
               {showAffiliate && (
-                <div className="px-6 pb-6">
-                  <p className="text-sm text-gray-600 mb-3">
+                <div className="px-4 md:px-6 pb-6">
+                  <p className="text-sm text-gray-400 mb-3">
                     Geconfigureerde affiliate programma's voor dit project
                   </p>
                   {affiliateLinks.length === 0 ? (
-                    <p className="text-sm text-gray-500">Geen affiliate links geconfigureerd</p>
+                    <p className="text-sm text-gray-400">Geen affiliate links geconfigureerd</p>
                   ) : (
                     <div className="space-y-2">
                       {affiliateLinks.map((affiliate, i) => (
-                        <div key={i} className="px-3 py-2 rounded-lg border border-gray-200 bg-gray-50">
-                          <div className="font-medium text-gray-900 capitalize">{affiliate.platform}</div>
+                        <div key={i} className="px-3 py-2 rounded-lg border border-gray-700 bg-gray-800/50">
+                          <div className="font-medium text-white capitalize">{affiliate.platform}</div>
                           {affiliate.site_code && (
-                            <div className="text-xs text-gray-500">Site Code: {affiliate.site_code}</div>
+                            <div className="text-xs text-gray-400">Site Code: {affiliate.site_code}</div>
                           )}
                         </div>
                       ))}
@@ -623,10 +901,10 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {/* Featured Image */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 md:p-6">
+              <label className="block text-sm font-medium text-gray-300 mb-3">
                 Featured Image
               </label>
               {formData.featured_image ? (
@@ -646,18 +924,18 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                   </button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-3">
-                  <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center mb-3">
+                  <svg className="w-12 h-12 mx-auto text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p className="text-sm text-gray-500">Geen afbeelding</p>
+                  <p className="text-sm text-gray-400">Geen afbeelding</p>
                 </div>
               )}
               <div className="space-y-2">
                 <button
                   onClick={generateFeaturedImage}
                   disabled={generatingImage}
-                  className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
+                  className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 font-medium text-sm"
                 >
                   {generatingImage ? (
                     <>
@@ -672,21 +950,21 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                   type="url"
                   value={formData.featured_image}
                   onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="Of plak een URL..."
                 />
               </div>
             </div>
 
             {/* Status */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 md:p-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Status
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
                 <option value="draft">Draft</option>
                 <option value="published">Gepubliceerd</option>
@@ -695,16 +973,16 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
 
             {/* WordPress Info */}
             {article?.wordpress_id && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-blue-900 mb-2">WordPress Info</h3>
-                <div className="text-xs text-blue-800 space-y-1">
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-orange-400 mb-2">WordPress Info</h3>
+                <div className="text-xs text-gray-300 space-y-1">
                   <div>ID: {article.wordpress_id}</div>
                   {article.wordpress_url && (
                     <a
                       href={article.wordpress_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline block truncate"
+                      className="text-orange-400 hover:text-orange-300 underline block truncate"
                     >
                       Bekijk post →
                     </a>

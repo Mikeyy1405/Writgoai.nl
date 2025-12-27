@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { generateImage, generateFeaturedImage } from '@/lib/ai-image-client';
+import { generateFeaturedImage, generateArticleImage } from '@/lib/aiml-image-generator';
 import { requireCredits, deductCreditsAfterAction } from '@/lib/credit-middleware';
 
 // Force dynamic rendering for this API route
@@ -42,13 +42,13 @@ export async function POST(request: Request) {
     }
 
     const startTime = Date.now();
-    let imageUrl: string;
+    let imageUrl: string | null;
 
     if (type === 'featured' && article_id) {
       // Get article details
       const { data: article } = await supabase
         .from('articles')
-        .select('title, content')
+        .select('title, content, focus_keyword')
         .eq('id', article_id)
         .single();
 
@@ -56,20 +56,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Article not found' }, { status: 404 });
       }
 
-      // Generate featured image
-      imageUrl = await generateFeaturedImage({
-        articleTitle: article.title,
-        articleSummary: article.content.substring(0, 200),
-        style,
-      });
+      // Generate featured image using AIML
+      imageUrl = await generateFeaturedImage(
+        article.title,
+        article.focus_keyword || undefined
+      );
     } else {
-      // Generate custom image
-      const images = await generateImage({
-        prompt: prompt || 'Professional blog illustration',
-        aspectRatio: '16:9',
-        numImages: 1,
-      });
-      imageUrl = images[0];
+      // Generate custom image using AIML
+      imageUrl = await generateArticleImage(
+        prompt || 'Professional blog illustration',
+        'photorealistic'
+      );
+    }
+
+    if (!imageUrl) {
+      return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
     }
 
     const duration = Date.now() - startTime;
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
         type: 'image',
         url: imageUrl,
         prompt,
-        model: 'flux-pro',
+        model: 'aiml-flux-schnell',
         status: 'generated',
       })
       .select()
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
     await supabase.from('ai_generation_logs').insert({
       project_id,
       type: 'image',
-      model: 'flux-pro',
+      model: 'aiml-flux-schnell',
       prompt,
       output: imageUrl,
       duration_ms: duration,
