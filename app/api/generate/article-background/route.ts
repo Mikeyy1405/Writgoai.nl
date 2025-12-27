@@ -150,15 +150,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { 
-      project_id, 
-      title, 
-      keyword, 
-      description, 
+    const {
+      project_id,
+      title,
+      keyword,
+      description,
       content_type = 'article',
-      word_count = 2000, 
+      word_count = 2000,
       language = 'nl',
-      website_url 
+      website_url,
+      model // Accept model parameter from frontend
     } = await request.json();
 
     if (!title || !keyword) {
@@ -196,6 +197,7 @@ export async function POST(request: Request) {
       language,
       websiteUrl: website_url,
       projectId: project_id,
+      model, // Pass model to processArticle
     }).catch(err => {
       console.error('Background article generation failed:', err);
       updateJob(job.id, { status: 'failed', error: err.message });
@@ -221,8 +223,9 @@ async function processArticle(jobId: string, params: {
   language: string;
   websiteUrl?: string;
   projectId?: string;
+  model?: string; // Add model parameter
 }) {
-  const { title, keyword, description, contentType, wordCount, language, websiteUrl, projectId } = params;
+  const { title, keyword, description, contentType, wordCount, language, websiteUrl, projectId, model } = params;
   
   try {
     const now = new Date();
@@ -310,6 +313,7 @@ Geef een JSON outline:
     try {
       const outlineResponse = await generateAICompletion({
         task: 'content',
+        model, // Use selected model
         systemPrompt: `${langConfig.systemPrompt} Output alleen JSON. BELANGRIJK: Plan voor STRIKT ${wordCount} woorden totaal - niet meer!`,
         userPrompt: outlinePrompt,
         maxTokens: 2000,
@@ -347,14 +351,21 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
     try {
       introContent = await generateAICompletion({
         task: 'content',
+        model, // Use selected model
         systemPrompt: `${langConfig.systemPrompt} Output alleen HTML. BELANGRIJK: Gebruik GEEN "Inleiding:" of "Introductie:" heading. Start direct met <p> tags.`,
         userPrompt: introPrompt,
         maxTokens: 1000,
         temperature: 0.7,
       });
       introContent = cleanHtmlContent(introContent);
-    } catch (e) {
-      console.warn('Intro generation failed:', e);
+      console.log(`✅ Intro generated: ${introContent.length} characters`);
+    } catch (e: any) {
+      console.error('❌ Intro generation FAILED:', e?.message || e);
+      console.error('Error details:', {
+        name: e?.name,
+        status: e?.status,
+        message: e?.message
+      });
     }
 
     await updateJob(jobId, { progress: 30, current_step: '✅ Introductie klaar' });
@@ -399,14 +410,22 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
         const sectionMaxTokens = Math.min(Math.round(wordsPerSection * 2) + 200, 3000);
         const sectionContent = await generateAICompletion({
           task: 'content',
+          model, // Use selected model
           systemPrompt: `${langConfig.systemPrompt} Output alleen HTML. STRIKT maximaal ${wordsPerSection} woorden voor deze sectie!`,
           userPrompt: sectionPrompt,
           maxTokens: sectionMaxTokens,
           temperature: 0.7,
         });
-        mainContent += '\n\n' + cleanHtmlContent(sectionContent);
-      } catch (e) {
-        console.warn(`Section ${i + 1} generation failed:`, e);
+        const cleanedSection = cleanHtmlContent(sectionContent);
+        mainContent += '\n\n' + cleanedSection;
+        console.log(`✅ Section ${i + 1} generated: ${cleanedSection.length} characters`);
+      } catch (e: any) {
+        console.error(`❌ Section ${i + 1} generation FAILED:`, e?.message || e);
+        console.error('Error details:', {
+          name: e?.name,
+          status: e?.status,
+          message: e?.message
+        });
       }
 
       // Small delay between sections
@@ -436,14 +455,21 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
     try {
       conclusionContent = await generateAICompletion({
         task: 'content',
+        model, // Use selected model
         systemPrompt: `${langConfig.systemPrompt} Output alleen HTML.`,
         userPrompt: conclusionPrompt,
         maxTokens: 1000,
         temperature: 0.7,
       });
       conclusionContent = cleanHtmlContent(conclusionContent);
-    } catch (e) {
-      console.warn('Conclusion generation failed:', e);
+      console.log(`✅ Conclusion generated: ${conclusionContent.length} characters`);
+    } catch (e: any) {
+      console.error('❌ Conclusion generation FAILED:', e?.message || e);
+      console.error('Error details:', {
+        name: e?.name,
+        status: e?.status,
+        message: e?.message
+      });
     }
 
     await updateJob(jobId, { progress: 80, current_step: '✅ Conclusie klaar' });
@@ -512,6 +538,7 @@ Output alleen de social media post tekst, geen extra uitleg.`;
 
       socialMediaPost = await generateAICompletion({
         task: 'content',
+        model, // Use selected model
         systemPrompt: `${langConfig.systemPrompt} Je bent een social media expert. Output alleen de post tekst.`,
         userPrompt: socialPrompt,
         maxTokens: 500,
@@ -535,6 +562,28 @@ Output alleen de social media post tekst, geen extra uitleg.`;
 
     // Combine base content
     let fullContent = `${introContent}\n\n${mainContent}\n\n${conclusionContent}`;
+
+    // CRITICAL CHECK: Verify that actual content was generated
+    const plainTextContent = fullContent.replace(/<[^>]*>/g, ' ').trim();
+    const wordCountCheck = plainTextContent.split(/\s+/).filter(w => w.length > 0).length;
+
+    if (wordCountCheck < 200) {
+      // Content generation failed - not enough content was created
+      const missingParts = [];
+      if (!introContent || introContent.trim().length < 50) missingParts.push('introductie');
+      if (!mainContent || mainContent.trim().length < 100) missingParts.push('hoofdcontent');
+      if (!conclusionContent || conclusionContent.trim().length < 50) missingParts.push('conclusie');
+
+      const errorMsg = `Artikel generatie gefaald: onvoldoende content gegenereerd (${wordCountCheck} woorden). Ontbrekende delen: ${missingParts.join(', ')}. Dit kan veroorzaakt worden door API limiet, timeout, of lege AI responses.`;
+      console.error(errorMsg);
+      console.error('Content lengths:', {
+        intro: introContent?.length || 0,
+        main: mainContent?.length || 0,
+        conclusion: conclusionContent?.length || 0,
+      });
+
+      throw new Error(errorMsg);
+    }
 
     // Insert YouTube video after intro (before first H2)
     if (youtubeEmbed) {
