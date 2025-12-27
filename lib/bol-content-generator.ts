@@ -141,7 +141,8 @@ Regels:
  */
 function generateProductReviewHTML(
   review: ProductReview,
-  siteCode: string
+  siteCode: string,
+  productImageUrl?: string
 ): string {
   const { product, rank, specifications, experience, pros, cons, verdict } = review;
   const affiliateLink = generateBolAffiliateLink(product.url, siteCode, product.title);
@@ -185,6 +186,9 @@ function generateProductReviewHTML(
   </ul>
 </div>`;
 
+  // Use productImageUrl from media API if available, otherwise fall back to product.image
+  const imageUrl = productImageUrl || product.image?.url;
+
   return `
 <div class="bol-product-review" style="border: 2px solid #e0e0e0; border-radius: 12px; padding: 25px; margin: 30px 0; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
   <div style="display: flex; align-items: center; margin-bottom: 20px;">
@@ -194,9 +198,9 @@ function generateProductReviewHTML(
     <h3 style="margin: 0; flex: 1;">${product.title}</h3>
   </div>
 
-  ${product.image ? `
-  <div style="text-align: center; margin: 20px 0;">
-    <img src="${product.image.url}" alt="${product.title}" style="max-width: 100%; max-height: 300px; object-fit: contain;" />
+  ${imageUrl ? `
+  <div style="text-align: center; margin: 20px 0; background: #f8f9fa; padding: 20px; border-radius: 8px;">
+    <img src="${imageUrl}" alt="${product.title}" style="max-width: 100%; max-height: 400px; object-fit: contain;" />
   </div>` : ''}
 
   <div style="background: #0000a4; color: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
@@ -437,9 +441,35 @@ Output alleen de HTML (2-3 <p> tags) zonder markdown code blocks.`;
   </a>
 </div>`;
 
-  // Generate product reviews HTML
+  // Fetch product media for each product
+  console.log('Fetching product media from Bol.com Marketing API...');
+  const productImages: Map<string, string> = new Map();
+
+  for (const review of reviews) {
+    try {
+      const media = await bolClient.getProductMedia(review.product.ean);
+      if (media && media.images && media.images.length > 0) {
+        // Find the image with the highest resolution
+        const bestImage = media.images[0]; // Images are ordered by 'order' field
+        if (bestImage.renditions && bestImage.renditions.length > 0) {
+          // Sort renditions by size (width * height) to get highest resolution
+          const sortedRenditions = bestImage.renditions.sort((a, b) =>
+            (b.width * b.height) - (a.width * a.height)
+          );
+          const highestResolution = sortedRenditions[0];
+          productImages.set(review.product.ean, highestResolution.url);
+          console.log(`✓ Fetched high-res image for ${review.product.title}: ${highestResolution.width}x${highestResolution.height}`);
+        }
+      }
+    } catch (error) {
+      console.warn(`Could not fetch media for ${review.product.ean}:`, error);
+      // Will fall back to product.image.url
+    }
+  }
+
+  // Generate product reviews HTML with fetched images
   const reviewsHTML = reviews.map(review =>
-    generateProductReviewHTML(review, siteCode)
+    generateProductReviewHTML(review, siteCode, productImages.get(review.product.ean))
   ).join('\n\n');
 
   // Generate buying guide
