@@ -57,6 +57,9 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
+  const [enhancing, setEnhancing] = useState(false);
+  const [rewriting, setRewriting] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
 
   const [internalLinks, setInternalLinks] = useState<InternalLink[]>([]);
   const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
@@ -304,6 +307,230 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
     }
   };
 
+  // AI Enhancement Functions
+  const handleRewriteText = async () => {
+    if (!selectedText && !formData.content) {
+      alert('Selecteer eerst tekst om te herschrijven');
+      return;
+    }
+
+    const textToRewrite = selectedText || formData.content;
+
+    if (!confirm(`Wil je "${textToRewrite.substring(0, 50)}..." herschrijven met AI?`)) {
+      return;
+    }
+
+    setRewriting(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'rewrite-text',
+          selected_text: textToRewrite,
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to rewrite text');
+      }
+
+      // Replace selected text or full content
+      if (selectedText) {
+        setFormData(prev => ({
+          ...prev,
+          content: prev.content.replace(selectedText, data.rewritten_text)
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          content: data.rewritten_text
+        }));
+      }
+
+      alert('Tekst succesvol herschreven!');
+      setSelectedText('');
+    } catch (error: any) {
+      console.error('Error rewriting text:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het herschrijven');
+    } finally {
+      setRewriting(false);
+    }
+  };
+
+  const handleFullEnhancement = async () => {
+    if (!formData.content) {
+      alert('Voeg eerst content toe');
+      return;
+    }
+
+    if (!confirm('AI zal automatisch affiliate links, interne links en afbeeldingen toevoegen. Dit kan enkele minuten duren. Doorgaan?')) {
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'full-enhancement',
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to enhance content');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        content: data.enhanced_content
+      }));
+
+      const stats = data.stats;
+      alert(`Content verbeterd!\n\n` +
+        `✅ ${stats.affiliate_links} affiliate links toegevoegd\n` +
+        `✅ ${stats.internal_links} interne links toegevoegd\n` +
+        `✅ ${stats.images} afbeeldingen toegevoegd`);
+    } catch (error: any) {
+      console.error('Error enhancing content:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het verbeteren van content');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleAddAffiliateLinks = async () => {
+    if (!formData.content) {
+      alert('Voeg eerst content toe');
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'add-affiliate-links',
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add affiliate links');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        content: data.enhanced_content
+      }));
+
+      alert(`${data.links_added} bol.com affiliate links toegevoegd!`);
+    } catch (error: any) {
+      console.error('Error adding affiliate links:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het toevoegen van affiliate links');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleAddInternalLinks = async () => {
+    if (!formData.content) {
+      alert('Voeg eerst content toe');
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'add-internal-links',
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add internal links');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        content: data.enhanced_content
+      }));
+
+      alert(`${data.links_added} interne links toegevoegd!`);
+    } catch (error: any) {
+      console.error('Error adding internal links:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het toevoegen van interne links');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleAddImages = async () => {
+    if (!formData.content) {
+      alert('Voeg eerst content toe');
+      return;
+    }
+
+    if (!confirm('AI zal afbeeldingen genereren en invoegen. Dit kan enkele minuten duren. Doorgaan?')) {
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/wordpress/enhance-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: params.id,
+          content: formData.content,
+          action: 'add-images',
+          project_id: article?.project_id,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add images');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        content: data.enhanced_content
+      }));
+
+      alert(`${data.images_added} afbeeldingen toegevoegd!`);
+    } catch (error: any) {
+      console.error('Error adding images:', error);
+      alert(error.message || 'Er is een fout opgetreden bij het toevoegen van afbeeldingen');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -389,6 +616,57 @@ export default function WordPressEditor({ params }: WordPressEditorProps) {
                   placeholder="url-slug"
                 />
               </div>
+            </div>
+
+            {/* AI Content Enhancement */}
+            <div className="bg-gradient-to-r from-purple-500/10 to-orange-500/10 border border-purple-500/30 rounded-xl p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-white mb-3">🤖 AI Content Enhancement</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Gebruik AI om je content automatisch te verbeteren met affiliate links, interne links en afbeeldingen
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <button
+                  onClick={handleFullEnhancement}
+                  disabled={enhancing || !formData.content}
+                  className="px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  {enhancing ? '⏳' : '✨'} Alles Optimaliseren
+                </button>
+                <button
+                  onClick={handleAddAffiliateLinks}
+                  disabled={enhancing || !formData.content}
+                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  💰 Affiliate Links
+                </button>
+                <button
+                  onClick={handleAddInternalLinks}
+                  disabled={enhancing || !formData.content}
+                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  🔗 Interne Links
+                </button>
+                <button
+                  onClick={handleAddImages}
+                  disabled={enhancing || !formData.content}
+                  className="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  🎨 Afbeeldingen
+                </button>
+                <button
+                  onClick={handleRewriteText}
+                  disabled={rewriting || !formData.content}
+                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 text-xs md:text-sm font-medium flex items-center justify-center gap-1"
+                >
+                  ✍️ Tekst Herschrijven
+                </button>
+              </div>
+              {(enhancing || rewriting) && (
+                <div className="mt-3 flex items-center gap-2 text-sm text-purple-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+                  <span>AI is bezig met het verbeteren van je content...</span>
+                </div>
+              )}
             </div>
 
             {/* Content with Editor Mode Toggle */}
