@@ -171,11 +171,20 @@ async function getDataForSEOKeywords(
 // Detect website language
 async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: string; languageName: string }> {
   try {
-    // Try to fetch the website and detect language from HTML
+    // Try to fetch the website and detect language from HTML with timeout protection
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
     const response = await fetch(websiteUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
-      signal: AbortSignal.timeout(15000),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)',
+        'Accept': 'text/html',
+      },
+      signal: controller.signal,
+      redirect: 'follow',
     });
+
+    clearTimeout(timeoutId);
     
     if (response.ok) {
       const html = await response.text();
@@ -227,8 +236,11 @@ async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: st
       if (tld === 'fr') return { language: 'fr', languageName: 'Français' };
       if (tld === 'es') return { language: 'es', languageName: 'Español' };
     }
-  } catch (e) {
-    console.warn('Language detection failed:', e);
+  } catch (e: any) {
+    const errorMsg = e.name === 'AbortError'
+      ? 'Request timed out after 10 seconds'
+      : e.message;
+    console.warn(`⚠ Language detection failed for ${websiteUrl}:`, errorMsg);
   }
   
   // Fallback: check TLD if HTML fetch failed
@@ -280,10 +292,29 @@ export async function POST(request: Request) {
           estimatedTime: '~2-3 minuten totaal',
         });
 
-        // Detect website language
-        const { language, languageName } = await detectWebsiteLanguage(website_url);
+        // Detect website language with timeout protection
+        let language = 'en';
+        let languageName = 'English';
+
+        try {
+          const detectPromise = detectWebsiteLanguage(website_url);
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Language detection timed out after 15 seconds')), 15000);
+          });
+
+          const result = await Promise.race([detectPromise, timeoutPromise]);
+          language = result.language;
+          languageName = result.languageName;
+
+          console.log(`✓ Language detected for ${website_url}: ${languageName} (${language})`);
+        } catch (error: any) {
+          console.error(`⚠ Language detection failed for ${website_url}:`, error.message);
+          console.log('Using fallback: English');
+          // Fallback to English already set above
+        }
+
         const langConfig = LANGUAGE_CONFIG[language] || LANGUAGE_CONFIG['en'];
-        
+
         sendSSE(controller, {
           type: 'progress',
           step: 1,
