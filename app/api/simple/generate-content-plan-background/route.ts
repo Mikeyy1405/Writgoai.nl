@@ -47,60 +47,253 @@ function getSupabaseAdmin(): any {
   return supabaseAdmin as any;
 }
 
+// Website type configuration
+type WebsiteType = 'local_seo' | 'affiliate' | 'webshop' | 'blog' | 'general';
+
+interface WebsiteTypeConfig {
+  type: WebsiteType;
+  typeName: string;
+  modifiers: {
+    nl: string[];
+    en: string[];
+    de: string[];
+    fr: string[];
+    es: string[];
+  };
+  contentTypes: string[];
+  focusAreas: string[];
+}
+
+// Type-specific content strategies
+const WEBSITE_TYPE_CONFIGS: Record<WebsiteType, WebsiteTypeConfig> = {
+  local_seo: {
+    type: 'local_seo',
+    typeName: 'Lokale SEO Website',
+    modifiers: {
+      nl: [
+        'in [stad]', 'bij mij in de buurt', 'beste in [regio]',
+        'kosten', 'prijzen', 'tarief', 'offerte',
+        'wanneer nodig', 'hoe vaak', 'waarom belangrijk',
+        'wat doet een', 'wat is het verschil',
+        'zelf doen of uitbesteden', 'checklist', 'tips',
+        'specialist', 'ervaren', 'betrouwbaar',
+      ],
+      en: [
+        'in [city]', 'near me', 'best in [region]',
+        'cost', 'pricing', 'rates', 'quote',
+        'when needed', 'how often', 'why important',
+        'what does a', 'what is the difference',
+        'diy or hire', 'checklist', 'tips',
+        'specialist', 'experienced', 'reliable',
+      ],
+      de: [
+        'in [stadt]', 'in meiner Nähe', 'beste in [region]',
+        'kosten', 'preise', 'tarif', 'angebot',
+        'wann nötig', 'wie oft', 'warum wichtig',
+        'was macht ein', 'was ist der Unterschied',
+        'selbst machen oder beauftragen', 'checkliste', 'tipps',
+      ],
+      fr: [
+        'à [ville]', 'près de moi', 'meilleur à [région]',
+        'coût', 'tarifs', 'prix', 'devis',
+        'quand nécessaire', 'à quelle fréquence', 'pourquoi important',
+      ],
+      es: [
+        'en [ciudad]', 'cerca de mí', 'mejor en [región]',
+        'costo', 'precios', 'tarifas', 'presupuesto',
+      ],
+    },
+    contentTypes: ['service-page', 'location-page', 'how-to', 'faq', 'guide', 'checklist'],
+    focusAreas: ['diensten', 'locaties', 'werkgebied', 'kosten', 'proces', 'klantervaringen'],
+  },
+  affiliate: {
+    type: 'affiliate',
+    typeName: 'Affiliate Website',
+    modifiers: {
+      nl: [
+        'review', 'ervaringen', 'test', 'vergelijking',
+        'beste', 'top 10', 'top 5', 'alternatief voor',
+        'vs', 'versus', 'of',
+        'voordelen', 'nadelen', 'voor- en nadelen',
+        'is het de moeite waard', 'moet je kopen',
+        'kopen', 'waar te koop', 'kortingscode', 'aanbieding',
+        'specificaties', 'kenmerken', 'eigenschappen',
+      ],
+      en: [
+        'review', 'reviews', 'test', 'comparison',
+        'best', 'top 10', 'top 5', 'alternative to',
+        'vs', 'versus', 'or',
+        'pros', 'cons', 'pros and cons',
+        'is it worth it', 'should you buy',
+        'buy', 'where to buy', 'discount code', 'deal',
+        'specs', 'features', 'specifications',
+      ],
+      de: [
+        'bewertung', 'test', 'vergleich', 'erfahrungen',
+        'beste', 'top 10', 'alternative zu',
+        'vs', 'versus',
+        'vorteile', 'nachteile',
+        'kaufen', 'wo kaufen', 'rabattcode',
+      ],
+      fr: [
+        'avis', 'test', 'comparaison',
+        'meilleur', 'top 10', 'alternative à',
+        'avantages', 'inconvénients',
+        'acheter', 'code promo',
+      ],
+      es: [
+        'reseña', 'opiniones', 'comparación',
+        'mejor', 'top 10', 'alternativa a',
+        'comprar', 'código descuento',
+      ],
+    },
+    contentTypes: ['review', 'comparison', 'roundup', 'buying-guide', 'vs-article'],
+    focusAreas: ['productreviews', 'vergelijkingen', 'koopgidsen', 'alternatieven', 'deals'],
+  },
+  webshop: {
+    type: 'webshop',
+    typeName: 'Webshop/E-commerce',
+    modifiers: {
+      nl: [
+        'kopen', 'bestellen', 'online kopen',
+        'goedkoop', 'aanbieding', 'korting', 'sale',
+        'beste', 'top merken', 'populair',
+        'hoe te gebruiken', 'hoe werkt', 'handleiding',
+        'voor beginners', 'voor professionals',
+        'voordelen van', 'waarom kiezen voor',
+        'wat is', 'soorten', 'types',
+        'verschillen tussen', 'vergelijking',
+      ],
+      en: [
+        'buy', 'shop', 'purchase online',
+        'cheap', 'deal', 'discount', 'sale',
+        'best', 'top brands', 'popular',
+        'how to use', 'how does', 'guide',
+        'for beginners', 'for professionals',
+        'benefits of', 'why choose',
+        'what is', 'types', 'kinds',
+        'difference between', 'comparison',
+      ],
+      de: [
+        'kaufen', 'bestellen', 'online kaufen',
+        'günstig', 'angebot', 'rabatt', 'sale',
+        'beste', 'top marken',
+        'wie benutzen', 'anleitung',
+      ],
+      fr: [
+        'acheter', 'commander',
+        'pas cher', 'promo', 'soldes',
+        'meilleur', 'guide',
+      ],
+      es: [
+        'comprar', 'pedir',
+        'barato', 'oferta', 'descuento',
+        'mejor', 'guía',
+      ],
+    },
+    contentTypes: ['product-guide', 'how-to', 'buying-guide', 'category-page', 'comparison'],
+    focusAreas: ['producten', 'categorieën', 'gebruik', 'onderhoud', 'tips', 'trends'],
+  },
+  blog: {
+    type: 'blog',
+    typeName: 'Blog/Content Website',
+    modifiers: {
+      nl: [
+        'hoe', 'wat is', 'waarom', 'wanneer', 'waar', 'wie',
+        'uitleg', 'betekenis', 'definitie',
+        'tips', 'trucs', 'advies',
+        'handleiding', 'gids', 'stappenplan',
+        'beginners', 'gevorderden', 'experts',
+        'voordelen', 'nadelen', 'risico\'s',
+        'voorbeelden', 'inspiratie', 'ideeën',
+        'trends', 'ontwikkelingen', 'toekomst',
+      ],
+      en: [
+        'how', 'what is', 'why', 'when', 'where', 'who',
+        'explained', 'meaning', 'definition',
+        'tips', 'tricks', 'advice',
+        'guide', 'tutorial', 'step by step',
+        'beginners', 'advanced', 'experts',
+        'benefits', 'drawbacks', 'risks',
+        'examples', 'inspiration', 'ideas',
+        'trends', 'future',
+      ],
+      de: [
+        'wie', 'was ist', 'warum', 'wann',
+        'erklärung', 'bedeutung',
+        'tipps', 'tricks', 'ratschläge',
+        'anleitung', 'schritt für schritt',
+      ],
+      fr: [
+        'comment', 'qu\'est-ce que', 'pourquoi', 'quand',
+        'conseils', 'astuces',
+        'guide', 'étape par étape',
+      ],
+      es: [
+        'cómo', 'qué es', 'por qué', 'cuándo',
+        'consejos', 'trucos',
+        'guía', 'paso a paso',
+      ],
+    },
+    contentTypes: ['how-to', 'guide', 'listicle', 'explainer', 'tutorial', 'opinion'],
+    focusAreas: ['educatie', 'tips', 'handleidingen', 'achtergrond', 'trends', 'best practices'],
+  },
+  general: {
+    type: 'general',
+    typeName: 'Algemene Website',
+    modifiers: {
+      nl: [
+        'hoe', 'wat is', 'waarom', 'wanneer', 'welke', 'hoeveel',
+        'vs', 'versus', 'of', 'beste', 'top 10', 'top 5', 'vergelijking',
+        'tips', 'handleiding', 'checklist', 'gids',
+      ],
+      en: [
+        'how to', 'what is', 'why', 'when', 'which', 'how much',
+        'vs', 'versus', 'or', 'best', 'top 10', 'top 5', 'comparison',
+        'tips', 'guide', 'checklist',
+      ],
+      de: [
+        'wie', 'was ist', 'warum', 'wann', 'welche',
+        'tipps', 'anleitung', 'checkliste',
+      ],
+      fr: [
+        'comment', 'qu\'est-ce que', 'pourquoi', 'quand',
+        'conseils', 'guide',
+      ],
+      es: [
+        'cómo', 'qué es', 'por qué', 'cuándo',
+        'consejos', 'guía',
+      ],
+    },
+    contentTypes: ['guide', 'how-to', 'list', 'comparison', 'faq'],
+    focusAreas: ['algemeen', 'tips', 'handleidingen'],
+  },
+};
+
 // Language configuration
 const LANGUAGE_CONFIG: Record<string, {
   name: string;
   locationCode: number;
-  modifiers: string[];
 }> = {
   nl: {
     name: 'Nederlands',
     locationCode: 2528,
-    modifiers: [
-      'hoe', 'wat is', 'waarom', 'wanneer', 'welke', 'hoeveel',
-      'vs', 'versus', 'of', 'beste', 'top 10', 'top 5', 'vergelijking',
-      'kopen', 'gratis', 'goedkoop', 'premium', 'review', 'ervaringen', 'kosten', 'prijzen',
-      'beginners', 'gevorderden', 'professionals', 'bedrijven', 'mkb', 'starters',
-      'tips', 'handleiding', 'checklist', 'template', 'voorbeeld', 'stappenplan',
-    ],
   },
   en: {
     name: 'English',
     locationCode: 2840,
-    modifiers: [
-      'how to', 'what is', 'why', 'when', 'which', 'how much',
-      'vs', 'versus', 'or', 'best', 'top 10', 'top 5', 'comparison',
-      'buy', 'free', 'cheap', 'premium', 'review', 'reviews', 'cost', 'pricing',
-      'beginners', 'advanced', 'professionals', 'business', 'enterprise', 'startups',
-      'tips', 'guide', 'checklist', 'template', 'example', 'step by step',
-    ],
   },
   de: {
     name: 'Deutsch',
     locationCode: 2276,
-    modifiers: [
-      'wie', 'was ist', 'warum', 'wann', 'welche', 'wie viel',
-      'vs', 'versus', 'oder', 'beste', 'top 10', 'top 5', 'vergleich',
-      'kaufen', 'kostenlos', 'günstig', 'premium', 'bewertung', 'erfahrungen', 'kosten', 'preise',
-    ],
   },
   fr: {
     name: 'Français',
     locationCode: 2250,
-    modifiers: [
-      'comment', 'qu\'est-ce que', 'pourquoi', 'quand', 'quel', 'combien',
-      'vs', 'versus', 'ou', 'meilleur', 'top 10', 'top 5', 'comparaison',
-      'acheter', 'gratuit', 'pas cher', 'premium', 'avis', 'expériences', 'coût', 'prix',
-    ],
   },
   es: {
     name: 'Español',
     locationCode: 2724,
-    modifiers: [
-      'cómo', 'qué es', 'por qué', 'cuándo', 'cuál', 'cuánto',
-      'vs', 'versus', 'o', 'mejor', 'top 10', 'top 5', 'comparación',
-      'comprar', 'gratis', 'barato', 'premium', 'reseña', 'opiniones', 'costo', 'precios',
-    ],
   },
 };
 
@@ -195,6 +388,182 @@ async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: st
   // Default to English if no language detected
   console.log(`No language detected for ${websiteUrl}, using English as default`);
   return { language: 'en', languageName: 'English' };
+}
+
+// Detect website type based on content and structure
+async function detectWebsiteType(
+  websiteUrl: string,
+  html: string,
+  contentSignals: { products: string[]; categories: string[]; keywords: string[] }
+): Promise<{ type: WebsiteType; typeName: string; confidence: number; reasoning: string }> {
+  const url = new URL(websiteUrl);
+  const scores = {
+    local_seo: 0,
+    affiliate: 0,
+    webshop: 0,
+    blog: 0,
+    general: 0,
+  };
+
+  const reasoning: string[] = [];
+
+  // URL pattern analysis
+  const urlPath = url.pathname.toLowerCase();
+  const hostname = url.hostname.toLowerCase();
+
+  // Local SEO indicators
+  const localPatterns = [
+    /\/(contact|locaties|locations|standorten|vestigingen|werkgebied|service-area)/i,
+    /\/(over-ons|about|uber-uns|notre-equipe)/i,
+    /\/(diensten|services|leistungen)/i,
+  ];
+  if (localPatterns.some(p => p.test(urlPath) || p.test(html))) {
+    scores.local_seo += 3;
+    reasoning.push('Bevat lokale SEO pagina\'s (contact, locaties, diensten)');
+  }
+
+  // Look for local business schema
+  if (html.includes('"@type":"LocalBusiness"') || html.includes('schema.org/LocalBusiness')) {
+    scores.local_seo += 5;
+    reasoning.push('LocalBusiness schema markup gevonden');
+  }
+
+  // Look for address/location info
+  if (/(?:adres|address|standort|adresse):/i.test(html) ||
+      /\d{4}\s*[A-Z]{2}\s+[A-Z]/i.test(html)) {
+    scores.local_seo += 2;
+    reasoning.push('Adres informatie gevonden');
+  }
+
+  // Webshop indicators
+  const shopPatterns = [
+    /\/(shop|winkel|store|produkte|productos)/i,
+    /\/(cart|winkelmand|warenkorb|panier|carrito)/i,
+    /\/(checkout|bestellen|kasse|commander)/i,
+    /\/(product|artikel|item)/i,
+  ];
+  if (shopPatterns.some(p => p.test(urlPath) || p.test(html))) {
+    scores.webshop += 3;
+    reasoning.push('Webshop URL patronen gevonden');
+  }
+
+  // Look for e-commerce platforms
+  const ecommercePlatforms = ['shopify', 'woocommerce', 'magento', 'prestashop', 'lightspeed'];
+  if (ecommercePlatforms.some(platform => html.toLowerCase().includes(platform))) {
+    scores.webshop += 4;
+    reasoning.push('E-commerce platform gedetecteerd');
+  }
+
+  // Look for product schema
+  if (html.includes('"@type":"Product"') || html.includes('schema.org/Product')) {
+    scores.webshop += 3;
+    reasoning.push('Product schema markup gevonden');
+  }
+
+  // Check for shopping cart or checkout buttons
+  if (/add to cart|toevoegen aan winkelwagen|in den warenkorb|ajouter au panier/i.test(html)) {
+    scores.webshop += 5;
+    reasoning.push('Winkelwagen functionaliteit gevonden');
+  }
+
+  // Affiliate indicators
+  const affiliatePatterns = [
+    /amazon(-|\.)(com|nl|de|fr|co\.uk)/i,
+    /bol\.com/i,
+    /coolblue/i,
+    /affiliate|partner|ref=/i,
+    /awin|tradedoubler|daisycon/i,
+  ];
+  if (affiliatePatterns.some(p => p.test(html))) {
+    scores.affiliate += 4;
+    reasoning.push('Affiliate links gevonden');
+  }
+
+  // Look for review patterns (strong affiliate signal)
+  const reviewCount = (html.match(/review|beoordeling|bewertung|test|ervaringen/gi) || []).length;
+  if (reviewCount > 5) {
+    scores.affiliate += Math.min(reviewCount / 3, 5);
+    reasoning.push(`${reviewCount} review gerelateerde termen gevonden`);
+  }
+
+  // Look for comparison tables (affiliate signal)
+  if (html.includes('<table') && /vergelijk|comparison|vergleich|vs|versus/i.test(html)) {
+    scores.affiliate += 3;
+    reasoning.push('Vergelijkingstabellen gevonden');
+  }
+
+  // Blog indicators
+  const blogPatterns = [
+    /\/(blog|artikel|article|beitrag|post)/i,
+    /\/(category|categorie|kategorie)/i,
+    /\/(author|auteur|autor)/i,
+  ];
+  if (blogPatterns.some(p => p.test(urlPath) || p.test(html))) {
+    scores.blog += 3;
+    reasoning.push('Blog structuur gevonden');
+  }
+
+  // Look for article/blog schema
+  if (html.includes('"@type":"BlogPosting"') || html.includes('"@type":"Article"')) {
+    scores.blog += 4;
+    reasoning.push('Blog/Article schema markup gevonden');
+  }
+
+  // Content signals analysis
+  if (contentSignals.products.length > 5) {
+    scores.webshop += 3;
+    scores.affiliate += 2;
+    reasoning.push(`${contentSignals.products.length} producten gevonden`);
+  }
+
+  if (contentSignals.categories.length > 3) {
+    scores.webshop += 2;
+    scores.blog += 1;
+  }
+
+  // Keyword analysis for intent
+  const commercialKeywords = contentSignals.keywords.filter(k =>
+    /kopen|koop|buy|shop|bestellen|order|kaufen|acheter/i.test(k)
+  ).length;
+  if (commercialKeywords > 0) {
+    scores.webshop += commercialKeywords;
+    reasoning.push('Commerciële keywords gevonden');
+  }
+
+  const informationalKeywords = contentSignals.keywords.filter(k =>
+    /hoe|how|wat|what|waarom|why|was|wie|who/i.test(k)
+  ).length;
+  if (informationalKeywords > 3) {
+    scores.blog += 2;
+    reasoning.push('Informatieve keywords gevonden');
+  }
+
+  // Determine website type based on scores
+  const sortedTypes = Object.entries(scores)
+    .sort(([, a], [, b]) => b - a) as [WebsiteType, number][];
+
+  const topType = sortedTypes[0][0];
+  const topScore = sortedTypes[0][1];
+  const secondScore = sortedTypes[1][1];
+
+  // If top score is too low or difference is too small, mark as general
+  if (topScore < 3 || (topScore - secondScore) < 2) {
+    return {
+      type: 'general',
+      typeName: WEBSITE_TYPE_CONFIGS.general.typeName,
+      confidence: 0.5,
+      reasoning: 'Geen duidelijke website type signalen. ' + reasoning.join('; '),
+    };
+  }
+
+  const confidence = Math.min(topScore / 15, 1);
+
+  return {
+    type: topType,
+    typeName: WEBSITE_TYPE_CONFIGS[topType].typeName,
+    confidence,
+    reasoning: reasoning.join('; '),
+  };
 }
 
 // Start background job
@@ -466,6 +835,7 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
     await updateJob(jobId, { progress: 15, current_step: '🔍 Website content analyseren...' });
 
     let websiteContent = '';
+    let htmlContent = ''; // Store HTML for type detection
     let contentSignals = {
       products: [] as string[],
       categories: [] as string[],
@@ -487,9 +857,10 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
       });
 
       clearTimeout(timeoutId);
-      
+
       if (response.ok) {
         const html = await response.text();
+        htmlContent = html; // Save for type detection
         
         // Extract title
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -643,20 +1014,61 @@ Content preview: ${textContent.slice(0, 2000)}
       await updateJob(jobId, { progress: 18, current_step: '🔍 Website analyse (fallback)' });
     }
 
-    await updateJob(jobId, { progress: 20, current_step: '🎯 Niche detecteren met AI...' });
+    // Step 2b: Detect website type based on scraped content
+    await updateJob(jobId, { progress: 19, current_step: '🏷️ Website type detecteren...' });
+
+    let websiteType: WebsiteType = 'general';
+    let websiteTypeName = 'Algemene Website';
+    let websiteTypeConfidence = 0.5;
+    let websiteTypeReasoning = 'Standaard';
+
+    try {
+      // Only detect type if we have HTML content
+      if (htmlContent && htmlContent.length > 100) {
+        const typeDetection = await detectWebsiteType(websiteUrl, htmlContent, contentSignals);
+
+        websiteType = typeDetection.type;
+        websiteTypeName = typeDetection.typeName;
+        websiteTypeConfidence = typeDetection.confidence;
+        websiteTypeReasoning = typeDetection.reasoning;
+
+        console.log(`✓ Website type detected: ${websiteTypeName} (confidence: ${Math.round(websiteTypeConfidence * 100)}%)`);
+        console.log(`  Reasoning: ${websiteTypeReasoning}`);
+      }
+    } catch (typeError: any) {
+      console.warn('⚠ Website type detection failed:', typeError.message);
+      console.log('Using fallback: general website type');
+    }
+
+    await updateJob(jobId, {
+      progress: 20,
+      current_step: `✅ Type: ${websiteTypeName}`,
+      website_type: websiteType,
+      website_type_confidence: websiteTypeConfidence,
+      website_type_reasoning: websiteTypeReasoning,
+    });
+
+    await updateJob(jobId, { progress: 22, current_step: '🎯 Niche detecteren met AI...' });
 
     const currentMonth = now.toLocaleString(language === 'nl' ? 'nl-NL' : 'en-US', { month: 'long' });
 
     // Use Perplexity Sonar Pro for accurate niche detection with real-time web access
+    const websiteTypeConfig = WEBSITE_TYPE_CONFIGS[websiteType];
+
     const nichePrompt = `Analyseer de website ${websiteUrl} en bepaal de EXACTE niche op basis van de producten, diensten en content.
 
 Bezoek de website LIVE en analyseer de daadwerkelijke content, producten en diensten die worden aangeboden.
+
+GEDETECTEERD WEBSITE TYPE: ${websiteTypeName}
+${websiteTypeReasoning ? `Reden: ${websiteTypeReasoning}` : ''}
+
+Dit betekent dat de content strategie moet focussen op: ${websiteTypeConfig.focusAreas.join(', ')}
 
 ${websiteContent ? `\nHier is extra context die ik heb verzameld van de website:\n${websiteContent}\n` : ''}
 
 ${languageInstructions[language]}
 
-KRITIEKE INSTRUCTIES:
+KRITIEKE INSTRUCTIES VOOR ${websiteTypeName.toUpperCase()}:
 - Kijk naar ALLE artikel titels en de VOLLEDIGE RANGE van onderwerpen op de website
 - Bepaal de OVERKOEPELENDE niche op basis van ALLE content, niet alleen het eerste artikel
 - Focus op WAT de website verkoopt of over schrijft (producten, diensten, hoofdonderwerpen)
@@ -854,11 +1266,40 @@ Output als JSON array:
         const estimatedArticles = typeof pillarData === 'object' ? pillarData.estimatedArticles : Math.ceil(targetCount / pillarCount);
 
         try {
+          const allowedContentTypes = websiteTypeConfig.contentTypes.join('|');
           const clusterPrompt = `Genereer content cluster voor: "${pillarTopic}"
 Niche: ${nicheData.niche}
+Website Type: ${websiteTypeName}
+Content Focus: ${websiteTypeConfig.focusAreas.join(', ')}
 Subtopics: ${subtopics.join(', ')}
-Aantal: ${estimatedArticles}
+Aantal artikelen: ${estimatedArticles}
 ${languageInstructions[language]}
+
+BELANGRIJKE INSTRUCTIES VOOR ${websiteTypeName.toUpperCase()}:
+${websiteType === 'local_seo' ? `
+- Focus op lokale dienstverlening en expertise
+- Gebruik "diensten", "locaties", "werkgebied" thema's
+- Denk aan: "kosten", "wanneer nodig", "checklist", "specialist"
+- Vermijd productvergelijkingen en reviews
+` : ''}
+${websiteType === 'affiliate' ? `
+- Focus op productreviews, vergelijkingen en koopadvies
+- Gebruik "review", "test", "vergelijking", "beste" thema's
+- Denk aan: "vs", "voordelen/nadelen", "is het de moeite waard"
+- Commerciële intent is belangrijk
+` : ''}
+${websiteType === 'webshop' ? `
+- Focus op productinformatie, gebruik en koopadvies
+- Gebruik "hoe te gebruiken", "handleiding", "voor wie geschikt" thema's
+- Denk aan: "soorten", "verschillen", "beste keuze"
+- Mix van informatief en commercieel
+` : ''}
+${websiteType === 'blog' ? `
+- Focus op educatieve en informatieve content
+- Gebruik "hoe", "waarom", "wat is", "tips" thema's
+- Denk aan: "uitleg", "handleiding", "voorbeelden", "trends"
+- Voornamelijk informatieve intent
+` : ''}
 
 Output als JSON:
 {
@@ -866,13 +1307,13 @@ Output als JSON:
   "pillarDescription": "Beschrijving",
   "pillarKeywords": ["kw1", "kw2"],
   "supportingContent": [
-    {"title": "Titel", "description": "Beschrijving", "keywords": ["kw1"], "contentType": "how-to|guide|comparison|list|faq", "difficulty": "beginner|intermediate|advanced", "searchIntent": "informational|commercial|transactional"}
+    {"title": "Titel", "description": "Beschrijving", "keywords": ["kw1"], "contentType": "${allowedContentTypes}", "difficulty": "beginner|intermediate|advanced", "searchIntent": "informational|commercial|transactional"}
   ]
 }`;
 
           const clusterResponse = await generateAICompletion({
             task: 'content',
-            systemPrompt: `SEO content strategist. ${languageInstructions[language]} Output JSON.`,
+            systemPrompt: `Je bent een SEO content strategist gespecialiseerd in ${websiteTypeName}. ${languageInstructions[language]} Output JSON.`,
             userPrompt: clusterPrompt,
             maxTokens: 8000,
             temperature: 0.8,
@@ -955,21 +1396,24 @@ Output als JSON:
       return;
     }
 
-    // Step 5: Generate long-tail variations
+    // Step 5: Generate long-tail variations with type-specific modifiers
     await updateJob(jobId, { progress: 80, current_step: '🔄 Long-tail variaties genereren...' });
 
     if (allArticles.length < targetCount) {
-      const modifiers = langConfig.modifiers;
-      const contentTypes = ['how-to', 'guide', 'comparison', 'list', 'faq'];
+      // Use type-specific modifiers and content types
+      const modifiers = websiteTypeConfig.modifiers[language] || websiteTypeConfig.modifiers['en'];
+      const contentTypes = websiteTypeConfig.contentTypes;
+
+      console.log(`Using ${modifiers.length} ${websiteTypeName} modifiers for ${language} language`);
 
       for (const pillarData of nicheData.pillarTopics) {
         const topic = typeof pillarData === 'string' ? pillarData : pillarData.topic;
-        
+
         for (const modifier of modifiers) {
           if (allArticles.length >= targetCount) break;
 
           const title = `${modifier.charAt(0).toUpperCase() + modifier.slice(1)} ${topic}`;
-          
+
           allArticles.push({
             title,
             category: topic,
@@ -978,6 +1422,7 @@ Output als JSON:
             contentType: contentTypes[Math.floor(Math.random() * contentTypes.length)],
             cluster: topic,
             priority: 'low',
+            websiteType: websiteType, // Add website type for filtering/sorting
           });
         }
       }
