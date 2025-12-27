@@ -89,7 +89,18 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
 
     const completion = await Promise.race([completionPromise, timeoutPromise]);
 
-    return completion.choices[0]?.message?.content || '';
+    const content = completion.choices[0]?.message?.content || '';
+
+    // Check if content is empty
+    if (!content || content.trim().length === 0) {
+      console.error('AI returned empty content');
+      console.error('Model:', selectedModel);
+      console.error('Response object keys:', Object.keys(completion));
+      console.error('Choices:', completion.choices);
+      throw new Error('AI returned empty content. The AI model did not generate any text. Please try again.');
+    }
+
+    return content;
   } catch (error: any) {
     console.error('AI completion error:', error);
 
@@ -277,7 +288,17 @@ export async function analyzeWithPerplexity(prompt: string, timeout: number = 90
 
     const completion = await Promise.race([completionPromise, timeoutPromise]);
 
-    return completion.choices[0]?.message?.content || '';
+    const content = completion.choices[0]?.message?.content || '';
+
+    // Check if content is empty
+    if (!content || content.trim().length === 0) {
+      console.error('Perplexity returned empty content');
+      console.error('Response object keys:', Object.keys(completion));
+      console.error('Choices:', completion.choices);
+      throw new Error('Perplexity returned empty content. The AI model did not generate any text. Please try again.');
+    }
+
+    return content;
   } catch (error: any) {
     console.error('Perplexity analysis error:', error);
 
