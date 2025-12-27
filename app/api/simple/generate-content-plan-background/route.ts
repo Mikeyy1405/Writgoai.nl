@@ -104,7 +104,7 @@ const LANGUAGE_CONFIG: Record<string, {
   },
 };
 
-// Detect website language
+// Detect website language with improved timeout and error handling
 async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: string; languageName: string }> {
   // Helper function to detect language from TLD
   const detectFromTLD = (url: URL): { language: string; languageName: string } | null => {
@@ -133,13 +133,25 @@ async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: st
 
     // First, check TLD (most reliable signal)
     const tldLanguage = detectFromTLD(url);
+    if (tldLanguage) {
+      console.log(`Language detected from TLD: ${tldLanguage.languageName} for ${websiteUrl}`);
+    }
 
-    // Try to fetch HTML for additional validation
+    // Try to fetch HTML for additional validation (with shorter 10s timeout)
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const response = await fetch(websiteUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
-        signal: AbortSignal.timeout(15000),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)',
+          'Accept': 'text/html',
+        },
+        signal: controller.signal,
+        redirect: 'follow',
       });
+
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         const html = await response.text();
@@ -157,23 +169,31 @@ async function detectWebsiteLanguage(websiteUrl: string): Promise<{ language: st
 
           // No strong TLD signal, use HTML lang attribute
           if (LANGUAGE_CONFIG[htmlLang]) {
+            console.log(`Language detected from HTML: ${LANGUAGE_CONFIG[htmlLang].name} for ${websiteUrl}`);
             return { language: htmlLang, languageName: LANGUAGE_CONFIG[htmlLang].name };
           }
         }
+      } else {
+        console.warn(`HTTP ${response.status} when fetching ${websiteUrl}`);
       }
-    } catch (fetchError) {
-      console.warn('HTML fetch failed during language detection:', fetchError);
+    } catch (fetchError: any) {
+      const errorMsg = fetchError.name === 'AbortError'
+        ? 'Request timed out after 10 seconds'
+        : fetchError.message;
+      console.warn(`HTML fetch failed for ${websiteUrl}:`, errorMsg);
     }
 
-    // If we have TLD signal, use it
+    // If we have TLD signal, use it as fallback
     if (tldLanguage) {
+      console.log(`Using TLD language as fallback: ${tldLanguage.languageName}`);
       return tldLanguage;
     }
-  } catch (e) {
-    console.warn('Language detection failed:', e);
+  } catch (e: any) {
+    console.error('Language detection failed:', e.message);
   }
 
   // Default to English if no language detected
+  console.log(`No language detected for ${websiteUrl}, using English as default`);
   return { language: 'en', languageName: 'English' };
 }
 
@@ -402,13 +422,34 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
       return;
     }
 
-    // Step 1: Detect language
+    // Step 1: Detect language with timeout protection
     await updateJob(jobId, { progress: 5, current_step: '🌍 Taal detecteren...' });
-    const { language, languageName } = await detectWebsiteLanguage(websiteUrl);
+
+    let language = 'en';
+    let languageName = 'English';
+
+    try {
+      // Wrap language detection with additional timeout safety
+      const detectPromise = detectWebsiteLanguage(websiteUrl);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Language detection timed out after 20 seconds')), 20000);
+      });
+
+      const result = await Promise.race([detectPromise, timeoutPromise]);
+      language = result.language;
+      languageName = result.languageName;
+
+      console.log(`✓ Language detected for ${websiteUrl}: ${languageName} (${language})`);
+    } catch (error: any) {
+      console.error(`⚠ Language detection failed for ${websiteUrl}:`, error.message);
+      console.log('Using fallback: English');
+      // Fallback to English already set above
+    }
+
     const langConfig = LANGUAGE_CONFIG[language] || LANGUAGE_CONFIG['en'];
 
-    await updateJob(jobId, { 
-      progress: 10, 
+    await updateJob(jobId, {
+      progress: 10,
       current_step: `🌍 Taal gedetecteerd: ${languageName}`,
       language,
     });
@@ -421,7 +462,7 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
       es: 'Escribe TODO en español. Usa "tú" (informal).',
     };
 
-    // Step 2: Scrape website content for better niche detection
+    // Step 2: Scrape website content for better niche detection with timeout protection
     await updateJob(jobId, { progress: 15, current_step: '🔍 Website content analyseren...' });
 
     let websiteContent = '';
@@ -430,12 +471,22 @@ async function processContentPlan(jobId: string, websiteUrl: string) {
       categories: [] as string[],
       keywords: [] as string[],
     };
-    
+
     try {
+      // Wrap fetch with timeout protection
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 second timeout
+
       const response = await fetch(websiteUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)' },
-        signal: AbortSignal.timeout(15000),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; WritGoBot/1.0)',
+          'Accept': 'text/html',
+        },
+        signal: controller.signal,
+        redirect: 'follow',
       });
+
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const html = await response.text();
@@ -582,8 +633,13 @@ Content preview: ${textContent.slice(0, 2000)}
 `.trim();
       }
       await updateJob(jobId, { progress: 18, current_step: '🔍 Website content verzameld' });
-    } catch (e) {
-      console.warn('Website scraping failed:', e);
+      console.log(`✓ Successfully scraped content from ${websiteUrl}`);
+    } catch (e: any) {
+      const errorMsg = e.name === 'AbortError'
+        ? 'Request timed out after 12 seconds'
+        : e.message;
+      console.warn(`⚠ Website scraping failed for ${websiteUrl}:`, errorMsg);
+      console.log('Continuing with AI-only niche detection (no website content)');
       await updateJob(jobId, { progress: 18, current_step: '🔍 Website analyse (fallback)' });
     }
 
