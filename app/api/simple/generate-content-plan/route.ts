@@ -192,11 +192,13 @@ Output als JSON (ALLEEN de object, geen markdown):
   "pillarTitle": "Specifieke titel met waarde propositie",
   "pillarDescription": "Wat de lezer precies leert en waarom het waardevol is",
   "pillarKeywords": ["hoofdkeyword", "long-tail variant", "vraag-gebaseerd"],
+  "focusKeyword": "primair zoekwoord voor dit artikel (2-4 woorden)",
   "supportingContent": [
     {
       "title": "Specifieke, actionable titel met duidelijke waarde",
       "description": "Concrete beschrijving wat de lezer leert",
       "keywords": ["specifiek keyword", "long-tail variant"],
+      "focusKeyword": "primair zoekwoord (2-4 woorden)",
       "contentType": "how-to|guide|comparison|list|case-study|faq|news",
       "searchIntent": "informational|commercial|transactional"
     }
@@ -240,6 +242,7 @@ Output alleen valide JSON zonder markdown formatting.`,
             category: pillarTopic,
             description: cluster.pillarDescription,
             keywords: cluster.pillarKeywords,
+            focusKeyword: cluster.focusKeyword || cluster.pillarKeywords?.[0] || pillarTopic.toLowerCase(),
             contentType: 'pillar',
             cluster: pillarTopic,
             priority: 'high',
@@ -252,6 +255,7 @@ Output alleen valide JSON zonder markdown formatting.`,
               category: pillarTopic,
               description: article.description,
               keywords: article.keywords || [],
+              focusKeyword: article.focusKeyword || article.keywords?.[0] || pillarTopic.toLowerCase(),
               contentType: article.contentType || 'guide',
               searchIntent: article.searchIntent || 'informational',
               cluster: pillarTopic,
@@ -396,12 +400,14 @@ async function generateLongTailVariations(
       contentType: 'list',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} fouten`, `${topic} problemen`, `${topic} vermijden`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} fouten`,
     },
     {
       template: (topic: string) => `Hoe los je ${getCommonProblem()} op met ${topic}?`,
       contentType: 'how-to',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} oplossing`, `${topic} probleem`, `hoe ${topic}`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} oplossing`,
     },
 
     // Comparison templates
@@ -410,12 +416,14 @@ async function generateLongTailVariations(
       contentType: 'comparison',
       intent: 'commercial',
       keywords: (topic: string) => [`${topic} vergelijking`, `${topic} beginners`, `${topic} gevorderden`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} vergelijking`,
     },
     {
       template: (topic: string) => `Gratis vs Betaald ${topic}: Waar moet je op letten?`,
       contentType: 'comparison',
       intent: 'commercial',
       keywords: (topic: string) => [`${topic} gratis`, `${topic} betaald`, `${topic} kosten`],
+      focusKeyword: (topic: string) => `gratis ${topic.toLowerCase()}`,
     },
 
     // How-to templates
@@ -424,12 +432,14 @@ async function generateLongTailVariations(
       contentType: 'how-to',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} implementeren`, `${topic} stappen`, `${topic} handleiding`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} implementeren`,
     },
     {
       template: (topic: string) => `Complete ${topic} checklist voor ${getAudience()} in ${nextYear}`,
       contentType: 'guide',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} checklist`, `${topic} ${nextYear}`, `${topic} gids`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} checklist`,
     },
 
     // List templates
@@ -438,12 +448,14 @@ async function generateLongTailVariations(
       contentType: 'list',
       intent: 'commercial',
       keywords: (topic: string) => [`${topic} tools`, `beste ${topic}`, `${topic} ${nextYear}`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} tools`,
     },
     {
       template: (topic: string) => `${getNumber()} Manieren om ${getTopic(topic)} te verbeteren met ${topic}`,
       contentType: 'list',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} tips`, `${topic} verbeteren`, `${topic} technieken`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} tips`,
     },
 
     // Buying guides
@@ -452,12 +464,14 @@ async function generateLongTailVariations(
       contentType: 'guide',
       intent: 'commercial',
       keywords: (topic: string) => [`${topic} kosten`, `${topic} prijs`, `${topic} nederland`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} kosten`,
     },
     {
       template: (topic: string) => `Waar koop je de beste ${topic} voor ${getAudience()}?`,
       contentType: 'guide',
       intent: 'commercial',
       keywords: (topic: string) => [`${topic} kopen`, `beste ${topic}`, `${topic} aanbieding`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} kopen`,
     },
 
     // Audience-specific templates
@@ -466,12 +480,14 @@ async function generateLongTailVariations(
       contentType: 'guide',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} ${getAudience()}`, `${topic} gids`, `${topic} leren`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} gids`,
     },
     {
       template: (topic: string) => `Welke ${topic} past het beste bij ${getAudience()}?`,
       contentType: 'comparison',
       intent: 'commercial',
       keywords: (topic: string) => [`${topic} kiezen`, `${topic} advies`, `${topic} ${getAudience()}`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} kiezen`,
     },
 
     // Trend/update templates
@@ -480,12 +496,14 @@ async function generateLongTailVariations(
       contentType: 'news',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} trends`, `${topic} ${nextYear}`, `${topic} toekomst`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} trends ${nextYear}`,
     },
     {
       template: (topic: string) => `Nieuwe ontwikkelingen in ${topic}: ${nextYear} update`,
       contentType: 'news',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} nieuw`, `${topic} ${nextYear}`, `${topic} ontwikkelingen`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} ${nextYear}`,
     },
 
     // Case study templates
@@ -494,6 +512,7 @@ async function generateLongTailVariations(
       contentType: 'case-study',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} case study`, `${topic} succesverhaal`, `${topic} voorbeeld`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} case study`,
     },
 
     // FAQ templates
@@ -502,6 +521,7 @@ async function generateLongTailVariations(
       contentType: 'faq',
       intent: 'informational',
       keywords: (topic: string) => [`${topic} vragen`, `${topic} antwoorden`, `${topic} faq`],
+      focusKeyword: (topic: string) => `${topic.toLowerCase()} vragen`,
     },
   ];
 
@@ -516,6 +536,7 @@ async function generateLongTailVariations(
       const title = templateObj.template(topic);
       const description = generateValueDescription(title, topic, templateObj.contentType);
       const keywords = templateObj.keywords(topic);
+      const focusKeyword = templateObj.focusKeyword(topic);
 
       // Validate title is meaningful
       if (!isValidTitle(title)) continue;
@@ -525,6 +546,7 @@ async function generateLongTailVariations(
         category: topic,
         description,
         keywords,
+        focusKeyword,
         contentType: templateObj.contentType,
         searchIntent: templateObj.intent,
         cluster: topic,
