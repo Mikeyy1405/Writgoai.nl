@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateAICompletion } from '@/lib/ai-client';
+import { generateAICompletion, BEST_MODELS } from '@/lib/ai-client';
 import { generateFeaturedImage, generateArticleImage } from '@/lib/aiml-image-generator';
 import { CONTENT_PROMPT_RULES, cleanForbiddenWords } from '@/lib/writing-rules';
 import { createClient } from '@supabase/supabase-js';
@@ -318,6 +318,7 @@ Geef een JSON outline:
         userPrompt: outlinePrompt,
         maxTokens: 2000,
         temperature: 0.6,
+        timeout: 90000, // 90 second timeout for article generation
       });
 
       const jsonMatch = outlineResponse.match(/\{[\s\S]*\}/);
@@ -348,24 +349,47 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 - Output als HTML met alleen <p> tags (GEEN headings voor de intro)`;
 
     let introContent = '';
-    try {
-      introContent = await generateAICompletion({
-        task: 'content',
-        model, // Use selected model
-        systemPrompt: `${langConfig.systemPrompt} Output alleen HTML. BELANGRIJK: Gebruik GEEN "Inleiding:" of "Introductie:" heading. Start direct met <p> tags.`,
-        userPrompt: introPrompt,
-        maxTokens: 1000,
-        temperature: 0.7,
-      });
-      introContent = cleanHtmlContent(introContent);
-      console.log(`✅ Intro generated: ${introContent.length} characters`);
-    } catch (e: any) {
-      console.error('❌ Intro generation FAILED:', e?.message || e);
-      console.error('Error details:', {
-        name: e?.name,
-        status: e?.status,
-        message: e?.message
-      });
+    let introRetries = 0;
+    const maxRetries = 3;
+
+    while (introRetries < maxRetries && !introContent) {
+      try {
+        if (introRetries > 0) {
+          console.log(`🔄 Retrying intro generation (attempt ${introRetries + 1}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, 2000 * introRetries)); // Exponential backoff
+        }
+
+        introContent = await generateAICompletion({
+          task: 'content',
+          model, // Use selected model
+          systemPrompt: `${langConfig.systemPrompt} Output alleen HTML. BELANGRIJK: Gebruik GEEN "Inleiding:" of "Introductie:" heading. Start direct met <p> tags.`,
+          userPrompt: introPrompt,
+          maxTokens: 1000,
+          temperature: 0.7,
+          timeout: 90000, // 90 second timeout for article generation
+        });
+        introContent = cleanHtmlContent(introContent);
+
+        // Verify we got actual content
+        if (!introContent || introContent.trim().length < 50) {
+          throw new Error('Intro content too short or empty');
+        }
+
+        console.log(`✅ Intro generated: ${introContent.length} characters`);
+      } catch (e: any) {
+        introRetries++;
+        console.error(`❌ Intro generation FAILED (attempt ${introRetries}/${maxRetries}):`, e?.message || e);
+        console.error('Error details:', {
+          name: e?.name,
+          status: e?.status,
+          message: e?.message
+        });
+
+        // If this was the last retry, throw the error
+        if (introRetries >= maxRetries) {
+          throw new Error(`Introductie generatie gefaald na ${maxRetries} pogingen: ${e?.message || e}. Check server logs voor details.`);
+        }
+      }
     }
 
     await updateJob(jobId, { progress: 30, current_step: '✅ Introductie klaar' });
@@ -405,27 +429,58 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 - Als je producten noemt en er is een affiliate configuratie, voeg affiliate links toe
 - Output als HTML`;
 
-      try {
-        // Calculate max tokens for section (roughly 1.5 tokens per word)
-        const sectionMaxTokens = Math.min(Math.round(wordsPerSection * 2) + 200, 3000);
-        const sectionContent = await generateAICompletion({
-          task: 'content',
-          model, // Use selected model
-          systemPrompt: `${langConfig.systemPrompt} Output alleen HTML. STRIKT maximaal ${wordsPerSection} woorden voor deze sectie!`,
-          userPrompt: sectionPrompt,
-          maxTokens: sectionMaxTokens,
-          temperature: 0.7,
-        });
-        const cleanedSection = cleanHtmlContent(sectionContent);
-        mainContent += '\n\n' + cleanedSection;
-        console.log(`✅ Section ${i + 1} generated: ${cleanedSection.length} characters`);
-      } catch (e: any) {
-        console.error(`❌ Section ${i + 1} generation FAILED:`, e?.message || e);
-        console.error('Error details:', {
-          name: e?.name,
-          status: e?.status,
-          message: e?.message
-        });
+      let sectionRetries = 0;
+      let sectionContent = '';
+      const maxSectionRetries = 3;
+
+      while (sectionRetries < maxSectionRetries && !sectionContent) {
+        try {
+          if (sectionRetries > 0) {
+            console.log(`🔄 Retrying section ${i + 1} generation (attempt ${sectionRetries + 1}/${maxSectionRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, 2000 * sectionRetries)); // Exponential backoff
+          }
+
+          // Calculate max tokens for section (roughly 1.5 tokens per word)
+          const sectionMaxTokens = Math.min(Math.round(wordsPerSection * 2) + 200, 3000);
+          sectionContent = await generateAICompletion({
+            task: 'content',
+            model, // Use selected model
+            systemPrompt: `${langConfig.systemPrompt} Output alleen HTML. STRIKT maximaal ${wordsPerSection} woorden voor deze sectie!`,
+            userPrompt: sectionPrompt,
+            maxTokens: sectionMaxTokens,
+            temperature: 0.7,
+            timeout: 90000, // 90 second timeout for article generation
+          });
+          const cleanedSection = cleanHtmlContent(sectionContent);
+
+          // Verify we got actual content
+          if (!cleanedSection || cleanedSection.trim().length < 50) {
+            throw new Error('Section content too short or empty');
+          }
+
+          mainContent += '\n\n' + cleanedSection;
+          console.log(`✅ Section ${i + 1} generated: ${cleanedSection.length} characters`);
+        } catch (e: any) {
+          sectionRetries++;
+          console.error(`❌ Section ${i + 1} generation FAILED (attempt ${sectionRetries}/${maxSectionRetries}):`, e?.message || e);
+          console.error('Error details:', {
+            name: e?.name,
+            status: e?.status,
+            message: e?.message
+          });
+
+          // If this was the last retry, throw error (at least one section must succeed)
+          if (sectionRetries >= maxSectionRetries) {
+            // Only throw if this is the first section AND we have no main content yet
+            // Otherwise log but continue (we can work with partial content)
+            if (i === 0 && mainContent.trim().length < 100) {
+              throw new Error(`Eerste sectie generatie gefaald na ${maxSectionRetries} pogingen: ${e?.message || e}. Artikel generatie gestopt.`);
+            } else {
+              console.warn(`⚠️ Section ${i + 1} skipped after ${maxSectionRetries} failed attempts`);
+              break; // Skip this section but continue with others
+            }
+          }
+        }
       }
 
       // Small delay between sections
@@ -452,24 +507,47 @@ ${contextPrompt ? `\n${contextPrompt}\n` : ''}
 - Output als HTML`;
 
     let conclusionContent = '';
-    try {
-      conclusionContent = await generateAICompletion({
-        task: 'content',
-        model, // Use selected model
-        systemPrompt: `${langConfig.systemPrompt} Output alleen HTML.`,
-        userPrompt: conclusionPrompt,
-        maxTokens: 1000,
-        temperature: 0.7,
-      });
-      conclusionContent = cleanHtmlContent(conclusionContent);
-      console.log(`✅ Conclusion generated: ${conclusionContent.length} characters`);
-    } catch (e: any) {
-      console.error('❌ Conclusion generation FAILED:', e?.message || e);
-      console.error('Error details:', {
-        name: e?.name,
-        status: e?.status,
-        message: e?.message
-      });
+    let conclusionRetries = 0;
+    const maxConclusionRetries = 3;
+
+    while (conclusionRetries < maxConclusionRetries && !conclusionContent) {
+      try {
+        if (conclusionRetries > 0) {
+          console.log(`🔄 Retrying conclusion generation (attempt ${conclusionRetries + 1}/${maxConclusionRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, 2000 * conclusionRetries)); // Exponential backoff
+        }
+
+        conclusionContent = await generateAICompletion({
+          task: 'content',
+          model, // Use selected model
+          systemPrompt: `${langConfig.systemPrompt} Output alleen HTML.`,
+          userPrompt: conclusionPrompt,
+          maxTokens: 1000,
+          temperature: 0.7,
+          timeout: 90000, // 90 second timeout for article generation
+        });
+        conclusionContent = cleanHtmlContent(conclusionContent);
+
+        // Verify we got actual content
+        if (!conclusionContent || conclusionContent.trim().length < 50) {
+          throw new Error('Conclusion content too short or empty');
+        }
+
+        console.log(`✅ Conclusion generated: ${conclusionContent.length} characters`);
+      } catch (e: any) {
+        conclusionRetries++;
+        console.error(`❌ Conclusion generation FAILED (attempt ${conclusionRetries}/${maxConclusionRetries}):`, e?.message || e);
+        console.error('Error details:', {
+          name: e?.name,
+          status: e?.status,
+          message: e?.message
+        });
+
+        // If this was the last retry, throw the error
+        if (conclusionRetries >= maxConclusionRetries) {
+          throw new Error(`Conclusie generatie gefaald na ${maxConclusionRetries} pogingen: ${e?.message || e}. Check server logs voor details.`);
+        }
+      }
     }
 
     await updateJob(jobId, { progress: 80, current_step: '✅ Conclusie klaar' });
@@ -543,6 +621,7 @@ Output alleen de social media post tekst, geen extra uitleg.`;
         userPrompt: socialPrompt,
         maxTokens: 500,
         temperature: 0.8,
+        timeout: 90000, // 90 second timeout for article generation
       });
 
       // Clean up the social media post
@@ -574,13 +653,26 @@ Output alleen de social media post tekst, geen extra uitleg.`;
       if (!mainContent || mainContent.trim().length < 100) missingParts.push('hoofdcontent');
       if (!conclusionContent || conclusionContent.trim().length < 50) missingParts.push('conclusie');
 
-      const errorMsg = `Artikel generatie gefaald: onvoldoende content gegenereerd (${wordCountCheck} woorden). Ontbrekende delen: ${missingParts.join(', ')}. Dit kan veroorzaakt worden door API limiet, timeout, of lege AI responses.`;
+      const errorMsg = `Artikel generatie gefaald: onvoldoende content gegenereerd (${wordCountCheck} woorden). Ontbrekende delen: ${missingParts.join(', ')}.
+
+Mogelijke oorzaken:
+1. AI API timeout (controleer of het geselecteerde model beschikbaar is)
+2. API rate limit bereikt (wacht enkele minuten en probeer opnieuw)
+3. Onvoldoende API credits (controleer je AIML API saldo)
+4. Lege AI responses (model heeft geen content gegenereerd)
+
+Model: ${model || BEST_MODELS.CONTENT}
+Project ID: ${projectId || 'geen'}
+
+Check de server logs voor gedetailleerde error informatie.`;
+
       console.error(errorMsg);
       console.error('Content lengths:', {
         intro: introContent?.length || 0,
         main: mainContent?.length || 0,
         conclusion: conclusionContent?.length || 0,
       });
+      console.error('Full content preview:', fullContent.substring(0, 500));
 
       throw new Error(errorMsg);
     }
