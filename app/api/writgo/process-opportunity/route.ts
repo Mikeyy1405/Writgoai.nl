@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generateAdvancedContent } from '@/lib/advanced-content-generator';
-import { generateFeaturedImage } from '@/lib/aiml-image-generator';
+import { generateFeaturedImage } from '@/lib/abacus-image-generator';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';

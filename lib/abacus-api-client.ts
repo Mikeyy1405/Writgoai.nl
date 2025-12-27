@@ -1,10 +1,11 @@
 /**
- * AIML API Client for Video, Voice, and Music Generation
- * API Documentation: https://docs.aimlapi.com
+ * Abacus.AI API Client for Video, Voice, and Music Generation
+ * API Documentation: https://abacus.ai/help/api/ref
+ * Note: Video/Audio generation endpoints remain unchanged but now use Abacus API
  */
 
-const AIML_API_URL = 'https://api.aimlapi.com';
-const AIML_API_KEY = process.env.AIML_API_KEY!;
+const ABACUS_API_URL = 'https://api.abacus.ai';
+const ABACUS_API_KEY = process.env.ABACUS_API_KEY!;
 
 // Retry configuration for network errors
 const MAX_RETRIES = 3;
@@ -344,10 +345,10 @@ export async function generateVideo(
   const validAspectRatio = aspectRatio === '9:16' ? '16:9' : aspectRatio;
 
   return retryWithBackoff(async () => {
-    const response = await fetch(`${AIML_API_URL}${modelConfig.endpoint}`, {
+    const response = await fetch(`${ABACUS_API_URL}${modelConfig.endpoint}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${AIML_API_KEY}`,
+        'Authorization': `Bearer ${ABACUS_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -367,13 +368,13 @@ export async function generateVideo(
         errorDetails = { message: errorText };
       }
 
-      console.error('AIML API video generation error:', errorDetails);
+      console.error('Abacus API video generation error:', errorDetails);
 
       // Check if it's a backend provider error (like MiniMax DNS issues)
       if (errorDetails.meta?.errno || errorDetails.meta?.syscall) {
         const backendError = errorDetails.meta;
         throw new Error(
-          `AIML API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'} ` +
+          `Abacus API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'} ` +
           `(${backendError.syscall || 'unknown'} ${backendError.hostname || ''}). ` +
           `This is a temporary infrastructure issue. Please try again in a few moments.`
         );
@@ -399,10 +400,10 @@ export async function getVideoStatus(
   const modelConfig = VIDEO_MODELS[model];
 
   return retryWithBackoff(async () => {
-    const response = await fetch(`${AIML_API_URL}${modelConfig.endpoint}?generation_id=${generationId}`, {
+    const response = await fetch(`${ABACUS_API_URL}${modelConfig.endpoint}?generation_id=${generationId}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${AIML_API_KEY}`,
+        'Authorization': `Bearer ${ABACUS_API_KEY}`,
         'Content-Type': 'application/json',
       },
     });
@@ -416,13 +417,13 @@ export async function getVideoStatus(
         errorDetails = { message: errorText };
       }
 
-      console.error('AIML API status check error:', errorDetails);
+      console.error('Abacus API status check error:', errorDetails);
 
       // Check for backend connectivity issues
       if (errorDetails.meta?.errno || errorDetails.meta?.syscall) {
         const backendError = errorDetails.meta;
         throw new Error(
-          `AIML API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
+          `Abacus API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
         );
       }
 
@@ -492,10 +493,10 @@ export async function generateVoiceOver(
   model: string = 'elevenlabs/eleven_multilingual_v2'
 ): Promise<{ generationId: string }> {
   return retryWithBackoff(async () => {
-    const response = await fetch(`${AIML_API_URL}/v1/tts`, {
+    const response = await fetch(`${ABACUS_API_URL}/v1/tts`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${AIML_API_KEY}`,
+        'Authorization': `Bearer ${ABACUS_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -514,13 +515,13 @@ export async function generateVoiceOver(
         errorDetails = { message: errorText };
       }
 
-      console.error('AIML API voice generation error:', errorDetails);
+      console.error('Abacus API voice generation error:', errorDetails);
 
       // Check for backend connectivity issues
       if (errorDetails.meta?.errno || errorDetails.meta?.syscall) {
         const backendError = errorDetails.meta;
         throw new Error(
-          `AIML API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
+          `Abacus API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
         );
       }
 
@@ -542,11 +543,11 @@ export async function getVoiceOverStatus(
 ): Promise<{ status: 'queued' | 'processing' | 'completed' | 'failed'; url?: string; error?: string }> {
   return retryWithBackoff(async () => {
     const response = await fetch(
-      `${AIML_API_URL}/v1/tts?generation_id=${generationId}`,
+      `${ABACUS_API_URL}/v1/tts?generation_id=${generationId}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${AIML_API_KEY}`,
+          'Authorization': `Bearer ${ABACUS_API_KEY}`,
           'Content-Type': 'application/json',
         },
       }
@@ -561,13 +562,13 @@ export async function getVoiceOverStatus(
         errorDetails = { message: errorText };
       }
 
-      console.error('AIML API voice status error:', errorDetails);
+      console.error('Abacus API voice status error:', errorDetails);
 
       // Check for backend connectivity issues
       if (errorDetails.meta?.errno || errorDetails.meta?.syscall) {
         const backendError = errorDetails.meta;
         throw new Error(
-          `AIML API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
+          `Abacus API backend connectivity issue: ${backendError.code || 'NETWORK_ERROR'}`
         );
       }
 
@@ -632,10 +633,10 @@ export async function generateMusic(
   duration: number = 60,
   model: string = 'stable-audio'
 ): Promise<{ generationId: string }> {
-  const response = await fetch(`${AIML_API_URL}/v2/generate/audio`, {
+  const response = await fetch(`${ABACUS_API_URL}/v2/generate/audio`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${AIML_API_KEY}`,
+      'Authorization': `Bearer ${ABACUS_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -647,7 +648,7 @@ export async function generateMusic(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('AIML API music generation error:', errorText);
+    console.error('Abacus API music generation error:', errorText);
     throw new Error(`Music generation failed: ${response.status}`);
   }
 
@@ -662,11 +663,11 @@ export async function getMusicStatus(
   generationId: string
 ): Promise<{ status: 'queued' | 'processing' | 'completed' | 'failed'; url?: string; error?: string }> {
   const response = await fetch(
-    `${AIML_API_URL}/v2/generate/audio?generation_id=${generationId}`,
+    `${ABACUS_API_URL}/v2/generate/audio?generation_id=${generationId}`,
     {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${AIML_API_KEY}`,
+        'Authorization': `Bearer ${ABACUS_API_KEY}`,
         'Content-Type': 'application/json',
       },
     }
@@ -674,7 +675,7 @@ export async function getMusicStatus(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('AIML API music status error:', errorText);
+    console.error('Abacus API music status error:', errorText);
     throw new Error(`Music status check failed: ${response.status}`);
   }
 

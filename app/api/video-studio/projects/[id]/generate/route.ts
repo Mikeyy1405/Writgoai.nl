@@ -8,7 +8,7 @@ import {
   generateVideoWithPolling,
   generateVoiceOverWithPolling,
   generateMusicWithPolling,
-} from '@/lib/aiml-api-client';
+} from '@/lib/abacus-api-client';
 import { Database } from '@/lib/database.types';
 
 export const runtime = 'nodejs';

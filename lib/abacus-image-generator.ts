@@ -1,8 +1,8 @@
 /**
- * AIML Image Generation with Flux Pro
- * Uses AIML API for high-quality AI-generated images
- * 
- * API Documentation: https://docs.aimlapi.com/api-references/image-models/flux
+ * Abacus.AI Image Generation with Flux Pro
+ * Uses Abacus.AI RouteLLM API for high-quality AI-generated images
+ *
+ * API Documentation: https://abacus.ai/help/api/ref
  */
 
 interface ImageGenerationOptions {
@@ -19,16 +19,16 @@ interface ImageGenerationResult {
   error?: string;
 }
 
-const AIML_API_KEY = process.env.AIML_API_KEY;
-// Correct endpoint per AIML API documentation
-const AIML_API_URL = 'https://api.aimlapi.com/v1/images/generations';
+const ABACUS_API_KEY = process.env.ABACUS_API_KEY;
+// Correct endpoint per Abacus.AI API documentation
+const ABACUS_API_URL = 'https://api.abacus.ai/v1/images/generations';
 
 /**
- * Generate image using Flux Pro via AIML API
+ * Generate image using Flux Pro via Abacus.AI RouteLLM API
  */
 export async function generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResult> {
-  if (!AIML_API_KEY) {
-    console.error('AIML_API_KEY not set');
+  if (!ABACUS_API_KEY) {
+    console.error('ABACUS_API_KEY not set');
     return { url: '', success: false, error: 'API key niet geconfigureerd' };
   }
 
@@ -57,10 +57,10 @@ export async function generateImage(options: ImageGenerationOptions): Promise<Im
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      const response = await fetch(AIML_API_URL, {
+      const response = await fetch(ABACUS_API_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${AIML_API_KEY}`,
+          'Authorization': `Bearer ${ABACUS_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
@@ -72,12 +72,12 @@ export async function generateImage(options: ImageGenerationOptions): Promise<Im
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('AIML API error:', response.status, errorText);
+        console.error('Abacus API error:', response.status, errorText);
         throw new Error(`API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('AIML response:', JSON.stringify(data).substring(0, 500));
+      console.log('Abacus response:', JSON.stringify(data).substring(0, 500));
 
       // Handle response format per AIML API documentation
       // Response: { images: [{ url: "...", width: ..., height: ..., content_type: "..." }], ... }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateAICompletion, BEST_MODELS } from '@/lib/ai-client';
-import { generateFeaturedImage, generateArticleImage } from '@/lib/aiml-image-generator';
+import { generateFeaturedImage, generateArticleImage } from '@/lib/abacus-image-generator';
 import { CONTENT_PROMPT_RULES, cleanForbiddenWords } from '@/lib/writing-rules';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase-server';

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
-import { generateImage, generateArticleImage } from '@/lib/aiml-image-generator';
+import { generateImage, generateArticleImage } from '@/lib/abacus-image-generator';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

@@ -7,9 +7,9 @@
 import OpenAI from 'openai';
 import { analyzeSERPWithPerplexity, formatSERPAnalysisForPrompt } from './serp-research';
 
-const aimlClient = new OpenAI({
-  apiKey: process.env.AIML_API_KEY || '',
-  baseURL: 'https://api.aimlapi.com/v1',
+const abacusClient = new OpenAI({
+  apiKey: process.env.ABACUS_API_KEY || '',
+  baseURL: 'https://api.abacus.ai/api/v0',
 });
 
 export interface ArticleGenerationParams {
@@ -106,7 +106,7 @@ export async function generateArticle(
 
   try {
     console.log('Starting AI article generation with Claude Sonnet 4.5 via AIML API...');
-    const response = await aimlClient.chat.completions.create({
+    const response = await abacusClient.chat.completions.create({
       model: 'anthropic/claude-sonnet-4.5', // Using Claude via AIML API
       messages: [
         {

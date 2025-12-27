@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { getProjectContext, buildContextPrompt } from '@/lib/project-context';
 import OpenAI from 'openai';
-import { generateFeaturedImage, generateArticleImage } from '@/lib/aiml-image-generator';
+import { generateFeaturedImage, generateArticleImage } from '@/lib/abacus-image-generator';
 import {
   searchYouTubeVideo,
   scrapeSitemap,

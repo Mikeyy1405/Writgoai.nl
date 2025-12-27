@@ -1,15 +1,15 @@
 /**
  * AI-Powered Content Discovery Service
- * Uses Perplexity via AIML API for intelligent topic discovery
+ * Uses Perplexity via Abacus.AI RouteLLM API for intelligent topic discovery
  * No RSS feeds needed - AI discovers trending topics and content gaps
  */
 
 import OpenAI from 'openai';
 
-// Initialize OpenAI client with AIML API base URL for Perplexity
-const aimlClient = new OpenAI({
-  apiKey: process.env.AIML_API_KEY || '',
-  baseURL: 'https://api.aimlapi.com/v1',
+// Initialize OpenAI client with Abacus.AI RouteLLM base URL for Perplexity
+const abacusClient = new OpenAI({
+  apiKey: process.env.ABACUS_API_KEY || '',
+  baseURL: 'https://api.abacus.ai/api/v0',
 });
 
 export interface DiscoveredTopic {
@@ -86,7 +86,7 @@ Focus op:
 - Nederlandse markt relevantie`;
 
   try {
-    const response = await aimlClient.chat.completions.create({
+    const response = await abacusClient.chat.completions.create({
       model: 'perplexity/llama-3.1-sonar-large-128k-online',
       messages: [
         {
@@ -162,7 +162,7 @@ Geef suggesties terug in JSON formaat:
 ]`;
 
   try {
-    const response = await aimlClient.chat.completions.create({
+    const response = await abacusClient.chat.completions.create({
       model: 'perplexity/llama-3.1-sonar-large-128k-online',
       messages: [
         {
@@ -226,7 +226,7 @@ Geef antwoord in JSON formaat:
 }`;
 
   try {
-    const response = await aimlClient.chat.completions.create({
+    const response = await abacusClient.chat.completions.create({
       model: 'perplexity/llama-3.1-sonar-large-128k-online',
       messages: [
         {
@@ -368,7 +368,7 @@ Geef antwoord in JSON formaat:
 }`;
 
   try {
-    const response = await aimlClient.chat.completions.create({
+    const response = await abacusClient.chat.completions.create({
       model: 'perplexity/llama-3.1-sonar-large-128k-online',
       messages: [
         {

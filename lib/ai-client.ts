@@ -5,7 +5,7 @@ export { BEST_MODELS, AVAILABLE_TEXT_MODELS, type TextModel } from './ai-models'
 
 // Get API key - support multiple env var names for flexibility
 const getApiKey = () => {
-  return process.env.AIML_API_KEY ||
+  return process.env.ABACUS_API_KEY ||
          process.env.ANTHROPIC_API_KEY ||
          process.env.OPENAI_API_KEY ||
          '';
@@ -13,17 +13,18 @@ const getApiKey = () => {
 
 const apiKey = getApiKey();
 
-// OpenAI-compatible client via AIML API (for all models including Claude)
+// OpenAI-compatible client via Abacus.AI RouteLLM API (for all models including Claude)
+// RouteLLM provides access to 500+ models with automatic routing for cost optimization
 // With 60 second default timeout to prevent hanging requests
 export const openaiClient = new OpenAI({
   apiKey: apiKey,
-  baseURL: process.env.OPENAI_BASE_URL || 'https://api.aimlapi.com/v1',
+  baseURL: process.env.OPENAI_BASE_URL || 'https://api.abacus.ai/api/v0',
   timeout: 60000, // 60 second default timeout
   maxRetries: 2,
 });
 
 // For backwards compatibility
-export const aimlClient = openaiClient;
+export const abacusClient = openaiClient;
 export const anthropicClient = openaiClient;
 
 interface GenerateOptions {
@@ -58,7 +59,7 @@ export async function generateAICompletion(options: GenerateOptions): Promise<st
 
   // Check if API key is configured
   if (!apiKey) {
-    console.error('No AI API key configured. Please set AIML_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY');
+    console.error('No AI API key configured. Please set ABACUS_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY');
     throw new Error('AI API key not configured. Please check environment variables.');
   }
 

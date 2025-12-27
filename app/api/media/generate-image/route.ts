@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { generateFeaturedImage, generateArticleImage } from '@/lib/aiml-image-generator';
+import { generateFeaturedImage, generateArticleImage } from '@/lib/abacus-image-generator';
 import { requireCredits, deductCreditsAfterAction } from '@/lib/credit-middleware';
 
 // Force dynamic rendering for this API route

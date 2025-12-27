@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-import { VIDEO_MODELS, VIDEO_STYLES, VideoModelId } from '@/lib/aiml-api-client';
+import { VIDEO_MODELS, VIDEO_STYLES, VideoModelId } from '@/lib/abacus-api-client';
 import { Database } from '@/lib/database.types';
 
 
@@ -27,10 +27,10 @@ function getSupabase() {
 
 function getOpenAI() {
   if (!openaiClient) {
-    // Use AIML API's OpenAI-compatible endpoint
+    // Use Abacus.AI RouteLLM's OpenAI-compatible endpoint
     openaiClient = new OpenAI({
-      apiKey: process.env.AIML_API_KEY,
-      baseURL: 'https://api.aimlapi.com/v1',
+      apiKey: process.env.ABACUS_API_KEY,
+      baseURL: 'https://api.abacus.ai/api/v0',
     });
   }
   return openaiClient;
