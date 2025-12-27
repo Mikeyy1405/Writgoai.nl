@@ -28,7 +28,9 @@ export async function POST(request: NextRequest) {
       focusKeyword,
       topicId,
       contentType,
-      clusterId
+      clusterId,
+      language = 'nl', // Default to Dutch
+      skipSERPAnalysis = false, // Enable SERP analysis by default
     } = body;
 
     if (!title || !focusKeyword || !topicId) {
@@ -75,8 +77,10 @@ export async function POST(request: NextRequest) {
       keywords = cluster?.keywords || [];
     }
 
-    // Generate article
+    // Generate article with SERP analysis
     console.log('Generating article with AI...');
+    console.log(`SERP Analysis: ${skipSERPAnalysis ? 'DISABLED (faster)' : 'ENABLED (better quality)'}`);
+
     const article = await generateArticle({
       title,
       focusKeyword,
@@ -85,7 +89,9 @@ export async function POST(request: NextRequest) {
       contentType: contentType || 'supporting',
       clusterId,
       keywords,
-      relatedArticles: relatedWithUrls
+      relatedArticles: relatedWithUrls,
+      language,
+      skipSERPAnalysis,
     });
 
     console.log(`Article generated: ${article.wordCount} words`);

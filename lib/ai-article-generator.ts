@@ -5,6 +5,7 @@
  */
 
 import OpenAI from 'openai';
+import { analyzeSERPWithPerplexity, formatSERPAnalysisForPrompt } from './serp-research';
 
 const aimlClient = new OpenAI({
   apiKey: process.env.AIML_API_KEY || '',
@@ -24,6 +25,8 @@ export interface ArticleGenerationParams {
     title: string;
     url: string;
   }>;
+  language?: string; // Language for SERP analysis
+  skipSERPAnalysis?: boolean; // Skip SERP research (for speed)
 }
 
 export interface GeneratedArticle {
@@ -54,7 +57,9 @@ export async function generateArticle(
     topicName,
     contentType,
     keywords = [],
-    relatedArticles = []
+    relatedArticles = [],
+    language = 'nl',
+    skipSERPAnalysis = false,
   } = params;
 
   // Determine target word count
@@ -63,9 +68,31 @@ export async function generateArticle(
     cluster: 2500,
     supporting: 1500
   };
-  const targetWordCount = wordCounts[contentType];
+  let targetWordCount = wordCounts[contentType];
 
-  // Build prompt
+  // Step 1: Analyze Google's top 5 results with Perplexity (unless skipped)
+  let serpAnalysisPrompt = '';
+  if (!skipSERPAnalysis) {
+    try {
+      console.log(`🔍 Analyzing Google top 5 for "${focusKeyword}"...`);
+      const serpAnalysis = await analyzeSERPWithPerplexity(focusKeyword, language);
+
+      // Adjust word count based on competition
+      if (serpAnalysis.averageWordCount > targetWordCount) {
+        targetWordCount = Math.max(targetWordCount, serpAnalysis.averageWordCount + 200);
+        console.log(`📊 Adjusted target word count to ${targetWordCount} (competition average: ${serpAnalysis.averageWordCount})`);
+      }
+
+      serpAnalysisPrompt = formatSERPAnalysisForPrompt(serpAnalysis);
+    } catch (error) {
+      console.error('SERP analysis failed, continuing without it:', error);
+      // Continue without SERP analysis if it fails
+    }
+  } else {
+    console.log('⚡ Skipping SERP analysis for faster generation');
+  }
+
+  // Step 2: Build prompt with SERP insights
   const prompt = buildArticlePrompt(
     title,
     focusKeyword,
@@ -73,12 +100,14 @@ export async function generateArticle(
     contentType,
     targetWordCount,
     keywords,
-    relatedArticles
+    relatedArticles,
+    serpAnalysisPrompt
   );
 
   try {
+    console.log('Starting AI article generation with Claude Sonnet 4.5...');
     const response = await aimlClient.chat.completions.create({
-      model: 'perplexity/llama-3.1-sonar-large-128k-online',
+      model: 'anthropic/claude-sonnet-4.5', // Use Claude instead of Perplexity for more reliable content generation
       messages: [
         {
           role: 'system',
@@ -94,10 +123,19 @@ export async function generateArticle(
     });
 
     const content = response.choices[0]?.message?.content || '';
-    
+
+    // Check if content is empty
+    if (!content || content.trim().length === 0) {
+      console.error('AI returned empty content for article generation');
+      console.error('Response object:', JSON.stringify(response, null, 2));
+      throw new Error('AI returned empty content. Please try again or check API configuration.');
+    }
+
+    console.log(`AI generated content: ${content.length} characters`);
+
     // Parse the response
     const article = parseArticleResponse(content, params);
-    
+
     return article;
   } catch (error) {
     console.error('Error generating article:', error);
@@ -115,7 +153,8 @@ function buildArticlePrompt(
   contentType: string,
   targetWordCount: number,
   keywords: string[],
-  relatedArticles: Array<{ id: string; title: string; url: string }>
+  relatedArticles: Array<{ id: string; title: string; url: string }>,
+  serpAnalysis: string = ''
 ): string {
   const contentTypeDescriptions = {
     pillar: 'een uitgebreide pillar page die het hele onderwerp dekt',
@@ -132,6 +171,7 @@ function buildArticlePrompt(
 **Target Lengte:** ${targetWordCount} woorden
 **Content Type:** ${contentType}
 ${keywords.length > 0 ? `**Related Keywords:** ${keywords.join(', ')}` : ''}
+${serpAnalysis ? serpAnalysis : ''}
 
 **BELANGRIJKE VEREISTEN:**
 
@@ -284,10 +324,17 @@ function parseArticleResponse(
     };
   } catch (error) {
     console.error('Error parsing article response:', error);
-    
+    console.error('Raw content (first 500 chars):', content.substring(0, 500));
+
+    // Check if content is actually empty
+    if (!content || content.trim().length < 50) {
+      throw new Error('AI response was too short or empty. Cannot parse article.');
+    }
+
     // Fallback: treat entire content as HTML
+    console.warn('Falling back to treating AI response as plain HTML (not JSON format)');
     const wordCount = content.split(' ').filter(w => w.length > 0).length;
-    
+
     return {
       title: params.title,
       content: `<h1>${params.title}</h1>\n\n${content}`,
